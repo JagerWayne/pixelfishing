@@ -26,4 +26,4 @@ description of the game, its systems and its structure.
 ## Checking a change
 
 Use headless Chromium (Playwright) against a local copy: boot with no errors (also with a corrupted save), walk the
-pier, exercise the menus, and make sure all 63 catch models still build. See the Testing section of the README.
+pier, exercise the menus, and make sure all 69 catch models still build. See the Testing section of the README.

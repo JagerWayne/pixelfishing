@@ -20,16 +20,20 @@ Once installed it also works offline.
 5. [The sea: zones, weather and the moon](#the-sea-zones-weather-and-the-moon)
 6. [Catches and the encyclopedia](#catches-and-the-encyclopedia)
 7. [Bounties, bottles and rewards](#bounties-bottles-and-rewards)
-8. [Character customisation](#character-customisation)
-9. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
-10. [Settings](#settings)
-11. [Saving](#saving)
-12. [Installing and offline play](#installing-and-offline-play)
-13. [Technical overview](#technical-overview)
-14. [Running and deploying](#running-and-deploying)
-15. [Testing](#testing)
-16. [Maintaining this file](#maintaining-this-file)
-17. [Changelog](#changelog)
+8. [Career: rank and achievements](#career-rank-and-achievements)
+9. [The fish market](#the-fish-market)
+10. [The Trophy Cabinet](#the-trophy-cabinet)
+11. [Sea events](#sea-events)
+12. [Character customisation](#character-customisation)
+13. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
+14. [Settings](#settings)
+15. [Saving](#saving)
+16. [Installing and offline play](#installing-and-offline-play)
+17. [Technical overview](#technical-overview)
+18. [Running and deploying](#running-and-deploying)
+19. [Testing](#testing)
+20. [Maintaining this file](#maintaining-this-file)
+21. [Changelog](#changelog)
 
 ---
 
@@ -54,7 +58,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
 | Open encyclopedia | **☰ Menu → 📖 Log** (a dot on ☰ marks new species) | `L` |
 | Toolbox or bucket (when nearby) | Action button | `T` |
-| Open the menu (Bag, Log, Settings, Look, Sound, gear info) | **☰** button, top right | none |
+| Open the menu (Bag, Log, Career, Trophies, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
 
 The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, and so on. Tapping empty screen does nothing; only the button acts.
@@ -92,11 +96,12 @@ A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking som
 | Carbon Surf Rod | $750 | 42 kg | 3 |
 | Titanium Rig | $1,800 | 85 kg | 4 |
 | Abyssal Leviathan Winch | $3,600 | 140 kg | 4 |
+| Mythril Deepcaster | $9,000 | 220 kg | 5 |
 
 ### Boats
 Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
 
-You ride each boat properly: on the **Wooden Rowboat** you sit on the stern thwart with a hand on the tiller, on the **Fiberglass Skiff** you stand behind the console with both hands on the wheel, and on the **Deep-Sea Trawler** you stand at the wheelhouse door. The rider moves, tilts and banks with the hull, hands go to the wheel while you steer, and the fishing rod is stowed until you cast.
+You ride each boat properly: on the **Wooden Rowboat** you sit on the stern thwart with a hand on the tiller, on the **Fiberglass Skiff** you stand behind the console with both hands on the wheel, and on the **Deep-Sea Trawler** you stand at the wheelhouse door; on the **Expedition Yacht** you stand behind the aft helm console. The rider moves, tilts and banks with the hull, hands go to the wheel while you steer, and the fishing rod is stowed until you cast.
 
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
@@ -104,6 +109,7 @@ You ride each boat properly: on the **Wooden Rowboat** you sit on the stern thwa
 | Wooden Rowboat | $120 | 60 | 2 |
 | Fiberglass Skiff | $550 | 150 | 3 |
 | Deep-Sea Trawler | $1,800 | 350 | 4 |
+| Expedition Yacht | $6,500 | 700 | 5 |
 
 ### Boat modules
 | Module | Cost | Effect |
@@ -131,8 +137,12 @@ Choose your bait in the **Tackle Toolbox** on the pier. When special bait runs o
 | Plastic Cooler | $100 | 18 kg |
 | Insulated Fish Box | $450 | 50 kg |
 | Refrigerated Hold | $1,500 | 150 kg |
+| Deep-Freeze Vault | $4,000 | 400 kg |
 
-The bucket on the pier shows your upgrade, open with the catch inside. In the bag you can **sort** by newest, value, weight or name.
+The bucket on the pier shows your upgrade, open with the catch inside (the Deep-Freeze Vault is a gilded freezer). In the bag you can **sort** by newest, value, weight or name.
+
+### Boat paint
+The shop's **Paint** tab recolours the hull of whichever boat you own: Classic (free), Sunset Orange ($150), Emerald ($250), Royal Violet ($400, rank 4), Midnight ($600, rank 8) and Gilded ($1,500, rank 12). A paint you own applies to every boat. Owning three paints earns the *Fresh Coat* achievement.
 
 ## The sea: zones, weather and the moon
 
@@ -144,34 +154,57 @@ Boats are solid: the **pier deck, stairs, mooring platform and pilings, the boar
 | 1 | Shallow Cove | 0 to 100 m |
 | 2 | Coastal Reef | 100 to 300 m |
 | 3 | Open Shelf | 300 to 650 m |
-| 4 | Abyssal Trench | 650 m and beyond |
+| 4 | Abyssal Trench | 650 to 1,500 m |
+| 5 | Mariana Rift | 1,500 m and beyond (Expedition Yacht and a strong rod needed) |
 
 - **Weather** cycles between ☀️ Clear, ☁️ Overcast, 🌧️ Rain and ⛈️ Storm. Rougher weather means bigger waves.
 - **Storm-only catches** appear in storms (for example the Thunder Eel).
 - **The moon** has phases over the days. On a **full moon night** special glowing fish can be caught.
 - **Feeding Frenzies** are patches of churning water. Casting into one gives much faster bites and better odds at rare fish.
+- **Sea events** (see below) add floating treasure and a boss fish.
 - Days and nights pass in real time, and the sky, lighting and lamps change with them.
 
 ## Catches and the encyclopedia
 
-The encyclopedia (📖 Log) tracks **63 catchable things**:
+The encyclopedia (📖 Log) tracks **69 catchable things**:
 
 | Kind | Count |
 |---|---|
-| Fish | 52 (9 Common, 10 Uncommon, 15 Rare, 13 Epic, 5 Legendary) |
+| Fish | 58 (9 Common, 10 Uncommon, 16 Rare, 15 Epic, 8 Legendary) |
 | Junk | 7 (boot, tin can, bottles, strongbox, hat, anchor and a message bottle) |
 | Flora | 4 (sea lettuce, kelp, bladderwrack, glowing abyssal moss) |
 
-- Fish per zone: 13 in Shallow Cove, 17 in Coastal Reef, 18 in Open Shelf, 15 in the Abyssal Trench (some species appear in more than one zone).
+- Fish per zone: 13 in Shallow Cove, 17 in Coastal Reef, 18 in Open Shelf, 15 in the Abyssal Trench and 6 in the Mariana Rift (some species appear in more than one zone).
 - 6 fish are **full-moon exclusives** and 5 are **storm exclusives**.
 - The log shows your **personal best weight** and catch count per species, flags new discoveries with a **NEW** badge and a red dot on the Log button, and can be filtered by Fish, Junk, Flora or Undiscovered.
 - All catches are rendered as 3D models: smooth countershaded fish with species-specific fins, markings, bills, sails, spines and lures, plus modelled junk.
 
 ## Bounties, bottles and rewards
 
-- **Bounties:** the board offers three contracts at a time from a pool of 14 (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
+- **Bounties:** the board offers three contracts at a time from a pool of 16 (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
 - **Message in a bottle:** 36 collectable scrolls are hidden across the four zones. Keep a bottle in your bucket to add its message to the Gallery. Collect all 36 for a **$2,500 Master Archivist** reward.
 - **Eco cleanup:** junk and flora you sell are recycled. Every **100 kg** recycled earns a **$1,000 Mayor's Award**.
+
+## Career: rank and achievements
+
+Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait, and ranks 4, 8 and 12 unlock boat paints. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **33 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
+
+## The fish market
+
+Prices move every in-game day (every 3.5 minutes). Each fish species gets a multiplier between **x0.75 and x1.35**; three species are **hot at x1.9** and three are in a **glut at x0.6**. The board in the shop lists today's hot and glut fish and the time until the next prices; the bag and *Sell All* use the current prices, and ▲ ▼ mark fish that are selling well or badly. Junk and flora are unaffected. Prices come from the day number, so nothing extra is saved.
+
+## The Trophy Cabinet
+
+A glass cabinet stands on the boardwalk between the Bottle Gallery and the Director's Camera. It mounts your **five best species** (ranked by rarity, then how close your record is to the species' top weight) as small 3D fish with name plates. Walk up to it and press **TROPHIES** (or use **☰ Menu → 🏆 Trophies**) for the full list: every fish you have caught with its record weight, catch count and a medal: 🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below.
+
+## Sea events
+
+While you are out on a boat, two things can appear (they are never saved):
+
+- **Treasure chests:** about every one to two minutes (up to two at a time) a chest floats 70 to 220 m away in your current zone, marked by a tall golden beam. Sail within a few metres to collect cash (more in deeper zones), bait and XP. They sink after about 2.5 minutes.
+- **Boss shadow:** in zone 3 and deeper, roughly every 6 to 10 minutes a huge shadow circles a marked spot (red ring and beam). Cast into the ring and you hook a boss: a Legendary fish of that zone, heavier than normal and worth double, plus a **$500 x zone** bonus and 150 XP. Your rod must be strong enough or the line snaps. It leaves after about 4 minutes.
+
+A pill under the top bar shows the nearest event with its distance and bearing relative to your boat. The secret menu can spawn both for testing.
 
 ## Character customisation
 
@@ -205,7 +238,7 @@ Your look is saved and applied immediately in the game world. While walking, the
 
 There is a hidden cheat menu. Stand close to the **seagull perched behind the tackle shop** (beside the left end of the shop works) and press the action button while it reads **WALK EDGE** **31 times in a row**. Pressing any other key or button resets the count, and so does an action press anywhere else.
 
-The menu can add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
+The menu can spawn a treasure chest or boss shadow (on a boat), add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
 
 ## Settings
 
@@ -231,7 +264,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 | Key | Contents |
 |---|---|
-| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance and more (save format version 2) |
+| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, boat paints and more (save format version 2; new fields are validated and old saves load with defaults) |
 | `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
@@ -274,10 +307,10 @@ The script inside `index.html` is organised in labelled sections:
 | B | Game data tables: rods, boats, modules, bait, buckets, zones, weather, the catch catalog, bottle messages, bounties |
 | C | Procedural pixel-art texture and icon factory |
 | D | 3D model builders: the lofted fish generator, junk models, boats, pier props, the pier and island, and the **AnglerFactory** (customisable character) |
-| E2 | Particles, ripples, feeding frenzies, weather and jumping fish |
+| E2 | Particles, ripples, feeding frenzies, weather and jumping fish; sea events (treasure and boss) are in the UI section |
 | F | Three.js rendering pipeline and screen shaders |
 | G | Runtime state and multi-touch controls |
-| H | Save state, validation and helper queries |
+| H | Career (XP, ranks, achievements), the daily market, save state, validation and helper queries |
 | I | Boarding, docking and the rescue loop |
 | J | Fishing mechanics and the context-sensitive action button |
 | K | UI modals: shop, bucket, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
@@ -287,7 +320,7 @@ The script inside `index.html` is organised in labelled sections:
 Notes on the models:
 
 - **Fish** are generated from a per-species spec (length, height, width, fin layout, markings and features) and lofted into a smooth body with vertex-colour countershading and a pixel scale texture. They are normalised to fit the catch preview.
-- **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom) with three detailed vessels on top.
+- **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom) with four detailed vessels on top. Paint shifts the hue of the hull's vertex colours.
 - **The character** is built from a skin body plus layered clothing shells, driven by a `look` object. It dresses the same animated rig the game already used (body, head, arms, legs), so walking, sitting, casting and reeling are unaffected. The customise screen uses a second rig with its own small renderer.
 - Models keep their footprints and orientation (fronts face +Z, boats point toward -Z), so collisions and interaction ranges do not change when art is updated.
 
@@ -311,7 +344,7 @@ There is no test framework in the repository. Changes are checked with headless 
 - settings, bucket sorting, encyclopedia filters, the bounty tracker and the customise screen work,
 - walking and collisions (shop reachable, railings hold, ramp and platform ends, no teleports),
 - the action button only responds to the button, not the canvas,
-- every one of the 63 catch models builds,
+- every one of the 69 catch models builds,
 - the app registers its service worker and reloads and runs offline,
 - contact-sheet renders of fish, boats, props and characters are reviewed by eye.
 
@@ -326,6 +359,15 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Version 3.0.0: career, trophies, sea events, market and the Mariana Rift
+- **Career:** XP, 12 ranks and 33 achievements with cash rewards (☰ Menu → Career). Old saves are migrated from their species records.
+- **Fish market:** daily prices per species with hot (x1.9) and glut (x0.6) fish, a market board in the shop, and sell prices that follow the market.
+- **Trophy Cabinet** on the boardwalk showing your five best fish as 3D mounts, plus a Trophies screen with gold, silver and bronze medals.
+- **Sea events:** floating treasure chests with golden beams and a boss shadow that forces a Legendary catch with a big bonus; an event pill shows the nearest one. The frenzy readout now points relative to your boat.
+- **Endgame:** the **Mariana Rift** (zone 5, 1,500 m and beyond), six new fish (1 Rare, 2 Epic, 3 Legendary), 2 bounties, the **Expedition Yacht**, the **Mythril Deepcaster** rod, the **Deep-Freeze Vault** bucket and six **boat paints**.
+- **Bug fix:** the toast queue could freeze the game when four toasts arrived at once (an endless loop); fixed.
+- Catalogue is now 69 catchable things (58 fish); version bumped to **v3.0.0**.
 
 ### 2026-11-18, Version 2.4.0: sonar frenzies and a proper boat ride
 - **Frenzy:** the FRENZY readout and the frenzy rings and ripples on the water now need the **Sonar** module and are only shown while you are aboard a boat (driving, casting or reeling). Before, the readout also showed on the pier and the rings were visible to everyone. The frenzy fishing bonus itself is unchanged.
