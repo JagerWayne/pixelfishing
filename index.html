@@ -1440,10 +1440,13 @@
           <button class="menu-tile" id="menu-bag" data-closes-menu type="button">🪣<span>Bag</span></button>
           <button class="menu-tile menu-dot" id="menu-log" data-closes-menu type="button">📖<span>Log</span></button>
           <button class="menu-tile" id="btn-open-settings" data-closes-menu type="button" aria-label="Settings">🎛️<span>Settings</span></button>
+          <button class="menu-tile" id="menu-career" data-closes-menu type="button">🏅<span>Career</span></button>
+          <button class="menu-tile" id="menu-trophies" data-closes-menu type="button">🏆<span>Trophies</span></button>
           <button class="menu-tile" id="btn-drawer-customize" data-closes-menu type="button">🎨<span>Look</span></button>
           <button class="menu-tile" id="btn-toggle-audio" data-label="Sound" type="button" aria-label="Toggle sound">🔊</button>
         </div>
         <div class="menu-info">
+          <div class="drawer-item wide"><span class="drawer-label">RANK:</span><span class="drawer-val" id="hud-rank">Deckhand</span></div>
           <div class="drawer-item"><span class="drawer-label">ROD:</span><span class="drawer-val" id="hud-rod">Bamboo (3.5kg)</span></div>
           <div class="drawer-item"><span class="drawer-label">BAIT:</span><span class="drawer-val" id="hud-bait">Bread (∞)</span></div>
           <div class="drawer-item"><span class="drawer-label">VESSEL:</span><span class="drawer-val" id="hud-fuel-text">No Boat</span></div>
@@ -1458,6 +1461,44 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CAREER (rank, stats, achievements) -->
+  <div class="modal-backdrop" id="modal-career">
+    <div class="pixel-box modal-window">
+      <div class="modal-header">
+        <span class="modal-title">🏅 CAREER</span>
+        <button class="pixel-btn red" data-close="modal-career" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="pixel-box" style="padding: 12px; margin-bottom: 12px; background: #132036;">
+          <div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline;">
+            <span id="career-rank" style="font-size: 18px; font-weight: 900; color: #ffd24c;">Deckhand</span>
+            <span id="career-xp" style="font-size: 12px; color: #94a3b8;">0 XP</span>
+          </div>
+          <div class="bar-wrap" style="height: 12px; margin: 8px 0 4px;"><div class="bar-fill" id="career-xp-bar" style="width: 0%; background: #38bdf8;"></div></div>
+          <div id="career-next" style="font-size: 12px; color: #cbd5e1;"></div>
+        </div>
+        <div id="career-stats" class="menu-info" style="margin-bottom: 14px;"></div>
+        <div class="cheat-title">🏅 ACHIEVEMENTS (<span id="career-ach-count">0</span>)</div>
+        <div id="career-achievements"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TROPHY CASE -->
+  <div class="modal-backdrop" id="modal-trophies">
+    <div class="pixel-box modal-window" style="border-color: #facc15;">
+      <div class="modal-header" style="background: #2a2208; border-bottom-color: #facc15;">
+        <span class="modal-title">🏆 TROPHY CASE</span>
+        <button class="pixel-btn red" data-close="modal-trophies" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="trophy-summary" style="font-size: 13px; color: #fde68a; margin-bottom: 4px;"></div>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Your record weight for each fish decides its medal: gold at 90% of the species' top weight, silver at 70%, bronze below. The five best are mounted in the case on the pier.</div>
+        <div id="trophy-list"></div>
       </div>
     </div>
   </div>
@@ -1495,6 +1536,8 @@
             <div class="bar-fill" id="shop-eco-bar" style="width: 0%; background: #4ade80;"></div>
           </div>
         </div>
+
+        <div class="pixel-box" id="shop-market" style="padding: 9px 12px; margin-bottom: 12px; background: #1b1830; border-color: #a78bfa; font-size: 12px; line-height: 1.5;"></div>
 
         <div class="tab-row">
           <button class="pixel-btn tab-btn active" data-shop-tab="rods">Rods</button>
@@ -3074,6 +3117,7 @@
         gallery: { color: 0xc9f5ee, pool: 0xbfeee6, k: 1.0 },
         mooring: { color: 0xffd9a8, pool: 0xffd9a8, k: 1.0 },
         bulbs:   [0xffeec8, 0xffe0a0],
+        trophy:  { color: 0xfff0d0, pool: 0xffe9c4, k: 1.0 },
         lampGlass: 0xfff1c8, lampCore: 0xffe6a8
       };
 
@@ -4493,6 +4537,28 @@
           return g;
         }
 
+        /* Trophy cabinet: glass-fronted case that shows the player's best species as mounted fish.
+           Origin at the base centre, front faces +Z. g.userData.fishGroup holds the mounts (rebuilt on demand). */
+        static buildTrophyCabinet(textures) {
+          const g = new THREE.Group();
+          const K = this.propKit(textures);
+          const felt = K.M(0x14532d, 0.95);
+          const glass = new THREE.MeshStandardMaterial({ color: 0x9bd8f5, transparent: true, opacity: 0.13, roughness: 0.05, metalness: 0.1, depthWrite: false });
+          K.box(g, 1.3, 0.55, 0.62, K.darkWood, 0, 0.275, 0);
+          K.box(g, 1.34, 0.05, 0.66, K.lightWood, 0, 0.575, 0);
+          K.box(g, 1.16, 1.9, 0.05, felt, 0, 1.55, -0.27);
+          [-0.62, 0.62].forEach(x => K.box(g, 0.08, 2.0, 0.6, K.darkWood, x, 1.58, 0));
+          K.box(g, 1.34, 0.1, 0.66, K.darkWood, 0, 2.58, 0);
+          K.box(g, 1.16, 0.26, 0.05, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('TROPHY CASE', 256, 64) }), 0, 2.8, 0.05);
+          [1.3, 1.82].forEach(y => K.box(g, 1.16, 0.03, 0.5, K.lightWood, 0, y, -0.02));
+          const gl = new THREE.Mesh(new THREE.BoxGeometry(1.16, 1.9, 0.02), glass); gl.position.set(0, 1.55, 0.29); g.add(gl);
+          K.box(g, 1.1, 0.03, 0.05, K.brass, 0, 0.62, 0.3);
+          g.userData.slots = [[-0.29, 2.2], [0.29, 2.2], [-0.29, 1.62], [0.29, 1.62], [0, 1.02]];
+          g.userData.fishGroup = new THREE.Group();
+          g.add(g.userData.fishGroup);
+          return g;
+        }
+
         static buildBottleGalleryStand(textures) {
           const g = new THREE.Group();
           const K = this.propKit(textures);
@@ -4863,6 +4929,11 @@
           galleryStand.position.set(4.4, 1.56, 0.8);
           galleryStand.rotation.y = 0;
           pierGroup.add(galleryStand);
+
+          // Trophy cabinet in the gap between the gallery and the film camera (fronts face +Z)
+          const trophyCabinet = this.buildTrophyCabinet(textures);
+          trophyCabinet.position.set(6.55, 1.56, 0.8);
+          pierGroup.add(trophyCabinet);
 
           // 3D Fourth-Wall Film Camera with Back to the Sea, Facing South (+Z)
           const filmCamera = this.buildFourthWallCamera();
@@ -5308,6 +5379,9 @@
           // Bottle gallery (4.4, 0.8): cool teal light to show off the glass (its string lights already hang under the sign)
           if (realLights) addLight(4.4, 1.56 + 2.0, 0.8 + 0.9, LIGHT_TUNING.gallery.color, 8.5, LIGHT_TUNING.gallery.k);
           addPool(4.4, 1.56, 0.8 + 1.2, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
+          // Trophy cabinet (6.55, 0.8): a soft light over the case
+          if (realLights) addLight(6.55, 1.56 + 2.4, 0.8 + 0.9, LIGHT_TUNING.trophy.color, 8, LIGHT_TUNING.trophy.k);
+          addPool(6.55, 1.56, 0.8 + 1.0, 1.9, LIGHT_TUNING.trophy.pool, 0.8);
           // Film camera (8.2, 0.9): its own lamp post
           buildHarborLamp(9.55, 1.56, 1.9, realLights);
           // Mooring platform: lantern on the piling
@@ -5703,6 +5777,7 @@
             lanternLights,
             standGlows,
             lighthouseBeacon,
+            trophyCabinet,
             cheatGull,
             anglerGroup,
             bodyGroup,
@@ -6646,6 +6721,7 @@
           if (isNearPierShop()) openShopModal();
           else if (isNearPierBounty()) openBountyModal();
           else if (isNearPierGallery()) openGalleryModal();
+          else if (isNearPierTrophies()) openTrophiesModal();
           else if (isNearPierCamera()) openCameraModal();
           else if (isNearPierToolbox()) openToolboxModal();
           else if (isNearPierBucket()) openBucketModal();
@@ -6690,6 +6766,136 @@
         return shuffled.slice(0, 3).map(tpl => ({ ...tpl, progress: 0, claimed: false }));
       }
 
+      /* =========================================================================
+         CAREER (XP, ranks, achievements) AND THE DAILY FISH MARKET
+         ========================================================================= */
+      const STAT_KEYS = ['catches', 'fish', 'junk', 'legendary', 'nightCatches', 'stormCatches', 'frenzyCatches', 'treasures', 'bossCatches',
+        'earned', 'metersSailed', 'bountiesClaimed', 'maxZone'];
+      const CATALOG_INDEX = {};
+      CATCH_CATALOG.forEach(c => { CATALOG_INDEX[c.id] = c; });
+      const RANKS = [
+        { xp: 0, name: 'Deckhand' }, { xp: 60, name: 'Angler' }, { xp: 160, name: 'Harbor Regular' }, { xp: 320, name: 'Reef Runner' },
+        { xp: 560, name: 'Shelf Skipper' }, { xp: 900, name: 'Deep Hand' }, { xp: 1400, name: 'Trench Hunter' }, { xp: 2100, name: 'Captain' },
+        { xp: 3000, name: 'Commodore' }, { xp: 4200, name: 'Admiral' }, { xp: 5800, name: 'Sea Master' }, { xp: 8000, name: 'Sea Legend' }
+      ];
+      const RARITY_XP = { Common: 4, Uncommon: 8, Rare: 18, Epic: 40, Legendary: 100 };
+      function rankIndexFor(xp) { let r = 0; RANKS.forEach((k, i) => { if (xp >= k.xp) r = i; }); return r; }
+      function rankReward(idx) { return { cash: 50 * idx, baitTier: Math.min(4, 1 + Math.ceil(idx / 3)), baitQty: 5 }; }
+
+      /* Medal for a species record: gold at 90% of the species' top weight, silver at 70%, bronze otherwise */
+      function medalFor(id) {
+        const it = CATALOG_INDEX[id], st = state.speciesStats && state.speciesStats[id];
+        if (!it || it.category !== 'Fish' || !st || !st.count) return null;
+        const r = st.maxWeight / it.maxW;
+        return r >= 0.9 ? 'gold' : r >= 0.7 ? 'silver' : 'bronze';
+      }
+      const fishDiscovered = () => state.discovered.filter(id => CATALOG_INDEX[id] && CATALOG_INDEX[id].category === 'Fish').length;
+      const FISH_TOTAL = CATCH_CATALOG.filter(c => c.category === 'Fish').length;
+      const medalCount = min => Object.keys(state.speciesStats || {}).filter(id => { const m = medalFor(id); return m === 'gold' || (min === 'silver' && m === 'silver'); }).length;
+      const stat = k => (state.stats && state.stats[k]) || 0;
+      const ACHIEVEMENTS = [
+        { id: 'first_catch', icon: '🎣', name: 'First Catch', desc: 'Land your first catch.', goal: 1, prog: () => stat('catches'), cash: 10 },
+        { id: 'catches_10', icon: '🪝', name: 'Dock Regular', desc: 'Make 10 catches.', goal: 10, prog: () => stat('catches'), cash: 25 },
+        { id: 'catches_100', icon: '🐟', name: 'Century Angler', desc: 'Make 100 catches.', goal: 100, prog: () => stat('catches'), cash: 150 },
+        { id: 'catches_500', icon: '🏆', name: 'Net Result', desc: 'Make 500 catches.', goal: 500, prog: () => stat('catches'), cash: 800 },
+        { id: 'species_5', icon: '📗', name: 'Naturalist', desc: 'Discover 5 fish species.', goal: 5, prog: fishDiscovered, cash: 50 },
+        { id: 'species_25', icon: '📘', name: 'Field Guide', desc: 'Discover 25 fish species.', goal: 25, prog: fishDiscovered, cash: 300 },
+        { id: 'species_all', icon: '📕', name: 'Completionist', desc: 'Discover every fish species.', goal: FISH_TOTAL, prog: fishDiscovered, cash: 2000 },
+        { id: 'legend_1', icon: '🐉', name: 'Legend of the Deep', desc: 'Land a Legendary fish.', goal: 1, prog: () => stat('legendary'), cash: 200 },
+        { id: 'legend_5', icon: '🌊', name: 'Myth Hunter', desc: 'Land 5 Legendary fish.', goal: 5, prog: () => stat('legendary'), cash: 1000 },
+        { id: 'night_20', icon: '🦉', name: 'Night Owl', desc: 'Make 20 catches at night.', goal: 20, prog: () => stat('nightCatches'), cash: 150 },
+        { id: 'storm_10', icon: '⛈️', name: 'Storm Chaser', desc: 'Make 10 catches in a storm.', goal: 10, prog: () => stat('stormCatches'), cash: 200 },
+        { id: 'frenzy_10', icon: '🔥', name: 'Frenzy Fisher', desc: 'Make 10 catches inside a feeding frenzy.', goal: 10, prog: () => stat('frenzyCatches'), cash: 200 },
+        { id: 'recycle_100', icon: '♻️', name: 'Recycler', desc: 'Recycle 100 kg of junk.', goal: 100, prog: () => Math.floor(state.junkRecycledKg || 0), cash: 200 },
+        { id: 'bottles_10', icon: '📜', name: 'Message Reader', desc: 'Collect 10 message bottles.', goal: 10, prog: () => (state.foundMessages || []).length, cash: 150 },
+        { id: 'bottles_all', icon: '🍾', name: 'Archivist', desc: 'Collect every message bottle.', goal: BOTTLE_MESSAGES.length, prog: () => (state.foundMessages || []).length, cash: 500 },
+        { id: 'bounty_5', icon: '📋', name: 'Contractor', desc: 'Claim 5 bounties.', goal: 5, prog: () => stat('bountiesClaimed'), cash: 100 },
+        { id: 'bounty_25', icon: '🎯', name: 'Bounty Hunter', desc: 'Claim 25 bounties.', goal: 25, prog: () => stat('bountiesClaimed'), cash: 600 },
+        { id: 'earn_1k', icon: '💵', name: 'Pocket Money', desc: 'Earn $1,000 in total.', goal: 1000, prog: () => stat('earned'), cash: 50 },
+        { id: 'earn_10k', icon: '💰', name: 'Small Business', desc: 'Earn $10,000 in total.', goal: 10000, prog: () => stat('earned'), cash: 300 },
+        { id: 'earn_50k', icon: '🏦', name: 'Fish Tycoon', desc: 'Earn $50,000 in total.', goal: 50000, prog: () => stat('earned'), cash: 2000 },
+        { id: 'sail_5k', icon: '⛵', name: 'Sailor', desc: 'Sail 5 km.', goal: 5000, prog: () => stat('metersSailed'), cash: 100 },
+        { id: 'sail_20k', icon: '🧭', name: 'Navigator', desc: 'Sail 20 km.', goal: 20000, prog: () => stat('metersSailed'), cash: 400 },
+        { id: 'zone_2', icon: '🪸', name: 'Reef Explorer', desc: 'Sail into the Coastal Reef.', goal: 2, prog: () => stat('maxZone'), cash: 60 },
+        { id: 'zone_3', icon: '🌅', name: 'Shelf Explorer', desc: 'Sail into the Open Shelf.', goal: 3, prog: () => stat('maxZone'), cash: 150 },
+        { id: 'zone_4', icon: '🕳️', name: 'Trench Explorer', desc: 'Sail into the Abyssal Trench.', goal: 4, prog: () => stat('maxZone'), cash: 400 },
+        { id: 'treasure_1', icon: '🪙', name: 'Treasure Hunter', desc: 'Find a floating treasure chest.', goal: 1, prog: () => stat('treasures'), cash: 100 },
+        { id: 'treasure_10', icon: '🏴‍☠️', name: 'Pirate King', desc: 'Find 10 treasure chests.', goal: 10, prog: () => stat('treasures'), cash: 800 },
+        { id: 'boss_1', icon: '🦑', name: 'Boss Slayer', desc: 'Land a boss fish.', goal: 1, prog: () => stat('bossCatches'), cash: 1000 },
+        { id: 'trophy_10', icon: '🥇', name: 'Trophy Collector', desc: 'Hold silver or gold records for 10 species.', goal: 10, prog: () => medalCount('silver'), cash: 400 },
+        { id: 'rank_6', icon: '🎖️', name: 'Seasoned', desc: 'Reach the rank of Trench Hunter.', goal: 6, prog: () => rankIndexFor(state.xp), cash: 250 },
+        { id: 'rank_12', icon: '👑', name: 'Sea Legend', desc: 'Reach the top rank.', goal: 11, prog: () => rankIndexFor(state.xp), cash: 1500 }
+      ];
+
+      function bumpStat(key, n = 1) {
+        if (!state.stats) state.stats = {};
+        state.stats[key] = (state.stats[key] || 0) + n;
+      }
+      function addXp(n) {
+        n = Math.round(n);
+        if (!(n > 0)) return;
+        state.xp = (state.xp || 0) + n;
+        const idx = rankIndexFor(state.xp);
+        let delay = 500;
+        while ((state.rankClaimed || 0) < idx) {
+          state.rankClaimed = (state.rankClaimed || 0) + 1;
+          const r = rankReward(state.rankClaimed), name = RANKS[state.rankClaimed].name;
+          state.cash = +(state.cash + r.cash).toFixed(2);
+          state.baitStock[r.baitTier] = (state.baitStock[r.baitTier] || 0) + r.baitQty;
+          if (state.baitTier === r.baitTier) state.baitCount = state.baitStock[r.baitTier];
+          setTimeout(() => { showToast(`🎖️ RANK UP: ${name}! +$${r.cash} and ${r.baitQty} bait`); sfx.playCatchFanfare(false); }, delay);
+          delay += 700;
+        }
+      }
+      let achDelay = 0;
+      function checkAchievements() {
+        if (!Array.isArray(state.achievements)) state.achievements = [];
+        let got = 0;
+        ACHIEVEMENTS.forEach(a => {
+          if (state.achievements.includes(a.id) || a.prog() < a.goal) return;
+          state.achievements.push(a.id);
+          state.cash = +(state.cash + a.cash).toFixed(2);
+          got++;
+          setTimeout(() => { showToast(`🏅 Achievement: ${a.name}! +$${a.cash}`); sfx.playCoin(); }, 600 + (achDelay += 650));
+          setTimeout(() => { achDelay = Math.max(0, achDelay - 650); }, 8000);
+        });
+        if (got) { saveGame(); updateHUD(); }
+      }
+      function recordCatchProgress(c, isNewSpecies, isNewRecord) {
+        const cat = c.item.category, isFish = cat === 'Fish';
+        bumpStat('catches'); bumpStat(isFish ? 'fish' : 'junk');
+        if (isFish && c.item.rarity === 'Legendary') bumpStat('legendary');
+        if (isNightTime()) bumpStat('nightCatches');
+        if (state.weather === 'STORM') bumpStat('stormCatches');
+        if (c.inFrenzy) bumpStat('frenzyCatches');
+        let xp = isFish ? (RARITY_XP[c.item.rarity] || 4) : (cat === 'Flora' ? 2 : 1);
+        if (isFish) xp += Math.min(40, Math.floor(c.weight * 0.4));
+        if (isNewSpecies) xp += 30;
+        if (isNewRecord) xp += 10;
+        addXp(xp);
+        checkAchievements();
+      }
+
+      /* ---- Daily market: prices come from the day number, so every player sees the same board and nothing is saved ---- */
+      const MARKET_FISH = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly).map(c => c.id);
+      let marketCache = { day: -1, mult: {}, hot: [], glut: [] };
+      function marketFor(day) {
+        if (marketCache.day === day) return marketCache;
+        let a = (Math.imul(day + 1, 2654435761) ^ 0x9e3779b9) >>> 0;
+        const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        const mult = {};
+        CATCH_CATALOG.forEach(c => { mult[c.id] = c.category === 'Fish' ? 0.75 + rnd() * 0.6 : 1; });
+        const pool = [...MARKET_FISH], hot = [], glut = [];
+        for (let i = 0; i < 3; i++) hot.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+        for (let i = 0; i < 3; i++) glut.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+        hot.forEach(id => { mult[id] = 1.9; });
+        glut.forEach(id => { mult[id] = 0.6; });
+        marketCache = { day, mult, hot, glut };
+        return marketCache;
+      }
+      const marketMult = id => marketFor(state.dayCount || 0).mult[id] || 1;
+      const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id)));
+
       function defaultSaveState() {
         return {
           cash: 25.0,
@@ -6717,6 +6923,10 @@
           bounties: generateBountyContracts(),
           seenSpecies: [],
           look: AnglerFactory.defaultLook('male'),
+          xp: 0,
+          stats: {},
+          achievements: [],
+          rankClaimed: 0,
           saveVersion: 2
         };
       }
@@ -7159,6 +7369,25 @@
           }
         }
 
+        // career: xp, counters and achievements (old saves get their counters rebuilt from the species records)
+        out.stats = {};
+        STAT_KEYS.forEach(k => { out.stats[k] = num(src.stats && src.stats[k], 0, 0, 1e12); });
+        if (!src.stats || typeof src.stats !== 'object') {
+          let xp0 = 0;
+          Object.keys(out.speciesStats).forEach(id => {
+            const it = CATALOG_INDEX[id], n = out.speciesStats[id].count;
+            if (!it) return;
+            out.stats.catches += n;
+            if (it.category === 'Fish') { out.stats.fish += n; xp0 += n * (RARITY_XP[it.rarity] || 4); if (it.rarity === 'Legendary') out.stats.legendary += n; } else { out.stats.junk += n; xp0 += n; }
+          });
+          out.stats.maxZone = Math.max(1, out.boatTier ? Math.min(4, out.boatTier + 1) : 1);
+          if (src.xp === undefined) out.xp = Math.min(1e9, xp0);
+        }
+        out.xp = src.xp === undefined ? out.xp : int(src.xp, 0, 0, 1e9);
+        out.achievements = Array.isArray(src.achievements) ? [...new Set(src.achievements.filter(id => ACHIEVEMENTS.some(a => a.id === id)))] : [];
+        out.rankClaimed = Math.min(rankIndexFor(out.xp), int(src.rankClaimed, rankIndexFor(out.xp), 0, RANKS.length - 1));
+        if (src.rankClaimed === undefined) out.rankClaimed = rankIndexFor(out.xp);
+
         // Old saves: everything already discovered counts as seen (no flood of NEW badges)
         if (!Array.isArray(src.seenSpecies)) out.seenSpecies = [...out.discovered];
 
@@ -7257,6 +7486,7 @@
       function isNearPierShop() { return nearStandFront(-7.6, 2.05, 2.55, 1.0); }
       function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
       function isNearPierGallery() { return nearStandFront(4.4, 1.6, 1.75, 1.0); }
+      function isNearPierTrophies() { return nearStandFront(6.55, 0.8, 1.45, 1.0); }
       function isNearPierCamera() { return nearSpot(8.2, 0.9, 1.45); }
       function isNearPierBucket() { return nearSpot(-1.55, -7.6, 1.25); }
       function isNearPierToolbox() { return nearSpot(1.55, -7.6, 1.25); }
@@ -7526,6 +7756,13 @@
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
             openGalleryModal();
+            return;
+          }
+          if (isNearPierTrophies()) {
+            isHoldingAction = false;
+            actionPointerId = null;
+            primaryBtn.classList.remove('pressed');
+            openTrophiesModal();
             return;
           }
           if (isNearPierCamera()) {
@@ -7814,7 +8051,8 @@
         const c = activeCatch;
         sfx.playCatchFanfare(c.item.category === 'Junk' || c.item.category === 'Flora');
 
-        if (!state.discovered.includes(c.item.id)) {
+        const isNewSpecies = !state.discovered.includes(c.item.id);
+        if (isNewSpecies) {
           state.discovered.push(c.item.id);
         }
         if (!state.speciesStats) state.speciesStats = {};
@@ -7827,6 +8065,8 @@
         c.isNewRecord = isNewRecord;
 
         advanceBountiesOnCatch(c);
+        recordCatchProgress(c, isNewSpecies, isNewRecord);
+        if (isNewSpecies || isNewRecord) rebuildTrophyCabinet();
         saveGame();
 
         vfx.spawnSparkles(world.anglerGroup.position.clone().add(new THREE.Vector3(0, 1.5, -0.6)), 20, 0xfef08a);
@@ -7925,6 +8165,125 @@
         sfx.init(); sfx.playTick();
       }, { passive: true });
 
+      /* Market board in the shop: today's hot and glutted fish and the time to the next prices */
+      function renderMarketBoard() {
+        const host = document.getElementById('shop-market');
+        if (!host) return;
+        const m = marketFor(state.dayCount || 0);
+        const names = ids => ids.map(id => `<b>${CATALOG_INDEX[id].name}</b> x${m.mult[id].toFixed(1)}`).join(' &middot; ');
+        const left = Math.max(0, Math.round((1 - state.timeOfDay) * 210)), mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
+        host.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px; font-weight:900; color:#c4b5fd;"><span>📈 TODAY'S FISH MARKET</span><span style="color:#94a3b8; font-weight:bold;">new prices in ${mm}:${ss}</span></div>
+          <div style="color:#bbf7d0;">🔥 Hot: ${names(m.hot)}</div><div style="color:#fecaca;">📉 Glut: ${names(m.glut)}</div>`;
+      }
+
+      /* Career screen: rank, counters and achievements */
+      function openCareerModal() {
+        renderCareer();
+        document.getElementById('modal-career').classList.add('open');
+      }
+      function renderCareer() {
+        const idx = rankIndexFor(state.xp || 0), cur = RANKS[idx], next = RANKS[idx + 1];
+        document.getElementById('career-rank').textContent = `${idx + 1}. ${cur.name}`;
+        document.getElementById('career-xp').textContent = `${Math.floor(state.xp || 0).toLocaleString()} XP`;
+        const pct = next ? Math.min(100, ((state.xp - cur.xp) / (next.xp - cur.xp)) * 100) : 100;
+        document.getElementById('career-xp-bar').style.width = `${pct}%`;
+        const rw = next ? rankReward(idx + 1) : null;
+        document.getElementById('career-next').textContent = next
+          ? `${Math.ceil(next.xp - state.xp)} XP to ${next.name}: +$${rw.cash} and ${rw.baitQty} bait`
+          : 'Top rank reached. You are a Sea Legend!';
+        const stats = [['Catches', stat('catches')], ['Fish', stat('fish')], ['Junk and flora', stat('junk')], ['Legendary', stat('legendary')],
+          ['Night catches', stat('nightCatches')], ['Storm catches', stat('stormCatches')], ['Frenzy catches', stat('frenzyCatches')],
+          ['Sailed', `${(stat('metersSailed') / 1000).toFixed(1)} km`], ['Earned', `$${Math.floor(stat('earned')).toLocaleString()}`],
+          ['Bounties', stat('bountiesClaimed')], ['Treasures', stat('treasures')], ['Boss fish', stat('bossCatches')]];
+        document.getElementById('career-stats').innerHTML = stats.map(([k, v]) =>
+          `<div class="drawer-item"><span class="drawer-label">${k}:</span><span class="drawer-val">${typeof v === 'number' ? Math.floor(v).toLocaleString() : v}</span></div>`).join('');
+        const done = ACHIEVEMENTS.filter(a => state.achievements.includes(a.id)).length;
+        document.getElementById('career-ach-count').textContent = `${done} / ${ACHIEVEMENTS.length}`;
+        const host = document.getElementById('career-achievements');
+        host.innerHTML = '';
+        [...ACHIEVEMENTS].sort((a, b) => (state.achievements.includes(b.id) ? 1 : 0) - (state.achievements.includes(a.id) ? 1 : 0)).forEach(a => {
+          const has = state.achievements.includes(a.id), p = Math.min(a.goal, a.prog());
+          const row = document.createElement('div');
+          row.className = 'item-row';
+          row.style.opacity = has ? '1' : '0.78';
+          row.innerHTML = `<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+              <div style="font-size:24px; width:32px; text-align:center; filter:${has ? 'none' : 'grayscale(1)'};">${a.icon}</div>
+              <div style="min-width:0; flex:1;">
+                <div style="font-weight:bold; font-size:13px; color:${has ? '#ffd24c' : '#f1f5f9'};">${a.name}</div>
+                <div style="font-size:12px; color:#94a3b8;">${a.desc}</div>
+                ${has ? '' : `<div class="bar-wrap" style="height:6px; margin:4px 0 0;"><div class="bar-fill" style="width:${(p / a.goal) * 100}%; background:#38bdf8;"></div></div>`}
+              </div></div>
+            <div style="font-size:12px; font-weight:bold; color:${has ? '#4ade80' : '#94a3b8'}; white-space:nowrap;">${has ? '✔ $' + a.cash : '$' + a.cash}</div>`;
+          host.appendChild(row);
+        });
+      }
+      document.getElementById('menu-career').addEventListener('click', () => openCareerModal());
+
+      /* Trophy case: ranking, mounted fish and the full list */
+      const RARITY_RANK = { Common: 1, Uncommon: 2, Rare: 3, Epic: 4, Legendary: 5 };
+      const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' };
+      function trophyRanking() {
+        return Object.keys(state.speciesStats || {}).filter(id => medalFor(id)).sort((a, b) => {
+          const ia = CATALOG_INDEX[a], ib = CATALOG_INDEX[b];
+          return (RARITY_RANK[ib.rarity] - RARITY_RANK[ia.rarity]) || (state.speciesStats[b].maxWeight / ib.maxW - state.speciesStats[a].maxWeight / ia.maxW);
+        });
+      }
+      function rebuildTrophyCabinet() {
+        const cab = world.trophyCabinet;
+        if (!cab) return;
+        const fg = cab.userData.fishGroup;
+        while (fg.children.length) {
+          const c = fg.children.pop();
+          c.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+        }
+        const ids = trophyRanking().slice(0, 5);
+        cab.userData.slots.forEach(([sx, sy], i) => {
+          const id = ids[i];
+          if (!id) { // empty slot: a dim brass cup waiting for a catch
+            const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.05, 0.14, 10), new THREE.MeshStandardMaterial({ color: 0x6b5a2a, metalness: 0.6, roughness: 0.5 }));
+            cup.position.set(sx, sy - 0.08, -0.15); fg.add(cup);
+            return;
+          }
+          const it = CATALOG_INDEX[id];
+          const fish = WorldBuilder.buildFishModel(it, textures);
+          const bb = new THREE.Box3().setFromObject(fish), size = bb.getSize(new THREE.Vector3());
+          const k = Math.min(0.5 / Math.max(size.x, size.z, 0.01), 0.36 / Math.max(size.y, 0.01));
+          fish.scale.multiplyScalar(k);
+          const bb2 = new THREE.Box3().setFromObject(fish), c2 = bb2.getCenter(new THREE.Vector3());
+          fish.position.set(sx - c2.x, sy - c2.y, -0.14 - c2.z);
+          fg.add(fish);
+          const plate = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.09, 0.02), new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture(it.name.toUpperCase().slice(0, 18), 192, 40) }));
+          plate.position.set(sx, sy - 0.27, -0.2); fg.add(plate);
+          const medal = medalFor(id);
+          const bead = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: medal === 'gold' ? 0xfacc15 : medal === 'silver' ? 0xe2e8f0 : 0xb45309 }));
+          bead.position.set(sx + 0.27, sy - 0.27, -0.19); fg.add(bead);
+        });
+      }
+      function openTrophiesModal() {
+        const ids = trophyRanking();
+        const counts = { gold: 0, silver: 0, bronze: 0 };
+        ids.forEach(id => { counts[medalFor(id)]++; });
+        document.getElementById('trophy-summary').textContent = `${ids.length} / ${FISH_TOTAL} fish species   🥇 ${counts.gold}   🥈 ${counts.silver}   🥉 ${counts.bronze}`;
+        const host = document.getElementById('trophy-list');
+        host.innerHTML = '';
+        if (!ids.length) host.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:12px 0;">No fish yet. Land one and it will appear here, and the best five get mounted in the case.</div>';
+        ids.forEach((id, i) => {
+          const it = CATALOG_INDEX[id], st = state.speciesStats[id], m = medalFor(id);
+          const row = document.createElement('div');
+          row.className = 'item-row';
+          row.innerHTML = `<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+              <img class="item-icon" src="${ITEM_ICONS[id]}" alt="" />
+              <div style="min-width:0;">
+                <div style="font-weight:bold; font-size:13px;">${it.name} ${i < 5 ? '<span style="color:#facc15; font-size:11px;">• ON DISPLAY</span>' : ''}</div>
+                <div style="font-size:12px; color:#94a3b8;">${it.rarity} • record ${st.maxWeight.toFixed(2)} / ${it.maxW.toFixed(1)} kg • caught ${st.count}</div>
+              </div></div>
+            <div style="font-size:24px;">${MEDAL_ICON[m]}</div>`;
+          host.appendChild(row);
+        });
+        document.getElementById('modal-trophies').classList.add('open');
+      }
+      document.getElementById('menu-trophies').addEventListener('click', () => openTrophiesModal());
+
       function openShopModal() {
         if (getDistanceMeters() > 15) {
           showToast('Dock at the Pier to visit the Tackle Shop!');
@@ -8021,6 +8380,7 @@
           btn.onclick = () => {
             if (b.progress < b.target) return;
             state.cash = +(state.cash + b.rewardCash).toFixed(2);
+            bumpStat('earned', b.rewardCash); bumpStat('bountiesClaimed'); addXp(40);
             state.baitStock[b.rewardBaitTier] = (state.baitStock[b.rewardBaitTier] || 0) + b.rewardBaitQty;
             if (state.baitTier === b.rewardBaitTier) {
               state.baitCount = state.baitStock[b.rewardBaitTier];
@@ -8031,6 +8391,7 @@
             state.bounties[idx] = { ...nextTpl, progress: 0, claimed: false };
 
             sfx.playCatchFanfare(false);
+            checkAchievements();
             saveGame();
             renderBounties();
             updateHUD();
@@ -8103,8 +8464,9 @@
       });
 
       function renderShop() {
-        const totalBucketVal = state.bucket.reduce((s, i) => s + i.value, 0);
+        const totalBucketVal = state.bucket.reduce((s, i) => s + sellValue(i), 0);
         document.getElementById('shop-cash-banner').textContent = `Cash: $${state.cash.toFixed(2)}`;
+        renderMarketBoard();
         document.getElementById('shop-cash-head').textContent = `💵 $${state.cash.toFixed(2)}`;
         document.getElementById('shop-bucket-banner').textContent =
           `Bucket Value: $${totalBucketVal.toFixed(2)} (${getBucketWeight().toFixed(1)} / ${getBucketCapacity().toFixed(1)} kg)`;
@@ -8424,12 +8786,14 @@
       document.getElementById('btn-sell-all').addEventListener('click', () => {
         if (state.bucket.length === 0) return;
         const soldCopy = [...state.bucket];
-        const total = soldCopy.reduce((s, i) => s + i.value, 0);
+        const total = soldCopy.reduce((s, i) => s + sellValue(i), 0);
         const count = soldCopy.length;
         state.cash = +(state.cash + total).toFixed(2);
+        bumpStat('earned', total);
         state.bucket = [];
         sfx.playCoin();
         processEcoCleanupReward(soldCopy);
+        checkAchievements();
         saveGame();
         rebuildPierBucketVisual();
         renderShop();
@@ -8550,7 +8914,7 @@
 
           const sorters = {
             newest: (a, b) => b.idx - a.idx,
-            value: (a, b) => b.entry.value - a.entry.value,
+            value: (a, b) => sellValue(b.entry) - sellValue(a.entry),
             weight: (a, b) => b.entry.weight - a.entry.weight,
             name: (a, b) => a.entry.name.localeCompare(b.entry.name)
           };
@@ -8563,7 +8927,7 @@
                 <img class="item-icon" src="${ITEM_ICONS[entry.id]}" alt="" />
                 <div>
                   <div style="font-weight:bold; font-size:13px;">${entry.name}</div>
-                  <div style="font-size: 12px; color:#94a3b8;">${entry.weight.toFixed(2)} kg • <span style="color:#ffd24c;">$${entry.value}</span></div>
+                  <div style="font-size: 12px; color:#94a3b8;">${entry.weight.toFixed(2)} kg • <span style="color:#ffd24c;">$${sellValue(entry)}</span>${marketMult(entry.id) > 1.1 ? ' <span style="color:#4ade80;">▲</span>' : marketMult(entry.id) < 0.9 ? ' <span style="color:#f87171;">▼</span>' : ''}</div>
                 </div>
               </div>
             `;
@@ -8574,12 +8938,15 @@
             if (atShop) {
               const sellBtn = document.createElement('button');
               sellBtn.className = 'pixel-btn green';
-              sellBtn.textContent = `Sell $${entry.value}`;
+              sellBtn.textContent = `Sell $${sellValue(entry)}`;
               sellBtn.onclick = () => {
                 const [soldItem] = state.bucket.splice(idx, 1);
-                state.cash = +(state.cash + soldItem.value).toFixed(2);
+                const got = sellValue(soldItem);
+                state.cash = +(state.cash + got).toFixed(2);
+                bumpStat('earned', got);
                 sfx.playCoin();
                 processEcoCleanupReward([soldItem]);
+                checkAchievements();
                 saveGame();
                 rebuildPierBucketVisual();
                 openBucketModal();
@@ -8724,6 +9091,7 @@
           if (!state.foundMessages) state.foundMessages = [];
           if (!state.foundMessages.includes(activeCatch.bottleMessage.id)) {
             state.foundMessages.push(activeCatch.bottleMessage.id);
+            addXp(15);
             extraMsg = ` (Archived ${state.foundMessages.length}/${BOTTLE_MESSAGES.length} in Gallery!)`;
             checkGalleryCompletionReward();
           }
@@ -9020,6 +9388,14 @@
           proxEl.style.color = '#5eead4';
           proxEl.textContent = `📜 BOTTLE GALLERY (${(state.foundMessages || []).length}/${BOTTLE_MESSAGES.length}) — PRESS BUTTON TO VIEW`;
           proxEl.style.display = 'block';
+        } else if (isNearPierTrophies()) {
+          primaryBtn.classList.add('bounty');
+          iconEl.textContent = '🏆';
+          labelEl.textContent = 'TROPHIES';
+          proxEl.style.borderColor = '#facc15';
+          proxEl.style.color = '#fde68a';
+          proxEl.textContent = `🏆 TROPHY CASE (${Object.keys(state.speciesStats || {}).filter(id => medalFor(id)).length}/${FISH_TOTAL} SPECIES) — PRESS BUTTON TO VIEW`;
+          proxEl.style.display = 'block';
         } else if (isNearPierCamera()) {
           primaryBtn.classList.add('camera');
           iconEl.textContent = '🎬';
@@ -9152,6 +9528,7 @@
           sonarPill.style.display = 'none';
         }
 
+        document.getElementById('hud-rank').textContent = RANKS[rankIndexFor(state.xp || 0)].name;
         const rod = getCurrentRod();
         document.getElementById('hud-rod').textContent = `${rod.name} (${rod.maxWeight}kg)${state.hasLiveBaitCam ? ' 📹' : ''}`;
 
@@ -9471,6 +9848,18 @@
               else nextX = galMaxX;
             }
 
+            // Solid collision box around the Trophy Cabinet (6.55, 0.8)
+            {
+              const trMinX = 5.9, trMaxX = 7.2, trMaxZ = 1.45;
+              if (nextX > trMinX && nextX < trMaxX && nextZ < trMaxZ && nextZ > 0) {
+                const penZ = trMaxZ - nextZ, penXLeft = nextX - trMinX, penXRight = trMaxX - nextX;
+                const minPen = Math.min(penZ, penXLeft, penXRight);
+                if (minPen === penZ) nextZ = trMaxZ;
+                else if (minPen === penXLeft) nextX = trMinX;
+                else nextX = trMaxX;
+              }
+            }
+
             // Solid collision boxes around the pier bucket (-1.55, -7.6) and tackle toolbox (1.55, -7.6).
             // Resolve along the axis the player entered from (using the previous position) so the
             // player slides along the box instead of being snapped across it.
@@ -9527,6 +9916,8 @@
             targetYaw = Math.atan2(-(-4.2 - playerX), -(0.8 - playerZ));
           } else if (isNearPierGallery()) {
             targetYaw = Math.atan2(-(4.4 - playerX), -(0.8 - playerZ));
+          } else if (isNearPierTrophies()) {
+            targetYaw = Math.atan2(-(6.55 - playerX), -(0.8 - playerZ));
           } else if (isNearPierCamera()) {
             targetYaw = Math.atan2(-(8.2 - playerX), -(0.9 - playerZ));
           } else if (isNearPierToolbox()) {
@@ -9550,6 +9941,7 @@
 
             const stepDist = Math.abs(boatVel) * dt;
             if (stepDist > 0.001) {
+              bumpStat('metersSailed', stepDist);
               const dx = -Math.sin(boatYaw) * boatVel * dt;
               const dz = -Math.cos(boatYaw) * boatVel * dt;
               const speedBefore = boatVel;
@@ -9591,6 +9983,7 @@
             boatVel = THREE.MathUtils.lerp(boatVel, 0, dt * 4);
           }
 
+          if (zone.id > (state.stats.maxZone || 1)) state.stats.maxZone = zone.id;
           const waveY = getWaveHeight(boatPos.x, boatPos.z, elapsed, zone);
           boatPos.y = waveY;
           playerBoatMesh.position.copy(boatPos);
@@ -9992,12 +10385,15 @@
       }
 
       let hudClockTimer = 0;
+      let achTimer = 0;
       function animate(now) {
         requestAnimationFrame(animate);
         const dt = Math.min(0.05, (now - lastTime) / 1000);
         lastTime = now;
 
         updateSimulation(dt);
+        achTimer += dt;
+        if (achTimer > 2) { achTimer = 0; checkAchievements(); }
         const fishingNow = mode === 'CASTING' || mode === 'WAITING_BITE' || mode === 'BITE_WINDOW' || mode === 'REELING' ? '1' : '0';
         if (document.body.dataset.fishing !== fishingNow) document.body.dataset.fishing = fishingNow;
         hudClockTimer += dt;
@@ -10069,6 +10465,7 @@
       }
 
       applyVfxShader(state.vfxShader || 'none', false);
+      rebuildTrophyCabinet();
       rebuildPlayerBoatVisual();
       updateHUD();
       requestAnimationFrame(animate);
