@@ -1378,8 +1378,13 @@
     </div>
   </div>
 
-  <!-- Synchronous Three.js r128 Bundle with Multi-CDN Fallbacks -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Synchronous Three.js r128 (bundled locally, with CDN fallbacks) -->
+  <script src="vendor/three.r128.min.js"></script>
+  <script>
+    if (!window.THREE) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
   <script>
     if (!window.THREE) {
       document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
@@ -4762,7 +4767,8 @@
           mayorRewardsClaimed: 0,
           vfxShader: 'none',
           modules: [],
-          bounties: generateBountyContracts()
+          bounties: generateBountyContracts(),
+          saveVersion: 2
         };
       }
 
@@ -4845,23 +4851,87 @@
         return Array.isArray(state.modules) && state.modules.includes(modId);
       }
 
+      const SAVE_VERSION = 2;
+      const SAVE_BACKUP_KEY = SAVE_KEY + '_backup';
+
+      // Coerce every field of a parsed save to a safe type/range so a corrupted or hand-edited
+      // save can never crash the game; unknown or invalid fields fall back to defaults.
+      function sanitizeSave(raw) {
+        const def = defaultSaveState();
+        const src = raw && typeof raw === 'object' ? raw : {};
+        const num = (v, d, min, max) => {
+          const n = Number(v);
+          return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
+        };
+        const int = (v, d, min, max) => Math.round(num(v, d, min, max));
+        const out = { ...def };
+
+        out.cash = +num(src.cash, def.cash, 0, 1e9).toFixed(2);
+        out.anglerGender = src.anglerGender === 'female' ? 'female' : 'male';
+        out.boatTier = int(src.boatTier, 0, 0, BOAT_TIERS.length - 1);
+        out.rodTier = int(src.rodTier, 1, 1, ROD_TIERS.length);
+        out.bucketTier = int(src.bucketTier, 1, 1, BUCKET_TIERS.length);
+        out.baitTier = int(src.baitTier, 1, 1, BAIT_TIERS.length);
+        out.baitCount = int(src.baitCount, 0, 0, 9999);
+        out.hasLiveBaitCam = !!src.hasLiveBaitCam;
+        out.galleryRewardClaimed = !!src.galleryRewardClaimed;
+        out.fuel = num(src.fuel, 0, 0, BOAT_TIERS[out.boatTier].maxFuel);
+        out.dayCount = int(src.dayCount, 0, 0, 1e6);
+        out.timeOfDay = num(src.timeOfDay, def.timeOfDay, 0, 1);
+        out.weather = WEATHER_TYPES.some(w => w.id === src.weather) ? src.weather : 'CLEAR';
+        out.junkRecycledKg = num(src.junkRecycledKg, 0, 0, 1e9);
+        out.mayorRewardsClaimed = int(src.mayorRewardsClaimed, 0, 0, 1e6);
+        out.vfxShader = typeof src.vfxShader === 'string' ? src.vfxShader : 'none';
+
+        out.baitStock = { 2: 0, 3: 0, 4: 0 };
+        if (src.baitStock && typeof src.baitStock === 'object') {
+          for (const t of [2, 3, 4]) out.baitStock[t] = int(src.baitStock[t], 0, 0, 9999);
+        }
+        if (out.baitTier > 1 && out.baitCount > 0 && !out.baitStock[out.baitTier]) {
+          out.baitStock[out.baitTier] = out.baitCount;
+        }
+
+        const knownIds = new Set(CATCH_CATALOG.map(c => c.id));
+        out.discovered = Array.isArray(src.discovered)
+          ? [...new Set(src.discovered.filter(id => knownIds.has(id)))] : [];
+        out.foundMessages = Array.isArray(src.foundMessages)
+          ? [...new Set(src.foundMessages.filter(id => BOTTLE_MESSAGES.some(m => m.id === id)))] : [];
+        out.modules = Array.isArray(src.modules)
+          ? [...new Set(src.modules.filter(id => BOAT_MODULES.some(m => m.id === id)))] : [];
+
+        out.bucket = Array.isArray(src.bucket)
+          ? src.bucket.filter(e => e && typeof e === 'object' && knownIds.has(e.id) && Number.isFinite(Number(e.weight)) && Number.isFinite(Number(e.value)))
+              .map(e => ({ ...e, weight: Number(e.weight), value: Number(e.value) }))
+          : [];
+
+        out.speciesStats = {};
+        if (src.speciesStats && typeof src.speciesStats === 'object') {
+          for (const id of Object.keys(src.speciesStats)) {
+            const st = src.speciesStats[id];
+            if (knownIds.has(id) && st && typeof st === 'object') {
+              out.speciesStats[id] = { ...st, count: int(st.count, 0, 0, 1e9), maxWeight: num(st.maxWeight, 0, 0, 1e6) };
+            }
+          }
+        }
+
+        out.bounties = Array.isArray(src.bounties)
+          ? src.bounties.filter(b => b && typeof b === 'object' && Number.isFinite(Number(b.target)) && Number.isFinite(Number(b.rewardCash)))
+          : [];
+        if (out.bounties.length === 0) out.bounties = generateBountyContracts();
+
+        out.saveVersion = SAVE_VERSION;
+        return out;
+      }
+
       function loadSaveState() {
+        let text = null;
+        try { text = localStorage.getItem(SAVE_KEY); } catch {}
+        if (!text) return defaultSaveState();
         try {
-          const raw = localStorage.getItem(SAVE_KEY);
-          if (!raw) return defaultSaveState();
-          const parsed = { ...defaultSaveState(), ...JSON.parse(raw) };
-          if (!parsed.speciesStats) parsed.speciesStats = {};
-          if (!Array.isArray(parsed.foundMessages)) parsed.foundMessages = [];
-          if (!parsed.baitStock) parsed.baitStock = { 2: 0, 3: 0, 4: 0 };
-          if (parsed.baitTier > 1 && parsed.baitCount > 0 && !parsed.baitStock[parsed.baitTier]) {
-            parsed.baitStock[parsed.baitTier] = parsed.baitCount;
-          }
-          if (!Array.isArray(parsed.modules)) parsed.modules = [];
-          if (!Array.isArray(parsed.bounties) || parsed.bounties.length === 0) {
-            parsed.bounties = generateBountyContracts();
-          }
-          return parsed;
+          return sanitizeSave(JSON.parse(text));
         } catch {
+          // Unreadable save: keep the raw text so progress isn't silently destroyed, then start fresh.
+          try { localStorage.setItem(SAVE_BACKUP_KEY, text); } catch {}
           return defaultSaveState();
         }
       }
@@ -6727,29 +6797,24 @@
               else nextX = galMaxX;
             }
 
-            // Solid collision box around the 3D pier bucket (-1.55, -7.6)
-            const bucketHalfX = 0.55 + state.bucketTier * 0.14;
-            const bucketHalfZ = 0.65;
-            const dxB = nextX - (-1.55);
-            const dzB = nextZ - (-7.6);
-            if (Math.abs(dxB) < bucketHalfX && Math.abs(dzB) < bucketHalfZ) {
-              const penX = bucketHalfX - Math.abs(dxB);
-              const penZ = bucketHalfZ - Math.abs(dzB);
-              if (penX < penZ) nextX = -1.55 + Math.sign(dxB || 1) * bucketHalfX;
-              else nextZ = -7.6 + Math.sign(dzB || 1) * bucketHalfZ;
-            }
-
-            // Solid collision box around the 3D Tackle Toolbox (1.55, -7.6)
-            const tbHalfX = 0.55;
-            const tbHalfZ = 0.45;
-            const dxTB = nextX - 1.55;
-            const dzTB = nextZ - (-7.6);
-            if (Math.abs(dxTB) < tbHalfX && Math.abs(dzTB) < tbHalfZ) {
-              const penX = tbHalfX - Math.abs(dxTB);
-              const penZ = tbHalfZ - Math.abs(dzTB);
-              if (penX < penZ) nextX = 1.55 + Math.sign(dxTB || 1) * tbHalfX;
-              else nextZ = -7.6 + Math.sign(dzTB || 1) * tbHalfZ;
-            }
+            // Solid collision boxes around the pier bucket (-1.55, -7.6) and tackle toolbox (1.55, -7.6).
+            // Resolve along the axis the player entered from (using the previous position) so the
+            // player slides along the box instead of being snapped across it.
+            const pushOutOfBox = (cx, cz, hx, hz) => {
+              const dx = nextX - cx;
+              const dz = nextZ - cz;
+              if (Math.abs(dx) >= hx || Math.abs(dz) >= hz) return;
+              const cameFromSide = Math.abs(prevX - cx) >= hx;
+              const cameFromEnd = Math.abs(prevZ - cz) >= hz;
+              let resolveX;
+              if (cameFromSide && !cameFromEnd) resolveX = true;
+              else if (cameFromEnd && !cameFromSide) resolveX = false;
+              else resolveX = (hx - Math.abs(dx)) < (hz - Math.abs(dz));
+              if (resolveX) nextX = cx + (Math.sign(dx) || Math.sign(prevX - cx) || 1) * hx;
+              else nextZ = cz + (Math.sign(dz) || Math.sign(prevZ - cz) || 1) * hz;
+            };
+            pushOutOfBox(-1.55, -7.6, 0.55 + state.bucketTier * 0.14, 0.65);
+            pushOutOfBox(1.55, -7.6, 0.55, 0.45);
 
             // Solid collision cylinder around the 3D Fourth-Wall Film Camera (8.2, 0.9)
             const camDX = nextX - 8.2;
