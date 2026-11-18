@@ -6152,7 +6152,7 @@
       let boatYaw = 0;
       let boatVel = 0;
       let lastBumpAt = -10;
-      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0;
+      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0;
 
       let castCharge = 0;
       let castDir = 1;
@@ -7069,10 +7069,11 @@
       function resolveBoatCollisions() {
         const hx = -Math.sin(boatYaw), hz = -Math.cos(boatYaw);
         const R = boatHalfWid, off = Math.max(0, boatHalfLen - boatHalfWid);
+        const mv = boatVel < 0 ? -1 : 1; // moving backwards: the impact direction is the stern
         let hit = null, worst = 0;
         const push = (nx, nz, depth, name) => {
           boatPos.x += nx * depth; boatPos.z += nz * depth;
-          const into = Math.max(0, -(hx * nx + hz * nz));
+          const into = Math.max(0, -(mv * (hx * nx + hz * nz)));
           if (into > worst) { worst = into; hit = name; }
         };
         for (let it = 0; it < 3; it++) {
@@ -7105,31 +7106,33 @@
 
       const BUMP_TEXT = { rocks: '🪨 Watch the rocks!', lighthouse: '🪨 Watch the rocks!', buoy: '🛟 Bumped a buoy!', pier: '⚓ Mind the pier!', island: '🏝️ Shallow water, that is the beach!' };
 
-      /* ---- Arcade boat control: the stick points where the boat should go ---- */
+      /* ---- Arcade boat control, relative to the boat: up = ahead, left / right = turn, down = brake then reverse ---- */
       function updateBoatControl(dt, boat) {
-        let vx = joyState.x, vz = joyState.y;
-        if (keys['KeyW'] || keys['ArrowUp']) vz -= 1;
-        if (keys['KeyS'] || keys['ArrowDown']) vz += 1;
-        if (keys['KeyA'] || keys['ArrowLeft']) vx -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) vx += 1;
-        const m = Math.min(1, Math.hypot(vx, vz));
+        let throttle = -joyState.y, steer = joyState.x;
+        if (keys['KeyW'] || keys['ArrowUp']) throttle += 1;
+        if (keys['KeyS'] || keys['ArrowDown']) throttle -= 1;
+        if (keys['KeyA'] || keys['ArrowLeft']) steer -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) steer += 1;
+        throttle = THREE.MathUtils.clamp(throttle, -1, 1);
+        steer = THREE.MathUtils.clamp(steer, -1, 1);
         const maxSpd = boat.speed;
-        if (m > 0.1 && state.fuel > 0) {
-          const target = Math.atan2(-vx, -vz);
-          const err = Math.atan2(Math.sin(target - boatYaw), Math.cos(target - boatYaw));
-          const rate = 1.25 + 1.35 * Math.min(1, Math.abs(boatVel) / (maxSpd * 0.45));
-          const want = THREE.MathUtils.clamp(err * 3.2, -rate, rate);
+        const active = state.fuel > 0 && (Math.abs(throttle) > 0.1 || Math.abs(steer) > 0.1);
+        if (active) {
+          const ahead = Math.abs(throttle) > 0.1 ? throttle : 0;
+          const target = ahead >= 0 ? ahead * maxSpd * (1 - 0.25 * Math.abs(steer)) : ahead * maxSpd * 0.35;
+          boatVel = THREE.MathUtils.lerp(boatVel, target, Math.min(1, dt * 2.6));
+          // a slow boat still pivots a little, a moving one turns faster; backwards the helm works like a car
+          const rate = 0.6 + 1.5 * Math.min(1, Math.abs(boatVel) / (maxSpd * 0.4));
+          const dir = boatVel < -0.3 ? -1 : 1;
+          const want = -steer * rate * dir;
           boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, want, Math.min(1, dt * 7));
-          boatYaw += boatTurnRate * dt;
-          const align = Math.max(0, Math.cos(err));
-          boatVel = THREE.MathUtils.lerp(boatVel, m * maxSpd * (0.2 + 0.8 * align), Math.min(1, dt * 2.6));
-          sfx.playEngineChug(maxSpd / 14);
+          if (Math.abs(ahead) > 0.1) sfx.playEngineChug(maxSpd / 14);
         } else {
           boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, 0, Math.min(1, dt * 6));
-          boatYaw += boatTurnRate * dt;
           boatVel = THREE.MathUtils.lerp(boatVel, 0, Math.min(1, dt * 2.2));
-          if (boatVel < 0.05) boatVel = 0;
+          if (Math.abs(boatVel) < 0.05) boatVel = 0;
         }
+        boatYaw += boatTurnRate * dt;
       }
 
       function handleBoardOrDockToggle() {
@@ -7152,9 +7155,10 @@
           boatYaw = 0;
           boatVel = 0;
           boatTurnRate = 0;
+          boatCamYaw = 0;
           resolveBoatCollisions();
           sfx.vibrate(25);
-          showToast(`Sailing ${getCurrentBoat().name}! Push the stick where you want to go.`);
+          showToast(`Sailing ${getCurrentBoat().name}! Up to sail, left or right to turn, down to reverse.`);
         } else {
           const dist = getDistanceMeters();
           if (dist > 15) {
@@ -9659,11 +9663,17 @@
           camera.lookAt(playerX * lateralFollow, 1.35, playerZ - 6.0);
         } else {
           const speedZoom = Math.min(1.6, Math.abs(boatVel) * 0.05);
-          // The camera keeps one orientation (looking out to sea) so stick directions always match the screen
-          const backOffset = new THREE.Vector3(0, 5.8 + speedZoom * 0.35, 9.5 + speedZoom);
+          // Chase camera: it swings round behind the boat with a short lag so turns feel smooth
+          const yawErr = Math.atan2(Math.sin(boatYaw - boatCamYaw), Math.cos(boatYaw - boatCamYaw));
+          boatCamYaw += yawErr * (1 - Math.exp(-3.5 * dt));
+          const backOffset = new THREE.Vector3(
+            Math.sin(boatCamYaw) * (9.5 + speedZoom),
+            5.8 + speedZoom * 0.35,
+            Math.cos(boatCamYaw) * (9.5 + speedZoom)
+          );
           const targetCamPos = boatPos.clone().add(backOffset);
           camera.position.lerp(targetCamPos, camSmooth);
-          const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatYaw) * 2.5, 1.0, -7 - Math.cos(boatYaw) * 2.5));
+          const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
           camera.lookAt(lookTarget);
         }
       }
