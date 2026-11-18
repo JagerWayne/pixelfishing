@@ -3543,10 +3543,15 @@
           for (let i = 0; i < 3; i++) {
             const angle = (i / 3) * Math.PI * 2 + 0.35;
             const leg = add(new THREE.CylinderGeometry(0.03, 0.022, 1.45, 6), woodMat, Math.sin(angle) * 0.25, 0.68, Math.cos(angle) * 0.25);
-            leg.rotation.z = -Math.sin(angle) * 0.33; leg.rotation.x = Math.cos(angle) * 0.33;
-            add(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 6), M(0x111827, 0.9), Math.sin(angle) * 0.5, 0.02, Math.cos(angle) * 0.5);
-            const brace = add(new THREE.CylinderGeometry(0.008, 0.008, 0.38, 4), tripodMat, Math.sin(angle) * 0.17, 0.42, Math.cos(angle) * 0.17);
-            brace.rotation.z = Math.cos(angle) * 1.2; brace.rotation.x = -Math.sin(angle) * 1.2;
+            // lean the legs outward at the bottom (feet spread, tops meet under the head)
+            leg.rotation.z = Math.sin(angle) * 0.33; leg.rotation.x = -Math.cos(angle) * 0.33;
+            add(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 6), M(0x111827, 0.9), Math.sin(angle) * 0.49, 0.02, Math.cos(angle) * 0.49);
+            // spreader chain between this leg and the next
+            const a2 = ((i + 1) / 3) * Math.PI * 2 + 0.35;
+            const x1 = Math.sin(angle) * 0.36, z1 = Math.cos(angle) * 0.36, x2 = Math.sin(a2) * 0.36, z2 = Math.cos(a2) * 0.36;
+            const len = Math.hypot(x2 - x1, z2 - z1);
+            const brace = add(new THREE.CylinderGeometry(0.008, 0.008, len, 4), tripodMat, (x1 + x2) / 2, 0.34, (z1 + z2) / 2);
+            brace.rotation.z = Math.PI / 2; brace.rotation.y = Math.atan2(z2 - z1, x2 - x1) * -1 + 0;
           }
           add(new THREE.CylinderGeometry(0.05, 0.05, 0.4, 8), tripodMat, 0, 1.38, 0);
           add(new THREE.CylinderGeometry(0.09, 0.07, 0.05, 10), brassMat, 0, 1.18, 0);
