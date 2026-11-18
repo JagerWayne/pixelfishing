@@ -32,6 +32,21 @@
       --safe-right: env(safe-area-inset-right, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-left: env(safe-area-inset-left, 0px);
+      /* sizing tokens */
+      --tap: 48px;
+      --fs-xs: 12px;
+      --fs-sm: 13px;
+      --fs-md: 15px;
+      --fs-lg: 18px;
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      /* measured by script (ResizeObserver), with sensible fallbacks */
+      --hud-top-h: 96px;
+      --controls-h: 126px;
+      --joy-size: clamp(104px, 30vw, 126px);
+      --act-size: clamp(94px, 28vw, 112px);
     }
 
     * {
@@ -163,13 +178,15 @@
       margin: 0 auto;
     }
 
+    /* Status bar: cash + weather/time + menu on the first row, gauges on the second (portrait) or all in one row (wide) */
     .hud-bar-main {
       pointer-events: auto;
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "cash right" "gauges gauges";
       align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      padding: 6px 10px;
+      gap: 6px 10px;
+      padding: 6px 8px 6px 12px;
       background: rgba(10, 17, 30, 0.86);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -177,56 +194,49 @@
       box-shadow: 0 0 0 2px var(--border-dark), 0 4px 12px rgba(0, 0, 0, 0.55);
       border-radius: 4px;
     }
-
-    .hud-chips-group {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      flex-wrap: nowrap;
-      overflow: hidden;
-      min-width: 0;
+    .hud-bar-main #hud-cash { grid-area: cash; }
+    .hud-gauges { grid-area: gauges; display: flex; gap: 14px; min-width: 0; }
+    .hud-right { grid-area: right; display: flex; align-items: center; gap: 8px; }
+    @media (min-width: 600px), (orientation: landscape) and (max-height: 520px) {
+      .hud-bar-main { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "cash gauges right"; gap: 14px; }
+      .hud-gauges { max-width: 440px; width: 100%; justify-self: center; }
     }
 
     .hud-chip {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
-      font-size: 12px;
+      gap: 4px;
+      font-size: var(--fs-sm);
       font-weight: bold;
       white-space: nowrap;
       color: #f1f5f9;
     }
-
     .hud-chip.cash {
       color: var(--accent-gold);
-      font-size: 14px;
+      font-size: var(--fs-md);
       text-shadow: 1px 1px 0 #000;
     }
-
-    .hud-divider {
-      width: 1px;
-      height: 16px;
-      background: rgba(148, 163, 184, 0.35);
-      flex-shrink: 0;
-    }
+    @media (max-width: 420px) { #hud-weather .w-tx { display: none; } }
 
     .mini-progress-pill {
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
-      gap: 2px;
-      min-width: 64px;
+      gap: 3px;
+      flex: 1 1 0;
+      min-width: 0;
     }
     .mini-progress-label {
-      font-size: 10px;
+      font-size: var(--fs-xs);
       font-weight: bold;
       color: #e2e8f0;
       display: flex;
       justify-content: space-between;
       gap: 4px;
+      white-space: nowrap;
     }
     .mini-bar-track {
       width: 100%;
-      height: 5px;
+      height: 6px;
       background: #060a12;
       border: 1px solid #475569;
       border-radius: 2px;
@@ -237,40 +247,30 @@
       transition: width 0.15s ease-out, background-color 0.2s;
     }
 
-    .hud-menu-strip {
-      pointer-events: auto;
+    /* Everything under the bar (zone, fuel warning, bounty, sonar, live cam) stacks here */
+    .hud-stack {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 5px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      pointer-events: none;
     }
-
     .hud-zone-pill {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 5px 8px;
+      gap: 6px;
+      padding: 4px 10px;
       background: rgba(10, 17, 30, 0.82);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       border: 2px solid rgba(122, 162, 214, 0.65);
       box-shadow: 0 0 0 2px var(--border-dark);
       border-radius: 4px;
-      font-size: 11px;
+      font-size: var(--fs-xs);
       font-weight: bold;
       color: #67e8f9;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      min-width: 0;
-      flex: 1 1 auto;
-    }
-
-    .hud-menu-btns {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      flex-shrink: 0;
+      max-width: 100%;
     }
 
     .sleek-menu-btn {
@@ -279,21 +279,22 @@
       border: 2px solid var(--border-light);
       box-shadow: 0 2px 0 #070c14;
       border-radius: 4px;
-      padding: 0 7px;
-      height: 36px;
-      min-width: 34px;
+      padding: 0 10px;
+      height: 44px;
+      min-width: 44px;
       font-family: inherit;
       font-weight: bold;
-      font-size: 10px;
+      font-size: var(--fs-xs);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 4px;
       text-transform: uppercase;
       touch-action: manipulation;
       transition: transform 0.05s, background 0.1s;
     }
+    #btn-toggle-drawer { font-size: 22px; line-height: 1; padding: 0; width: 44px; }
     .sleek-menu-btn:active {
       transform: translateY(1px);
       box-shadow: 0 1px 0 #070c14;
@@ -302,6 +303,7 @@
       background: #0284c7;
       border-color: #bae6fd;
     }
+    .fuel-alert { border-color: #ef4444 !important; animation: pulseWarn 0.8s infinite alternate; }
 
     /* Sonar Radar Pill */
     #hud-sonar-pill {
@@ -315,10 +317,10 @@
       border: 2px solid #22d3ee;
       box-shadow: 0 0 0 2px #070c14;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: bold;
       color: #67e8f9;
-      align-self: center;
+      align-self: flex-start;
     }
 
     /* Underwater Live Bait Cam Picture-in-Picture (PiP) */
@@ -326,7 +328,7 @@
       pointer-events: none;
       display: none;
       position: relative;
-      align-self: center;
+      align-self: flex-start;
       width: 176px;
       height: 112px;
       background: #041322;
@@ -352,7 +354,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 900;
       letter-spacing: 0.5px;
       text-shadow: 1px 1px 0 #000;
@@ -367,7 +369,7 @@
       bottom: 3px;
       left: 6px;
       right: 6px;
-      font-size: 9px;
+      font-size: 12px;
       font-weight: bold;
       color: #fef08a;
       text-align: center;
@@ -380,22 +382,6 @@
       pointer-events: none;
     }
 
-    /* Collapsible Gear & Eco Drawer */
-    #hud-details-drawer {
-      pointer-events: auto;
-      display: none;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 12px;
-      padding: 8px 10px;
-      background: rgba(12, 20, 34, 0.94);
-      border: 2px solid var(--border-light);
-      box-shadow: 0 0 0 2px var(--border-dark), 0 6px 14px rgba(0, 0, 0, 0.65);
-      border-radius: 4px;
-      font-size: 11px;
-    }
-    #hud-details-drawer.open {
-      display: grid;
-    }
     .drawer-item {
       display: flex;
       justify-content: space-between;
@@ -418,7 +404,7 @@
 
     .fuel-warning {
       grid-column: 1 / -1;
-      font-size: 10px;
+      font-size: var(--fs-xs);
       font-weight: bold;
       padding: 3px 6px;
       border-radius: 3px;
@@ -438,7 +424,7 @@
       position: fixed;
       left: 50%;
       top: auto;
-      bottom: calc(168px + var(--safe-bottom));
+      bottom: calc(var(--controls-h) + var(--safe-bottom) + 18px);
       transform: translateX(-50%);
       display: flex;
       flex-direction: column;
@@ -583,8 +569,8 @@
     }
 
     #virtual-joystick {
-      width: 126px;
-      height: 126px;
+      width: var(--joy-size);
+      height: var(--joy-size);
       border-radius: 50%;
       background: rgba(15, 23, 42, 0.65);
       border: 3px solid rgba(122, 162, 214, 0.8);
@@ -597,8 +583,8 @@
     }
 
     #joystick-knob {
-      width: 52px;
-      height: 52px;
+      width: calc(var(--joy-size) * 0.42);
+      height: calc(var(--joy-size) * 0.42);
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);
       border: 3px solid #e0f2fe;
@@ -611,7 +597,7 @@
 
     .joy-dir-label {
       position: absolute;
-      font-size: 10px;
+      font-size: 12px;
       font-weight: bold;
       color: rgba(203, 213, 225, 0.65);
       pointer-events: none;
@@ -630,8 +616,8 @@
     }
 
     #btn-primary-action {
-      width: 112px;
-      height: 112px;
+      width: var(--act-size);
+      height: var(--act-size);
       border-radius: 50%;
       background: radial-gradient(circle at 35% 30%, #22c55e, #15803d);
       border: 4px solid #bbf7d0;
@@ -699,28 +685,104 @@
       transform: scale(0.94);
     }
 
-    /* Toast Notification */
-    #toast-msg {
+    /* Toast stack (queue of up to 3, positioned from the measured HUD height) */
+    #toast-stack {
       position: fixed;
-      top: calc(96px + var(--safe-top));
       left: 50%;
+      top: calc(var(--hud-top-h) + var(--safe-top) + 18px);
       transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: min(92vw, 440px);
+      pointer-events: none;
+    }
+    .toast {
       background: rgba(15, 23, 42, 0.96);
       border: 2px solid var(--accent-cyan);
       color: #e0f2fe;
       padding: 8px 14px;
       font-weight: bold;
-      font-size: 13px;
-      z-index: 40;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
+      font-size: var(--fs-sm);
       text-align: center;
-      max-width: 88vw;
+      max-width: 100%;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.18s, transform 0.18s;
     }
-    #toast-msg.show {
-      opacity: 1;
+    .toast.show { opacity: 1; transform: none; }
+
+    /* Thumb-reach quick buttons between the stick and the action button */
+    .quick-dock {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 4px;
     }
+    .dock-btn {
+      position: relative;
+      width: 60px;
+      height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      background: rgba(24, 38, 61, 0.92);
+      color: #f8fafc;
+      border: 2px solid var(--border-light);
+      box-shadow: 0 2px 0 #070c14;
+      border-radius: 6px;
+      font-family: inherit;
+      font-weight: bold;
+      font-size: var(--fs-xs);
+      text-transform: uppercase;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .dock-btn .ic { font-size: 20px; line-height: 1; }
+    .dock-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #070c14; }
+
+    /* Menu sheet */
+    .modal-backdrop.sheet-modal { align-items: flex-end; padding-bottom: 0; }
+    .sheet-modal .modal-window {
+      width: min(100%, 560px);
+      max-height: 82vh;
+      max-height: 82dvh;
+      border-radius: 14px 14px 0 0;
+      padding-bottom: var(--safe-bottom);
+    }
+    .sheet-handle { width: 44px; height: 5px; border-radius: 3px; background: #475569; margin: 8px auto 0; flex-shrink: 0; }
+    .menu-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+    .menu-tile {
+      position: relative;
+      min-height: 78px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 26px;
+      background: var(--bg-card);
+      color: #f8fafc;
+      border: 2px solid var(--border-light);
+      border-radius: 6px;
+      box-shadow: 0 3px 0 #070c14;
+      font-family: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .menu-tile span, .menu-tile[data-label]::after { font-size: var(--fs-xs); text-transform: uppercase; }
+    .menu-tile[data-label]::after { content: attr(data-label); }
+    .menu-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 #070c14; }
+    .menu-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: var(--fs-sm); }
+    .menu-info .wide { grid-column: 1 / -1; }
+    .menu-info .angler-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
     /* Modals */
     .modal-backdrop {
@@ -851,7 +913,7 @@
 
     .rarity-badge {
       padding: 2px 8px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: bold;
       border: 1px solid currentColor;
       text-transform: uppercase;
@@ -870,7 +932,7 @@
       color: #fef08a;
       border: 1px solid #facc15;
       padding: 2px 8px;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 900;
       margin-left: 6px;
     }
@@ -955,29 +1017,17 @@
     }
 
     @media (max-height: 480px) {
+      :root { --joy-size: 104px; --act-size: 92px; }
       #center-hud {
-        bottom: calc(124px + var(--safe-bottom));
+        bottom: calc(var(--controls-h) + var(--safe-bottom) + 12px);
         width: min(74vw, 380px);
       }
-      #virtual-joystick {
-        width: 104px;
-        height: 104px;
-      }
-      #joystick-knob {
-        width: 44px;
-        height: 44px;
-      }
-      #btn-primary-action {
-        width: 92px;
-        height: 92px;
-        font-size: 13px;
-      }
+      #btn-primary-action { font-size: 13px; }
       #live-bait-pip {
         width: 148px;
         height: 92px;
       }
     }
-
     /* ---- Settings panel ---- */
     .setting-row {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -985,21 +1035,21 @@
     }
     .setting-row:last-child { border-bottom: none; }
     .setting-label { font-size: 13px; color: #e2e8f0; }
-    .setting-sub { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .setting-sub { display: block; font-size: 12px; color: #94a3b8; margin-top: 2px; }
     .setting-row .pixel-btn { min-width: 84px; }
     /* ---- QoL: bounty pill, sort/filter bars, NEW badge ---- */
     #hud-bounty-pill {
       pointer-events: none; display: none; align-items: center; justify-content: center; gap: 6px;
       padding: 4px 10px; background: rgba(40, 28, 6, 0.88); border: 2px solid #facc15;
-      box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 11px; font-weight: bold;
-      color: #fde68a; align-self: center; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold;
+      color: #fde68a; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-    .chip-row .pixel-btn { padding: 4px 8px; font-size: 11px; min-height: 0; }
+    .chip-row .pixel-btn { padding: 8px 12px; font-size: 12px; min-height: 44px; }
     .chip-row .pixel-btn.active { outline: 2px solid #facc15; }
     .new-badge {
-      display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 9px; font-weight: bold;
+      display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 12px; font-weight: bold;
       background: #f43f5e; color: #fff; border-radius: 3px; vertical-align: middle;
     }
     .menu-dot { position: relative; }
@@ -1014,22 +1064,22 @@
     #cust-canvas { width: 100%; height: min(42dvh, 340px); min-height: 200px; background: radial-gradient(circle at 50% 35%, #1e4a63, #0b2230 75%); border: 2px solid #334155; border-radius: 6px; touch-action: none; cursor: grab; }
     .cust-gender { display: flex; gap: 8px; }
     .cust-gender .pixel-btn { flex: 1; }
-    .cust-hint { font-size: 10px; color: #94a3b8; text-align: center; }
+    .cust-hint { font-size: 12px; color: #94a3b8; text-align: center; }
     .cust-panel { flex: 2 1 320px; min-width: 260px; }
     .cust-row { margin-bottom: 12px; }
-    .cust-label { font-size: 11px; font-weight: bold; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+    .cust-label { font-size: 12px; font-weight: bold; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
     .cheat-window { width: min(98vw, 760px); }
     .cheat-section { margin-bottom: 14px; }
     .cheat-title { font-size: 12px; font-weight: bold; color: #facc15; letter-spacing: 0.5px; margin-bottom: 6px; }
     .cheat-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-    .cheat-grid .pixel-btn { padding: 6px 9px; font-size: 11px; }
+    .cheat-grid .pixel-btn { padding: 6px 9px; font-size: 12px; }
     .cheat-grid .pixel-btn.on { background: #16a34a; }
     .chip-row .pixel-btn:disabled { opacity: 0.32; cursor: not-allowed; text-decoration: line-through; }
     .cust-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
-    .cust-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #475569; cursor: pointer; padding: 0; }
+    .cust-swatch { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #475569; cursor: pointer; padding: 0; }
     .cust-swatch.active { outline: 3px solid #facc15; outline-offset: 2px; }
     #cust-tabs { flex-wrap: wrap; margin-bottom: 12px; }
-    #cust-tabs .tab-btn { padding: 6px 9px; font-size: 11px; }
+    #cust-tabs .tab-btn { padding: 6px 9px; font-size: 12px; }
     /* wide / landscape screens: preview and options sit side by side, each scrolling on its own */
     @media (min-width: 640px) and (max-height: 620px), (min-width: 900px) {
       .cust-window { height: min(94dvh, 640px); }
@@ -1046,7 +1096,7 @@
   <canvas id="game-canvas"></canvas>
 
   <!-- Toast Notification -->
-  <div id="toast-msg"></div>
+  <div id="toast-stack" role="status" aria-live="polite"></div>
 
   <!-- Tap-to-Start Overlay -->
   <div id="start-overlay" class="open">
@@ -1058,7 +1108,7 @@
         Visit the <b>Tackle Shop</b>, <b>Bounty Board</b>, <b>Bottle Gallery</b>, <b>Tackle Toolbox</b>, <b>Moored Boat</b>, or the <b>Director's Camera</b> on the pier!
       </p>
       <div style="margin-bottom: 14px;">
-        <div style="font-size: 11px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; letter-spacing: 0.5px;">CHOOSE ANGLER</div>
+        <div style="font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; letter-spacing: 0.5px;">CHOOSE ANGLER</div>
         <div style="display: flex; gap: 8px;">
           <button class="pixel-btn green" id="btn-start-male" type="button" style="flex: 1;">🧔 MALE FISHERMAN</button>
           <button class="pixel-btn" id="btn-start-female" type="button" style="flex: 1;">👩 FEMALE FISHERMAN</button>
@@ -1073,12 +1123,11 @@
 
   <!-- HUD Layer -->
   <div id="ui-layer">
-    <div class="hud-top">
-      <!-- Row 1: Unified Compact Telemetry Bar -->
+    <div class="hud-top" id="hud-top">
+      <!-- Status bar: cash, weather/time, menu; bucket and fuel gauges -->
       <div class="hud-bar-main">
-        <div class="hud-chips-group">
-          <span class="hud-chip cash" id="hud-cash">$25.00</span>
-          <span class="hud-divider"></span>
+        <span class="hud-chip cash" id="hud-cash">$25.00</span>
+        <div class="hud-gauges">
           <div class="mini-progress-pill" title="Bucket Capacity">
             <div class="mini-progress-label">
               <span>🪣</span>
@@ -1098,80 +1147,35 @@
             </div>
           </div>
         </div>
-
-        <div class="hud-chips-group">
+        <div class="hud-right">
           <span class="hud-chip" id="hud-weather" title="Weather">☀️ Clear</span>
           <span class="hud-chip" id="hud-time">12:00</span>
-          <span class="hud-chip" id="hud-moon" style="color: #fef08a;" title="Moon Phase">🌑</span>
-          <button class="sleek-menu-btn" id="btn-toggle-drawer" type="button" aria-label="Toggle Gear Details" title="Gear & Eco Info">⚙️</button>
+          <button class="sleek-menu-btn" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
         </div>
       </div>
 
-      <!-- Row 2: Zone/Distance Pill + Sleek Action Menu -->
-      <div class="hud-menu-strip">
+      <div class="hud-stack">
         <div class="hud-zone-pill">
           <span id="hud-zone">1. Shallow Cove</span>
           <span style="color:#94a3b8;">•</span>
           <span id="hud-dist" style="color:#f8fafc;">0 m</span>
         </div>
-        <div class="hud-menu-btns">
-          <button class="sleek-menu-btn" id="btn-open-bucket" type="button">🪣 Bag</button>
-          <button class="sleek-menu-btn menu-dot" id="btn-open-log" type="button">📖 Log</button>
-          <button class="sleek-menu-btn" id="btn-toggle-audio" type="button" aria-label="Toggle Sound">🔊</button>
-          <button class="sleek-menu-btn" id="btn-open-settings" type="button" aria-label="Settings" title="Settings">🎛️</button>
-        </div>
-      </div>
-
-      <!-- Sonar Fish Finder Compass Pill (Visible when Sonar Module installed) -->
-      <div id="hud-bounty-pill"></div>
-
-      <div id="hud-sonar-pill">
-        <span>📡 SONAR:</span>
-        <span id="hud-sonar-text" style="color:#fef08a;">SCANNING FRENZIES...</span>
-      </div>
-
-      <!-- Underwater Live Bait Cam Picture-in-Picture (Active when Rod Cam Upgrade is purchased & Reeling) -->
-      <div id="live-bait-pip">
-        <canvas id="pip-bait-canvas" width="176" height="112"></canvas>
-        <div class="pip-overlay-top">
-          <span class="pip-rec-dot">● LIVE CAM</span>
-          <span style="color:#bae6fd;">SUBSEA</span>
-        </div>
-        <div class="pip-overlay-bottom" id="pip-bait-label">BAIT: Bread Crumbs</div>
-      </div>
-
-      <!-- Collapsible Gear, Fuel & Eco Cleanup Drawer -->
-      <div id="hud-details-drawer">
-        <div class="drawer-item">
-          <span class="drawer-label">ROD:</span>
-          <span class="drawer-val" id="hud-rod">Bamboo (3.5kg)</span>
-        </div>
-        <div class="drawer-item">
-          <span class="drawer-label">BAIT:</span>
-          <span class="drawer-val" id="hud-bait">Bread (∞)</span>
-        </div>
-        <div class="drawer-item">
-          <span class="drawer-label">VESSEL:</span>
-          <span class="drawer-val" id="hud-fuel-text">No Boat</span>
-        </div>
-        <div class="drawer-item">
-          <span class="drawer-label">ECO PERK:</span>
-          <span class="drawer-val" id="hud-eco" style="color:#4ade80;">♻️ 0.0/100kg</span>
-        </div>
-        <div class="drawer-item" style="grid-column: 1 / -1; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 6px;">
-          <span class="drawer-label">🎣 ANGLER STYLE:</span>
-          <div style="display: flex; gap: 6px;">
-            <button class="sleek-menu-btn active" id="btn-drawer-male" type="button" style="height: 28px; padding: 0 8px;">🧔 Male</button>
-            <button class="sleek-menu-btn" id="btn-drawer-female" type="button" style="height: 28px; padding: 0 8px;">👩 Female</button>
-            <button class="sleek-menu-btn" id="btn-drawer-customize" type="button" style="height: 28px; padding: 0 8px;">🎨 Look</button>
-          </div>
-        </div>
-        <div class="drawer-item" style="grid-column: 1 / -1; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 4px;">
-          <span class="drawer-label">🎬 CAMERA LENS:</span>
-          <span class="drawer-val" id="hud-vfx-label" style="color:#f0abfc;">Standard Lens</span>
-        </div>
         <div id="hud-fuel-warning" class="fuel-warning fuel-safe" style="display:none;">
           Return Fuel: 0.0
+        </div>
+        <div id="hud-bounty-pill"></div>
+        <div id="hud-sonar-pill">
+          <span>📡 SONAR:</span>
+          <span id="hud-sonar-text" style="color:#fef08a;">SCANNING FRENZIES...</span>
+        </div>
+        <!-- Underwater Live Bait Cam Picture-in-Picture (Active when Rod Cam Upgrade is purchased & Reeling) -->
+        <div id="live-bait-pip">
+          <canvas id="pip-bait-canvas" width="176" height="112"></canvas>
+          <div class="pip-overlay-top">
+            <span class="pip-rec-dot">● LIVE CAM</span>
+            <span style="color:#bae6fd;">SUBSEA</span>
+          </div>
+          <div class="pip-overlay-bottom" id="pip-bait-label">BAIT: Bread Crumbs</div>
         </div>
       </div>
     </div>
@@ -1197,13 +1201,13 @@
           <span class="stat-label" id="fish-dir-label">FISH DRAG: CENTER</span>
           <span class="stat-val" id="reel-dist-label">LINE: 14.0 m</span>
         </div>
-        <div style="font-size: 11px; color: #93c5fd; display:flex; justify-content:space-between; margin-top:2px;">
+        <div style="font-size: 12px; color: #93c5fd; display:flex; justify-content:space-between; margin-top:2px;">
           <span>◀ STICK L</span>
           <span id="counter-pull-hint" style="color:#fde047; font-weight:bold;">STEER STICK OPPOSITE!</span>
           <span>STICK R ▶</span>
         </div>
         <div class="reel-track" style="height: 18px; border-color: #38bdf8;">
-          <div id="fish-dir-marker" style="position:absolute; top:1px; bottom:1px; width:18px; background:#f87171; border:2px solid #000; transform:translateX(-50%); left:50%; text-align:center; font-size:10px; line-height:12px; font-weight:bold;">🐟</div>
+          <div id="fish-dir-marker" style="position:absolute; top:1px; bottom:1px; width:18px; background:#f87171; border:2px solid #000; transform:translateX(-50%); left:50%; text-align:center; font-size: 12px; line-height:12px; font-weight:bold;">🐟</div>
           <div id="rod-dir-marker" style="position:absolute; top:-3px; bottom:-3px; width:8px; background:#4ade80; border:2px solid #000; transform:translateX(-50%); left:50%;"></div>
         </div>
         <div class="stat-row" style="margin-top:3px;">
@@ -1232,11 +1236,51 @@
         </div>
       </div>
 
+      <div class="quick-dock">
+        <button class="dock-btn" id="btn-open-bucket" type="button" aria-label="Open bag"><span class="ic">🪣</span>Bag</button>
+        <button class="dock-btn menu-dot" id="btn-open-log" type="button" aria-label="Open encyclopedia"><span class="ic">📖</span>Log</button>
+      </div>
+
       <div class="touch-zone-right">
         <button id="btn-primary-action" type="button">
           <span id="primary-action-icon" style="font-size: 24px;">🎣</span>
           <span id="primary-action-label">HOLD CAST</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU SHEET (replaces the old strip of small buttons and the gear drawer) -->
+  <div class="modal-backdrop sheet-modal" id="modal-menu">
+    <div class="pixel-box modal-window">
+      <div class="sheet-handle"></div>
+      <div class="modal-header">
+        <span class="modal-title">☰ MENU</span>
+        <button class="pixel-btn red" data-close="modal-menu" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="menu-tiles">
+          <button class="menu-tile" id="menu-bag" data-closes-menu type="button">🪣<span>Bag</span></button>
+          <button class="menu-tile menu-dot" id="menu-log" data-closes-menu type="button">📖<span>Log</span></button>
+          <button class="menu-tile" id="btn-open-settings" data-closes-menu type="button" aria-label="Settings">🎛️<span>Settings</span></button>
+          <button class="menu-tile" id="btn-drawer-customize" data-closes-menu type="button">🎨<span>Look</span></button>
+          <button class="menu-tile" id="btn-toggle-audio" data-label="Sound" type="button" aria-label="Toggle sound">🔊</button>
+        </div>
+        <div class="menu-info">
+          <div class="drawer-item"><span class="drawer-label">ROD:</span><span class="drawer-val" id="hud-rod">Bamboo (3.5kg)</span></div>
+          <div class="drawer-item"><span class="drawer-label">BAIT:</span><span class="drawer-val" id="hud-bait">Bread (∞)</span></div>
+          <div class="drawer-item"><span class="drawer-label">VESSEL:</span><span class="drawer-val" id="hud-fuel-text">No Boat</span></div>
+          <div class="drawer-item"><span class="drawer-label">ECO PERK:</span><span class="drawer-val" id="hud-eco" style="color:#4ade80;">♻️ 0.0/100kg</span></div>
+          <div class="drawer-item"><span class="drawer-label">MOON:</span><span class="drawer-val" id="hud-moon" style="color:#fef08a;" title="Moon Phase">🌑</span></div>
+          <div class="drawer-item"><span class="drawer-label">🎬 LENS:</span><span class="drawer-val" id="hud-vfx-label" style="color:#f0abfc;">Standard Lens</span></div>
+          <div class="drawer-item wide" style="border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 10px;">
+            <span class="drawer-label">🎣 ANGLER:</span>
+            <div class="angler-row">
+              <button class="sleek-menu-btn active" id="btn-drawer-male" type="button">🧔 Male</button>
+              <button class="sleek-menu-btn" id="btn-drawer-female" type="button">👩 Female</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1266,7 +1310,7 @@
             <span style="font-size:12px; font-weight:900; color:#4ade80;">♻️ PERK: SAVING THE ENVIRONMENT</span>
             <span style="font-size:12px; font-weight:bold; color:#fef08a;" id="shop-eco-progress">0.0 / 100.0 kg</span>
           </div>
-          <div style="font-size:11px; color:#bbf7d0; margin-bottom:5px;" id="shop-eco-desc">
+          <div style="font-size: 12px; color:#bbf7d0; margin-bottom:5px;" id="shop-eco-desc">
             Keep & sell ocean junk/flora! The Mayor awards <b>$1,000</b> for every 100 kg recycled.
           </div>
           <div class="bar-wrap" style="height: 10px; margin: 0;">
@@ -1285,8 +1329,8 @@
         <div class="upgrade-grid" id="shop-items-container"></div>
 
         <div style="margin-top: 18px; padding-top: 12px; border-top: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-          <span style="font-size: 11px; color: #94a3b8;">Auto-saved on device.</span>
-          <button class="pixel-btn red" id="btn-reset-save" style="font-size: 11px; padding: 6px 10px;">Reset Save</button>
+          <span style="font-size: 12px; color: #94a3b8;">Auto-saved on device.</span>
+          <button class="pixel-btn red" id="btn-reset-save" style="font-size: 12px; padding: 6px 10px;">Reset Save</button>
         </div>
       </div>
     </div>
@@ -1457,7 +1501,7 @@
             <span style="font-size:12px; font-weight:900; color:#5eead4;">🏆 MASTER ARCHIVIST COLLECTION REWARD</span>
             <span style="font-size:12px; font-weight:bold; color:#fef08a;" id="gallery-reward-status">$2,500.00</span>
           </div>
-          <div style="font-size:11px; color:#ccfbf1; margin-bottom:6px;">
+          <div style="font-size: 12px; color:#ccfbf1; margin-bottom:6px;">
             Collect & keep all <b>36 unique Messages in a Bottle</b> across all 4 ocean depths to claim <b>$2,500.00</b>! Each bottle is one-of-a-kind once kept (discarded bottles drift back to sea).
           </div>
           <div class="bar-wrap" style="height: 10px; margin: 0;">
@@ -6790,14 +6834,46 @@
         rebuildPierBucketVisual();
       }
 
-      let toastTimeout = null;
+      // Toast queue: up to 3 stacked, repeats refresh the existing toast, duration grows with length.
+      const toastStack = document.getElementById('toast-stack');
       function showToast(msg) {
-        const el = document.getElementById('toast-msg');
-        el.textContent = msg;
-        el.classList.add('show');
-        clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => el.classList.remove('show'), 2600);
+        const text = String(msg);
+        const dup = [...toastStack.children].find(t => t.textContent === text && !t.dataset.closing);
+        const ttl = 2000 + Math.min(2600, text.length * 32);
+        if (dup) {
+          clearTimeout(dup._timer);
+          dup._timer = setTimeout(() => dropToast(dup), ttl);
+          return;
+        }
+        const el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = text;
+        toastStack.appendChild(el);
+        while (toastStack.children.length > 3) dropToast(toastStack.children[0], true);
+        requestAnimationFrame(() => el.classList.add('show'));
+        el._timer = setTimeout(() => dropToast(el), ttl);
       }
+      function dropToast(el, instant) {
+        if (!el || el.dataset.closing) return;
+        el.dataset.closing = '1';
+        clearTimeout(el._timer);
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), instant ? 0 : 220);
+      }
+
+      // Measure the HUD so toasts, banners and meters position themselves without hard-coded pixels.
+      (function trackHudSize() {
+        const root = document.documentElement;
+        const top = document.getElementById('hud-top');
+        const ctl = document.getElementById('mobile-controls');
+        const apply = () => {
+          root.style.setProperty('--hud-top-h', Math.ceil(top.getBoundingClientRect().height) + 'px');
+          root.style.setProperty('--controls-h', Math.ceil(ctl.getBoundingClientRect().height) + 'px');
+        };
+        if (window.ResizeObserver) { const ro = new ResizeObserver(apply); ro.observe(top); ro.observe(ctl); }
+        window.addEventListener('resize', apply);
+        apply();
+      })();
 
       /* =========================================================================
          SECTION I: BOARDING, DOCKING & RESCUE LOOP
@@ -7366,7 +7442,7 @@
             <div>
               <div class="card-title">
                 <span>🎞️ ${preset.label}</span>
-                <span style="color: ${isEquipped ? '#f0abfc' : '#94a3b8'}; font-size:11px;">${isEquipped ? 'ACTIVE' : 'FILTER'}</span>
+                <span style="color: ${isEquipped ? '#f0abfc' : '#94a3b8'}; font-size: 12px;">${isEquipped ? 'ACTIVE' : 'FILTER'}</span>
               </div>
               <div class="card-stats">${preset.desc}</div>
             </div>
@@ -7808,7 +7884,7 @@
           const atShop = isNearPierShop();
           const sortBar = document.createElement('div');
           sortBar.className = 'chip-row';
-          sortBar.innerHTML = '<span style="font-size:11px; color:#94a3b8; align-self:center;">Sort:</span>';
+          sortBar.innerHTML = '<span style="font-size: 12px; color:#94a3b8; align-self:center;">Sort:</span>';
           [['newest', 'Newest'], ['value', '$ Value'], ['weight', 'Weight'], ['name', 'Name']].forEach(([key, label]) => {
             const b = document.createElement('button');
             b.className = `pixel-btn ${settings.bucketSort === key ? 'active gold' : ''}`;
@@ -7833,7 +7909,7 @@
                 <img class="item-icon" src="${ITEM_ICONS[entry.id]}" alt="" />
                 <div>
                   <div style="font-weight:bold; font-size:13px;">${entry.name}</div>
-                  <div style="font-size:11px; color:#94a3b8;">${entry.weight.toFixed(2)} kg • <span style="color:#ffd24c;">$${entry.value}</span></div>
+                  <div style="font-size: 12px; color:#94a3b8;">${entry.weight.toFixed(2)} kg • <span style="color:#ffd24c;">$${entry.value}</span></div>
                 </div>
               </div>
             `;
@@ -7898,7 +7974,7 @@
         document.getElementById('catch-weight').textContent = `${c.weight.toFixed(2)} kg`;
         document.getElementById('catch-value').textContent = `$${c.value}`;
         document.getElementById('catch-desc').innerHTML = c.bottleMessage
-          ? `<div style="background:#fef3c7; color:#451a03; border:2px solid #b45309; padding:8px 10px; border-radius:3px; font-style:italic; text-align:left; margin-top:4px;"><b>Message #${c.bottleMessage.id}/${BOTTLE_MESSAGES.length} — ${c.bottleMessage.title}:</b><br/>"${c.bottleMessage.text}"<div style="font-style:normal; font-size:11px; color:#92400e; margin-top:4px;">Keep in bucket to archive in your Gallery (discarding tosses it back to sea).</div></div>`
+          ? `<div style="background:#fef3c7; color:#451a03; border:2px solid #b45309; padding:8px 10px; border-radius:3px; font-style:italic; text-align:left; margin-top:4px;"><b>Message #${c.bottleMessage.id}/${BOTTLE_MESSAGES.length} — ${c.bottleMessage.title}:</b><br/>"${c.bottleMessage.text}"<div style="font-style:normal; font-size: 12px; color:#92400e; margin-top:4px;">Keep in bucket to archive in your Gallery (discarding tosses it back to sea).</div></div>`
           : c.item.desc;
 
         refreshCatchOverflowUI();
@@ -8027,6 +8103,7 @@
       function updateLogNewDot() {
         const hasNew = state.discovered.some(id => !state.seenSpecies.includes(id));
         document.getElementById('btn-open-log').classList.toggle('has-new', hasNew);
+        document.getElementById('menu-log').classList.toggle('has-new', hasNew);
       }
 
       function renderLog() {
@@ -8062,7 +8139,7 @@
           card.className = `log-card ${found ? '' : 'undiscovered'}`;
           card.innerHTML = `
             <img class="item-icon" src="${ITEM_ICONS[item.id]}" style="${found ? '' : 'filter: brightness(0);'}" alt="" />
-            <div style="font-size: 11px; line-height: 1.35;">
+            <div style="font-size: 12px; line-height: 1.35;">
               <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}${isNew ? '<span class="new-badge">NEW</span>' : ''}</div>
               <div style="color: #94a3b8;">Zones: ${item.zones.join(', ')} • ${item.rarity}</div>
               <div style="color: #ffd24c;">${found ? `~$${item.value}${recordTxt}` : 'Undiscovered'}</div>
@@ -8110,17 +8187,17 @@
           card.className = `scroll-card ${unlocked ? '' : 'locked'}`;
           if (unlocked) {
             card.innerHTML = `
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:900; border-bottom:1px solid rgba(180,83,9,0.35); padding-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size: 12px; font-weight:900; border-bottom:1px solid rgba(180,83,9,0.35); padding-bottom:4px;">
                 <span>📜 #${msg.id} • ${msg.title}</span>
               </div>
               <div style="font-size:12px; font-style:italic; line-height:1.4;">"${msg.text}"</div>
             `;
           } else {
             card.innerHTML = `
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:bold; border-bottom:1px solid #334155; padding-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size: 12px; font-weight:bold; border-bottom:1px solid #334155; padding-bottom:4px;">
                 <span>🔒 Scroll #${msg.id} • Undiscovered</span>
               </div>
-              <div style="font-size:11px; line-height:1.4;">Fish up corked bottles in <b>${ZONES[msg.zones[0] - 1].name}</b> and keep them in your bucket to unlock this scroll.</div>
+              <div style="font-size: 12px; line-height:1.4;">Fish up corked bottles in <b>${ZONES[msg.zones[0] - 1].name}</b> and keep them in your bucket to unlock this scroll.</div>
             `;
           }
           grid.appendChild(card);
@@ -8129,11 +8206,17 @@
 
       document.getElementById('btn-open-bucket').addEventListener('click', openBucketModal);
       document.getElementById('btn-open-log').addEventListener('click', openLogModal);
-      document.getElementById('btn-toggle-drawer').addEventListener('click', e => {
-        const drawer = document.getElementById('hud-details-drawer');
-        const isOpen = drawer.classList.toggle('open');
-        e.currentTarget.classList.toggle('active', isOpen);
+      document.getElementById('btn-toggle-drawer').addEventListener('click', () => {
+        document.getElementById('modal-menu').classList.add('open');
       });
+      // menu tiles that open another screen close the sheet first
+      document.getElementById('modal-menu').addEventListener('click', e => {
+        if (e.target.closest && e.target.closest('[data-closes-menu]')) {
+          document.getElementById('modal-menu').classList.remove('open');
+        }
+      });
+      document.getElementById('menu-bag').addEventListener('click', () => openBucketModal());
+      document.getElementById('menu-log').addEventListener('click', () => openLogModal());
       const audioBtn = document.getElementById('btn-toggle-audio');
       const setSoundBtn = document.getElementById('set-sound');
       const setHapticsBtn = document.getElementById('set-haptics');
@@ -8321,11 +8404,12 @@
         updateBountyPill();
         updateLogNewDot();
         document.getElementById('hud-cash').textContent = `$${state.cash.toFixed(2)}`;
-        document.getElementById('hud-weather').textContent = getWeatherObj().label;
+        { const wl = getWeatherObj().label; const sp = wl.indexOf(' ');
+          document.getElementById('hud-weather').innerHTML = `<span class="w-ic">${wl.slice(0, sp)}</span><span class="w-tx">${wl.slice(sp)}</span>`; }
 
         const bWeight = getBucketWeight();
         const bCap = getBucketCapacity();
-        document.getElementById('hud-bucket').textContent = `${bWeight.toFixed(1)}/${bCap.toFixed(1)}kg`;
+        document.getElementById('hud-bucket').textContent = `${bWeight.toFixed(1)}/${bCap % 1 === 0 ? bCap : bCap.toFixed(1)}kg`;
         const bPct = Math.min(100, (bWeight / bCap) * 100);
         const bBar = document.getElementById('hud-bucket-bar');
         bBar.style.width = `${bPct}%`;
@@ -8355,16 +8439,19 @@
             if (state.fuel <= returnNeeded * 1.05) {
               fuelWarn.className = 'fuel-warning fuel-danger';
               fBar.style.backgroundColor = '#ef4444';
-              document.getElementById('hud-details-drawer').classList.add('open');
+              fuelWrap.classList.add('fuel-alert');
             } else if (state.fuel <= returnNeeded * 1.45) {
               fuelWarn.className = 'fuel-warning fuel-amber';
               fBar.style.backgroundColor = '#f59e0b';
+              fuelWrap.classList.remove('fuel-alert');
             } else {
               fuelWarn.className = 'fuel-warning fuel-safe';
               fBar.style.backgroundColor = '#4ade80';
+              fuelWrap.classList.remove('fuel-alert');
             }
           } else {
             fuelWarn.style.display = 'none';
+            fuelWrap.classList.remove('fuel-alert');
             fBar.style.backgroundColor = fPct < 25 ? '#f59e0b' : '#4ade80';
           }
         }
