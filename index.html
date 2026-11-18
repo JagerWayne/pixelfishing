@@ -3474,33 +3474,67 @@
             const handle = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.022, 6, 18, Math.PI), K.rope);
             handle.position.y = 0.78; handle.rotation.z = 0; group.add(handle);
             addFish(0.72, 0.18, 0.12);
-          } else if (tier === 2) { // plastic cooler
-            const blue = K.M(0x0284c7, 0.45), white = K.M(0xf8fafc, 0.4);
-            K.box(group, 1.3, 0.62, 0.74, blue, 0, 0.31, 0);
-            K.box(group, 1.34, 0.12, 0.78, white, 0, 0.7, 0);
-            K.box(group, 1.1, 0.04, 0.56, K.M(0x38bdf8, 0.2, 0.1, { transparent: true, opacity: 0.75 }), 0, 0.77, 0);
-            [-0.45, 0.45].forEach(x => { K.box(group, 0.16, 0.2, 0.06, K.M(0x0f172a, 0.5), x, 0.62, 0.4); K.box(group, 0.1, 0.05, 0.08, K.steel, x, 0.72, 0.4); });
-            [-1, 1].forEach(s => { K.box(group, 0.1, 0.1, 0.3, white, s * 0.68, 0.5, 0); K.box(group, 0.05, 0.2, 0.34, K.M(0x0369a1, 0.5), s * 0.66, 0.5, 0); });
-            addFish(0.78, 0.3, 0.2);
-          } else if (tier === 3) { // insulated deck fish box
-            const wood = K.M(0xf1f5f9, 0.55);
-            K.box(group, 1.55, 0.74, 0.78, wood, 0, 0.37, 0);
-            [-0.55, 0, 0.55].forEach(x => K.box(group, 0.08, 0.76, 0.8, K.M(0x7c4a1e, 0.85, 0, { map: textures.wood }), x, 0.38, 0));
-            K.box(group, 1.62, 0.1, 0.86, K.M(0x5b3a1a, 0.85, 0, { map: textures.wood }), 0, 0.8, 0);
-            K.box(group, 0.28, 0.12, 0.05, K.brass, 0, 0.62, 0.42);
-            [-1, 1].forEach(s => { const h = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 5, 10, Math.PI), K.M(0x78350f, 0.9)); h.position.set(s * 0.8, 0.55, 0); h.rotation.y = Math.PI / 2; group.add(h); });
-            addFish(0.84, 0.38, 0.22);
-          } else { // refrigerated hold
-            const black = K.M(0x0f172a, 0.35, 0.4), plate = K.M(0x1e293b, 0.4, 0.5), cyan = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
-            K.box(group, 1.7, 0.9, 0.9, black, 0, 0.45, 0);
-            K.box(group, 1.74, 0.1, 0.94, plate, 0, 0.95, 0);
-            K.box(group, 1.72, 0.04, 0.05, cyan, 0, 0.78, 0.46);
-            K.box(group, 1.72, 0.04, 0.05, cyan, 0, 0.18, 0.46);
-            K.cyl(group, 0.1, 0.1, 0.04, K.steel, -0.55, 0.5, 0.47, 14).rotation.x = Math.PI / 2;
-            K.box(group, 0.3, 0.12, 0.03, K.M(0x052e16, 0.3, 0, { emissive: new THREE.Color(0x4ade80), emissiveIntensity: 0.6 }), 0.1, 0.5, 0.47);
-            K.sph(group, 0.04, new THREE.MeshBasicMaterial({ color: 0x4ade80 }), 0.6, 0.5, 0.47);
-            [-1, 1].forEach(s => K.box(group, 0.12, 0.5, 0.5, plate, s * 0.88, 0.5, 0));
-            addFish(1.0, 0.4, 0.24);
+          } else {
+            // Open-top containers (cooler, fish box, freezer): lined walls, ice, and a lid hinged open at the back.
+            const spec = tier === 2
+              ? { w: 1.3, h: 0.66, d: 0.76, shell: 0x0284c7, rim: 0xf8fafc, lining: 0xe0f2fe, lidTop: 0xf8fafc, lidIn: 0xbae6fd, hinge: 0xf1f5f9, glow: 0x7dd3fc }
+              : tier === 3
+                ? { w: 1.55, h: 0.78, d: 0.8, shell: 0xe2e8f0, rim: 0x5b3a1a, lining: 0xcbd5e1, lidTop: 0x5b3a1a, lidIn: 0xe2e8f0, hinge: 0xd9a21b, glow: 0x93c5fd }
+                : { w: 1.7, h: 0.92, d: 0.9, shell: 0x0f172a, rim: 0x1e293b, lining: 0xa5f3fc, lidTop: 0x1e293b, lidIn: 0x67e8f9, hinge: 0x94a3b8, glow: 0x22d3ee };
+            const { w, h, d } = spec, t = 0.07;
+            const shell = K.M(spec.shell, tier === 4 ? 0.35 : 0.5, tier === 4 ? 0.4 : 0.05, tier === 3 ? { map: textures.wood } : {});
+            const lining = K.M(spec.lining, 0.5);
+            // floor, four walls, and an inner lining so the inside reads as hollow
+            K.box(group, w, 0.06, d, shell, 0, 0.03, 0);
+            K.box(group, w, h, t, shell, 0, h / 2, d / 2 - t / 2);
+            K.box(group, w, h, t, shell, 0, h / 2, -d / 2 + t / 2);
+            [-1, 1].forEach(sx => K.box(group, t, h, d, shell, sx * (w / 2 - t / 2), h / 2, 0));
+            K.box(group, w - 2 * t, 0.03, d - 2 * t, lining, 0, 0.09, 0);
+            [-1, 1].forEach(sz => K.box(group, w - 2 * t, h - 0.1, 0.02, lining, 0, 0.1 + (h - 0.1) / 2, sz * (d / 2 - t - 0.01)));
+            [-1, 1].forEach(sx => K.box(group, 0.02, h - 0.1, d - 2 * t, lining, sx * (w / 2 - t - 0.01), 0.1 + (h - 0.1) / 2, 0));
+            // rim around the opening
+            const rim = K.M(spec.rim, 0.5, tier === 4 ? 0.3 : 0);
+            K.box(group, w + 0.05, 0.05, 0.09, rim, 0, h + 0.02, d / 2);
+            K.box(group, w + 0.05, 0.05, 0.09, rim, 0, h + 0.02, -d / 2);
+            [-1, 1].forEach(sx => K.box(group, 0.09, 0.05, d, rim, sx * (w / 2), h + 0.02, 0));
+            // crushed ice (or cold water) the catch lies in
+            const iceLevel = h - 0.2;
+            const ice = K.M(0xe0f2fe, 0.25, 0.1, { transparent: true, opacity: 0.82 });
+            K.box(group, w - 0.18, 0.05, d - 0.18, K.M(spec.glow, 0.2, 0.1, { transparent: true, opacity: 0.55 }), 0, iceLevel, 0);
+            for (let i = 0; i < 16; i++) {
+              const sz = 0.07 + (i % 3) * 0.025;
+              const cube = K.box(group, sz, sz, sz, ice, -w / 2 + 0.16 + ((i * 0.37) % 1) * (w - 0.32), iceLevel + 0.03 + (i % 4) * 0.018, -d / 2 + 0.14 + ((i * 0.61) % 1) * (d - 0.28));
+              cube.rotation.set(i * 0.7, i * 1.1, i * 0.4);
+            }
+            // lid hinged at the back edge, swung open and leaning back
+            const lid = new THREE.Group();
+            lid.position.set(0, h + 0.03, -d / 2);
+            K.box(lid, w + 0.06, 0.07, d + 0.05, K.M(spec.lidTop, 0.5, tier === 4 ? 0.3 : 0), 0, 0.035, (d + 0.05) / 2);
+            K.box(lid, w - 0.1, 0.03, d - 0.1, K.M(spec.lidIn, 0.5), 0, -0.01, (d + 0.05) / 2);
+            if (tier === 3) [-0.5, 0, 0.5].forEach(x => K.box(lid, 0.08, 0.075, d + 0.07, K.M(0x7c4a1e, 0.85, 0, { map: textures.wood }), x, 0.037, (d + 0.05) / 2));
+            lid.rotation.x = -2.05; // opened past vertical, resting back
+            group.add(lid);
+            [-w * 0.32, w * 0.32].forEach(x => K.box(group, 0.12, 0.07, 0.08, K.M(spec.hinge, 0.4, 0.6), x, h + 0.02, -d / 2));
+            // front latches / handles / gauges per tier
+            if (tier === 2) {
+              [-0.45, 0.45].forEach(x => { K.box(group, 0.15, 0.18, 0.05, K.M(0x0f172a, 0.5), x, h - 0.1, d / 2 + 0.03); K.box(group, 0.1, 0.05, 0.06, K.steel, x, h, d / 2 + 0.03); });
+              [-1, 1].forEach(sx => K.box(group, 0.1, 0.1, 0.3, K.M(0xf8fafc, 0.5), sx * (w / 2 + 0.04), h * 0.7, 0));
+            } else if (tier === 3) {
+              [-1, 1].forEach(sx => { const hd = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 5, 10, Math.PI), K.M(0x78350f, 0.9)); hd.position.set(sx * (w / 2 + 0.01), h * 0.65, 0); hd.rotation.y = Math.PI / 2; group.add(hd); });
+              [-0.52, 0, 0.52].forEach(x => K.box(group, 0.07, h, 0.01, K.M(0x7c4a1e, 0.85, 0, { map: textures.wood }), x, h / 2, d / 2 + 0.01));
+              K.box(group, 0.26, 0.1, 0.03, K.brass, 0, h - 0.18, d / 2 + 0.03);
+            } else {
+              const cyan = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+              K.box(group, w - 0.1, 0.035, 0.03, cyan, 0, h * 0.82, d / 2 + 0.03);
+              K.box(group, w - 0.1, 0.035, 0.03, cyan, 0, h * 0.18, d / 2 + 0.03);
+              K.cyl(group, 0.1, 0.1, 0.04, K.steel, -0.55, h * 0.5, d / 2 + 0.03, 14).rotation.x = Math.PI / 2;
+              K.box(group, 0.3, 0.12, 0.03, K.M(0x052e16, 0.3, 0, { emissive: new THREE.Color(0x4ade80), emissiveIntensity: 0.6 }), 0.1, h * 0.5, d / 2 + 0.03);
+              K.sph(group, 0.04, new THREE.MeshBasicMaterial({ color: 0x4ade80 }), 0.6, h * 0.5, d / 2 + 0.03);
+              [-1, 1].forEach(sx => K.box(group, 0.12, 0.5, 0.5, K.M(0x1e293b, 0.4, 0.5), sx * (w / 2 + 0.06), h * 0.55, 0));
+              // cold mist rolling over the rim
+              for (let i = 0; i < 5; i++) K.sph(group, 0.09 + (i % 2) * 0.04, new THREE.MeshBasicMaterial({ color: 0xcffafe, transparent: true, opacity: 0.18, depthWrite: false }), -0.55 + i * 0.28, h + 0.1 + (i % 3) * 0.05, 0.1 - (i % 2) * 0.2, 8, 6);
+            }
+            addFish(iceLevel + 0.1, Math.min(0.34, (w - 0.4) / 3.5), d * 0.22);
           }
           return group;
         }
@@ -3981,6 +4015,115 @@
           tackleToolbox.position.set(1.55, 1.56, -7.6);
           tackleToolbox.rotation.y = -0.35;
           pierGroup.add(tackleToolbox);
+
+          // ---- Pier detail layer: structure, mooring gear, bunting, gulls and a distant lighthouse ----
+          {
+            const K = this.propKit(textures);
+            const deckY = 1.55;
+
+            // side stringers and under-deck cross bracing so the pier reads as a built structure
+            [-2.6, 2.6].forEach(x => K.box(pierGroup, 0.16, 0.3, 10.0, K.darkWood, x, 1.36, -5.0));
+            [[-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8]].forEach(([px, pz]) => {
+              // barnacle ring at the waterline and a rope wrap near the top
+              for (let i = 0; i < 9; i++) {
+                const a = (i / 9) * Math.PI * 2;
+                const c = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.07, 5), K.M(i % 2 ? 0xd6d3d1 : 0x9ca3af, 0.95));
+                c.position.set(px + Math.cos(a) * 0.25, 0.12 + (i % 3) * 0.05, pz + Math.sin(a) * 0.25);
+                c.rotation.z = -Math.cos(a) * 1.4; c.rotation.x = Math.sin(a) * 1.4;
+                pierGroup.add(c);
+              }
+              const wrap = new THREE.Mesh(new THREE.TorusGeometry(0.245, 0.03, 5, 14), K.rope);
+              wrap.rotation.x = Math.PI / 2; wrap.position.set(px, 1.7, pz); pierGroup.add(wrap);
+              const wrap2 = wrap.clone(); wrap2.position.y = 1.82; pierGroup.add(wrap2);
+            });
+            [[-3.2], [-9.8]].forEach(([z]) => K.box(pierGroup, 4.8, 0.14, 0.14, K.darkWood, 0, 0.75, z));
+            [-1, 1].forEach(s => [-3.2, -9.8].forEach(z => { /* diagonals across the span between the two bent pairs */ }));
+            const span = Math.hypot(6.6, 0.9);
+            [-1, 1].forEach(s => {
+              const brace = K.box(pierGroup, 0.1, 0.1, span, K.darkWood, s * 2.4, 0.78, -6.5);
+              brace.rotation.x = 0; brace.rotation.y = 0; brace.rotation.z = 0;
+              const diag = K.box(pierGroup, 0.09, 0.09, 4.6, K.darkWood, s * 2.4, 1.0, -6.5);
+              diag.rotation.x = s * 0.28;
+            });
+
+            // mooring bollards at the pier tip with rope coils
+            [-2.15, 2.15].forEach(x => {
+              K.cyl(pierGroup, 0.12, 0.16, 0.34, K.iron, x, deckY + 0.17, -9.6, 10);
+              K.cyl(pierGroup, 0.19, 0.12, 0.08, K.iron, x, deckY + 0.38, -9.6, 10);
+              const rope = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 5, 12), K.rope);
+              rope.rotation.x = Math.PI / 2; rope.position.set(x, deckY + 0.28, -9.6); pierGroup.add(rope);
+            });
+            // life ring station on the starboard rail, and a coiled hose
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.085, 8, 18), K.M(0xf97316, 0.5));
+            ring.rotation.y = Math.PI / 2; ring.position.set(2.36, 2.2, -3.0); pierGroup.add(ring);
+            for (let i = 0; i < 4; i++) {
+              const band = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.1), K.M(0xf8fafc, 0.5));
+              const a = (i / 4) * Math.PI * 2;
+              band.position.set(2.36, 2.2 + Math.cos(a) * 0.26, -3.0 + Math.sin(a) * 0.26); band.rotation.x = a; pierGroup.add(band);
+            }
+            // rod rack at the tip, port side
+            K.box(pierGroup, 0.06, 0.5, 0.5, K.darkWood, -2.3, deckY + 0.25, -8.4);
+            [0xd97706, 0x0284c7, 0x16a34a].forEach((c, i) => {
+              const r = K.cyl(pierGroup, 0.013, 0.02, 1.9, K.M(c, 0.4, 0.2), -2.2, deckY + 0.95, -8.15 - i * 0.18, 5); r.rotation.z = -0.3;
+            });
+
+            // bunting across the pier entrance
+            {
+              const pts = [], cols = [[0xdc2626], [0xfacc15], [0x38bdf8], [0xf8fafc]];
+              const posByColor = cols.map(() => []);
+              const N = 18;
+              for (let i = 0; i < N; i++) {
+                const t0 = i / N, t1 = (i + 0.8) / N;
+                const p = t => [(-1 + 2 * t) * 2.45, 3.3 - Math.sin(t * Math.PI) * 0.36, 0.16];
+                const a = p(t0), b = p(t1), mid = p((t0 + t1) / 2);
+                posByColor[i % 4].push(a[0], a[1], a[2], b[0], b[1], b[2], mid[0], mid[1] - 0.34, mid[2]);
+              }
+              posByColor.forEach((arr, i) => {
+                const g = new THREE.BufferGeometry();
+                g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); g.computeVertexNormals();
+                pierGroup.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: cols[i][0], side: THREE.DoubleSide, roughness: 0.85 })));
+              });
+              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * 2.45, 3.3 - Math.sin(t * Math.PI) * 0.36, 0.16); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
+              pierGroup.add(line);
+              [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.06, 1.8, K.darkWood, x, 2.45 + 0.4, 0.16, 6));
+            }
+
+            // seagulls perched on rail posts and pilings
+            const buildGull = yaw => {
+              const g = new THREE.Group();
+              const white = K.M(0xf8fafc, 0.7), grey = K.M(0x94a3b8, 0.7), orange = K.M(0xf59e0b, 0.5);
+              const body = K.sph(g, 0.11, white, 0, 0.16, 0, 10, 8); body.scale.set(1, 0.85, 1.7);
+              K.sph(g, 0.065, white, 0, 0.27, -0.14, 8, 6);
+              const beak = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 5), orange); beak.rotation.x = -Math.PI / 2; beak.position.set(0, 0.265, -0.22); g.add(beak);
+              [-1, 1].forEach(s => {
+                const wing = K.sph(g, 0.07, grey, s * 0.1, 0.18, 0.04, 8, 6); wing.scale.set(0.5, 0.35, 1.9);
+                K.sph(g, 0.012, new THREE.MeshBasicMaterial({ color: 0x0b1020 }), s * 0.035, 0.285, -0.17, 5, 4);
+                K.cyl(g, 0.006, 0.006, 0.1, orange, s * 0.03, 0.04, 0.0, 4);
+              });
+              const tail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 4), white); tail.rotation.x = Math.PI / 2 + 0.3; tail.position.set(0, 0.17, 0.2); g.add(tail);
+              g.rotation.y = yaw; return g;
+            };
+            [[2.45, 2.62, -6.2, 0.6], [-2.45, 2.62, -8.4, -0.5], [2.4, 2.66, -3.2, 2.2], [-2.4, 2.66, -9.8, 3.4], [2.4, 2.66, -9.8, 0.2], [-10.4, 2.66, 0.0, 1.0]].forEach(([x, y, z, yaw]) => {
+              const gull = buildGull(yaw); gull.position.set(x, y, z); pierGroup.add(gull);
+            });
+
+            // distant lighthouse on a rock out at sea
+            const lh = new THREE.Group();
+            for (let i = 0; i < 6; i++) {
+              const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(3 + (i % 3), 0), K.M(i % 2 ? 0x57534e : 0x78716c, 0.95, 0, { flatShading: true }));
+              rock.position.set(Math.cos(i * 1.2) * 3.5, 0.2 + (i % 2) * 0.8, Math.sin(i * 1.2) * 3.0); rock.scale.set(1.2, 0.8, 1.0); lh.add(rock);
+            }
+            for (let i = 0; i < 4; i++) {
+              const seg = new THREE.Mesh(new THREE.CylinderGeometry(1.5 - i * 0.18, 1.7 - i * 0.18, 3.2, 14), K.M(i % 2 ? 0xdc2626 : 0xf8fafc, 0.7));
+              seg.position.y = 3.2 + i * 3.2 + 1.6; lh.add(seg);
+            }
+            const gallery = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.3, 14), K.M(0x1e293b, 0.5, 0.5)); gallery.position.y = 3.2 + 4 * 3.2 + 1.7; lh.add(gallery);
+            const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 1.6, 12), new THREE.MeshBasicMaterial({ color: 0xfef08a })); lantern.position.y = gallery.position.y + 1.0; lh.add(lantern);
+            const lroof = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.4, 12), K.M(0xdc2626, 0.6)); lroof.position.y = lantern.position.y + 1.5; lh.add(lroof);
+            lh.position.set(52, -0.6, -150);
+            lh.scale.setScalar(1.6);
+            scene.add(lh);
+          }
 
           scene.add(pierGroup);
 
