@@ -1018,6 +1018,13 @@
     .cust-panel { flex: 2 1 320px; min-width: 260px; }
     .cust-row { margin-bottom: 12px; }
     .cust-label { font-size: 11px; font-weight: bold; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+    .cheat-window { width: min(98vw, 760px); }
+    .cheat-section { margin-bottom: 14px; }
+    .cheat-title { font-size: 12px; font-weight: bold; color: #facc15; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .cheat-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cheat-grid .pixel-btn { padding: 6px 9px; font-size: 11px; }
+    .cheat-grid .pixel-btn.on { background: #16a34a; }
+    .chip-row .pixel-btn:disabled { opacity: 0.32; cursor: not-allowed; text-decoration: line-through; }
     .cust-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
     .cust-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #475569; cursor: pointer; padding: 0; }
     .cust-swatch.active { outline: 3px solid #facc15; outline-offset: 2px; }
@@ -1331,6 +1338,17 @@
           <button class="pixel-btn red" id="set-reset" type="button">Reset</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SEAGULL'S SECRET CHEAT MENU -->
+  <div class="modal-backdrop" id="modal-cheats">
+    <div class="pixel-box modal-window cheat-window">
+      <div class="modal-header">
+        <span class="modal-title">🕊️ SEAGULL'S SECRET MENU</span>
+        <button class="pixel-btn red" data-close="modal-cheats" type="button">Close</button>
+      </div>
+      <div class="modal-body" id="cheat-body"></div>
     </div>
   </div>
 
@@ -2305,8 +2323,8 @@
         hairStyle: [['short', 'Short'], ['buzz', 'Buzz'], ['wavy', 'Wavy'], ['ponytail', 'Ponytail'], ['long', 'Long'], ['bob', 'Bob'], ['bun', 'Bun'], ['braid', 'Braid'], ['bald', 'Bald']],
         facial: [['none', 'None'], ['stubble', 'Stubble'], ['mustache', 'Mustache'], ['goatee', 'Goatee'], ['beard', 'Full beard']],
         glasses: [['none', 'None'], ['round', 'Round'], ['sun', 'Sunglasses']],
-        top: [['sweater', 'Striped sweater'], ['tee', 'T-shirt'], ['tank', 'Tank top'], ['hoodie', 'Hoodie'], ['slicker', 'Raincoat']],
-        bottom: [['jeans', 'Jeans'], ['shorts', 'Shorts'], ['skirt', 'Skirt']],
+        top: [['sweater', 'Striped sweater'], ['tee', 'T-shirt'], ['tank', 'Tank top'], ['hoodie', 'Hoodie'], ['slicker', 'Raincoat'], ['bikini', 'Bikini top'], ['none', 'Bare chest']],
+        bottom: [['jeans', 'Jeans'], ['shorts', 'Shorts'], ['swim', 'Swim shorts'], ['bikini', 'Bikini bottom'], ['skirt', 'Skirt']],
         shoes: [['boots', 'Rubber boots'], ['sneakers', 'Sneakers'], ['sandals', 'Sandals'], ['barefoot', 'Barefoot']],
         hat: [['souwester', "Sou'wester"], ['cap', 'Cap'], ['beanie', 'Beanie'], ['bucket', 'Bucket hat'], ['straw', 'Straw hat'], ['none', 'None']]
       };
@@ -2324,12 +2342,18 @@
           };
         }
 
+        // Hair styles that would poke through a hat; they are disabled while that hat is worn.
+        static blockedHair(hat) {
+          const volume = ['wavy', 'bun', 'bob', 'ponytail'];
+          return ({ none: [], cap: ['wavy', 'bun', 'bob'], beanie: volume, bucket: volume, straw: volume, souwester: volume.concat(['long']) })[hat] || [];
+        }
+
         static sanitizeLook(src, gender) {
           const def = this.defaultLook(gender === 'female' ? 'female' : 'male');
           if (!src || typeof src !== 'object') return def;
           const idx = (v, n, d) => { const k = Math.round(Number(v)); return Number.isFinite(k) && k >= 0 && k < n ? k : d; };
           const pick = (v, list, d) => (list.some(o => o[0] === v) ? v : d);
-          return {
+          const out = {
             gender: src.gender === 'female' ? 'female' : (src.gender === 'male' ? 'male' : def.gender),
             skin: idx(src.skin, ANGLER_OPTS.skin.length, def.skin),
             eyes: idx(src.eyes, ANGLER_OPTS.eyes.length, def.eyes),
@@ -2347,6 +2371,19 @@
             hat: pick(src.hat, ANGLER_OPTS.hat, def.hat),
             hatColor: idx(src.hatColor, ANGLER_OPTS.colors.length, def.hatColor)
           };
+          if (this.blockedHair(out.hat).includes(out.hairStyle)) out.hairStyle = 'short';
+          return out;
+        }
+
+        static applyPreset(look, id) {
+          const f = look.gender === 'female';
+          const presets = {
+            fisherman: { top: 'sweater', topColor: 0, topAccent: f ? 7 : 1, bottom: 'jeans', bottomColor: f ? 13 : 1, shoes: 'boots', shoeColor: 10, hat: 'souwester', hatColor: 3, glasses: 'none' },
+            bikini: { top: 'bikini', topColor: 7, topAccent: 0, bottom: 'bikini', bottomColor: 7, shoes: 'sandals', shoeColor: 0, hat: 'straw', hatColor: 3, glasses: 'sun' },
+            shorts: { top: 'none', topColor: 0, topAccent: 0, bottom: 'swim', bottomColor: 5, shoes: 'barefoot', shoeColor: 0, hat: 'none', hatColor: 3, glasses: 'none' },
+            raincoat: { top: 'slicker', topColor: 3, topAccent: 10, bottom: 'jeans', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'souwester', hatColor: 3, glasses: 'none' }
+          };
+          return this.sanitizeLook(Object.assign({}, look, presets[id] || {}), look.gender);
         }
 
         static isDefault(look) {
@@ -2359,20 +2396,29 @@
         static randomLook(gender) {
           const f = gender === 'female';
           const r = n => Math.floor(Math.random() * n);
-          const pickId = (list, allowed) => { const ids = (allowed || list.map(o => o[0])); return ids[r(ids.length)]; };
-          const hairStyles = f ? ['short', 'wavy', 'ponytail', 'long', 'long', 'bob', 'bun', 'braid'] : ['short', 'short', 'buzz', 'wavy', 'bald', 'ponytail'];
+          const choose = arr => arr[r(arr.length)];
+          const hat = choose(['souwester', 'cap', 'beanie', 'bucket', 'straw', 'none', 'none']);
+          const blocked = this.blockedHair(hat);
+          const hairPool = (f ? ['short', 'wavy', 'ponytail', 'long', 'long', 'bob', 'bun', 'braid'] : ['short', 'short', 'buzz', 'wavy', 'bald', 'ponytail', 'braid']).filter(h => !blocked.includes(h));
           const facial = f ? ['none'] : ['none', 'none', 'stubble', 'mustache', 'goatee', 'beard', 'beard'];
-          const top = pickId(ANGLER_OPTS.top);
-          const hat = ['souwester', 'cap', 'beanie', 'bucket', 'straw', 'none', 'none'][r(7)];
+          // coherent outfits: beach wear is paired with beach wear
+          const beach = r(6) === 0;
+          let top, bottom;
+          if (beach) {
+            top = f ? 'bikini' : choose(['none', 'none', 'tank']);
+            bottom = f ? choose(['bikini', 'bikini', 'swim', 'shorts']) : choose(['swim', 'shorts']);
+          } else {
+            top = choose(['sweater', 'tee', 'tank', 'hoodie', 'slicker']);
+            bottom = choose(f ? ['shorts', 'jeans', 'jeans', 'skirt', 'skirt'] : ['shorts', 'jeans', 'jeans']);
+          }
           return this.sanitizeLook({
             gender: f ? 'female' : 'male',
             skin: r(ANGLER_OPTS.skin.length), eyes: r(ANGLER_OPTS.eyes.length),
-            hairStyle: hairStyles[r(hairStyles.length)], hairColor: r(ANGLER_OPTS.hairColor.length),
-            facial: facial[r(facial.length)], glasses: ['none', 'none', 'none', 'round', 'sun'][r(5)],
+            hairStyle: hairPool.length ? choose(hairPool) : 'short', hairColor: r(ANGLER_OPTS.hairColor.length),
+            facial: choose(facial), glasses: choose(['none', 'none', 'none', 'round', 'sun']),
             top, topColor: r(ANGLER_OPTS.colors.length), topAccent: r(ANGLER_OPTS.colors.length),
-            bottom: pickId(ANGLER_OPTS.bottom, f ? ['shorts', 'jeans', 'skirt', 'skirt'] : ['shorts', 'jeans']),
-            bottomColor: r(ANGLER_OPTS.colors.length),
-            shoes: pickId(ANGLER_OPTS.shoes), shoeColor: r(ANGLER_OPTS.colors.length),
+            bottom, bottomColor: r(ANGLER_OPTS.colors.length),
+            shoes: beach ? choose(['sandals', 'barefoot']) : choose(['boots', 'sneakers', 'sandals', 'barefoot']), shoeColor: r(ANGLER_OPTS.colors.length),
             hat, hatColor: r(ANGLER_OPTS.colors.length)
           }, gender);
         }
@@ -2450,15 +2496,17 @@
             return prof[prof.length - 1][0];
           };
           const DEPTH = 0.82;
-          // Female bust: a smooth gaussian bulge pushed out of the front of the torso surface (body and every garment)
+          // Chest shaping: a smooth gaussian bulge pushed out of the front of the torso (body and every garment).
+          // Strong for the female bust, subtle pecs for the male chest.
           const bumpBust = geo => {
             const pos = geo.attributes.position;
+            const amp = female ? 0.068 : 0.02, cxs = female ? 0.086 : 0.09, sx = female ? 0.07 : 0.085, cy = female ? 0.88 : 0.9, sy = female ? 0.082 : 0.09;
             for (let i = 0; i < pos.count; i++) {
               const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
               if (z >= 0) continue;
               let d = 0;
-              for (const cx of [-0.086, 0.086]) { const dx = (x - cx) / 0.07, dy = (y - 0.88) / 0.082; d += Math.exp(-(dx * dx + dy * dy)); }
-              pos.setZ(i, z - d * 0.068 / DEPTH);
+              for (const c of [-cxs, cxs]) { const dx = (x - c) / sx, dy = (y - cy) / sy; d += Math.exp(-(dx * dx + dy * dy)); }
+              pos.setZ(i, z - d * amp / DEPTH);
             }
             geo.computeVertexNormals();
           };
@@ -2467,7 +2515,7 @@
             const n = Math.max(steps, Math.round((y1 - y0) / 0.018));
             for (let i = 0; i <= n; i++) { const y = y0 + (y1 - y0) * (i / n); pts.push([rAt(y) + off + flare * (1 - i / n), y]); }
             const mesh = lathe(rig.bodyGroup, pts, m, 56, DEPTH);
-            if (female) bumpBust(mesh.geometry);
+            bumpBust(mesh.geometry);
             return mesh;
           };
           // skin body: torso (densely sampled so the bust stays smooth), neck, shoulders
@@ -2475,7 +2523,7 @@
             const pts = [];
             for (let y = 0.44; y <= 1.1201; y += 0.018) pts.push([Math.max(0.001, rAt(y)), y]);
             const torso = lathe(rig.bodyGroup, pts, skinMat, 56, DEPTH);
-            if (female) bumpBust(torso.geometry);
+            bumpBust(torso.geometry);
           }
           put(rig.bodyGroup, new THREE.CylinderGeometry(0.072, 0.085, 0.14, 16), skinMat, 0, 1.15, 0);
           const shoulderR = female ? 0.075 : 0.085;
@@ -2487,6 +2535,16 @@
             const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push([0.236 + t * 0.14 + Math.sin(t * Math.PI * 4) * 0.008, 0.7 - t * 0.3]); }
             lathe(rig.bodyGroup, pts, botMat, 40, 0.92);
             shell(0.62, 0.72, 0.012, botMat, 4);
+          } else if (look.bottom === 'bikini') {
+            shell(0.455, 0.62, 0.012, botMat, 8);
+            [-1, 1].forEach(sx => {
+              sph(rig.bodyGroup, 0.02, accMat, sx * (rAt(0.6) + 0.018), 0.6, 0, 1, 1, 1, 10);
+              put(rig.bodyGroup, new THREE.CylinderGeometry(0.006, 0.006, 0.09, 5), accMat, sx * (rAt(0.57) + 0.02), 0.54, 0.0);
+            });
+          } else if (look.bottom === 'swim') {
+            shell(0.44, 0.71, 0.018, botMat, 8);
+            shell(0.68, 0.72, 0.024, accMat, 3);
+            [-1, 1].forEach(sx => put(rig.bodyGroup, new THREE.CylinderGeometry(0.006, 0.006, 0.1, 5), accMat, sx * 0.025, 0.66, -(rAt(0.7) * DEPTH + 0.03)));
           } else {
             shell(0.44, 0.71, 0.014, botMat, 8);
           }
@@ -2494,7 +2552,22 @@
           // ----- top -----
           const longSleeves = look.top === 'sweater' || look.top === 'hoodie' || look.top === 'slicker';
           const loose = look.top === 'hoodie' ? 0.03 : look.top === 'slicker' ? 0.04 : 0.016;
-          if (look.top !== 'tank') shell(look.top === 'slicker' ? 0.5 : 0.62, 1.07, loose, topMat, 14, look.top === 'slicker' ? 0.02 : 0);
+          if (look.top === 'none') { /* bare chest: the skin torso shows */ }
+          else if (look.top === 'bikini') {
+            const frontZ = -(rAt(0.88) * DEPTH + (female ? 0.045 : 0.012));
+            [-1, 1].forEach(sx => {
+              const cupGeo = new THREE.SphereGeometry(female ? 0.076 : 0.06, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.5);
+              cupGeo.rotateX(-Math.PI / 2);
+              const cup = put(rig.bodyGroup, cupGeo, topMat, sx * (female ? 0.086 : 0.09), 0.885, frontZ + 0.035);
+              cup.scale.set(1.08, 0.96, 0.8);
+              const strap = new THREE.CatmullRomCurve3([new THREE.Vector3(sx * 0.07, 0.945, frontZ + 0.02), new THREE.Vector3(sx * 0.062, 1.03, frontZ * 0.75), new THREE.Vector3(sx * 0.04, 1.1, 0.05)]);
+              put(rig.bodyGroup, new THREE.TubeGeometry(strap, 14, 0.0075, 5, false), accMat);
+            });
+            put(rig.bodyGroup, new THREE.CylinderGeometry(0.012, 0.012, 0.06, 6), accMat, 0, 0.885, frontZ + 0.04).rotation.z = Math.PI / 2;
+            const ring = []; for (let i = 0; i < 32; i++) { const a = (i / 32) * Math.PI * 2; const R = rAt(0.8) + 0.012; ring.push(new THREE.Vector3(Math.cos(a) * R, 0.8, Math.sin(a) * R * DEPTH)); }
+            put(rig.bodyGroup, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ring, true), 48, 0.0085, 5, true), accMat);
+          }
+          else if (look.top !== 'tank') shell(look.top === 'slicker' ? 0.5 : 0.62, 1.07, loose, topMat, 14, look.top === 'slicker' ? 0.02 : 0);
           else { shell(0.62, 1.0, 0.022, topMat, 12); [-1, 1].forEach(s => put(rig.bodyGroup, new THREE.BoxGeometry(0.05, 0.16, 0.03), topMat, s * (female ? 0.12 : 0.14), 1.06, -0.12).rotation.z = s * 0.2); }
           if (look.top === 'sweater') {
             [0.74, 0.86, 0.98].forEach(y => shell(y, y + 0.035, loose + 0.006, accMat, 2));
@@ -2532,10 +2605,18 @@
             const brow = put(H, new THREE.BoxGeometry(female ? 0.07 : 0.085, female ? 0.012 : 0.02, 0.016), hairMat.clone(), s * 0.075, female ? 0.088 : 0.082, -0.192); brow.rotation.z = s * -0.12;
             if (female) { const lash = put(H, new THREE.BoxGeometry(0.05, 0.007, 0.01), darkMat, s * 0.075, 0.062, -0.205); lash.rotation.z = s * -0.18; sph(H, 0.03, new THREE.MeshBasicMaterial({ color: 0xfb7185, transparent: true, opacity: 0.35 }), s * 0.11, -0.04, -0.175, 1, 0.7, 0.4, 10); }
           });
-          const nose = sph(H, 0.038, mat(new THREE.Color(ANGLER_OPTS.skin[look.skin]).multiplyScalar(0.94), 0.7), 0, -0.018, -0.205, 1, 1.1, 0.9, 14);
-          if (female) sph(H, 0.036, mat(0xe11d48, 0.45), 0, -0.083, -0.185, 1.5, 0.45, 0.5, 12);
-          else put(H, new THREE.TorusGeometry(0.045, 0.006, 4, 12, Math.PI), darkMat, 0, -0.068, -0.186).rotation.z = Math.PI;
-          if (female) put(H, new THREE.TorusGeometry(0.03, 0.005, 4, 10, Math.PI), darkMat, 0, -0.085, -0.19).rotation.z = Math.PI;
+          sph(H, 0.038, mat(new THREE.Color(ANGLER_OPTS.skin[look.skin]).multiplyScalar(0.94), 0.7), 0, -0.018, -0.205, 1, 1.1, 0.9, 14);
+          {
+            // mouth: toned-down lips (female) and a soft smile line, sitting on the face surface
+            const lipCol = new THREE.Color(ANGLER_OPTS.skin[look.skin]).lerp(new THREE.Color('#b4425a'), 0.55);
+            const arcLen = female ? Math.PI * 0.6 : Math.PI * 0.55, R = female ? 0.05 : 0.06;
+            if (female) {
+              sph(H, 0.036, mat(lipCol.clone().multiplyScalar(0.92), 0.4), 0, -0.066, -0.187, 1.35, 0.27, 0.42, 16);
+              sph(H, 0.038, mat(lipCol, 0.35), 0, -0.082, -0.188, 1.2, 0.34, 0.44, 16);
+            }
+            const smile = put(H, new THREE.TorusGeometry(R, female ? 0.0042 : 0.006, 4, 18, arcLen), female ? mat(lipCol.clone().multiplyScalar(0.5), 0.6) : darkMat, 0, (female ? -0.0735 : -0.068) + R, -0.193);
+            smile.rotation.z = -Math.PI / 2 - arcLen / 2;
+          }
 
           // facial hair
           const fh = look.facial;
@@ -2556,7 +2637,7 @@
             const R = hs === 'buzz' ? 0.212 : 0.222;
             const front = put(H, new THREE.SphereGeometry(R, 32, 14, Math.PI, Math.PI, 0, Math.PI * 0.32), hairMat); front.position.y = 0.01;
             const back = put(H, new THREE.SphereGeometry(R, 32, 18, 0, Math.PI, 0, Math.PI * (hs === 'buzz' ? 0.62 : 0.8)), hairMat); back.position.y = 0.01; back.scale.set(1, 1.04, 1.03);
-            if (hs === 'short') { [-1, 1].forEach(s => sph(H, 0.07, hairMat, s * 0.1, 0.17, -0.12, 1, 0.6, 0.7, 12)); sph(H, 0.09, hairMat, 0, 0.19, -0.1, 1.3, 0.6, 0.7, 12); }
+            if (hs === 'short' && look.hat === 'none') { [-1, 1].forEach(s => sph(H, 0.07, hairMat, s * 0.1, 0.17, -0.12, 1, 0.6, 0.7, 12)); sph(H, 0.09, hairMat, 0, 0.19, -0.1, 1.3, 0.6, 0.7, 12); }
             if (hs === 'wavy') { for (let i = 0; i < 8; i++) { const a = (i / 7) * Math.PI; sph(H, 0.07, hairMat, Math.cos(a) * 0.17, 0.13 + Math.sin(i * 2.1) * 0.03, Math.sin(a) * 0.17 + 0.03, 1, 0.85, 1, 10); } [-0.1, 0, 0.1].forEach((x, i) => sph(H, 0.065, hairMat, x, 0.2, -0.06 + (i % 2) * 0.03, 1, 0.8, 1, 10)); }
             if (hs === 'ponytail') {
               const pts = [new THREE.Vector3(0, 0.1, 0.2), new THREE.Vector3(0, 0.0, 0.34), new THREE.Vector3(0, -0.14, 0.38), new THREE.Vector3(0, -0.3, 0.33)];
@@ -2613,7 +2694,7 @@
             lathe(hatG, [[0.001, 0.2], [0.17, 0.195], [0.22, 0.16], [0.24, 0.07], [0.3, 0.02], [0.36, 0.0]], hatMat, 30);
             put(hatG, new THREE.TorusGeometry(0.238, 0.012, 6, 28), accMat, 0, 0.07, 0).rotation.x = Math.PI / 2;
           } else if (hat === 'straw') {
-            const dome = put(hatG, new THREE.SphereGeometry(0.22, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(0xe9c46a, 0.9, 0, { side: THREE.DoubleSide })); dome.position.y = 0.05; dome.scale.set(1, 0.9, 1);
+            const dome = put(hatG, new THREE.SphereGeometry(0.236, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(0xe9c46a, 0.9, 0, { side: THREE.DoubleSide })); dome.position.y = 0.05; dome.scale.set(1, 0.9, 1);
             const brim = put(hatG, new THREE.CylinderGeometry(0.46, 0.46, 0.014, 34), mat(0xe9c46a, 0.9), 0, 0.055, 0); brim.scale.set(1, 1, 1.0);
             put(hatG, new THREE.TorusGeometry(0.218, 0.022, 8, 30), hatMat, 0, 0.1, 0).rotation.x = Math.PI / 2;
           }
@@ -2621,7 +2702,7 @@
           // ----- arms -----
           const armDef = [[rig.leftArm, -1, [0.03, -0.17, -0.07], [0.11, -0.26, -0.26]], [rig.rightArm, 1, [0.0, -0.16, -0.07], [-0.05, -0.24, -0.26]]];
           armDef.forEach(([arm, s, E, Hd]) => {
-            sph(arm, 0.072, longSleeves ? topMat : (look.top === 'tank' ? skinMat : topMat), 0, 0.0, 0, 1, 1, 1, 16);
+            sph(arm, 0.072, longSleeves ? topMat : (look.top === 'tee' ? topMat : skinMat), 0, 0.0, 0, 1, 1, 1, 16);
             limb(arm, [0, 0, 0], E, 0.062, 0.052, skinMat);
             sph(arm, 0.052, skinMat, E[0], E[1], E[2], 1, 1, 1, 14);
             limb(arm, E, Hd, 0.05, 0.04, skinMat);
@@ -2650,6 +2731,10 @@
             sph(leg, 0.085, skinMat, knee[0], knee[1], knee[2], 1, 1, 1, 14);
             limb(leg, knee, ankle, 0.082, 0.056, skinMat);
             // bottoms on the legs
+            if (look.bottom === 'swim') {
+              limb(leg, [0, 0.04, 0], [0, -0.17, 0], 0.122, 0.132, botMat, true);
+              put(leg, new THREE.TorusGeometry(0.132, 0.01, 6, 22), accMat, 0, -0.17, 0).rotation.x = Math.PI / 2;
+            }
             if (look.bottom === 'shorts') { limb(leg, [0, 0.03, 0], [0, -0.14, 0], 0.114, 0.118, botMat, true); put(leg, new THREE.TorusGeometry(0.118, 0.008, 6, 20), accMat, 0, -0.14, 0).rotation.x = Math.PI / 2; }
             if (look.bottom === 'jeans') {
               limb(leg, [0, 0.03, 0], knee, 0.114, 0.095, botMat, true);
@@ -4468,6 +4553,7 @@
           tackleToolbox.rotation.y = -0.35;
           pierGroup.add(tackleToolbox);
 
+          let cheatGull = null;
           // ---- Pier detail layer: structure, mooring gear, bunting, gulls and a distant lighthouse ----
           {
             const K = this.propKit(textures);
@@ -4558,6 +4644,8 @@
             [[2.45, 2.62, -6.2, 0.6], [-2.45, 2.62, -8.4, -0.5], [2.4, 2.66, -3.2, 2.2], [-2.4, 2.66, -9.8, 3.4], [2.4, 2.66, -9.8, 0.2], [-10.4, 2.66, 0.0, 1.0]].forEach(([x, y, z, yaw]) => {
               const gull = buildGull(yaw); gull.position.set(x, y, z); pierGroup.add(gull);
             });
+            // the seagull behind the tackle shop, hiding on the rail
+            cheatGull = buildGull(0.5); cheatGull.position.set(-7.6, 2.62, 0.12); pierGroup.add(cheatGull);
 
             // distant lighthouse on a rock out at sea
             const lh = new THREE.Group();
@@ -5144,6 +5232,7 @@
             starField,
             starMat,
             lanternLights,
+            cheatGull,
             anglerGroup,
             bodyGroup,
             headGroup,
@@ -5885,6 +5974,11 @@
       let bobberPos = new THREE.Vector3();
       let bobberVel = new THREE.Vector3();
       let bobberInWater = false;
+      // Session-only cheat toggles (unlocked through the secret seagull menu)
+      const cheats = { fastBites: false, noSnap: false, luck: false, freeBait: false, freeFuel: false };
+      let cheatTaps = 0;
+      const CHEAT_TAPS = 31;
+      const CHEAT_GULL = { x: -7.6, z: 0.12, radius: 2.7 };
       let waitTimer = 0;
       let biteTimer = 0;
       let activeCatch = null;
@@ -6186,6 +6280,7 @@
       const custModal = document.getElementById('modal-customize');
       const custCanvas = document.getElementById('cust-canvas');
       const CUST_FRAMES = {
+        outfit: { y: 0.78, z: 3.5, ly: 0.7 },
         body: { y: 0.78, z: 3.5, ly: 0.7 },
         hair: { y: 1.3, z: 1.6, ly: 1.27 },
         face: { y: 1.3, z: 1.45, ly: 1.27 },
@@ -6195,6 +6290,8 @@
         hat: { y: 1.3, z: 1.75, ly: 1.27 }
       };
       const CUST_TABS = [
+        { id: 'outfit', label: '✨ Outfits', rows: [
+          { key: 'preset', label: 'Quick outfits', kind: 'presets', list: [['fisherman', '🎣 Fisherman'], ['bikini', '👙 Beach: Bikini'], ['shorts', '🩳 Beach: Shorts only'], ['raincoat', '🌧️ Raincoat day']] }] },
         { id: 'body', label: '🧍 Body', rows: [
           { key: 'skin', label: 'Skin tone', kind: 'swatch', list: ANGLER_OPTS.skin },
           { key: 'eyes', label: 'Eye colour', kind: 'swatch', list: ANGLER_OPTS.eyes }] },
@@ -6218,7 +6315,7 @@
           { key: 'hat', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hat },
           { key: 'hatColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] }
       ];
-      let custTab = 'body';
+      let custTab = 'outfit';
       let custRenderer = null, custScene = null, custCam = null, custRig = null;
       let custYaw = 0, custDragYaw = 0, custDragging = false, custLastX = 0, custLooping = false;
       const custFrame = { y: 0.78, z: 3.5, ly: 0.7 };
@@ -6282,18 +6379,35 @@
           (row.list || []).forEach((entry, i) => {
             const b = document.createElement('button');
             b.type = 'button';
-            if (row.kind === 'swatch') {
+            if (row.kind === 'presets') {
+              b.className = 'pixel-btn';
+              b.textContent = entry[1];
+              b.onclick = () => { state.look = AnglerFactory.applyPreset(state.look, entry[0]); saveGame(); custRefresh(); };
+            } else if (row.kind === 'swatch') {
               b.className = 'cust-swatch' + (state.look[row.key] === i ? ' active' : '');
               b.style.background = entry; b.setAttribute('aria-label', `${row.label} ${i + 1}`);
               b.onclick = () => { state.look[row.key] = i; saveGame(); custRefresh(); };
             } else {
               b.className = 'pixel-btn' + (state.look[row.key] === entry[0] ? ' active gold' : '');
               b.textContent = entry[1];
-              b.onclick = () => { state.look[row.key] = entry[0]; saveGame(); custRefresh(); };
+              if (row.key === 'hairStyle' && AnglerFactory.blockedHair(state.look.hat).includes(entry[0])) {
+                b.disabled = true; b.title = 'Not available with this hat';
+              }
+              b.onclick = () => {
+                state.look[row.key] = entry[0];
+                state.look = AnglerFactory.sanitizeLook(state.look, state.look.gender); // a hat that clashes with the hair switches the hair
+                saveGame(); custRefresh();
+              };
             }
             line.appendChild(b);
           });
           wrap.appendChild(line);
+          if (row.key === 'hairStyle' && state.look.hat !== 'none') {
+            const note = document.createElement('div');
+            note.className = 'cust-hint'; note.style.textAlign = 'left'; note.style.marginTop = '6px';
+            note.textContent = 'Some hair styles are unavailable while wearing a hat. Choose "None" for the hat to use them.';
+            wrap.appendChild(note);
+          }
           host.appendChild(wrap);
         });
         document.querySelectorAll('#cust-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === custTab));
@@ -6335,6 +6449,108 @@
         });
       });
       window.addEventListener('resize', () => { if (custModal.classList.contains('open')) custResize(); });
+
+      /* =========================================================================
+         SECRET CHEAT MENU (unlocked by pressing WALK EDGE 31 times beside the seagull behind the tackle shop)
+         ========================================================================= */
+      const cheatModal = document.getElementById('modal-cheats');
+      const cheatDone = msg => { saveGame(); updateHUD(); if (typeof renderShop === 'function') renderShop(); if (msg) showToast(msg); };
+      const cheatMoney = n => () => { state.cash = +(state.cash + n).toFixed(2); cheatDone(`💰 +$${n.toLocaleString()}`); };
+      const cheatTeleport = (x, z, label) => () => {
+        if (onBoat || mode !== 'PIER_IDLE') { showToast('Stand on the pier first.'); return; }
+        playerX = x; playerZ = z; cheatDone(`🧭 ${label}`);
+      };
+      const CHEAT_SECTIONS = [
+        { title: '💰 Money', items: [
+          ['+$100', cheatMoney(100)], ['+$1,000', cheatMoney(1000)], ['+$10,000', cheatMoney(10000)], ['+$100,000', cheatMoney(100000)],
+          ['Set to $0', () => { state.cash = 0; cheatDone('Cash set to $0'); }]] },
+        { title: '🎣 Gear', items: [
+          ['Unlock all gear', () => {
+            state.rodTier = ROD_TIERS.length; state.boatTier = BOAT_TIERS.length - 1; state.bucketTier = BUCKET_TIERS.length;
+            state.hasLiveBaitCam = true; state.modules = BOAT_MODULES.map(m => m.id); state.fuel = getCurrentBoat().maxFuel;
+            rebuildPlayerBoatVisual(); cheatDone('🎣 All gear unlocked');
+          }],
+          ['Best rod', () => { state.rodTier = ROD_TIERS.length; rebuildPlayerBoatVisual(); cheatDone('Best rod equipped'); }],
+          ['Best boat', () => { state.boatTier = BOAT_TIERS.length - 1; state.fuel = getCurrentBoat().maxFuel; rebuildPlayerBoatVisual(); cheatDone('Best boat unlocked'); }],
+          ['Biggest bucket', () => { state.bucketTier = BUCKET_TIERS.length; rebuildPierBucketVisual(); cheatDone('Biggest bucket unlocked'); }],
+          ['Refill fuel', () => { state.fuel = getCurrentBoat().maxFuel; cheatDone('⛽ Fuel refilled'); }],
+          ['99 of every bait', () => { state.baitStock = { 2: 99, 3: 99, 4: 99 }; state.baitCount = state.baitTier > 1 ? 99 : 0; cheatDone('🪱 Bait stocked'); }]] },
+        { title: '🐟 Fishing (toggles)', toggles: [
+          ['fastBites', 'Instant bites'], ['noSnap', 'Line never snaps'], ['luck', 'Rare fish luck x5'], ['freeBait', 'Infinite bait'], ['freeFuel', 'Infinite fuel']] },
+        { title: '🌍 World', items: [
+          ['Dawn', () => { state.timeOfDay = 0.27; cheatDone('🌅 Dawn'); }], ['Noon', () => { state.timeOfDay = 0.5; cheatDone('☀️ Noon'); }],
+          ['Dusk', () => { state.timeOfDay = 0.74; cheatDone('🌇 Dusk'); }], ['Midnight', () => { state.timeOfDay = 0.0; cheatDone('🌙 Midnight'); }],
+          ['Clear', () => { state.weather = 'CLEAR'; weatherTimer = 120; cheatDone('☀️ Clear skies'); }], ['Overcast', () => { state.weather = 'OVERCAST'; weatherTimer = 120; cheatDone('☁️ Overcast'); }],
+          ['Rain', () => { state.weather = 'RAIN'; weatherTimer = 120; cheatDone('🌧️ Rain'); }], ['Storm', () => { state.weather = 'STORM'; weatherTimer = 120; cheatDone('⛈️ Storm'); }],
+          ['Full moon night', () => { state.dayCount = Math.max(0, MOON_PHASES.findIndex(m => m.isFull)); state.timeOfDay = 0.9; cheatDone('🌕 Full moon night'); }]] },
+        { title: '📖 Collection', items: [
+          ['Discover all species', () => { state.discovered = CATCH_CATALOG.map(c => c.id); cheatDone('📖 Encyclopedia complete'); }],
+          ['Collect all bottles', () => { state.foundMessages = BOTTLE_MESSAGES.map(m => m.id); checkGalleryCompletionReward(); cheatDone('📜 All bottles collected'); }],
+          ['Complete bounties', () => { (state.bounties || []).forEach(b => { b.progress = b.target; }); cheatDone('📋 Bounties ready to claim'); }],
+          ['New bounties', () => { state.bounties = generateBountyContracts(); cheatDone('📋 New bounties'); }],
+          ['Fill bucket', () => {
+            const fish = CATCH_CATALOG.filter(c => c.category === 'Fish');
+            for (let tries = 0; tries < 60; tries++) {
+              const it = fish[Math.floor(Math.random() * fish.length)];
+              const w = +(it.minW + Math.random() * (it.maxW - it.minW)).toFixed(2);
+              if (getBucketWeight() + w > getBucketCapacity()) continue;
+              state.bucket.push({ uid: Date.now() + Math.random(), id: it.id, name: it.name, category: it.category, rarity: it.rarity, zoneName: ZONES[it.zones[0] - 1].name, weight: w, value: it.value, bottleMessageId: null });
+            }
+            rebuildPierBucketVisual(); cheatDone('🪣 Bucket filled');
+          }],
+          ['Empty bucket', () => { state.bucket = []; rebuildPierBucketVisual(); cheatDone('🪣 Bucket emptied'); }]] },
+        { title: '🧭 Teleport (on the pier)', items: [
+          ['Pier tip', cheatTeleport(0, -9.15, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
+          ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(-5.2, -5.6, 'Mooring platform')]] },
+        { title: '⚙️ Cheats', items: [
+          ['Turn all toggles off', () => { Object.keys(cheats).forEach(k => { cheats[k] = false; }); renderCheatMenu(); showToast('Cheat toggles off'); }]] }
+      ];
+
+      function renderCheatMenu() {
+        const host = document.getElementById('cheat-body');
+        host.innerHTML = '';
+        CHEAT_SECTIONS.forEach(sec => {
+          const wrap = document.createElement('div');
+          wrap.className = 'cheat-section';
+          wrap.innerHTML = `<div class="cheat-title">${sec.title}</div>`;
+          const grid = document.createElement('div');
+          grid.className = 'cheat-grid';
+          (sec.items || []).forEach(([label, fn]) => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'pixel-btn'; b.textContent = label;
+            b.onclick = () => { sfx.playCoin(); fn(); };
+            grid.appendChild(b);
+          });
+          (sec.toggles || []).forEach(([key, label]) => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'pixel-btn' + (cheats[key] ? ' on' : '');
+            b.textContent = `${cheats[key] ? '✅' : '⬜'} ${label}`;
+            b.onclick = () => { cheats[key] = !cheats[key]; sfx.playCoin(); renderCheatMenu(); };
+            grid.appendChild(b);
+          });
+          wrap.appendChild(grid);
+          host.appendChild(wrap);
+        });
+      }
+
+      function openCheatMenu() {
+        renderCheatMenu();
+        cheatModal.classList.add('open');
+      }
+
+      function unlockCheatMenu() {
+        cheatTaps = 0;
+        isHoldingAction = false; actionPointerId = null; primaryBtn.classList.remove('pressed');
+        sfx.playSeagull();
+        showToast('🕊️ The seagull squawks... secret menu unlocked!');
+        openCheatMenu();
+      }
+
+      // Any other input (another key, or touching anything other than the action button) resets the count.
+      window.addEventListener('keydown', e => { if (e.code !== 'Space') cheatTaps = 0; }, true);
+      document.addEventListener('pointerdown', e => {
+        if (!(e.target && e.target.closest && e.target.closest('#btn-primary-action'))) cheatTaps = 0;
+      }, true);
 
       function getMoonPhase() {
         const idx = (state.dayCount || 0) % MOON_PHASES.length;
@@ -6651,7 +6867,13 @@
       /* =========================================================================
          SECTION J: FISHING MECHANICS & CONTEXTUAL ACTION BUTTON
          ========================================================================= */
+      function isNearCheatGull() {
+        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - CHEAT_GULL.x, playerZ - CHEAT_GULL.z) <= CHEAT_GULL.radius;
+      }
+
       function handleActionPress() {
+        const prevCheatTaps = cheatTaps;
+        cheatTaps = 0; // any action press that is not a counted "WALK EDGE" press beside the gull resets the count
         if (mode === 'PIER_IDLE') {
           if (isNearPierShop()) {
             isHoldingAction = false;
@@ -6707,6 +6929,10 @@
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
             showToast('Walk to the end of the pier to cast, or visit the Shop / Gallery / Boat!');
+            if (isNearCheatGull()) {
+              cheatTaps = prevCheatTaps + 1;
+              if (cheatTaps >= CHEAT_TAPS) unlockCheatMenu();
+            }
             return;
           }
         }
@@ -6725,7 +6951,7 @@
             return;
           }
           const bait = getCurrentBait();
-          if (!bait.infinite && (state.baitStock[state.baitTier] || 0) <= 0) {
+          if (!bait.infinite && !cheats.freeBait && (state.baitStock[state.baitTier] || 0) <= 0) {
             state.baitTier = 1;
             state.baitCount = 0;
             showToast('Out of special bait! Switched to Bread Crumbs.');
@@ -6751,7 +6977,7 @@
 
       function launchBobber(power) {
         const bait = getCurrentBait();
-        if (!bait.infinite) {
+        if (!bait.infinite && !cheats.freeBait) {
           const curStock = state.baitStock[state.baitTier] || 0;
           if (curStock > 0) {
             state.baitStock[state.baitTier] = curStock - 1;
@@ -6782,7 +7008,7 @@
         world.bobberGroup.position.copy(bobberPos);
         world.bobberGroup.visible = true;
         world.fishingLine.visible = true;
-        waitTimer = inFrenzy ? (0.9 + Math.random() * 1.1) : (1.8 + Math.random() * 2.4);
+        waitTimer = cheats.fastBites ? 0.35 : (inFrenzy ? (0.9 + Math.random() * 1.1) : (1.8 + Math.random() * 2.4));
         if (inFrenzy) {
           showToast('🔥 Landed in a Feeding Frenzy! Fast bites & rare odds!');
         }
@@ -6806,14 +7032,14 @@
         });
         if (pool.length === 0) pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly);
 
-        const frenzyRarityMult = inFrenzy ? 2.1 : 1.0;
+        const frenzyRarityMult = (inFrenzy ? 2.1 : 1.0) * (cheats.luck ? 5 : 1);
 
         const weightedPool = pool.map(item => {
           let w = 10;
           if (item.isMessageBottle) {
             w = zoneUncollectedMsgs.length > 0 ? 2.2 : 1.1;
           } else if (item.category === 'Junk' || item.category === 'Flora') {
-            w = 7 * bait.trashMod * (inFrenzy ? 0.25 : 1.0);
+            w = 7 * bait.trashMod * (inFrenzy ? 0.25 : 1.0) * (cheats.luck ? 0.15 : 1);
           } else if (item.stormOnly && isStorm) {
             w = 13 * (1 + bait.rarityBonus * 1.8) * frenzyRarityMult;
           } else if (item.fullMoonOnly && fullMoon) {
@@ -8584,7 +8810,7 @@
                 const sternWake = boatPos.clone().add(new THREE.Vector3(Math.sin(boatYaw) * 2.4, 0, Math.cos(boatYaw) * 2.4));
                 vfx.spawnWake(sternWake, boatYaw, Math.abs(boatVel) / 14);
               }
-              state.fuel = Math.max(0, state.fuel - stepDist * boat.burnRate);
+              if (!cheats.freeFuel) state.fuel = Math.max(0, state.fuel - stepDist * boat.burnRate);
               saveGame();
               updateHUD();
 
@@ -8764,7 +8990,7 @@
                 underpoweredTimer += dt;
                 tension = Math.min(1, tension + dt * 0.55);
                 sfx.playReelTick(0.95);
-                if (underpoweredTimer >= 1.55 || tension >= 0.99) {
+                if (!cheats.noSnap && (underpoweredTimer >= 1.55 || tension >= 0.99)) {
                   snapLine();
                   return;
                 }
@@ -8797,6 +9023,7 @@
               if (Math.random() < 0.14) {
                 vfx.spawnRipple(bobberPos, 0xe0f2fe, 1.9);
               }
+              if (cheats.noSnap) tension = Math.min(tension, 0.9);
               if (tension >= 0.98) {
                 vfx.spawnSplash(bobberPos, 16, 0xf87171, 3.0);
                 snapLine();
@@ -8895,6 +9122,9 @@
           const stride = Math.sin(elapsed * 13);
           world.leftLeg.rotation.x = stride * 0.55;
           world.rightLeg.rotation.x = -stride * 0.55;
+          // arms swing opposite to the legs while walking
+          world.leftArm.rotation.x = -stride * 0.6;
+          world.rightArm.rotation.x = stride * 0.6;
           world.leftLeg.position.set(-0.12, 0.42, 0);
           world.rightLeg.position.set(0.12, 0.42, 0);
           world.bodyGroup.position.set(0, Math.abs(Math.cos(elapsed * 13)) * 0.07, 0);
@@ -8911,6 +9141,9 @@
           // Bend legs forward at the knees when seated in the folding chair
           world.leftLeg.rotation.x = sitEase * 1.18;
           world.rightLeg.rotation.x = sitEase * 1.18;
+          // arms ease back to the rod-holding pose
+          world.leftArm.rotation.x = THREE.MathUtils.lerp(world.leftArm.rotation.x, 0, Math.min(1, dt * 10));
+          world.rightArm.rotation.x = THREE.MathUtils.lerp(world.rightArm.rotation.x, 0, Math.min(1, dt * 10));
           world.leftLeg.position.set(-0.12, 0.42 + sitEase * 0.05, -sitEase * 0.08);
           world.rightLeg.position.set(0.12, 0.42 + sitEase * 0.05, -sitEase * 0.08);
         }
