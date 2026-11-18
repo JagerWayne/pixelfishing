@@ -209,6 +209,7 @@ Open **☰ Menu → Settings**.
 - **Sound effects** on or off (also on the 🔊 button).
 - **Haptics** (vibration) on or off, independent of sound.
 - **Graphics:** *High* or *Battery saver* (renders at lower resolution).
+- **Full screen:** on by default; the game enters full screen when you tap *Start*. Turn it off here to stay windowed. (iPhone Safari does not allow full screen for web pages; the installed home-screen app is already full screen.)
 - **Handedness:** *Right* or *Left*; left swaps the thumbstick and action button.
 - **Thumbstick:** *Fixed*, or *Floating*, where the stick appears under your thumb anywhere on its half of the screen and the fixed one stays as a faint hint.
 - **Button size:** *S*, *M* or *L* for the thumbstick and action button.
@@ -226,7 +227,7 @@ Progress is saved automatically in your browser's `localStorage`:
 | Key | Contents |
 |---|---|
 | `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance and more (save format version 2) |
-| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade |
+| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
@@ -316,6 +317,9 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Full screen by default
+- The game now enters full screen when you start it, on phones, tablets and desktops (before, only on narrow screens). New **Full screen** switch in Settings to opt out.
 
 ### 2026-11-18, Cheat confirmation
 - Every secret-menu cheat (including the toggles) now opens an **Apply cheat?** dialog with Apply and Cancel before anything changes.
