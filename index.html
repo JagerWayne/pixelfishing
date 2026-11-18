@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '2.3.0';
+    window.PF_VERSION = '2.3.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -3064,6 +3064,19 @@
         }
       }
 
+      /* Night lighting: colours are warm whites (not saturated amber), intensities are modest. Adjust here. */
+      const LIGHT_TUNING = {
+        nightGlow: 2.4,          // shared strength of every lamp at night
+        poolOpacity: 0.28,       // additive glow laid on the deck under each light
+        lamp:    { color: 0xffe3b8, pool: 0xffdcae, k: 1.2 },
+        shop:    { color: 0xffe3b8, pool: 0xffdcae, k: 1.15 },
+        bounty:  { color: 0xffe0b0, pool: 0xffdcae, k: 1.0 },
+        gallery: { color: 0xc9f5ee, pool: 0xbfeee6, k: 1.0 },
+        mooring: { color: 0xffd9a8, pool: 0xffd9a8, k: 1.0 },
+        bulbs:   [0xffeec8, 0xffe0a0],
+        lampGlass: 0xfff1c8, lampCore: 0xffe6a8
+      };
+
       class WorldBuilder {
         /* ------------------------------------------------------------------
            LOFTED FISH GENERATOR
@@ -4989,7 +5002,7 @@
               const pos = beamGeo.attributes.position, col = new Float32Array(pos.count * 3);
               for (let i = 0; i < pos.count; i++) {
                 const f = Math.max(0, 1 - pos.getX(i) / beamLen); // bright at the lantern, fading out along the beam
-                col[i * 3] = 1.0 * f; col[i * 3 + 1] = 0.93 * f; col[i * 3 + 2] = 0.62 * f;
+                col[i * 3] = 1.0 * f; col[i * 3 + 1] = 0.95 * f; col[i * 3 + 2] = 0.8 * f;
               }
               beamGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
             }
@@ -5004,7 +5017,7 @@
               return new THREE.CanvasTexture(c);
             })();
             const flare = new THREE.Sprite(new THREE.SpriteMaterial({
-              map: flareTex, color: 0xfff2b8, transparent: true, blending: THREE.AdditiveBlending,
+              map: flareTex, color: 0xfff3d0, transparent: true, blending: THREE.AdditiveBlending,
               depthWrite: false, fog: false, sizeAttenuation: false, opacity: 0
             }));
             flare.renderOrder = 10; flare.frustumCulled = false;
@@ -5028,11 +5041,11 @@
                 const pulse = Math.pow(align, 40);
                 const r = Math.min(dist - 2, 600);
                 flare.position.copy(cam.position).addScaledVector(toCam, -r);
-                const base = 0.5 + 0.5 * night;
-                const sz = 0.035 + 0.03 * night + pulse * (0.16 + 0.1 * night);
+                const base = 0.4 + 0.4 * night;
+                const sz = 0.03 + 0.02 * night + pulse * (0.1 + 0.06 * night);
                 flare.scale.set(sz, sz, 1);
-                flare.material.opacity = Math.min(1, base * 0.6 + pulse * 0.9);
-                beamMat.opacity = 0.12 + 0.3 * night;
+                flare.material.opacity = Math.min(1, base * 0.55 + pulse * 0.7);
+                beamMat.opacity = 0.08 + 0.18 * night;
               }
             };
           }
@@ -5237,12 +5250,12 @@
             lampCollar.position.y = 1.78;
             const lampGlass = new THREE.Mesh(
               new THREE.CylinderGeometry(0.20, 0.15, 0.34, 6),
-              new THREE.MeshBasicMaterial({ color: 0xfef08a })
+              new THREE.MeshBasicMaterial({ color: LIGHT_TUNING.lampGlass })
             );
             lampGlass.position.y = 2.00;
             const lampCore = new THREE.Mesh(
               new THREE.SphereGeometry(0.11, 8, 8),
-              new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+              new THREE.MeshBasicMaterial({ color: LIGHT_TUNING.lampCore })
             );
             lampCore.position.y = 2.00;
             const lampRoof = new THREE.Mesh(new THREE.ConeGeometry(0.27, 0.22, 6), ironMat);
@@ -5260,8 +5273,8 @@
             lamp.add(lampBase, lampPole, lampCollar, lampGlass, lampCore, lampRoof, lampFinial);
             scene.add(lamp);
 
-            addPool(lx, ly, lz, 2.3, 0xffc15a, 0.8);
-            if (withLight) addLight(lx, ly + 2.0, lz, 0xfbbf24, 14, 2.0);
+            addPool(lx, ly, lz, 2.3, LIGHT_TUNING.lamp.pool, 0.8);
+            if (withLight) addLight(lx, ly + 2.0, lz, LIGHT_TUNING.lamp.color, 14, LIGHT_TUNING.lamp.k);
           };
 
           // Pier lamp posts stand on the rail line, in pairs: near the entrance, flanking the bucket and toolbox, and at the tip.
@@ -5278,31 +5291,31 @@
           // Tackle shop (-7.6, 1.0): warm bulbs strung under the awning valance
           for (let i = 0; i < 9; i++) {
             const t = i / 8;
-            const b = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 5), bulbMat(i % 2 ? 0xfde68a : 0xfbbf24));
+            const b = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 5), bulbMat(LIGHT_TUNING.bulbs[i % 2]));
             b.position.set(-7.6 - 1.15 + t * 2.3, 1.56 + 2.12 - Math.sin(t * Math.PI) * 0.14, 1.0 + 1.14);
             scene.add(b);
           }
-          if (realLights) addLight(-7.6, 1.56 + 2.2, 1.0 + 1.5, 0xffc766, 10, 1.9);
-          addPool(-7.6, 1.56, 1.0 + 1.7, 2.9, 0xffb454, 1);
+          if (realLights) addLight(-7.6, 1.56 + 2.2, 1.0 + 1.5, LIGHT_TUNING.shop.color, 10, LIGHT_TUNING.shop.k);
+          addPool(-7.6, 1.56, 1.0 + 1.7, 2.9, LIGHT_TUNING.shop.pool, 1);
           // Bounty board (-4.2, 0.8): a gooseneck lamp over the notices
           {
             const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.55), ironMat); arm.position.set(-4.2, 1.56 + 2.5, 0.8 + 0.28); scene.add(arm);
             const hood = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.12, 8), ironMat); hood.position.set(-4.2, 1.56 + 2.5, 0.8 + 0.55); scene.add(hood);
-            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), bulbMat(0xfde68a)); bulb.position.set(-4.2, 1.56 + 2.42, 0.8 + 0.55); scene.add(bulb);
-            if (realLights) addLight(-4.2, 1.56 + 2.35, 0.8 + 0.9, 0xffd27a, 7.5, 1.7);
-            addPool(-4.2, 1.56, 0.8 + 1.0, 2.1, 0xffd27a, 0.9);
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), bulbMat(LIGHT_TUNING.bulbs[0])); bulb.position.set(-4.2, 1.56 + 2.42, 0.8 + 0.55); scene.add(bulb);
+            if (realLights) addLight(-4.2, 1.56 + 2.35, 0.8 + 0.9, LIGHT_TUNING.bounty.color, 7.5, LIGHT_TUNING.bounty.k);
+            addPool(-4.2, 1.56, 0.8 + 1.0, 2.1, LIGHT_TUNING.bounty.pool, 0.9);
           }
           // Bottle gallery (4.4, 0.8): cool teal light to show off the glass (its string lights already hang under the sign)
-          if (realLights) addLight(4.4, 1.56 + 2.0, 0.8 + 0.9, 0x8ff7ea, 8.5, 1.7);
-          addPool(4.4, 1.56, 0.8 + 1.2, 2.4, 0x5eead4, 0.9);
+          if (realLights) addLight(4.4, 1.56 + 2.0, 0.8 + 0.9, LIGHT_TUNING.gallery.color, 8.5, LIGHT_TUNING.gallery.k);
+          addPool(4.4, 1.56, 0.8 + 1.2, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
           // Film camera (8.2, 0.9): its own lamp post
           buildHarborLamp(9.55, 1.56, 1.9, realLights);
           // Mooring platform: lantern on the piling
           {
-            const glass = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), bulbMat(0xfbbf24)); glass.position.set(-5.95, 2.3, -4.6); scene.add(glass);
+            const glass = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), bulbMat(LIGHT_TUNING.bulbs[1])); glass.position.set(-5.95, 2.3, -4.6); scene.add(glass);
             const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.3, 6, 1, true), ironMat); cage.position.set(-5.95, 2.3, -4.6); scene.add(cage);
-            if (realLights) addLight(-5.95, 2.35, -4.6, 0xffb454, 8, 1.6);
-            addPool(-5.0, 0.66, -5.6, 2.2, 0xffb454, 0.8);
+            if (realLights) addLight(-5.95, 2.35, -4.6, LIGHT_TUNING.mooring.color, 8, LIGHT_TUNING.mooring.k);
+            addPool(-5.0, 0.66, -5.6, 2.2, LIGHT_TUNING.mooring.pool, 0.8);
           }
 
           // Articulated Fisherman Character with Wader Overalls, Rain Slicker & Sou'wester Hat
@@ -6428,6 +6441,7 @@
       let boatVel = 0;
       let lastBumpAt = -10;
       let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0;
+      let boatPowered = false; // true while the engine is driving the boat (burns fuel)
 
       let castCharge = 0;
       let castDir = 1;
@@ -7380,8 +7394,15 @@
         throttle = THREE.MathUtils.clamp(throttle, -1, 1);
         steer = THREE.MathUtils.clamp(steer, -1, 1);
         const maxSpd = boat.speed;
-        const active = state.fuel > 0 && (Math.abs(throttle) > 0.1 || Math.abs(steer) > 0.1);
-        if (active) {
+        const hasFuel = cheats.freeFuel || state.fuel > 0;
+        const active = hasFuel && (Math.abs(throttle) > 0.1 || Math.abs(steer) > 0.1);
+        boatPowered = active;
+        if (!hasFuel) {
+          // no engine: the boat keeps its way and slows down by water drag alone (inertia), holding its heading
+          const drag = (0.55 * Math.abs(boatVel) + 0.35) * dt;
+          boatVel = Math.abs(boatVel) <= drag ? 0 : boatVel - Math.sign(boatVel) * drag;
+          boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, 0, Math.min(1, dt * 2.5));
+        } else if (active) {
           const ahead = Math.abs(throttle) > 0.1 ? throttle : 0;
           const target = ahead >= 0 ? ahead * maxSpd * (1 - 0.25 * Math.abs(steer)) : ahead * maxSpd * 0.35;
           boatVel = THREE.MathUtils.lerp(boatVel, target, Math.min(1, dt * 2.6));
@@ -9254,11 +9275,11 @@
         world.moonShadow.position.x = moonPhase.shadowOffset;
         world.moonHalo.material.opacity = moonPhase.isFull ? (0.28 + Math.sin(elapsed * 2.5) * 0.08) : 0.12;
         world.starMat.opacity = Math.max(0, (1 - dayFactor) * 0.9 * (weather.id === 'CLEAR' ? 1 : 0.2));
-        const lanternGlow = (1 - dayFactor) * (3.6 + Math.sin(elapsed * 7) * 0.35);
+        const lanternGlow = (1 - dayFactor) * (LIGHT_TUNING.nightGlow + Math.sin(elapsed * 7) * 0.25);
         world.lanternLights.forEach((l, idx) => {
           l.intensity = Math.max(0, lanternGlow + Math.sin(elapsed * 6.5 + idx * 1.7) * 0.2 * (1 - dayFactor)) * (l.userData.k || 1);
         });
-        world.standGlows.forEach(g => { g.mat.opacity = (1 - dayFactor) * 0.55 * g.k; });
+        world.standGlows.forEach(g => { g.mat.opacity = (1 - dayFactor) * LIGHT_TUNING.poolOpacity * g.k; });
         if (world.lighthouseBeacon) world.lighthouseBeacon.update(elapsed, camera, 1 - dayFactor);
         if (boatSpotlight) {
           boatSpotlight.intensity = (isNightTime() || weather.id === 'STORM') ? 3.8 : 0.0;
@@ -9517,7 +9538,7 @@
             updateBoatControl(dt, boat);
 
             const stepDist = Math.abs(boatVel) * dt;
-            if (stepDist > 0.001 && state.fuel > 0) {
+            if (stepDist > 0.001) {
               const dx = -Math.sin(boatYaw) * boatVel * dt;
               const dz = -Math.cos(boatYaw) * boatVel * dt;
               const speedBefore = boatVel;
@@ -9542,13 +9563,17 @@
                 const sternWake = boatPos.clone().add(new THREE.Vector3(Math.sin(boatYaw) * 2.4, 0, Math.cos(boatYaw) * 2.4));
                 vfx.spawnWake(sternWake, boatYaw, Math.abs(boatVel) / 14);
               }
-              if (!cheats.freeFuel) state.fuel = Math.max(0, state.fuel - stepDist * boat.burnRate);
+              // fuel is only burned while the engine is driving; coasting is free
+              const hadFuel = state.fuel > 0;
+              if (!cheats.freeFuel && boatPowered) state.fuel = Math.max(0, state.fuel - stepDist * boat.burnRate);
+              if (hadFuel && state.fuel <= 0) showToast('⛽ Out of fuel! Drifting...');
               saveGame();
               updateHUD();
-
-              if (state.fuel <= 0 && getDistanceMeters() > 15) {
-                triggerRescueSequence();
-              }
+            }
+            // out of fuel and far from the pier: the tow starts once the boat has coasted to a stop
+            if (state.fuel <= 0 && !cheats.freeFuel && Math.abs(boatVel) < 0.4 && getDistanceMeters() > 15) {
+              boatVel = 0;
+              triggerRescueSequence();
             }
             updatePrimaryActionButton();
           } else {

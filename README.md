@@ -94,7 +94,7 @@ A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking som
 | Abyssal Leviathan Winch | $3,600 | 140 kg | 4 |
 
 ### Boats
-Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. If you run dry far from shore, the coast guard tows you back for a **$100 emergency fee**.
+Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
 
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
@@ -324,6 +324,11 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Version 2.3.1: coasting and softer lights
+- **Out of fuel:** the boat no longer stops dead. It coasts and slows down by water drag, and the coast guard tow starts only once it has stopped. Fuel is burned only under power, so gliding is free.
+- **Lights:** warmer, paler colours and roughly a third less brightness on the pier lamps, stand lights, light pools and the lighthouse (night glow 3.6 to 2.4, pool glow 0.55 to 0.28). The numbers are gathered in `LIGHT_TUNING` in `index.html` if you want to tweak them.
+- Version bumped to **v2.3.1**.
 
 ### 2026-11-18, Version 2.3.0: lighthouse, stand reach, longer pier, new deck wood
 - **Lighthouse:** a rotating beacon with two sweeping beams and a flare that flashes as the beam passes you. The flare is not affected by fog or distance, so it is visible even 2000 m out.
