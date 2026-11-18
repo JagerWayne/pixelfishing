@@ -2306,7 +2306,7 @@
         facial: [['none', 'None'], ['stubble', 'Stubble'], ['mustache', 'Mustache'], ['goatee', 'Goatee'], ['beard', 'Full beard']],
         glasses: [['none', 'None'], ['round', 'Round'], ['sun', 'Sunglasses']],
         top: [['sweater', 'Striped sweater'], ['tee', 'T-shirt'], ['tank', 'Tank top'], ['hoodie', 'Hoodie'], ['slicker', 'Raincoat']],
-        bottom: [['waders', 'Waders'], ['shorts', 'Shorts'], ['jeans', 'Jeans'], ['skirt', 'Skirt']],
+        bottom: [['jeans', 'Jeans'], ['shorts', 'Shorts'], ['skirt', 'Skirt']],
         shoes: [['boots', 'Rubber boots'], ['sneakers', 'Sneakers'], ['sandals', 'Sandals'], ['barefoot', 'Barefoot']],
         hat: [['souwester', "Sou'wester"], ['cap', 'Cap'], ['beanie', 'Beanie'], ['bucket', 'Bucket hat'], ['straw', 'Straw hat'], ['none', 'None']]
       };
@@ -2318,7 +2318,7 @@
             gender: f ? 'female' : 'male', skin: 1, eyes: 0,
             hairStyle: f ? 'ponytail' : 'short', hairColor: f ? 3 : 2, facial: f ? 'none' : 'beard', glasses: 'none',
             top: 'sweater', topColor: 0, topAccent: f ? 7 : 1,
-            bottom: 'waders', bottomColor: f ? 5 : 12,
+            bottom: 'jeans', bottomColor: f ? 13 : 1,
             shoes: 'boots', shoeColor: 10,
             hat: 'souwester', hatColor: 3
           };
@@ -2370,7 +2370,7 @@
             hairStyle: hairStyles[r(hairStyles.length)], hairColor: r(ANGLER_OPTS.hairColor.length),
             facial: facial[r(facial.length)], glasses: ['none', 'none', 'none', 'round', 'sun'][r(5)],
             top, topColor: r(ANGLER_OPTS.colors.length), topAccent: r(ANGLER_OPTS.colors.length),
-            bottom: pickId(ANGLER_OPTS.bottom, f ? ['waders', 'shorts', 'jeans', 'skirt', 'skirt'] : ['waders', 'shorts', 'jeans']),
+            bottom: pickId(ANGLER_OPTS.bottom, f ? ['shorts', 'jeans', 'skirt', 'skirt'] : ['shorts', 'jeans']),
             bottomColor: r(ANGLER_OPTS.colors.length),
             shoes: pickId(ANGLER_OPTS.shoes), shoeColor: r(ANGLER_OPTS.colors.length),
             hat, hatColor: r(ANGLER_OPTS.colors.length)
@@ -2450,13 +2450,33 @@
             return prof[prof.length - 1][0];
           };
           const DEPTH = 0.82;
+          // Female bust: a smooth gaussian bulge pushed out of the front of the torso surface (body and every garment)
+          const bumpBust = geo => {
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+              const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+              if (z >= 0) continue;
+              let d = 0;
+              for (const cx of [-0.086, 0.086]) { const dx = (x - cx) / 0.07, dy = (y - 0.88) / 0.082; d += Math.exp(-(dx * dx + dy * dy)); }
+              pos.setZ(i, z - d * 0.068 / DEPTH);
+            }
+            geo.computeVertexNormals();
+          };
           const shell = (y0, y1, off, m, steps = 12, flare = 0) => {
             const pts = [];
-            for (let i = 0; i <= steps; i++) { const y = y0 + (y1 - y0) * (i / steps); pts.push([rAt(y) + off + flare * (1 - i / steps), y]); }
-            return lathe(rig.bodyGroup, pts, m, 36, DEPTH);
+            const n = Math.max(steps, Math.round((y1 - y0) / 0.018));
+            for (let i = 0; i <= n; i++) { const y = y0 + (y1 - y0) * (i / n); pts.push([rAt(y) + off + flare * (1 - i / n), y]); }
+            const mesh = lathe(rig.bodyGroup, pts, m, 56, DEPTH);
+            if (female) bumpBust(mesh.geometry);
+            return mesh;
           };
-          // skin body: torso, neck, shoulders
-          lathe(rig.bodyGroup, prof, skinMat, 36, DEPTH);
+          // skin body: torso (densely sampled so the bust stays smooth), neck, shoulders
+          {
+            const pts = [];
+            for (let y = 0.44; y <= 1.1201; y += 0.018) pts.push([Math.max(0.001, rAt(y)), y]);
+            const torso = lathe(rig.bodyGroup, pts, skinMat, 56, DEPTH);
+            if (female) bumpBust(torso.geometry);
+          }
           put(rig.bodyGroup, new THREE.CylinderGeometry(0.072, 0.085, 0.14, 16), skinMat, 0, 1.15, 0);
           const shoulderR = female ? 0.075 : 0.085;
           [-1, 1].forEach(s => sph(rig.bodyGroup, shoulderR, skinMat, s * (female ? 0.245 : 0.27), 1.0, 0));
@@ -2469,23 +2489,13 @@
             shell(0.62, 0.72, 0.012, botMat, 4);
           } else {
             shell(0.44, 0.71, 0.014, botMat, 8);
-            if (look.bottom === 'waders') {
-              shell(0.71, female ? 0.86 : 0.93, 0.02, botMat, 8);
-              // straps over the shoulders with brass buckles, front pocket
-              [-1, 1].forEach(s => {
-                put(rig.bodyGroup, new THREE.BoxGeometry(0.05, 0.3, 0.025), botMat, s * 0.11, 1.02, -0.2).rotation.x = -0.1;
-                put(rig.bodyGroup, new THREE.BoxGeometry(0.045, 0.34, 0.02), botMat, s * 0.12, 1.0, 0.19).rotation.x = 0.1;
-                put(rig.bodyGroup, new THREE.BoxGeometry(0.06, 0.04, 0.02), brass, s * 0.11, 0.9, -0.215);
-              });
-              put(rig.bodyGroup, new THREE.BoxGeometry(0.18, 0.1, 0.02), botMat, 0, 0.8, -0.21);
-            }
           }
 
           // ----- top -----
           const longSleeves = look.top === 'sweater' || look.top === 'hoodie' || look.top === 'slicker';
           const loose = look.top === 'hoodie' ? 0.03 : look.top === 'slicker' ? 0.04 : 0.016;
           if (look.top !== 'tank') shell(look.top === 'slicker' ? 0.5 : 0.62, 1.07, loose, topMat, 14, look.top === 'slicker' ? 0.02 : 0);
-          else { shell(0.62, 1.0, 0.014, topMat, 12); [-1, 1].forEach(s => put(rig.bodyGroup, new THREE.BoxGeometry(0.05, 0.16, 0.03), topMat, s * (female ? 0.12 : 0.14), 1.06, -0.12).rotation.z = s * 0.2); }
+          else { shell(0.62, 1.0, 0.022, topMat, 12); [-1, 1].forEach(s => put(rig.bodyGroup, new THREE.BoxGeometry(0.05, 0.16, 0.03), topMat, s * (female ? 0.12 : 0.14), 1.06, -0.12).rotation.z = s * 0.2); }
           if (look.top === 'sweater') {
             [0.74, 0.86, 0.98].forEach(y => shell(y, y + 0.035, loose + 0.006, accMat, 2));
             const collar = put(rig.bodyGroup, new THREE.TorusGeometry(0.1, 0.035, 10, 24), topMat, 0, 1.1, 0); collar.rotation.x = Math.PI / 2;
@@ -2499,15 +2509,20 @@
           } else if (look.top === 'tee') {
             const col = put(rig.bodyGroup, new THREE.TorusGeometry(0.1, 0.02, 8, 24), accMat, 0, 1.1, 0); col.rotation.x = Math.PI / 2;
           }
-          if (female) { // bust: shaped by the garment it sits under
-            const bustMat = look.top === 'tank' ? topMat : topMat;
-            [-1, 1].forEach(s => sph(rig.bodyGroup, 0.066, bustMat, s * 0.082, 0.86, -0.165, 1, 0.92, 0.8, 22));
-          }
-
           // ----- head -----
           const H = rig.headGroup;
-          sph(H, 0.205, skinMat, 0, 0, 0, female ? 0.97 : 1.0, 1.06, 0.99, 36);
-          sph(H, 0.17, skinMat, 0, -0.075, -0.045, female ? 0.9 : 0.96, 0.9, 0.9, 24); // jaw / chin
+          {
+            const hg = new THREE.SphereGeometry(0.205, 48, 34);
+            const hp = hg.attributes.position;
+            for (let i = 0; i < hp.count; i++) {
+              let x = hp.getX(i), y = hp.getY(i) * 1.06, z = hp.getZ(i) * 0.99;
+              if (y < 0) { const t = Math.min(1, -y / 0.21); const k = t * t; x *= 1 - (female ? 0.16 : 0.09) * k; z *= 1 - 0.05 * k; y *= 1 + 0.07 * k; }
+              if (female) x *= 0.97;
+              hp.setXYZ(i, x, y, z);
+            }
+            hg.computeVertexNormals();
+            put(H, hg, skinMat);
+          }
           [-1, 1].forEach(s => {
             const ear = sph(H, 0.042, skinMat, s * 0.2, 0.0, 0.01, 0.55, 1, 0.8, 12);
             sph(H, 0.036, mat(0xffffff, 0.3), s * 0.075, 0.03, -0.178, 1, 1, 0.9, 14);
@@ -2539,11 +2554,10 @@
           const hs = look.hairStyle;
           if (hs !== 'bald') {
             const R = hs === 'buzz' ? 0.212 : 0.222;
-            const front = put(H, new THREE.SphereGeometry(R, 32, 14, Math.PI, Math.PI, 0, Math.PI * 0.36), hairMat); front.position.y = 0.01;
+            const front = put(H, new THREE.SphereGeometry(R, 32, 14, Math.PI, Math.PI, 0, Math.PI * 0.32), hairMat); front.position.y = 0.01;
             const back = put(H, new THREE.SphereGeometry(R, 32, 18, 0, Math.PI, 0, Math.PI * (hs === 'buzz' ? 0.62 : 0.8)), hairMat); back.position.y = 0.01; back.scale.set(1, 1.04, 1.03);
-            const sides = put(H, new THREE.SphereGeometry(R, 32, 14, 0, Math.PI * 2, 0, Math.PI * 0.46), hairMat); sides.position.y = 0.01;
             if (hs === 'short') { [-1, 1].forEach(s => sph(H, 0.07, hairMat, s * 0.1, 0.17, -0.12, 1, 0.6, 0.7, 12)); sph(H, 0.09, hairMat, 0, 0.19, -0.1, 1.3, 0.6, 0.7, 12); }
-            if (hs === 'wavy') for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; sph(H, 0.07, hairMat, Math.cos(a) * 0.17, 0.12 + Math.sin(i * 2.1) * 0.03, Math.sin(a) * 0.17 + 0.02, 1, 0.85, 1, 10); }
+            if (hs === 'wavy') { for (let i = 0; i < 8; i++) { const a = (i / 7) * Math.PI; sph(H, 0.07, hairMat, Math.cos(a) * 0.17, 0.13 + Math.sin(i * 2.1) * 0.03, Math.sin(a) * 0.17 + 0.03, 1, 0.85, 1, 10); } [-0.1, 0, 0.1].forEach((x, i) => sph(H, 0.065, hairMat, x, 0.2, -0.06 + (i % 2) * 0.03, 1, 0.8, 1, 10)); }
             if (hs === 'ponytail') {
               const pts = [new THREE.Vector3(0, 0.1, 0.2), new THREE.Vector3(0, 0.0, 0.34), new THREE.Vector3(0, -0.14, 0.38), new THREE.Vector3(0, -0.3, 0.33)];
               put(H, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.055, 10, false), hairMat);
@@ -2554,10 +2568,10 @@
             if (hs === 'long') {
               const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.215 + 0.03 * Math.sin(t * 2.4), 0.04 - t * 0.5]); }
               const mesh = lathe(H, pts, new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65, side: THREE.DoubleSide }), 28, 1.0);
-              mesh.geometry.dispose(); mesh.geometry = new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 28, 0, Math.PI); mesh.position.z = 0.02;
+              mesh.geometry.dispose(); mesh.geometry = new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 28, 0, Math.PI); mesh.position.z = 0.02; mesh.rotation.y = -Math.PI / 2;
               [-1, 1].forEach(s => { const lock = sph(H, 0.055, hairMat, s * 0.19, -0.12, -0.03, 0.8, 3.2, 0.9, 12); });
             }
-            if (hs === 'bob') { sph(H, 0.235, new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65 }), 0, -0.03, 0.03, 1.05, 0.8, 1.0, 26); [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.2, -0.05, -0.1, 0.8, 1.6, 0.8, 10)); }
+            if (hs === 'bob') { const bobM = put(H, new THREE.SphereGeometry(0.235, 30, 18, 0, Math.PI, 0, Math.PI * 0.78), new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65 })); bobM.scale.set(1.04, 0.85, 1.02); bobM.position.set(0, -0.04, 0.02); [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.2, -0.05, -0.04, 0.8, 1.6, 0.8, 10)); }
             if (hs === 'bun') { sph(H, 0.085, hairMat, 0, 0.24, 0.07, 1, 0.9, 1, 16); const t = put(H, new THREE.TorusGeometry(0.07, 0.014, 6, 14), mat(C(look.hatColor), 0.5), 0, 0.2, 0.07); t.rotation.x = Math.PI / 2; }
             if (hs === 'braid') {
               for (let i = 0; i < 8; i++) sph(H, 0.045 - i * 0.002, hairMat, 0.17 + i * 0.012, -0.03 - i * 0.075, -0.02 + (i % 2 ? 0.012 : -0.012), 1, 1.2, 1, 10);
@@ -2578,28 +2592,30 @@
 
           // hats
           const hat = look.hat;
+          const hatG = new THREE.Group(); H.add(hatG);
+          hatG.position.y = { souwester: 0.07, cap: 0.07, beanie: 0.03, bucket: 0.09, straw: 0.06, none: 0 }[hat] || 0;
           if (hat === 'souwester') {
-            lathe(H, [[0.001, 0.25], [0.12, 0.245], [0.205, 0.2], [0.232, 0.1], [0.235, 0.05]], hatMat, 30);
-            lathe(H, [[0.235, 0.05], [0.29, 0.03], [0.4, -0.02]], hatMat, 30, 1.05).position.set(0, 0.0, 0.05);
-            const flap = put(H, new THREE.CylinderGeometry(0.245, 0.34, 0.22, 18, 1, true, -Math.PI / 2, Math.PI), hatMat); flap.position.set(0, -0.08, 0.06);
-            [-1, 1].forEach(s => put(H, new THREE.CylinderGeometry(0.006, 0.006, 0.26, 4), darkMat, s * 0.19, -0.1, -0.06).rotation.set(0.2, 0, s * -0.3));
-            sph(H, 0.022, brass, 0, 0.255, 0, 1, 1, 1, 8);
+            lathe(hatG, [[0.001, 0.25], [0.12, 0.245], [0.205, 0.2], [0.232, 0.1], [0.235, 0.05]], hatMat, 30);
+            lathe(hatG, [[0.235, 0.05], [0.29, 0.03], [0.4, -0.02]], hatMat, 30, 1.05).position.set(0, 0.0, 0.05);
+            const flap = put(hatG, new THREE.CylinderGeometry(0.245, 0.34, 0.22, 18, 1, true, -Math.PI / 2, Math.PI), hatMat); flap.position.set(0, -0.08, 0.06);
+            [-1, 1].forEach(s => put(hatG, new THREE.CylinderGeometry(0.006, 0.006, 0.26, 4), darkMat, s * 0.19, -0.1, -0.06).rotation.set(0.2, 0, s * -0.3));
+            sph(hatG, 0.022, brass, 0, 0.255, 0, 1, 1, 1, 8);
           } else if (hat === 'cap') {
-            const dome = put(H, new THREE.SphereGeometry(0.228, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), hatMat); dome.position.y = 0.02; dome.scale.set(1, 0.95, 1.02);
-            const visor = put(H, new THREE.CylinderGeometry(0.2, 0.2, 0.014, 24, 1, false, Math.PI * 0.5 + 0.2, Math.PI - 0.4), hatMat); visor.position.set(0, 0.04, -0.2); visor.scale.set(1, 1, 1.0); visor.rotation.y = Math.PI; visor.position.z = -0.1; visor.scale.set(1.05, 1, 1.0);
-            put(H, new THREE.TorusGeometry(0.226, 0.01, 6, 28), accMat, 0, 0.03, 0).rotation.x = Math.PI / 2;
-            sph(H, 0.02, accMat, 0, 0.245, 0, 1, 1, 1, 8);
+            const dome = put(hatG, new THREE.SphereGeometry(0.228, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), hatMat); dome.position.y = 0.02; dome.scale.set(1, 0.95, 1.02);
+            const visor = put(hatG, new THREE.CircleGeometry(0.27, 28, Math.PI, Math.PI), new THREE.MeshStandardMaterial({ color: hatMat.color, roughness: 0.7, side: THREE.DoubleSide })); visor.geometry.rotateX(Math.PI / 2); visor.scale.set(0.85, 1, 1); visor.position.set(0, 0.035, -0.02); visor.rotation.x = 0.12;
+            put(hatG, new THREE.TorusGeometry(0.226, 0.01, 6, 28), accMat, 0, 0.03, 0).rotation.x = Math.PI / 2;
+            sph(hatG, 0.02, accMat, 0, 0.245, 0, 1, 1, 1, 8);
           } else if (hat === 'beanie') {
-            const dome = put(H, new THREE.SphereGeometry(0.232, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.56), hatMat); dome.position.y = 0.02; dome.scale.set(1, 1.05, 1.02);
-            const cuff = put(H, new THREE.TorusGeometry(0.225, 0.03, 10, 30), accMat, 0, 0.065, 0); cuff.rotation.x = Math.PI / 2;
-            sph(H, 0.06, accMat, 0, 0.27, 0, 1, 1, 1, 14);
+            const dome = put(hatG, new THREE.SphereGeometry(0.232, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.46), hatMat); dome.position.y = 0.02; dome.scale.set(1, 1.05, 1.02);
+            const cuff = put(hatG, new THREE.TorusGeometry(0.225, 0.03, 10, 30), accMat, 0, 0.09, 0); cuff.rotation.x = Math.PI / 2;
+            sph(hatG, 0.06, accMat, 0, 0.27, 0, 1, 1, 1, 14);
           } else if (hat === 'bucket') {
-            lathe(H, [[0.001, 0.2], [0.17, 0.195], [0.22, 0.16], [0.24, 0.07], [0.3, 0.02], [0.36, 0.0]], hatMat, 30);
-            put(H, new THREE.TorusGeometry(0.238, 0.012, 6, 28), accMat, 0, 0.07, 0).rotation.x = Math.PI / 2;
+            lathe(hatG, [[0.001, 0.2], [0.17, 0.195], [0.22, 0.16], [0.24, 0.07], [0.3, 0.02], [0.36, 0.0]], hatMat, 30);
+            put(hatG, new THREE.TorusGeometry(0.238, 0.012, 6, 28), accMat, 0, 0.07, 0).rotation.x = Math.PI / 2;
           } else if (hat === 'straw') {
-            const dome = put(H, new THREE.SphereGeometry(0.22, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(0xe9c46a, 0.9, 0, { side: THREE.DoubleSide })); dome.position.y = 0.05; dome.scale.set(1, 0.9, 1);
-            const brim = put(H, new THREE.CylinderGeometry(0.46, 0.46, 0.014, 34), mat(0xe9c46a, 0.9), 0, 0.055, 0); brim.scale.set(1, 1, 1.0);
-            put(H, new THREE.TorusGeometry(0.218, 0.022, 8, 30), hatMat, 0, 0.1, 0).rotation.x = Math.PI / 2;
+            const dome = put(hatG, new THREE.SphereGeometry(0.22, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(0xe9c46a, 0.9, 0, { side: THREE.DoubleSide })); dome.position.y = 0.05; dome.scale.set(1, 0.9, 1);
+            const brim = put(hatG, new THREE.CylinderGeometry(0.46, 0.46, 0.014, 34), mat(0xe9c46a, 0.9), 0, 0.055, 0); brim.scale.set(1, 1, 1.0);
+            put(hatG, new THREE.TorusGeometry(0.218, 0.022, 8, 30), hatMat, 0, 0.1, 0).rotation.x = Math.PI / 2;
           }
 
           // ----- arms -----
@@ -2635,10 +2651,10 @@
             limb(leg, knee, ankle, 0.082, 0.056, skinMat);
             // bottoms on the legs
             if (look.bottom === 'shorts') { limb(leg, [0, 0.03, 0], [0, -0.14, 0], 0.114, 0.118, botMat, true); put(leg, new THREE.TorusGeometry(0.118, 0.008, 6, 20), accMat, 0, -0.14, 0).rotation.x = Math.PI / 2; }
-            if (look.bottom === 'jeans' || look.bottom === 'waders') {
+            if (look.bottom === 'jeans') {
               limb(leg, [0, 0.03, 0], knee, 0.114, 0.095, botMat, true);
               sph(leg, 0.096, botMat, knee[0], knee[1], knee[2], 1, 1, 1, 14);
-              limb(leg, knee, [0, look.shoes === 'boots' ? -0.24 : -0.34, 0], 0.094, look.bottom === 'jeans' ? 0.075 : 0.088, botMat, true);
+              limb(leg, knee, [0, look.shoes === 'boots' ? -0.24 : -0.34, 0], 0.094, 0.075, botMat, true);
               if (look.bottom === 'jeans') put(leg, new THREE.TorusGeometry(0.078, 0.01, 6, 18), accMat, 0, -0.335, 0).rotation.x = Math.PI / 2;
             }
             // feet and shoes

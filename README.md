@@ -168,7 +168,7 @@ The encyclopedia (📖 Log) tracks **63 catchable things**:
 Open it from the start screen (**🎨 Customise Look**), the ⚙️ drawer (**🎨 Look**) or **Settings → Appearance**.
 
 - A live **3D preview** that rotates by itself and can be dragged to turn.
-- **Male / Female** bodies. The female body has a different build and bust shape.
+- **Male / Female** bodies. The female body has a different build and a smoothly shaped bust that every top, sweater and coat follows.
 - Tabs: **Body** (skin tone, eye colour), **Hair** (style and colour), **Face** (facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
 - **🎲 Random** rolls a whole new character (it keeps your chosen gender) and **↺ Reset** restores the default outfit.
 - Options:
@@ -182,7 +182,7 @@ Open it from the start screen (**🎨 Customise Look**), the ⚙️ drawer (**�
 | Facial hair | None, Stubble, Mustache, Goatee, Full beard |
 | Glasses | None, Round, Sunglasses |
 | Tops | Striped sweater, T-shirt, Tank top, Hoodie, Raincoat |
-| Bottoms | Waders, Shorts, Jeans, Skirt |
+| Bottoms | Jeans, Shorts, Skirt |
 | Shoes | Rubber boots, Sneakers, Sandals, Barefoot |
 | Hats | Sou'wester, Cap, Beanie, Bucket hat, Straw hat, None |
 | Clothing colours | 14 per item |
@@ -299,6 +299,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Character fixes
+- Hair no longer covers the eyes: shorter hairlines, and hats now sit above the eyes.
+- Long hair is rotated 90 degrees about the head's centre so it hangs down the back.
+- Removed the waders option. Saves that used waders switch to jeans automatically.
+- New female bust: a smooth bulge shaped into the body and into every garment, replacing the two attached spheres.
+- One smooth head surface with a tapered chin (fixes speckling on the face), a proper cap visor, and cleaner tank-top hems.
 
 ### 2026-11-18, Customisable character
 - Rebuilt the fisherman with smooth, layered geometry instead of chunky low-poly parts: a skin body with clothing shells, proper head, hands and feet.
