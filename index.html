@@ -717,37 +717,6 @@
     .toast.show { opacity: 1; transform: none; }
 
     /* Thumb-reach quick buttons between the stick and the action button */
-    .quick-dock {
-      pointer-events: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding-bottom: 4px;
-    }
-    .dock-btn {
-      position: relative;
-      width: 60px;
-      height: 52px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1px;
-      background: rgba(24, 38, 61, 0.92);
-      color: #f8fafc;
-      border: 2px solid var(--border-light);
-      box-shadow: 0 2px 0 #070c14;
-      border-radius: 6px;
-      font-family: inherit;
-      font-weight: bold;
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    .dock-btn .ic { font-size: 20px; line-height: 1; }
-    .dock-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #070c14; }
 
     /* Menu sheet */
     .modal-backdrop.sheet-modal { align-items: flex-end; padding-bottom: 0; }
@@ -1049,12 +1018,11 @@
     body[data-joy="floating"] .touch-zone-left { min-width: calc(var(--joy-size) * var(--ui-scale, 1)); min-height: calc(var(--joy-size) * var(--ui-scale, 1)); pointer-events: none; }
     body[data-joy="floating"] #virtual-joystick.live { position: fixed; opacity: 1; z-index: 30; }
     /* auto-hide: while a line is in the water only the essentials stay */
-    .hud-top, .quick-dock { transition: opacity 0.25s; }
+    .hud-top { transition: opacity 0.25s; }
     body[data-autohide="1"][data-fishing="1"] .hud-gauges,
     body[data-autohide="1"][data-fishing="1"] .hud-stack,
-    body[data-autohide="1"][data-fishing="1"] .quick-dock,
     body[data-autohide="1"][data-fishing="1"] #live-bait-pip { opacity: 0.12; pointer-events: none; }
-    @media (prefers-reduced-motion: reduce) { .hud-top, .quick-dock { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .hud-top { transition: none; } }
     /* ---- Bottom-sheet modals (phones), near full-screen in short landscape ---- */
     @keyframes sheetUp { from { transform: translateY(40px); opacity: 0.6; } to { transform: none; opacity: 1; } }
     .modal-window { position: relative; }
@@ -1222,7 +1190,7 @@
         <div class="hud-right">
           <span class="hud-chip" id="hud-weather" title="Weather">☀️ Clear</span>
           <span class="hud-chip" id="hud-time">12:00</span>
-          <button class="sleek-menu-btn" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
+          <button class="sleek-menu-btn menu-dot" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
         </div>
       </div>
 
@@ -1309,10 +1277,6 @@
         </div>
       </div>
 
-      <div class="quick-dock">
-        <button class="dock-btn" id="btn-open-bucket" type="button" aria-label="Open bag"><span class="ic">🪣</span>Bag</button>
-        <button class="dock-btn menu-dot" id="btn-open-log" type="button" aria-label="Open encyclopedia"><span class="ic">📖</span>Log</button>
-      </div>
 
       <div class="touch-zone-right">
         <button id="btn-primary-action" type="button">
@@ -8291,7 +8255,7 @@
 
       function updateLogNewDot() {
         const hasNew = state.discovered.some(id => !state.seenSpecies.includes(id));
-        document.getElementById('btn-open-log').classList.toggle('has-new', hasNew);
+        document.getElementById('btn-toggle-drawer').classList.toggle('has-new', hasNew);
         document.getElementById('menu-log').classList.toggle('has-new', hasNew);
       }
 
@@ -8393,8 +8357,6 @@
         });
       }
 
-      document.getElementById('btn-open-bucket').addEventListener('click', openBucketModal);
-      document.getElementById('btn-open-log').addEventListener('click', openLogModal);
       document.getElementById('btn-toggle-drawer').addEventListener('click', () => {
         document.getElementById('modal-menu').classList.add('open');
       });

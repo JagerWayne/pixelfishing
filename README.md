@@ -50,8 +50,8 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Walk / steer boat | Left thumbstick | `W` `A` `S` `D` or arrow keys |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space` |
 | Interact with the nearest pier object | Action button | `E` |
-| Open bag / bucket | **🪣 Bag** button (beside the thumbstick) | `B` |
-| Open encyclopedia | **📖 Log** button | `L` |
+| Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
+| Open encyclopedia | **☰ Menu → 📖 Log** (a dot on ☰ marks new species) | `L` |
 | Toolbox or bucket (when nearby) | Action button | `T` |
 | Open the menu (Bag, Log, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
@@ -321,7 +321,7 @@ There is no test framework in the repository. Changes are checked with headless 
 ### 2026-11-18, Mobile interface, part 1
 - **Top bar:** one tidy status bar (cash, time and weather, menu button) with bucket and fuel gauges underneath. Nothing is clipped on a 360 px phone any more, and low fuel turns the gauge red and pulsing instead of popping a drawer open.
 - **Menu sheet:** the ☰ button opens a slide-up sheet with large tiles (Bag, Log, Settings, Look, Sound) and the rod, bait, vessel, eco perk, lens and moon info. It replaces the small gear drawer.
-- **Bag and Log** quick buttons sit beside the thumbstick.
+- **Bag and Log** live in the menu sheet only; the screen bottom is just the thumbstick and action button.
 - **Bigger touch targets:** all buttons are at least 44 px and all text at least 12 px.
 - **Toasts** now queue and stack (up to three) with a length-based duration. Layout is measured, so toasts and the fishing meters no longer overlap the HUD. Thumbstick and action button scale with the screen.
 
