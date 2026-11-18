@@ -3193,322 +3193,197 @@
           return g;
         }
 
+        /* ------------------------------------------------------------------
+           BOATS: shared lofted hull + three detailed vessels.
+           Bow points toward -Z, up is +Y, origin near the waterline centre.
+           ------------------------------------------------------------------ */
+        static loftHull(o) {
+          // o: L, beam, draft, depth (keel->sheer at midship), bowRise, sternRise, sternW, bands:[{y0,y1,color}], planks
+          const NZ = 30, NP = 10;
+          const pos = [], col = [], idx = [];
+          const c = new THREE.Color();
+          const sheerY = t => o.depth - o.draft + o.depth * (0.45 * (t < 0.4 ? Math.pow((0.4 - t) / 0.4, 1.7) * o.bowRise : 0) + (t > 0.8 ? (t - 0.8) * o.sternRise : 0));
+          const keelY = t => -o.draft * (0.25 + 0.75 * THREE.MathUtils.smoothstep(t, 0.0, 0.42)) + (t > 0.85 ? (t - 0.85) * 0.9 : 0);
+          const halfW = t => {
+            const base = o.beam / 2;
+            if (t < 0.5) return base * Math.pow(Math.max(0.02, t / 0.5), 0.62);
+            const k = Math.max(0, (t - 0.86) / 0.14); // rounded quarters only in the last stretch
+            return base * (1 - 0.05 * (t - 0.5) / 0.5) * (1 - (1 - o.sternW) * k * k);
+          };
+          const loops = [];
+          for (let i = 0; i <= NZ; i++) {
+            const t = i / NZ, z = -o.L / 2 + t * o.L;
+            const w = halfW(t), ky = keelY(t), sy = sheerY(t);
+            const right = [];
+            for (let k = 0; k < NP; k++) {
+              const u = k / (NP - 1);
+              const x = w * (1 - Math.pow(1 - u, 2.1)) * (1 + (o.planks ? Math.sin(u * o.planks * Math.PI * 2) * 0.012 : 0));
+              right.push([x, ky + (sy - ky) * u, z]);
+            }
+            const left = right.slice(0, NP - 1).reverse().map(p => [-p[0], p[1], p[2]]);
+            loops.push(right.concat(left));
+          }
+          const NL = loops[0].length;
+          loops.forEach(loop => loop.forEach(p => {
+            pos.push(p[0], p[1], p[2]);
+            c.set(o.bands[o.bands.length - 1].color);
+            for (const b of o.bands) { if (p[1] >= b.y0 && p[1] < b.y1) { c.set(b.color); break; } }
+            if (o.planks) { const pl = Math.floor((p[1] + o.draft) * o.planks * 2.2); if (pl % 2) c.multiplyScalar(0.88); }
+            col.push(c.r, c.g, c.b);
+          }));
+          for (let i = 0; i < NZ; i++) for (let j = 0; j < NL - 1; j++) {
+            const a = i * NL + j, b = a + NL;
+            idx.push(a, b, a + 1, b, b + 1, a + 1);
+          }
+          const g = new THREE.BufferGeometry();
+          g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+          g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+          g.setIndex(idx); g.computeVertexNormals();
+          // flat transom board closing the stern, with its own flat normals
+          const last = loops[NZ];
+          const tp = [], tc = [], ti = [], tn = [];
+          const zT = last[0][2];
+          const top = last[NP - 1];
+          tp.push(0, top[1], zT); c.set(o.bands[o.bands.length - 1].color); tc.push(c.r, c.g, c.b); tn.push(0, 0, 1);
+          last.forEach(p => {
+            tp.push(p[0], p[1], zT);
+            c.set(o.bands[o.bands.length - 1].color);
+            for (const bnd of o.bands) { if (p[1] >= bnd.y0 && p[1] < bnd.y1) { c.set(bnd.color); break; } }
+            tc.push(c.r, c.g, c.b); tn.push(0, 0, 1);
+          });
+          for (let j = 1; j < NL; j++) ti.push(0, j, j + 1);
+          const tg = new THREE.BufferGeometry();
+          tg.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3));
+          tg.setAttribute('color', new THREE.Float32BufferAttribute(tc, 3));
+          tg.setAttribute('normal', new THREE.Float32BufferAttribute(tn, 3));
+          tg.setIndex(ti);
+          const topY = top[1], topX = top[0];
+          return { geo: g, transom: tg, halfW, sheerY, keelY, sternTop: { y: topY, x: topX, z: zT } };
+        }
+
         static buildBoatMesh(tier, textures) {
           const group = new THREE.Group();
           if (tier === 0) return group;
+          const M = (color, rough = 0.6, metal = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra));
+          const box = (w, h, d, mat, x, y, z, parent = group) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); parent.add(m); return m; };
+          const cyl = (rt, rb, h, mat, x, y, z, seg = 10, parent = group) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z); parent.add(m); return m; };
+          const hullMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.55, metalness: 0.05 });
+          const addRails = (hull, mat, radius, lift = 0.0, from = 0.04, to = 0.98) => {
+            { // rail across the top of the transom so the stern reads as a finished edge
+              const st = hull.sternTop;
+              const cap = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(st.x) * 2 + radius * 2, radius * 2, radius * 2.4), mat);
+              cap.position.set(0, st.y + lift, st.z); group.add(cap);
+            }
+            [-1, 1].forEach(side => {
+              const pts = [];
+              for (let i = 0; i <= 24; i++) { const t = from + (to - from) * (i / 24); pts.push(new THREE.Vector3(side * hull.halfW(t) * 1.01, hull.sheerY(t) + lift, -hull.L / 2 + t * hull.L)); }
+              group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, radius, 6, false), mat));
+            });
+          };
+          const outboard = (x, y, z, cowl, leg) => {
+            const o = new THREE.Group();
+            const cow = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.5, 0.58), M(cowl, 0.4, 0.2)); cow.position.y = 0.55;
+            const top = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.1, 10), M(0x111827, 0.5)); top.position.y = 0.84;
+            const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.9, 0.22), M(leg, 0.5, 0.3)); shaft.position.y = -0.15;
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 8), M(leg, 0.4, 0.4)); foot.rotation.x = Math.PI / 2; foot.position.set(0, -0.62, 0.08);
+            const prop = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.03), M(0xcbd5e1, 0.3, 0.8)); prop.position.set(0, -0.62, 0.34);
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.06, 0.59), M(0xdc2626, 0.5)); stripe.position.y = 0.45;
+            o.add(cow, top, shaft, foot, prop, stripe); o.position.set(x, y, z); group.add(o);
+          };
 
           if (tier === 1) {
-            const hullMat = new THREE.MeshStandardMaterial({
-              map: textures.wood,
-              color: 0xb87339,
-              roughness: 0.72,
-              side: THREE.DoubleSide,
-              flatShading: true
+            // ---- Wooden clinker rowboat ----
+            const hull = this.loftHull({ L: 4.6, beam: 2.3, draft: 0.34, depth: 1.0, bowRise: 0.55, sternRise: 0.4, sternW: 0.72, planks: 4,
+              bands: [{ y0: -9, y1: 0.0, color: '#7a4a24' }, { y0: 0.0, y1: 0.08, color: '#d6c8a0' }, { y0: 0.08, y1: 9, color: '#b97a3e' }] });
+            hull.L = 4.6; group.add(new THREE.Mesh(hull.geo, hullMat), new THREE.Mesh(hull.transom, hullMat));
+            const trim = M(0x3b1f0d, 0.7), wood = M(0xc98a4a, 0.75), dark = M(0x2b180b, 0.8);
+            addRails(hull, trim, 0.06, 0.02);
+            // floor boards, thwarts, stem post
+            for (let i = 0; i < 5; i++) box(0.3, 0.03, 2.6, wood, -0.6 + i * 0.3, 0.02, 0.3);
+            [-1.2, 0.55, 1.45].forEach((z, i) => { const w = hull.halfW((z + 2.3) / 4.6) * 1.82; box(w, 0.07, 0.34, trim, 0, 0.5, z); box(w * 0.92, 0.05, 0.3, wood, 0, 0.55, z); });
+            const stem = box(0.1, 1.0, 0.1, trim, 0, 0.35, -2.25); stem.rotation.x = -0.6;
+            // oars resting across the gunwales
+            [[-0.35, 0.2], [0.4, -0.15]].forEach(([z, rot], i) => {
+              const oar = new THREE.Group();
+              const shaft = cyl(0.03, 0.03, 3.3, wood, 0, 0, 0, 6, oar); shaft.rotation.z = Math.PI / 2;
+              const blade = box(0.5, 0.03, 0.2, wood, -1.55, 0, 0, oar);
+              oar.position.set(0, 0.62, z); oar.rotation.y = rot; group.add(oar);
             });
-            const trimMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.65, flatShading: true });
-            const metalMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.65, roughness: 0.35, flatShading: true });
+            // rope coil, lantern, fender
+            const rope = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 6, 14), M(0xa8845a, 0.95)); rope.rotation.x = Math.PI / 2; rope.position.set(0.4, 0.07, -1.6); group.add(rope);
+            const lan = cyl(0.07, 0.07, 0.16, M(0xfacc15, 0.4, 0.5, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.5 }), -0.5, 0.52, -1.35, 8);
+            outboard(0, 0.52, 2.45, 0x64748b, 0x475569);
+            const tiller = cyl(0.025, 0.025, 0.9, trim, 0, 0.85, 2.0, 6); tiller.rotation.x = 1.2;
+          }
 
-            const hullGeo = new THREE.CylinderGeometry(1.08, 0.56, 4.3, 18, 8, true);
-            hullGeo.rotateX(Math.PI / 2);
-            const pos = hullGeo.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-              let x = pos.getX(i);
-              let y = pos.getY(i);
-              const z = pos.getZ(i);
-              const t = (z + 2.15) / 4.3;
-              if (y > 0.08) y = 0.08;
-              const widthProfile = t < 0.55
-                ? Math.pow(Math.max(0.04, t / 0.55), 0.72)
-                : 1.0 - (t - 0.55) * 0.22;
-              const rocker = Math.pow(Math.abs(t - 0.55) * 1.6, 2.2) * 0.28;
-              const sheerRise = t < 0.35 ? Math.pow((0.35 - t) / 0.35, 1.5) * 0.36 : 0;
-              const strakeStep = 1 + Math.sin(y * 28) * 0.035;
-              pos.setX(i, x * widthProfile * 1.08 * strakeStep);
-              pos.setY(i, y * 0.78 + rocker + sheerRise);
-            }
-            hullGeo.computeVertexNormals();
-            const hullMesh = new THREE.Mesh(hullGeo, hullMat);
-            hullMesh.position.y = 0.52;
-            group.add(hullMesh);
+          if (tier === 2) {
+            // ---- Fiberglass centre-console skiff ----
+            const hull = this.loftHull({ L: 6.0, beam: 2.7, draft: 0.62, depth: 1.5, bowRise: 0.42, sternRise: 0.1, sternW: 0.88, planks: 0,
+              bands: [{ y0: -9, y1: -0.2, color: '#b91c1c' }, { y0: -0.2, y1: -0.1, color: '#f8fafc' }, { y0: -0.1, y1: 0.55, color: '#f8fafc' }, { y0: 0.55, y1: 0.72, color: '#1d4ed8' }, { y0: 0.72, y1: 9, color: '#f8fafc' }] });
+            hull.L = 6.0; group.add(new THREE.Mesh(hull.geo, hullMat), new THREE.Mesh(hull.transom, hullMat));
+            const white = M(0xf8fafc, 0.4), grey = M(0x94a3b8, 0.5, 0.2), blue = M(0x1d4ed8, 0.45), steel = M(0xcbd5e1, 0.3, 0.8), glass = M(0x7dd3fc, 0.1, 0.1, { transparent: true, opacity: 0.45 });
+            addRails(hull, steel, 0.045, 0.02);
+            // deck & coaming
+            box(1.7, 0.05, 4.2, M(0xe2e8f0, 0.9), 0, 0.1, 0.3);
+            for (let i = -3; i <= 3; i++) box(0.012, 0.055, 4.1, M(0x94a3b8, 0.9), i * 0.22, 0.105, 0.3);
+            // console with sloped front, windshield and wheel
+            const con = box(0.86, 1.0, 0.8, white, 0, 0.65, -0.55);
+            const conTop = box(0.9, 0.06, 0.84, blue, 0, 1.17, -0.55);
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.5, 0.03), glass); screen.position.set(0, 1.5, -0.9); screen.rotation.x = -0.3; group.add(screen);
+            [-0.43, 0.43].forEach(x => box(0.03, 0.5, 0.03, steel, x, 1.5, -0.9).rotation.x = -0.3);
+            const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 6, 14), M(0x111827, 0.6)); wheel.position.set(0, 1.0, -0.88); wheel.rotation.x = -0.6; group.add(wheel);
+            box(0.4, 0.1, 0.02, M(0x0f172a, 0.3, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.35 }), 0, 0.95, -0.93);
+            // bow rail & cleat, cooler seat, rod holders, light
+            const bowPts = [-1, 1].map(s => new THREE.Vector3(s * 0.62, 0.9, -2.0)); box(1.24, 0.05, 0.05, steel, 0, 0.98, -2.1);
+            [-0.62, 0.62].forEach(x => cyl(0.025, 0.025, 0.45, steel, x, 0.78, -2.1, 6));
+            box(0.9, 0.42, 0.5, blue, 0, 0.3, 0.9); box(0.92, 0.05, 0.52, white, 0, 0.55, 0.9);
+            [-1, 1].forEach(s => [-0.2, 1.0].forEach(z => { const h = cyl(0.05, 0.05, 0.3, steel, s * hull.halfW((z + 3) / 6) * 0.98, 0.95, z, 8); h.rotation.z = -s * 0.4; }));
+            [-1, 1].forEach(s => cyl(0.045, 0.045, 0.1, M(s > 0 ? 0x16a34a : 0xdc2626, 0.4, 0, { emissive: new THREE.Color(s > 0 ? 0x16a34a : 0xdc2626), emissiveIntensity: 0.6 }), s * 0.45, 1.0, -2.2, 8));
+            outboard(0, 0.9, 3.15, 0x111827, 0x94a3b8);
+            box(0.18, 0.05, 0.1, steel, 0, 0.6, 3.0);
+          }
 
-            const transomGeo = new THREE.CylinderGeometry(0.96, 0.52, 0.14, 14);
-            transomGeo.rotateX(Math.PI / 2);
-            transomGeo.scale(1.02, 0.56, 1);
-            const transom = new THREE.Mesh(transomGeo, hullMat);
-            transom.position.set(0, 0.44, 2.12);
-            const transomCap = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.94, 6), trimMat);
-            transomCap.rotation.z = Math.PI / 2;
-            transomCap.position.set(0, 0.74, 2.13);
-            group.add(transom, transomCap);
-
-            const floor = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.38, 3.35, 8), trimMat);
-            floor.rotation.x = Math.PI / 2;
-            floor.scale.set(1.12, 0.08, 1);
-            floor.position.set(0, 0.18, 0.32);
-            group.add(floor);
-
-            [-1, 1].forEach(side => {
-              const railPts = [];
-              for (let s = 0; s <= 10; s++) {
-                const t = s / 10;
-                const z = -2.15 + t * 4.3;
-                const w = (t < 0.55 ? Math.pow(Math.max(0.03, t / 0.55), 0.72) : 1.0 - (t - 0.55) * 0.22) * 1.14;
-                const y = 0.58 + (t < 0.35 ? Math.pow((0.35 - t) / 0.35, 1.5) * 0.36 : 0) + Math.pow(Math.abs(t - 0.55) * 1.6, 2.2) * 0.28;
-                railPts.push(new THREE.Vector3(side * w, y, z));
-              }
-              const railCurve = new THREE.CatmullRomCurve3(railPts);
-              const railMesh = new THREE.Mesh(new THREE.TubeGeometry(railCurve, 14, 0.055, 6, false), trimMat);
-              group.add(railMesh);
-
-              const oarlock = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.018, 5, 8), metalMat);
-              oarlock.position.set(side * 1.12, 0.65, -0.05);
-              group.add(oarlock);
-            });
-
-            [
-              { z: -1.1, w: 1.15, y: 0.52 },
-              { z: 0.1, w: 1.95, y: 0.48 },
-              { z: 1.55, w: 1.72, y: 0.52 }
-            ].forEach(b => {
-              const thwart = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, b.w, 6), trimMat);
-              thwart.rotation.z = Math.PI / 2;
-              thwart.scale.set(0.22, 1, 1);
-              thwart.position.set(0, b.y, b.z);
-              group.add(thwart);
-            });
-
-            const fuelCan = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.2, 0.22, 0.34, 6),
-              new THREE.MeshStandardMaterial({ color: 0xdc2626, flatShading: true })
-            );
-            fuelCan.scale.set(1.2, 1, 0.75);
-            fuelCan.position.set(-0.42, 0.34, 1.05);
-            group.add(fuelCan);
-
-            const cowling = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.22, 0.24, 0.52, 8),
-              new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, flatShading: true })
-            );
-            cowling.rotation.x = Math.PI / 2;
-            cowling.position.set(0, 0.84, 2.28);
-
-            const tiller = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.65, 6), trimMat);
-            tiller.rotation.x = Math.PI / 2.4;
-            tiller.position.set(0.12, 0.78, 1.82);
-
-            const lowerUnit = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.75, 6), metalMat);
-            lowerUnit.position.set(0, 0.36, 2.30);
-
-            const propHub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.14, 6), metalMat);
-            propHub.rotation.x = Math.PI / 2;
-            propHub.position.set(0, 0.04, 2.36);
-
-            group.add(cowling, tiller, lowerUnit, propHub);
-          } else if (tier === 2) {
-            const hullMat = new THREE.MeshStandardMaterial({ map: textures.hull, roughness: 0.32, metalness: 0.1, flatShading: true });
-            const deckMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.45, flatShading: true });
-            const steelMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.2, flatShading: true });
-            const cushionMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6, flatShading: true });
-
-            const hullGeo = new THREE.CylinderGeometry(1.42, 0.82, 5.6, 20, 8);
-            hullGeo.rotateX(Math.PI / 2);
-            const pos = hullGeo.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-              let x = pos.getX(i);
-              let y = pos.getY(i);
-              const z = pos.getZ(i);
-              const t = (z + 2.8) / 5.6;
-              if (y > 0) y *= 0.22;
-              else y = y * 0.85 - (1 - Math.min(1, Math.abs(x) / 1.1)) * 0.25;
-              const beam = t < 0.48
-                ? Math.pow(Math.max(0.03, t / 0.48), 0.78)
-                : 1.0 - (t - 0.48) * 0.08;
-              const bowSheer = t < 0.35 ? Math.pow((0.35 - t) / 0.35, 1.4) * 0.34 : 0;
-              pos.setX(i, x * beam);
-              pos.setY(i, y + bowSheer);
-            }
-            hullGeo.computeVertexNormals();
-            const hullMesh = new THREE.Mesh(hullGeo, hullMat);
-            hullMesh.position.y = 0.56;
-            group.add(hullMesh);
-
-            [-1, 1].forEach(side => {
-              const coaming = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 3.6, 8), deckMat);
-              coaming.rotation.x = Math.PI / 2;
-              coaming.position.set(side * 1.24, 0.90, 0.95);
-              group.add(coaming);
-
-              const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.3, 6), steelMat);
-              rail.rotation.x = Math.PI / 2;
-              rail.rotation.y = side * 0.24;
-              rail.position.set(side * 0.72, 0.96, -1.45);
-              group.add(rail);
-            });
-
-            const aftTransom = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 2.55, 8), deckMat);
-            aftTransom.rotation.z = Math.PI / 2;
-            aftTransom.scale.set(1.15, 1, 1.25);
-            aftTransom.position.set(0, 0.84, 2.48);
-            const aftCushion = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.95, 8), cushionMat);
-            aftCushion.rotation.z = Math.PI / 2;
-            aftCushion.position.set(0, 1.14, 2.32);
-            group.add(aftTransom, aftCushion);
-
-            const foreDeck = new THREE.Mesh(new THREE.ConeGeometry(1.18, 2.0, 8), deckMat);
-            foreDeck.rotation.x = -Math.PI / 2;
-            foreDeck.scale.set(1.0, 1, 0.14);
-            foreDeck.position.set(0, 0.78, -1.75);
-            group.add(foreDeck);
-
-            const consoleBody = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.54, 1.15, 8), deckMat);
-            consoleBody.scale.set(1.15, 1, 0.85);
-            consoleBody.position.set(0, 1.15, 0.15);
-
-            const windshield = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.44, 0.46, 0.48, 8, 1, true, Math.PI * 0.65, Math.PI * 0.7),
-              new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.65, side: THREE.DoubleSide })
-            );
-            windshield.position.set(0, 1.85, 0.12);
-
-            const grabArch = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.025, 6, 12, Math.PI), steelMat);
-            grabArch.position.set(0, 1.72, 0.15);
-
-            const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 5, 10), steelMat);
-            wheel.rotation.x = Math.PI / 3;
-            wheel.position.set(-0.15, 1.48, 0.55);
-
-            const seatPost = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.65, 6), steelMat);
-            seatPost.scale.set(1.3, 1, 0.55);
-            seatPost.position.set(0, 0.95, 1.05);
-            const seatPad = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.85, 8), cushionMat);
-            seatPad.rotation.z = Math.PI / 2;
-            seatPad.position.set(0, 1.32, 1.05);
-
-            group.add(consoleBody, windshield, grabArch, wheel, seatPost, seatPad);
-
-            const engineCowl = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.28, 0.30, 0.82, 10),
-              new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.25, metalness: 0.3, flatShading: true })
-            );
-            engineCowl.scale.set(0.95, 1.0, 1.25);
-            engineCowl.position.set(0, 1.12, 2.95);
-            const engineStripe = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.31, 0.31, 0.1, 10),
-              new THREE.MeshStandardMaterial({ color: 0x38bdf8, flatShading: true })
-            );
-            engineStripe.position.set(0, 1.18, 2.95);
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.85, 6), steelMat);
-            leg.position.set(0, 0.45, 2.95);
-            group.add(engineCowl, engineStripe, leg);
-          } else {
-            const hullMat = new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.55, flatShading: true });
-            const bulwarkMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5, flatShading: true });
-            const deckMat = new THREE.MeshStandardMaterial({ map: textures.wood, color: 0x9a6b42, roughness: 0.8, flatShading: true });
-            const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.15, metalness: 0.5, flatShading: true });
-            const steelMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7, roughness: 0.3, flatShading: true });
-
-            const hullGeo = new THREE.CylinderGeometry(1.88, 1.22, 7.8, 22, 10);
-            hullGeo.rotateX(Math.PI / 2);
-            const pos = hullGeo.attributes.position;
-            for (let i = 0; i < pos.count; i++) {
-              let x = pos.getX(i);
-              let y = pos.getY(i);
-              const z = pos.getZ(i);
-              const t = (z + 3.9) / 7.8;
-              if (y > 0) y *= 0.32;
-              else y *= 0.92;
-              const beam = t < 0.42
-                ? Math.pow(Math.max(0.04, t / 0.42), 0.72)
-                : 1.0 - (t - 0.42) * 0.14;
-              const bowFlare = t < 0.38 ? Math.pow((0.38 - t) / 0.38, 1.55) * 0.78 : 0;
-              const flareX = (y > 0 && t < 0.45) ? 1.12 : 1.0;
-              pos.setX(i, x * beam * flareX);
-              pos.setY(i, y + bowFlare);
-            }
-            hullGeo.computeVertexNormals();
-            const hullMesh = new THREE.Mesh(hullGeo, hullMat);
-            hullMesh.position.y = 0.72;
-            group.add(hullMesh);
-
-            const aftDeck = new THREE.Mesh(new THREE.CylinderGeometry(1.52, 1.48, 4.4, 10), deckMat);
-            aftDeck.rotation.x = Math.PI / 2;
-            aftDeck.scale.set(1.05, 0.08, 1);
-            aftDeck.position.set(0, 1.05, 1.3);
-            group.add(aftDeck);
-
-            [-1, 1].forEach(side => {
-              const sideWall = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 4.3, 6), bulwarkMat);
-              sideWall.rotation.x = Math.PI / 2;
-              sideWall.scale.set(0.7, 2.2, 1);
-              sideWall.position.set(side * 1.58, 1.25, 1.45);
-              const capRail = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.35, 6), steelMat);
-              capRail.rotation.x = Math.PI / 2;
-              capRail.position.set(side * 1.58, 1.56, 1.45);
-              group.add(sideWall, capRail);
-            });
-
-            const sternBulwark = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 3.15, 6), bulwarkMat);
-            sternBulwark.rotation.z = Math.PI / 2;
-            sternBulwark.scale.set(1.4, 1, 0.85);
-            sternBulwark.position.set(0, 1.24, 3.62);
-            const sternRail = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.22, 6), steelMat);
-            sternRail.rotation.z = Math.PI / 2;
-            sternRail.position.set(0, 1.56, 3.62);
-            const sternNameplate = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.5, 6), hullMat);
-            sternNameplate.rotation.z = Math.PI / 2;
-            sternNameplate.position.set(0, 1.22, 3.82);
-            group.add(sternBulwark, sternRail, sternNameplate);
-
-            const cabinBase = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 1.24, 1.75, 8), bulwarkMat);
-            cabinBase.scale.set(1.1, 1, 1.25);
-            cabinBase.position.set(0, 1.85, -1.15);
-
-            const windowBand = new THREE.Mesh(new THREE.CylinderGeometry(1.14, 1.18, 0.45, 8), glassMat);
-            windowBand.scale.set(1.11, 1, 1.26);
-            windowBand.position.set(0, 2.25, -1.15);
-
-            const wheelhouseRoof = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.18, 0.22, 8), new THREE.MeshStandardMaterial({ color: 0x0369a1, flatShading: true }));
-            wheelhouseRoof.scale.set(1.12, 1, 1.28);
-            wheelhouseRoof.position.set(0, 2.75, -1.15);
-
-            const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 1.35, 8), hullMat);
-            stack.position.set(0.55, 2.65, -0.1);
-            const stackCap = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.22, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a, flatShading: true }));
-            stackCap.position.set(0.55, 3.35, -0.1);
-
-            group.add(cabinBase, windowBand, wheelhouseRoof, stack, stackCap);
-
-            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.12, 3.2, 8), steelMat);
-            mast.position.set(0, 4.1, -1.15);
-            const radarBar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.1, 6), bulwarkMat);
-            radarBar.rotation.z = Math.PI / 2;
-            radarBar.scale.set(1, 1, 0.45);
-            radarBar.position.set(0, 4.65, -1.15);
-            group.add(mast, radarBar);
-
-            [-1, 1].forEach(side => {
-              const outrigger = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.05, 4.2, 6), steelMat);
-              outrigger.position.set(side * 1.9, 3.4, -0.6);
-              outrigger.rotation.z = -side * 0.58;
-              outrigger.rotation.x = 0.22;
-              group.add(outrigger);
-            });
-
-            const winchDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.95, 10), steelMat);
-            winchDrum.rotation.z = Math.PI / 2;
-            winchDrum.position.set(0, 1.38, 0.75);
-
-            [-1, 1].forEach(side => {
-              const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.8, 6), steelMat);
-              leg.position.set(side * 1.25, 2.25, 3.1);
-              leg.rotation.x = 0.22;
-              group.add(leg);
-            });
-            const crossBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.75, 6), steelMat);
-            crossBeam.rotation.z = Math.PI / 2;
-            crossBeam.position.set(0, 3.55, 3.4);
-
-            group.add(winchDrum, crossBeam);
+          if (tier === 3) {
+            // ---- Deep-sea steel trawler ----
+            const hull = this.loftHull({ L: 9.4, beam: 3.7, draft: 1.0, depth: 2.6, bowRise: 0.5, sternRise: 0.2, sternW: 0.86, planks: 0,
+              bands: [{ y0: -9, y1: -0.15, color: '#7f1d1d' }, { y0: -0.15, y1: 0.0, color: '#f8fafc' }, { y0: 0.0, y1: 0.7, color: '#1e3a8a' }, { y0: 0.7, y1: 0.85, color: '#facc15' }, { y0: 0.85, y1: 9, color: '#1e3a8a' }] });
+            hull.L = 9.4; group.add(new THREE.Mesh(hull.geo, hullMat), new THREE.Mesh(hull.transom, hullMat));
+            const white = M(0xf1f5f9, 0.45), steel = M(0x94a3b8, 0.4, 0.6), darkM = M(0x1e293b, 0.6, 0.3), orange = M(0xf97316, 0.5), red = M(0xb91c1c, 0.5), yellow = M(0xfacc15, 0.5);
+            const glassM = M(0x0b1220, 0.15, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.28 });
+            addRails(hull, steel, 0.05, 0.1, 0.1, 0.96);
+            // deck
+            box(2.5, 0.06, 6.6, M(0x78716c, 0.9), 0, 0.5, 0.8);
+            box(2.3, 0.5, 1.6, M(0x1e3a8a, 0.5), 0, 0.75, -2.0); // forecastle
+            // wheelhouse + windows + roof + radar
+            const wh = box(2.0, 1.5, 2.0, white, 0, 1.55, -1.9);
+            box(2.2, 0.12, 2.2, red, 0, 2.35, -1.9);
+            [-0.6, 0, 0.6].forEach(x => box(0.45, 0.45, 0.04, glassM, x, 1.8, -2.92));
+            [-1, 1].forEach(s => [-2.3, -1.6].forEach(z => box(0.04, 0.4, 0.4, glassM, s * 1.01, 1.8, z)));
+            const radarBase = cyl(0.05, 0.05, 0.3, steel, 0.5, 2.55, -1.9, 6);
+            box(0.9, 0.06, 0.12, steel, 0.5, 2.75, -1.9);
+            // funnel, mast with crow's nest and rigging
+            const funnel = cyl(0.32, 0.38, 1.0, red, 0, 2.95, -1.0, 12);
+            cyl(0.33, 0.33, 0.18, M(0x111827, 0.7), 0, 3.5, -1.0, 12);
+            cyl(0.06, 0.08, 4.2, steel, 0, 3.4, -2.6, 8);
+            cyl(0.22, 0.22, 0.28, yellow, 0, 4.6, -2.6, 8);
+            [-1, 1].forEach(s => { const stay = cyl(0.012, 0.012, 4.4, darkM, s * 0.8, 2.9, -1.5, 4); stay.rotation.z = s * 0.3; stay.rotation.x = 0.25; });
+            // nav lights
+            [[-1, 0xdc2626], [1, 0x16a34a]].forEach(([s, c]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: c })); l.position.set(s * 1.05, 2.1, -2.7); group.add(l); });
+            // winch drum, A-frame gantry and trawl block at the stern
+            const drum = cyl(0.45, 0.45, 1.4, orange, 0, 0.95, 1.9, 14); drum.rotation.z = Math.PI / 2;
+            [-0.78, 0.78].forEach(x => cyl(0.55, 0.55, 0.06, steel, x, 0.95, 1.9, 14).rotation.z = Math.PI / 2);
+            [-1, 1].forEach(s => { const leg = box(0.12, 3.2, 0.12, yellow, s * 1.25, 2.0, 3.6); leg.rotation.x = 0.28; });
+            box(2.7, 0.14, 0.14, yellow, 0, 3.55, 3.15);
+            const block = cyl(0.12, 0.12, 0.2, steel, 0, 3.35, 3.15, 10); block.rotation.z = Math.PI / 2;
+            cyl(0.012, 0.012, 3.3, darkM, 0, 1.9, 2.5, 4).rotation.x = -0.55;
+            // trawl doors (otter boards) hung on the quarters
+            [-1, 1].forEach(s => { const d = box(0.08, 1.2, 0.8, M(0x7f1d1d, 0.6, 0.3), s * 1.95, 1.25, 1.6); d.rotation.z = s * 0.1; box(0.1, 0.1, 0.9, steel, s * 1.95, 0.7, 1.6); });
+            // crates, barrels, life ring
+            [[-1.0, 1.0], [-0.55, 1.4], [0.9, 0.2]].forEach(([x, z], i) => box(0.6, 0.45, 0.6, M(i % 2 ? 0x0e7490 : 0xea580c, 0.7), x, 0.78, z));
+            [[1.1, -0.9], [1.2, -0.3]].forEach(([x, z]) => cyl(0.26, 0.26, 0.6, M(0x1d4ed8, 0.6), x, 0.83, z, 12));
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.07, 8, 16), M(0xf97316, 0.5)); ring.position.set(1.04, 1.5, -1.9); ring.rotation.y = Math.PI / 2; group.add(ring);
+            // anchor and bow bollard
+            box(0.18, 0.18, 0.3, steel, 0, 1.08, -2.6);
           }
           return group;
         }
