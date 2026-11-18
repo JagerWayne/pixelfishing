@@ -201,11 +201,15 @@ The menu can add money, unlock all gear, restock bait and fuel, change the time 
 
 ## Settings
 
-Open **🎛️** in the HUD.
+Open **☰ Menu → Settings**.
 
 - **Sound effects** on or off (also on the 🔊 button).
 - **Haptics** (vibration) on or off, independent of sound.
 - **Graphics:** *High* or *Battery saver* (renders at lower resolution).
+- **Handedness:** *Right* or *Left*; left swaps the thumbstick and action button.
+- **Thumbstick:** *Fixed*, or *Floating*, where the stick appears under your thumb anywhere on its half of the screen and the fixed one stays as a faint hint.
+- **Button size:** *S*, *M* or *L* for the thumbstick and action button.
+- **Fade HUD while fishing:** dims the gauges and shortcuts while your line is out.
 - **Appearance:** opens the customisation screen.
 - **Install app** (when your browser offers it).
 - **Save data → Reset:** needs two taps to confirm. Settings are kept when you reset.
@@ -219,7 +223,7 @@ Progress is saved automatically in your browser's `localStorage`:
 | Key | Contents |
 |---|---|
 | `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance and more (save format version 2) |
-| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order |
+| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
@@ -309,6 +313,10 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Mobile interface, part 2: controls
+- **New control settings:** left-handed layout, floating thumbstick, small/medium/large buttons and an option to fade the HUD while fishing. Stored in the settings, validated on load.
+- Fishing meters are more compact in landscape, and the stacked pills sit under the top bar on short screens so they never push the controls off screen.
 
 ### 2026-11-18, Mobile interface, part 1
 - **Top bar:** one tidy status bar (cash, time and weather, menu button) with bucket and fuel gauges underneath. Nothing is clipped on a 360 px phone any more, and low fuel turns the gauge red and pulsing instead of popping a drawer open.
