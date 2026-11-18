@@ -48,7 +48,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Action | Touch | Keyboard |
 |---|---|---|
 | Walk | Thumbstick | `W` `A` `S` `D` or arrow keys |
-| Sail the boat | Thumbstick: push **where you want to go**; the boat turns toward that direction (screen up is out to sea) and speed follows how far you push; let go to ease to a stop | `W` `A` `S` `D` or arrow keys point the boat the same way |
+| Sail the boat | Thumbstick: **up** sails ahead, **left / right** turn, **down** brakes then reverses; the camera follows the boat, and turns are smoother the faster you go | `W` `S` throttle and reverse, `A` `D` or arrow keys turn |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space` |
 | Interact with the nearest pier object | Action button | `E` |
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
@@ -323,6 +323,9 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ### 2026-11-18, Version 2.1.0
 - Game version bumped to **v2.1.0** (shown on the start screen): boat camera and controls update, boat collisions, full screen, cheat confirmation and the mobile interface.
+
+### 2026-11-18, Camera follows the boat
+- The sailing camera rotates with the boat again (with a short, smooth lag, so turns never snap), and the stick works relative to the boat: up sails ahead, left and right turn, down brakes and then reverses. Banking, momentum and the collisions are unchanged, and backing into the pier or beach now bumps and slows as well.
 
 ### 2026-11-18, Boat collisions, boat control, Continue / New game
 - **Real boat collisions:** the invisible wall at the pier is gone. The pier, boardwalk, stairs, mooring platform, pilings, island shore, lighthouse rocks and buoys are solid, using a hull shape measured from your boat; you slide along them instead of stopping dead.
