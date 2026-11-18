@@ -2418,6 +2418,30 @@
             }
           }, 2, 8);
 
+          // Deck board: grain runs along U (the board's length); the edge lines frame one plank
+          const deck = this.makeTexture(64, (ctx, s) => {
+            let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+            ctx.fillStyle = '#8b5a31'; ctx.fillRect(0, 0, s, s);
+            for (let y = 3; y < s - 3; y++) { // soft banding between grain lines
+              ctx.fillStyle = (y % 5 < 2) ? 'rgba(255,214,160,0.07)' : 'rgba(40,20,8,0.07)';
+              ctx.fillRect(0, y, s, 1);
+            }
+            for (let i = 0; i < 26; i++) { // long grain streaks
+              const y = 3 + Math.floor(rnd() * (s - 6)), x = Math.floor(rnd() * s), w = 14 + Math.floor(rnd() * 40);
+              ctx.fillStyle = rnd() > 0.45 ? 'rgba(52,26,10,0.45)' : 'rgba(190,135,80,0.4)';
+              ctx.fillRect(x, y, w, 1);
+              if (x + w > s) ctx.fillRect(0, y, x + w - s, 1); // wrap so the tile repeats seamlessly
+            }
+            const knot = (kx, ky, r) => { // a knot with a few rings
+              ctx.fillStyle = 'rgba(48,24,9,0.85)'; ctx.beginPath(); ctx.ellipse(kx, ky, r * 1.6, r, 0, 0, Math.PI * 2); ctx.fill();
+              ctx.fillStyle = 'rgba(120,76,40,0.9)'; ctx.beginPath(); ctx.ellipse(kx, ky, r, r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+            };
+            knot(18, 30, 3); knot(47, 44, 2);
+            ctx.fillStyle = '#3a1f0d'; ctx.fillRect(0, 0, s, 2); ctx.fillRect(0, s - 2, s, 2); // board edges
+            ctx.fillStyle = 'rgba(255,220,170,0.18)'; ctx.fillRect(0, 2, s, 1);
+          });
+          deck.wrapS = deck.wrapT = THREE.RepeatWrapping;
+
           const water = this.makeTexture(64, (ctx, s) => {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, s, s);
@@ -2496,7 +2520,7 @@
           const bountySign = this.makeSignTexture('📋 BOUNTIES');
           const gallerySign = this.makeSignTexture('📜 BOTTLE GALLERY', 512, 128);
 
-          return { wood, water, sand, grass, awning, hull, scales, shopSign, bountySign, gallerySign };
+          return { wood, deck, water, sand, grass, awning, hull, scales, shopSign, bountySign, gallerySign };
         }
 
         static generateItemIcon(item) {
@@ -4611,7 +4635,7 @@
 
           // Stone Pier Abutment & Timber Ramp Steps Connecting Terrace (Z = 6.2) to Pier (Z = 3.2)
           const abutment = new THREE.Mesh(new THREE.BoxGeometry(6.0, 2.2, 3.6), stoneMat);
-          abutment.position.set(0, 0.45, 4.6);
+          abutment.position.set(0, 0.40, 4.6);
           scene.add(abutment);
 
           // Rolling Island Hills Behind the Harbor Terrace
@@ -4671,25 +4695,41 @@
           const woodMat = new THREE.MeshStandardMaterial({ map: textures.wood, roughness: 0.85, flatShading: true });
           const postMat = new THREE.MeshStandardMaterial({ color: 0x4a2c16, roughness: 0.9, flatShading: true });
 
-          // Waterfront Wooden Boardwalk Deck along the Terrace Front (X = -9.4 to +9.4, Z = 5.4 to 8.2)
-          // Waterfront Wooden Boardwalk Promenade along the Sea Edge (X = -10.5 to +10.5, Z = 0.0 to 3.4)
-          for (let x = -10.5; x <= 10.5; x += 0.72) {
-            const bwPlank = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.14, 3.4), woodMat);
-            bwPlank.position.set(x, 1.49 + Math.sin(x * 0.6) * 0.008, 1.7);
+          // ---- Deck: boards with the grain running along their length, three tints, dark timber underneath ----
+          const deckMats = (rx, ry, rot) => {
+            const t = textures.deck.clone(); t.needsUpdate = true;
+            t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
+            if (rot) { t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; }
+            return [0xffffff, 0xe7cfb6, 0xd2b497].map(c => new THREE.MeshStandardMaterial({ map: t, color: c, roughness: 0.88, flatShading: true }));
+          };
+          const planksAcross = deckMats(4, 1, false);   // pier planks run along X
+          const planksAlong = deckMats(1, 4.3, true);   // boardwalk planks run along Z
+          const timberDark = new THREE.MeshStandardMaterial({ color: 0x2b180b, roughness: 0.95, flatShading: true });
+          const addBox = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); pierGroup.add(m); return m; };
+
+          // dark underlay and joists, so the gaps between boards read as shadowed timber instead of showing the sea
+          addBox(21.6, 0.12, 5.7, timberDark, 0, 1.38, 2.85);
+          addBox(5.5, 0.12, 11.5, timberDark, 0, 1.38, -5.7);
+          for (let jz = 0.4; jz < 5.6; jz += 1.44) addBox(21.4, 0.16, 0.14, timberDark, 0, 1.28, jz);
+          for (let jz = -0.3; jz > -11.4; jz -= 1.44) addBox(5.4, 0.16, 0.14, timberDark, 0, 1.28, jz);
+          // fascia trim: the island edge of the boardwalk, its sea edge either side of the pier, and the seam where the pier starts
+          addBox(21.6, 0.2, 0.1, timberDark, 0, 1.45, 5.68);
+          [-1, 1].forEach(sd => addBox(7.9, 0.2, 0.1, timberDark, sd * 6.55, 1.45, -0.04));
+          addBox(5.4, 0.2, 0.1, timberDark, 0, 1.47, 0.0);
+
+          // Waterfront boardwalk along the sea edge (X = -10.5 to +10.5, Z = 0.0 to 5.6): one layer only
+          for (let x = -10.5, n = 0; x <= 10.5; x += 0.72, n++) {
+            const bwPlank = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.14, 5.6), planksAlong[(n * 7 + Math.floor(n / 3)) % 3]);
+            bwPlank.position.set(x, 1.49 + ((n * 5) % 4) * 0.002, 2.8);
             pierGroup.add(bwPlank);
           }
 
-          // Waterfront Wooden Boardwalk Promenade along the Sea Edge (X = -10.5 to +10.5, Z = 0.0 to 5.6)
-          for (let x = -10.5; x <= 10.5; x += 0.72) {
-            const bwPlank = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.14, 5.6), woodMat);
-            bwPlank.position.set(x, 1.49 + Math.sin(x * 0.6) * 0.008, 2.8);
-            pierGroup.add(bwPlank);
-          }
-
-          // Straight Main Pier Walkway Extending from Boardwalk (Z = 0.0) Out to End (Z = -10.0)
-          for (let z = 0.0; z >= -10.0; z -= 0.72) {
-            const plank = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.14, 0.64), woodMat);
-            plank.position.set(0, 1.48 + Math.sin(z * 0.7) * 0.01, z);
+          // Main pier walkway (Z = 0 out to the tip at -11.12). The first board is trimmed so it never overlaps the boardwalk.
+          for (let k = 0; k < 16; k++) {
+            const z = -0.72 * k;
+            const depth = k === 0 ? 0.32 : 0.64;
+            const plank = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.14, depth), planksAcross[(k * 5 + Math.floor(k / 2)) % 3]);
+            plank.position.set(0, 1.48 + ((k * 3) % 4) * 0.002, k === 0 ? -0.16 : z);
             pierGroup.add(plank);
           }
 
@@ -4743,7 +4783,7 @@
           // Pier & Boardwalk Pilings
           const pilingCoords = [
             [-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0],
-            [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8]
+            [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-2.4, -11.25], [2.4, -11.25]
           ];
           pilingCoords.forEach(([px, pz]) => {
             const piling = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 4.2, 8), postMat);
@@ -4790,8 +4830,8 @@
           addRailingSegment(2.45, 0.12, 2.45, -4.2);
           // Railings continue down both sides to the far end. The port side keeps an opening
           // (Z -4.2 to -6.9) for the stairs down to the mooring platform.
-          addRailingSegment(2.45, -4.2, 2.45, -9.9);
-          addRailingSegment(-2.45, -6.9, -2.45, -9.9);
+          addRailingSegment(2.45, -4.2, 2.45, -11.34);
+          addRailingSegment(-2.45, -6.9, -2.45, -11.34);
 
           // 3D Tackle Shop on the Waterfront Edge with Back to the Sea, Facing South (+Z) so Player Walks in Front
           const tackleShop = this.buildTackleShop(textures);
@@ -4824,14 +4864,15 @@
           pierGroup.add(tackleToolbox);
 
           let cheatGull = null;
+          let lighthouseBeacon = null;
           // ---- Pier detail layer: structure, mooring gear, bunting, gulls and a distant lighthouse ----
           {
             const K = this.propKit(textures);
             const deckY = 1.55;
 
             // side stringers and under-deck cross bracing so the pier reads as a built structure
-            [-2.6, 2.6].forEach(x => K.box(pierGroup, 0.16, 0.3, 10.0, K.darkWood, x, 1.36, -5.0));
-            [[-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8]].forEach(([px, pz]) => {
+            [-2.6, 2.6].forEach(x => K.box(pierGroup, 0.16, 0.3, 11.44, K.darkWood, x, 1.36, -5.72));
+            [[-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-2.4, -11.25], [2.4, -11.25]].forEach(([px, pz]) => {
               // barnacle ring at the waterline and a rope wrap near the top
               for (let i = 0; i < 9; i++) {
                 const a = (i / 9) * Math.PI * 2;
@@ -4844,7 +4885,7 @@
               wrap.rotation.x = Math.PI / 2; wrap.position.set(px, 1.7, pz); pierGroup.add(wrap);
               const wrap2 = wrap.clone(); wrap2.position.y = 1.82; pierGroup.add(wrap2);
             });
-            [[-3.2], [-9.8]].forEach(([z]) => K.box(pierGroup, 4.8, 0.14, 0.14, K.darkWood, 0, 0.75, z));
+            [[-3.2], [-9.8], [-11.25]].forEach(([z]) => K.box(pierGroup, 4.8, 0.14, 0.14, K.darkWood, 0, 0.75, z));
             [-1, 1].forEach(s => [-3.2, -9.8].forEach(z => { /* diagonals across the span between the two bent pairs */ }));
             const span = Math.hypot(6.6, 0.9);
             [-1, 1].forEach(s => {
@@ -4911,7 +4952,7 @@
               const tail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 4), white); tail.rotation.x = Math.PI / 2 + 0.3; tail.position.set(0, 0.17, 0.2); g.add(tail);
               g.rotation.y = yaw; return g;
             };
-            [[2.45, 2.62, -6.2, 0.6], [-2.45, 2.62, -8.4, -0.5], [2.4, 2.66, -3.2, 2.2], [-2.4, 2.66, -9.8, 3.4], [2.4, 2.66, -9.8, 0.2], [-10.4, 2.66, 0.0, 1.0]].forEach(([x, y, z, yaw]) => {
+            [[2.45, 2.62, -6.2, 0.6], [-2.45, 2.62, -8.4, -0.5], [2.4, 2.66, -3.2, 2.2], [-2.4, 2.66, -11.25, 3.4], [2.4, 2.66, -11.25, 0.2], [-10.4, 2.66, 0.0, 1.0]].forEach(([x, y, z, yaw]) => {
               const gull = buildGull(yaw); gull.position.set(x, y, z); pierGroup.add(gull);
             });
             // the seagull behind the tackle shop, hiding on the rail
@@ -4933,6 +4974,67 @@
             lh.position.set(52, -0.6, -150);
             lh.scale.setScalar(1.6);
             scene.add(lh);
+
+            // ---- Rotating beacon: two long beams that sweep round, plus a flare that is visible from any distance ----
+            const beaconPivot = new THREE.Group();
+            beaconPivot.position.y = lantern.position.y;
+            lh.add(beaconPivot);
+            const beamLen = 90, beamMat = new THREE.MeshBasicMaterial({
+              color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending,
+              depthWrite: false, side: THREE.DoubleSide, fog: false
+            });
+            const beamGeo = new THREE.CylinderGeometry(0.12, 4.4, beamLen, 14, 1, true);
+            beamGeo.translate(0, beamLen / 2, 0); beamGeo.rotateZ(-Math.PI / 2); // along +X, narrow end at the lantern
+            {
+              const pos = beamGeo.attributes.position, col = new Float32Array(pos.count * 3);
+              for (let i = 0; i < pos.count; i++) {
+                const f = Math.max(0, 1 - pos.getX(i) / beamLen); // bright at the lantern, fading out along the beam
+                col[i * 3] = 1.0 * f; col[i * 3 + 1] = 0.93 * f; col[i * 3 + 2] = 0.62 * f;
+              }
+              beamGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+            }
+            const beamA = new THREE.Mesh(beamGeo, beamMat), beamB = new THREE.Mesh(beamGeo, beamMat);
+            beamB.rotation.y = Math.PI;
+            beaconPivot.add(beamA, beamB);
+            const flareTex = (() => {
+              const c = document.createElement('canvas'); c.width = c.height = 64;
+              const g2 = c.getContext('2d'), gr = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+              gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.18, 'rgba(255,244,200,0.85)'); gr.addColorStop(0.5, 'rgba(255,220,140,0.25)'); gr.addColorStop(1, 'rgba(255,200,100,0)');
+              g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
+              return new THREE.CanvasTexture(c);
+            })();
+            const flare = new THREE.Sprite(new THREE.SpriteMaterial({
+              map: flareTex, color: 0xfff2b8, transparent: true, blending: THREE.AdditiveBlending,
+              depthWrite: false, fog: false, sizeAttenuation: false, opacity: 0
+            }));
+            flare.renderOrder = 10; flare.frustumCulled = false;
+            scene.add(flare);
+            const lanternWorld = new THREE.Vector3(0, lantern.position.y, 0).multiplyScalar(lh.scale.x).add(lh.position);
+            const toCam = new THREE.Vector3();
+            lighthouseBeacon = {
+              flare,
+              // The flare sits on the line from the camera to the lantern, never further than 600 m away, with a fixed
+              // size on screen: it looks identical to a light at the real spot but is never clipped or fogged at 2000 m.
+              update(elapsed, cam, night) {
+                const a = elapsed * 0.7;
+                beaconPivot.rotation.y = a;
+                toCam.copy(cam.position).sub(lanternWorld);
+                const dist = toCam.length();
+                if (dist < 6) { flare.visible = false; return; }
+                flare.visible = true;
+                toCam.multiplyScalar(1 / dist);
+                const horiz = Math.max(1e-4, Math.hypot(toCam.x, toCam.z));
+                const align = Math.abs((Math.cos(a) * toCam.x - Math.sin(a) * toCam.z) / horiz); // beams point along +-(cos a, -sin a)
+                const pulse = Math.pow(align, 40);
+                const r = Math.min(dist - 2, 600);
+                flare.position.copy(cam.position).addScaledVector(toCam, -r);
+                const base = 0.5 + 0.5 * night;
+                const sz = 0.035 + 0.03 * night + pulse * (0.16 + 0.1 * night);
+                flare.scale.set(sz, sz, 1);
+                flare.material.opacity = Math.min(1, base * 0.6 + pulse * 0.9);
+                beamMat.opacity = 0.12 + 0.3 * night;
+              }
+            };
           }
 
           scene.add(pierGroup);
@@ -5048,12 +5150,12 @@
             seaObstacles.push({ name: 'lighthouse', x: LH.x, z: LH.z, r: 1.8 * LH.s });
             buoys.forEach(b => seaObstacles.push({ name: 'buoy', x: b.position.x, z: b.position.z, r: 1.0 }));
             // Pier and boardwalk pilings plus the two mooring pilings (same list as the pilings built above)
-            [[-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0], [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-5.95, -4.6], [-5.95, -6.6]]
+            [[-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0], [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-5.95, -4.6], [-5.95, -6.6], [-2.4, -11.25], [2.4, -11.25]]
               .forEach(([x, z]) => seaObstacles.push({ name: 'pier', x, z, r: 0.3 }));
           }
           // Solid rectangles (x1,z1 .. x2,z2): pier deck, boardwalk, stairs + mooring platform
           const boatRects = [
-            { name: 'pier', x1: -2.75, z1: -10.05, x2: 2.75, z2: 0.1 },
+            { name: 'pier', x1: -2.75, z1: -11.5, x2: 2.75, z2: 0.1 },
             { name: 'pier', x1: -10.7, z1: -0.1, x2: 10.7, z2: 8 },
             { name: 'pier', x1: -6.1, z1: -6.95, x2: -2.5, z2: -4.25 }
           ];
@@ -5168,8 +5270,8 @@
           buildHarborLamp(2.45, 1.55, -2.2, false);
           buildHarborLamp(-2.45, 1.55, -8.0, false);
           buildHarborLamp(2.45, 1.55, -8.0, true);
-          buildHarborLamp(-2.3, 1.55, -9.65, true);
-          buildHarborLamp(2.3, 1.55, -9.65, false);
+          buildHarborLamp(-2.3, 1.55, -11.1, true);
+          buildHarborLamp(2.3, 1.55, -11.1, false);
 
           // ---- Every stand gets its own light ----
           const bulbMat = c => new THREE.MeshBasicMaterial({ color: c });
@@ -5587,6 +5689,7 @@
             starMat,
             lanternLights,
             standGlows,
+            lighthouseBeacon,
             cheatGull,
             anglerGroup,
             bodyGroup,
@@ -6876,7 +6979,7 @@
           }],
           ['Empty bucket', () => { state.bucket = []; rebuildPierBucketVisual(); cheatDone('🪣 Bucket emptied'); }]] },
         { title: '🧭 Teleport (on the pier)', items: [
-          ['Pier tip', cheatTeleport(0, -9.15, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
+          ['Pier tip', cheatTeleport(0, -10.59, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
           ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(-5.2, -5.6, 'Mooring platform')]] },
         { title: '⚙️ Cheats', items: [
           ['Turn all toggles off', () => { Object.keys(cheats).forEach(k => { cheats[k] = false; }); renderCheatMenu(); showToast('Cheat toggles off'); }]] }
@@ -7117,37 +7220,26 @@
         return +(dist * getCurrentBoat().burnRate).toFixed(1);
       }
 
-      function isNearPierShop() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - (-7.6), playerZ - 3.2) <= 1.85;
+      // A stand reacts only when you are right in front of it: within `reach` metres of the front edge of its solid
+      // box (the closest you can walk) and not beyond its sides. The other spots use small circles around the object.
+      function nearStandFront(sx, halfWidth, frontZ, reach) {
+        return !onBoat && mode === 'PIER_IDLE' && Math.abs(playerX - sx) <= halfWidth && playerZ >= frontZ - 0.05 && playerZ <= frontZ + reach;
+      }
+      function nearSpot(x, z, radius) {
+        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - x, playerZ - z) <= radius;
       }
 
-      function isNearPierBounty() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - (-4.2), playerZ - 2.6) <= 1.75;
-      }
-
-      function isNearPierGallery() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - 4.4, playerZ - 2.6) <= 1.85;
-      }
-
-      function isNearPierCamera() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - 8.2, playerZ - 2.6) <= 1.85;
-      }
-
-      function isNearPierBucket() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - (-1.55), playerZ - (-7.6)) <= 1.65;
-      }
-
-      function isNearPierToolbox() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - 1.55, playerZ - (-7.6)) <= 1.65;
-      }
-
-      function isNearMooredBoat() {
-        return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - (-5.2), playerZ - (-5.6)) <= 1.85;
-      }
+      function isNearPierShop() { return nearStandFront(-7.6, 2.05, 2.55, 1.0); }
+      function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
+      function isNearPierGallery() { return nearStandFront(4.4, 1.6, 1.75, 1.0); }
+      function isNearPierCamera() { return nearSpot(8.2, 0.9, 1.45); }
+      function isNearPierBucket() { return nearSpot(-1.55, -7.6, 1.25); }
+      function isNearPierToolbox() { return nearSpot(1.55, -7.6, 1.25); }
+      function isNearMooredBoat() { return nearSpot(-5.2, -5.6, 1.4); }
 
       function isAtPierWaterEdge() {
         // Only the far tip of the pier is a fishing spot; the sides are railed off.
-        return !onBoat && playerZ <= -8.95 && Math.abs(playerX) <= 2.1;
+        return !onBoat && playerZ <= -10.39 && Math.abs(playerX) <= 2.1;
       }
 
       function canDockAtPier() {
@@ -9167,6 +9259,7 @@
           l.intensity = Math.max(0, lanternGlow + Math.sin(elapsed * 6.5 + idx * 1.7) * 0.2 * (1 - dayFactor)) * (l.userData.k || 1);
         });
         world.standGlows.forEach(g => { g.mat.opacity = (1 - dayFactor) * 0.55 * g.k; });
+        if (world.lighthouseBeacon) world.lighthouseBeacon.update(elapsed, camera, 1 - dayFactor);
         if (boatSpotlight) {
           boatSpotlight.intensity = (isNightTime() || weather.id === 'STORM') ? 3.8 : 0.0;
         }
@@ -9261,8 +9354,8 @@
 
             const prevX = playerX;
             const prevZ = playerZ;
-            // Small invisible border at the farthest end of the pier (Z = -9.15) so the fisherman doesn't step onto the very tip
-            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * 6.5 * dt, -9.15, 5.8);
+            // Small invisible border at the farthest end of the pier (Z = -10.59) so the fisherman doesn't step onto the very tip
+            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * 6.5 * dt, -10.59, 5.8);
 
             const getPierXBounds = zVal => {
               if (zVal >= 0.45) return [-9.8, 9.8];
@@ -9376,7 +9469,7 @@
             }
 
             const [finalMinX, finalMaxX] = getPierXBounds(nextZ);
-            playerZ = THREE.MathUtils.clamp(nextZ, -9.15, 5.8);
+            playerZ = THREE.MathUtils.clamp(nextZ, -10.59, 5.8);
             playerX = THREE.MathUtils.clamp(nextX, finalMinX, finalMaxX);
 
             walkDX = playerX - prevX;
