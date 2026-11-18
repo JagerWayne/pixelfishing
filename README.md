@@ -321,6 +321,9 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-18, Version 2.1.0
+- Game version bumped to **v2.1.0** (shown on the start screen): boat camera and controls update, boat collisions, full screen, cheat confirmation and the mobile interface.
+
 ### 2026-11-18, Boat collisions, boat control, Continue / New game
 - **Real boat collisions:** the invisible wall at the pier is gone. The pier, boardwalk, stairs, mooring platform, pilings, island shore, lighthouse rocks and buoys are solid, using a hull shape measured from your boat; you slide along them instead of stopping dead.
 - **New boat control:** the thumbstick now points where the boat should go (arcade style) instead of tank steering. Turning depends on speed, the boat banks into turns, and the camera keeps a fixed view out to sea so stick directions always match the screen. Boarding and rescue now place the boat beside the pier tip at (-8.2, -9.0).
