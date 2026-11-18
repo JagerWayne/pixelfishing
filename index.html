@@ -1155,9 +1155,12 @@
         </div>
       </div>
       <button class="pixel-btn gold" id="btn-start-customize" type="button" style="width: 100%; margin-bottom: 10px;">🎨 CUSTOMISE LOOK</button>
+      <div id="start-save-summary" style="display: none; font-size: 12px; color: #94a3b8; margin-bottom: 8px;"></div>
       <button class="pixel-btn green" id="btn-start-game" type="button" style="width: 100%; min-height: 54px; font-size: 16px;">
         🎣 TAP TO START FISHING
       </button>
+      <button class="pixel-btn red" id="btn-new-game" type="button" style="display: none; width: 100%; margin-top: 10px;">✨ NEW GAME</button>
+      <div id="start-version" style="margin-top: 14px; font-size: 12px; color: #64748b;"></div>
     </div>
   </div>
 
@@ -4925,7 +4928,18 @@
             }
             seaObstacles.push({ name: 'lighthouse', x: LH.x, z: LH.z, r: 1.8 * LH.s });
             buoys.forEach(b => seaObstacles.push({ name: 'buoy', x: b.position.x, z: b.position.z, r: 1.0 }));
+            // Pier and boardwalk pilings plus the two mooring pilings (same list as the pilings built above)
+            [[-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0], [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-5.95, -4.6], [-5.95, -6.6]]
+              .forEach(([x, z]) => seaObstacles.push({ name: 'pier', x, z, r: 0.3 }));
           }
+          // Solid rectangles (x1,z1 .. x2,z2): pier deck, boardwalk, stairs + mooring platform
+          const boatRects = [
+            { name: 'pier', x1: -2.75, z1: -10.05, x2: 2.75, z2: 0.1 },
+            { name: 'pier', x1: -10.7, z1: -0.1, x2: 10.7, z2: 8 },
+            { name: 'pier', x1: -6.1, z1: -6.95, x2: -2.5, z2: -4.25 }
+          ];
+          // The island: the beach reaches the waterline (y = 0) near z = 1.8; everything beyond is land
+          const shoreZ = x => 6.2 * Math.max(0, (0.6 - Math.sin(x * 0.05) * 0.35 * 0.35) / 2.08);
 
           // Celestial Sun, Phased Moon, Starfield & Pier Harbor Lantern
           const skyGroup = new THREE.Group();
@@ -5385,6 +5399,9 @@
             waveUniforms,
             buoys,
             seaObstacles,
+            boatCircles: seaObstacles,
+            boatRects,
+            shoreZ,
             filmCamera,
             skyGroup,
             sunOrb,
@@ -6131,6 +6148,7 @@
       let boatYaw = 0;
       let boatVel = 0;
       let lastBumpAt = -10;
+      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0;
 
       let castCharge = 0;
       let castDir = 1;
@@ -6853,9 +6871,12 @@
         return out;
       }
 
+      // Was there a saved game when the page opened? (the game writes its own save right after loading, so ask first)
+      let hadSavedGame = false;
       function loadSaveState() {
         let text = null;
         try { text = localStorage.getItem(SAVE_KEY); } catch {}
+        hadSavedGame = !!text;
         if (!text) return defaultSaveState();
         try {
           return sanitizeSave(JSON.parse(text));
@@ -6969,6 +6990,13 @@
       function rebuildPlayerBoatVisual() {
         scene.remove(playerBoatMesh);
         playerBoatMesh = WorldBuilder.buildBoatMesh(state.boatTier, textures);
+        {
+          const bb = new THREE.Box3().setFromObject(playerBoatMesh);
+          if (isFinite(bb.max.z - bb.min.z) && state.boatTier > 0) {
+            boatHalfLen = THREE.MathUtils.clamp((bb.max.z - bb.min.z) / 2, 1.6, 6);
+            boatHalfWid = THREE.MathUtils.clamp((bb.max.x - bb.min.x) / 2 * 0.9, 0.8, 1.7);
+          }
+        }
         boatSpotlight = null;
         if (state.boatTier > 0 && hasModule('spotlight')) {
           const lampHousing = new THREE.Mesh(
@@ -7033,6 +7061,73 @@
       /* =========================================================================
          SECTION I: BOARDING, DOCKING & RESCUE LOOP
          ========================================================================= */
+      /* ---- Boat collisions: the hull is a capsule (two circles along its heading) tested against circles, rectangles and the shoreline ---- */
+      function resolveBoatCollisions() {
+        const hx = -Math.sin(boatYaw), hz = -Math.cos(boatYaw);
+        const R = boatHalfWid, off = Math.max(0, boatHalfLen - boatHalfWid);
+        let hit = null, worst = 0;
+        const push = (nx, nz, depth, name) => {
+          boatPos.x += nx * depth; boatPos.z += nz * depth;
+          const into = Math.max(0, -(hx * nx + hz * nz));
+          if (into > worst) { worst = into; hit = name; }
+        };
+        for (let it = 0; it < 3; it++) {
+          for (const sOff of [off, -off]) {
+            const cx = boatPos.x + hx * sOff, cz = boatPos.z + hz * sOff;
+            const wall = world.shoreZ(cx) - R;
+            if (cz > wall) push(0, -1, cz - wall, 'island');
+            for (const o of world.boatCircles) {
+              const ox = cx - o.x, oz = cz - o.z, d = Math.hypot(ox, oz), m = o.r + R;
+              if (d < m) push(d > 1e-3 ? ox / d : 0, d > 1e-3 ? oz / d : -1, m - d, o.name);
+            }
+            for (const r of world.boatRects) {
+              const px = Math.max(r.x1, Math.min(cx, r.x2)), pz = Math.max(r.z1, Math.min(cz, r.z2));
+              const ox = cx - px, oz = cz - pz, d = Math.hypot(ox, oz);
+              if (d > 1e-4) {
+                if (d < R) push(ox / d, oz / d, R - d, r.name);
+              } else { // hull centre inside the rectangle: leave through the nearest face
+                const dl = cx - r.x1, dr = r.x2 - cx, dt = cz - r.z1, db = r.z2 - cz, mn = Math.min(dl, dr, dt, db);
+                if (mn === dl) push(-1, 0, dl + R, r.name);
+                else if (mn === dr) push(1, 0, dr + R, r.name);
+                else if (mn === dt) push(0, -1, dt + R, r.name);
+                else push(0, 1, db + R, r.name);
+              }
+            }
+          }
+        }
+        boatPos.x = THREE.MathUtils.clamp(boatPos.x, -110, 110);
+        return { hit, into: worst };
+      }
+
+      const BUMP_TEXT = { rocks: '🪨 Watch the rocks!', lighthouse: '🪨 Watch the rocks!', buoy: '🛟 Bumped a buoy!', pier: '⚓ Mind the pier!', island: '🏝️ Shallow water, that is the beach!' };
+
+      /* ---- Arcade boat control: the stick points where the boat should go ---- */
+      function updateBoatControl(dt, boat) {
+        let vx = joyState.x, vz = joyState.y;
+        if (keys['KeyW'] || keys['ArrowUp']) vz -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) vz += 1;
+        if (keys['KeyA'] || keys['ArrowLeft']) vx -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) vx += 1;
+        const m = Math.min(1, Math.hypot(vx, vz));
+        const maxSpd = boat.speed;
+        if (m > 0.1 && state.fuel > 0) {
+          const target = Math.atan2(-vx, -vz);
+          const err = Math.atan2(Math.sin(target - boatYaw), Math.cos(target - boatYaw));
+          const rate = 1.25 + 1.35 * Math.min(1, Math.abs(boatVel) / (maxSpd * 0.45));
+          const want = THREE.MathUtils.clamp(err * 3.2, -rate, rate);
+          boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, want, Math.min(1, dt * 7));
+          boatYaw += boatTurnRate * dt;
+          const align = Math.max(0, Math.cos(err));
+          boatVel = THREE.MathUtils.lerp(boatVel, m * maxSpd * (0.2 + 0.8 * align), Math.min(1, dt * 2.6));
+          sfx.playEngineChug(maxSpd / 14);
+        } else {
+          boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, 0, Math.min(1, dt * 6));
+          boatYaw += boatTurnRate * dt;
+          boatVel = THREE.MathUtils.lerp(boatVel, 0, Math.min(1, dt * 2.2));
+          if (boatVel < 0.05) boatVel = 0;
+        }
+      }
+
       function handleBoardOrDockToggle() {
         if (mode !== 'PIER_IDLE' && mode !== 'BOAT_DRIVING') {
           showToast('Finish your current cast first!');
@@ -7049,11 +7144,13 @@
           }
           onBoat = true;
           mode = 'BOAT_DRIVING';
-          boatPos.set(-6.5, 0, -9.5);
+          boatPos.set(-8.2, 0, -9.0);
           boatYaw = 0;
           boatVel = 0;
+          boatTurnRate = 0;
+          resolveBoatCollisions();
           sfx.vibrate(25);
-          showToast(`Sailing ${getCurrentBoat().name}! Use Left Stick to steer.`);
+          showToast(`Sailing ${getCurrentBoat().name}! Push the stick where you want to go.`);
         } else {
           const dist = getDistanceMeters();
           if (dist > 15) {
@@ -8093,6 +8190,32 @@
           action();
         });
       }
+      /* Start screen: version, Continue / New game */
+      const GAME_VERSION = '2.0.0';
+      function refreshStartScreen() {
+        document.getElementById('start-version').textContent = `Pixel Fishing v${GAME_VERSION}`;
+        const startBtn = document.getElementById('btn-start-game');
+        const summary = document.getElementById('start-save-summary');
+        const newBtn = document.getElementById('btn-new-game');
+        if (hadSavedGame) {
+          const species = (state.discovered || []).length, bottles = (state.foundMessages || []).length;
+          summary.textContent = `Saved game: $${state.cash.toFixed(2)} \u2022 ${species} species \u2022 ${bottles} bottles`;
+          summary.style.display = 'block';
+          startBtn.textContent = '▶ CONTINUE';
+          newBtn.style.display = 'block';
+        } else {
+          summary.style.display = 'none';
+          startBtn.textContent = '🎣 START NEW GAME';
+          newBtn.style.display = 'none';
+        }
+      }
+      wireTwoTap(document.getElementById('btn-new-game'), '✨ NEW GAME', () => {
+        performSaveReset();
+        hadSavedGame = false;
+        refreshStartScreen();
+        showToast('New game ready. Pick your angler and start!');
+      });
+      refreshStartScreen();
       wireTwoTap(document.getElementById('btn-reset-save'), 'Reset Save', performSaveReset);
       wireTwoTap(document.getElementById('set-reset'), 'Reset', performSaveReset);
 
@@ -8921,7 +9044,7 @@
           const pct = Math.min(1, rescueTimer / 3.0);
           document.getElementById('rescue-progress-bar').style.width = `${pct * 100}%`;
 
-          boatPos.lerpVectors(rescueStartPos, new THREE.Vector3(-6.5, 0, -9.5), pct);
+          boatPos.lerpVectors(rescueStartPos, new THREE.Vector3(-8.2, 0, -9.0), pct);
           boatYaw = 0;
           world.rescueBoat.visible = true;
           world.rescueBoat.position.set(boatPos.x - 2.4, getWaveHeight(boatPos.x, boatPos.z, elapsed, zone), boatPos.z + 1.5);
@@ -9120,53 +9243,28 @@
           const boat = getCurrentBoat();
 
           if (mode === 'BOAT_DRIVING' && !isAnyModalOpen()) {
-            let throttle = -joyState.y;
-            let steer = -joyState.x;
-            if (keys['KeyW'] || keys['ArrowUp']) throttle += 1;
-            if (keys['KeyS'] || keys['ArrowDown']) throttle -= 0.65;
-            if (keys['KeyA'] || keys['ArrowLeft']) steer += 1;
-            if (keys['KeyD'] || keys['ArrowRight']) steer -= 1;
-
-            throttle = THREE.MathUtils.clamp(throttle, -0.75, 1);
-            steer = THREE.MathUtils.clamp(steer, -1, 1);
-
-            if (Math.abs(throttle) > 0.05 && state.fuel > 0) {
-              boatVel = THREE.MathUtils.lerp(boatVel, throttle * boat.speed, dt * 3.2);
-              sfx.playEngineChug(boat.speed / 14);
-            } else {
-              boatVel = THREE.MathUtils.lerp(boatVel, 0, dt * 3.5);
-            }
-
-            if (Math.abs(boatVel) > 0.25) {
-              boatYaw += steer * 1.65 * dt * Math.sign(boatVel);
-            } else {
-              boatYaw += steer * 0.85 * dt;
-            }
+            updateBoatControl(dt, boat);
 
             const stepDist = Math.abs(boatVel) * dt;
             if (stepDist > 0.001 && state.fuel > 0) {
               const dx = -Math.sin(boatYaw) * boatVel * dt;
               const dz = -Math.cos(boatYaw) * boatVel * dt;
-              boatPos.x = THREE.MathUtils.clamp(boatPos.x + dx, -110, 110);
-              boatPos.z = Math.min(-8.5, boatPos.z + dz);
-
-              // Collide with the lighthouse rocks, buoys and anything else solid on the sea: slide along it and lose speed
-              const BOAT_R = 1.5;
-              for (const ob of world.seaObstacles) {
-                const ox = boatPos.x - ob.x, oz = boatPos.z - ob.z;
-                const d = Math.hypot(ox, oz), minD = ob.r + BOAT_R;
-                if (d < minD) {
-                  const nx = d > 0.001 ? ox / d : 0, nz = d > 0.001 ? oz / d : 1;
-                  boatPos.x = ob.x + nx * minD;
-                  boatPos.z = Math.min(-8.5, ob.z + nz * minD);
-                  const into = dx * -nx + dz * -nz; // positive when heading at the obstacle
-                  if (into > 0) boatVel *= 0.55;
-                  if (elapsed - lastBumpAt > 0.9 && Math.abs(boatVel) > 1.5) {
-                    lastBumpAt = elapsed;
-                    sfx.playBump();
-                    showToast(ob.name === 'buoy' ? '🛟 Bumped a buoy!' : '🪨 Watch the rocks!');
-                  }
+              const speedBefore = boatVel;
+              const steps = Math.max(1, Math.ceil(stepDist / 0.4));
+              let hit = null, into = 0;
+              for (let i = 0; i < steps; i++) {
+                boatPos.x += dx / steps;
+                boatPos.z += dz / steps;
+                const c = resolveBoatCollisions();
+                if (c.hit && c.into > into) { hit = c.hit; into = c.into; }
+              }
+              if (hit) {
+                if (elapsed - lastBumpAt > 0.9 && speedBefore * into > 1.5) {
+                  lastBumpAt = elapsed;
+                  sfx.playBump();
+                  showToast(BUMP_TEXT[hit] || '💥 Bump!');
                 }
+                boatVel *= 1 - 0.6 * Math.min(1, into);
               }
 
               if (Math.random() < 0.45) {
@@ -9189,10 +9287,12 @@
           const waveY = getWaveHeight(boatPos.x, boatPos.z, elapsed, zone);
           boatPos.y = waveY;
           playerBoatMesh.position.copy(boatPos);
+          const spdRatio = Math.min(1, Math.abs(boatVel) / Math.max(1, boat.speed));
+          playerBoatMesh.rotation.order = 'YXZ';
           playerBoatMesh.rotation.set(
-            Math.sin(elapsed * 2.1) * 0.05 * zone.waveAmp * 2,
+            Math.sin(elapsed * 2.1) * 0.05 * zone.waveAmp * 2 + spdRatio * 0.05,
             boatYaw,
-            Math.cos(elapsed * 1.8) * 0.06 * zone.waveAmp * 2
+            Math.cos(elapsed * 1.8) * 0.06 * zone.waveAmp * 2 + boatTurnRate * 0.09 * spdRatio
           );
 
           world.anglerGroup.position.set(boatPos.x, boatPos.y + 0.45, boatPos.z);
@@ -9555,14 +9655,11 @@
           camera.lookAt(playerX * lateralFollow, 1.35, playerZ - 6.0);
         } else {
           const speedZoom = Math.min(1.6, Math.abs(boatVel) * 0.05);
-          const backOffset = new THREE.Vector3(
-            Math.sin(boatYaw) * (9.5 + speedZoom),
-            5.8 + speedZoom * 0.35,
-            Math.cos(boatYaw) * (9.5 + speedZoom)
-          );
+          // The camera keeps one orientation (looking out to sea) so stick directions always match the screen
+          const backOffset = new THREE.Vector3(0, 5.8 + speedZoom * 0.35, 9.5 + speedZoom);
           const targetCamPos = boatPos.clone().add(backOffset);
           camera.position.lerp(targetCamPos, camSmooth);
-          const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatYaw) * 8, 1.0, -Math.cos(boatYaw) * 8));
+          const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatYaw) * 2.5, 1.0, -7 - Math.cos(boatYaw) * 2.5));
           camera.lookAt(lookTarget);
         }
       }
