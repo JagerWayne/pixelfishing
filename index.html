@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#070b14" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <title>Pixel Fishing - 3D Retro Mobile Adventure</title>
   <style>
     /* =========================================================================
@@ -1287,6 +1290,10 @@
         <div class="setting-row">
           <span class="setting-label">🖼️ Graphics<span class="setting-sub">Battery saver renders at lower resolution</span></span>
           <button class="pixel-btn" id="set-quality" type="button">High</button>
+        </div>
+        <div class="setting-row" id="row-install" style="display:none;">
+          <span class="setting-label">📲 Install app<span class="setting-sub">Add Pixel Fishing to your home screen and play offline</span></span>
+          <button class="pixel-btn gold" id="set-install" type="button">Install</button>
         </div>
         <div class="setting-row">
           <span class="setting-label">🗑️ Save data<span class="setting-sub">Erases cash, gear and catches. Settings are kept.</span></span>
@@ -6553,6 +6560,29 @@
       });
 
       renderSettings();
+
+      // ---- Installable app: service worker + install prompt ----
+      let deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        document.getElementById('row-install').style.display = 'flex';
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        document.getElementById('row-install').style.display = 'none';
+        showToast('📲 Installed! Find Pixel Fishing on your home screen.');
+      });
+      document.getElementById('set-install').addEventListener('click', async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        try { await deferredInstallPrompt.userChoice; } catch {}
+        deferredInstallPrompt = null;
+        document.getElementById('row-install').style.display = 'none';
+      });
+      if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      }
 
       /* =========================================================================
          SECTION L: HUD & PRIMARY MOBILE ACTION BUTTON SYNCHRONIZATION
