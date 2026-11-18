@@ -47,7 +47,8 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 
 | Action | Touch | Keyboard |
 |---|---|---|
-| Walk / steer boat | Left thumbstick | `W` `A` `S` `D` or arrow keys |
+| Walk | Thumbstick | `W` `A` `S` `D` or arrow keys |
+| Sail the boat | Thumbstick: push **where you want to go**; the boat turns toward that direction (screen up is out to sea) and speed follows how far you push; let go to ease to a stop | `W` `A` `S` `D` or arrow keys point the boat the same way |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space` |
 | Interact with the nearest pier object | Action button | `E` |
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
@@ -131,7 +132,7 @@ The bucket on the pier shows your upgrade, open with the catch inside. In the ba
 
 ## The sea: zones, weather and the moon
 
-Solid objects at sea (the lighthouse rocks and the buoys) block boats; steer around them.
+Boats are solid: the **pier deck, stairs, mooring platform and pilings, the boardwalk, the island shore, the lighthouse rocks and the buoys** all block the hull. You slide along them, lose speed, and get a thump, a buzz and a short warning. The hull is measured from the boat model, so bigger boats need more room. There is no damage.
 
 
 | Zone | Name | Distance from the pier |
@@ -232,6 +233,8 @@ Progress is saved automatically in your browser's `localStorage`:
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
 
+The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version shown there is `GAME_VERSION` in `index.html`; bump it with each release.
+
 On iPhones the home-screen app and Safari can keep separate saves. Clearing site data erases progress.
 
 ## Installing and offline play
@@ -317,6 +320,11 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Boat collisions, boat control, Continue / New game
+- **Real boat collisions:** the invisible wall at the pier is gone. The pier, boardwalk, stairs, mooring platform, pilings, island shore, lighthouse rocks and buoys are solid, using a hull shape measured from your boat; you slide along them instead of stopping dead.
+- **New boat control:** the thumbstick now points where the boat should go (arcade style) instead of tank steering. Turning depends on speed, the boat banks into turns, and the camera keeps a fixed view out to sea so stick directions always match the screen. Boarding and rescue now place the boat beside the pier tip at (-8.2, -9.0).
+- **Start screen:** shows the game version (v2.0.0) and, when a save exists, a **Continue** button with a short summary plus **New game** (two taps to confirm). The card scrolls on short landscape screens.
 
 ### 2026-11-18, Full screen by default
 - The game now enters full screen when you start it, on phones, tablets and desktops (before, only on narrow screens). New **Full screen** switch in Settings to opt out.
