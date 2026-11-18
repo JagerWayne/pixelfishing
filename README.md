@@ -21,14 +21,15 @@ Once installed it also works offline.
 6. [Catches and the encyclopedia](#catches-and-the-encyclopedia)
 7. [Bounties, bottles and rewards](#bounties-bottles-and-rewards)
 8. [Character customisation](#character-customisation)
-9. [Settings](#settings)
-10. [Saving](#saving)
-11. [Installing and offline play](#installing-and-offline-play)
-12. [Technical overview](#technical-overview)
-13. [Running and deploying](#running-and-deploying)
-14. [Testing](#testing)
-15. [Maintaining this file](#maintaining-this-file)
-16. [Changelog](#changelog)
+9. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
+10. [Settings](#settings)
+11. [Saving](#saving)
+12. [Installing and offline play](#installing-and-offline-play)
+13. [Technical overview](#technical-overview)
+14. [Running and deploying](#running-and-deploying)
+15. [Testing](#testing)
+16. [Maintaining this file](#maintaining-this-file)
+17. [Changelog](#changelog)
 
 ---
 
@@ -169,7 +170,9 @@ Open it from the start screen (**🎨 Customise Look**), the ⚙️ drawer (**�
 
 - A live **3D preview** that rotates by itself and can be dragged to turn.
 - **Male / Female** bodies. The female body has a different build and a smoothly shaped bust that every top, sweater and coat follows.
-- Tabs: **Body** (skin tone, eye colour), **Hair** (style and colour), **Face** (facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
+- Tabs: **Outfits** (quick presets), **Body** (skin tone, eye colour), **Hair** (style and colour), **Face** (facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
+- **Quick outfits:** one tap sets a whole outfit: *Fisherman*, *Beach: Bikini* (bikini, sandals, straw hat, sunglasses), *Beach: Shorts only* (swim shorts, bare chest, barefoot) and *Raincoat day*.
+- **Hats and hair:** some hair styles would poke through a hat, so they are greyed out while that hat is worn (and picking a hat that clashes switches the hair to *Short*). Cap blocks Wavy, Bob and Bun; Beanie, Bucket hat and Straw hat also block Ponytail; the Sou'wester also blocks Long. Choose *None* for the hat to use every style.
 - **🎲 Random** rolls a whole new character (it keeps your chosen gender) and **↺ Reset** restores the default outfit.
 - Options:
 
@@ -181,13 +184,19 @@ Open it from the start screen (**🎨 Customise Look**), the ⚙️ drawer (**�
 | Hair colours | 10 |
 | Facial hair | None, Stubble, Mustache, Goatee, Full beard |
 | Glasses | None, Round, Sunglasses |
-| Tops | Striped sweater, T-shirt, Tank top, Hoodie, Raincoat |
-| Bottoms | Jeans, Shorts, Skirt |
+| Tops | Striped sweater, T-shirt, Tank top, Hoodie, Raincoat, Bikini top, Bare chest |
+| Bottoms | Jeans, Shorts, Swim shorts, Bikini bottom, Skirt |
 | Shoes | Rubber boots, Sneakers, Sandals, Barefoot |
 | Hats | Sou'wester, Cap, Beanie, Bucket hat, Straw hat, None |
 | Clothing colours | 14 per item |
 
-Your look is saved and applied immediately in the game world, including while walking, sitting, casting and reeling.
+Your look is saved and applied immediately in the game world. While walking, the arms swing opposite to the legs; when you stop they return to the rod-holding pose.
+
+## Secret: the Seagull's menu
+
+There is a hidden cheat menu. Stand close to the **seagull perched behind the tackle shop** (beside the left end of the shop works) and press the action button while it reads **WALK EDGE** **31 times in a row**. Pressing any other key or button resets the count, and so does an action press anywhere else.
+
+The menu can add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. The toggles reset when you reload; changes to money and gear are saved like normal progress.
 
 ## Settings
 
@@ -299,6 +308,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Beach wear, hat rules, face and walking arms, secret menu
+- **Beach wear:** new *Bikini top*, *Bare chest*, *Bikini bottom* and *Swim shorts* options, plus a new **Outfits** tab with one-tap presets (Fisherman, Beach: Bikini, Beach: Shorts only, Raincoat day). Subtle pecs on the male chest.
+- **Hats and hair:** hair styles that clip through a hat are now disabled while that hat is worn, and a clashing hat switches the hair automatically. Saved looks are corrected on load. Fixed short-hair tufts poking through caps and beanies.
+- **Face:** the female mouth is rebuilt with natural, toned-down lips and a soft smile line (the red upper lip and chin-like arc are gone), and the male smile line is cleaner.
+- **Walking:** the arms now swing opposite to the legs while walking.
+- **Secret cheat menu** (see above).
 
 ### 2026-11-18, Character fixes
 - Hair no longer covers the eyes: shorter hairlines, and hats now sit above the eyes.
