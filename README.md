@@ -1,0 +1,348 @@
+# 🎣 Pixel Fishing
+
+A 3D retro pixel-art fishing adventure that runs entirely in the browser. Cast from a wooden pier, buy better gear,
+sail out to the deep, fill your encyclopedia and dress your fisherman however you like. Built for phones first,
+but it plays great with a keyboard too.
+
+**Play it:** https://jagerwayne.github.io/pixelfishing/
+**Install it:** open the link on your phone and use *Add to Home Screen* (or the **Install** button in Settings on browsers that offer it).
+Once installed it also works offline.
+
+> This file is kept up to date with every change to the game. See [Maintaining this file](#maintaining-this-file) and the [Changelog](#changelog).
+
+---
+
+## Contents
+1. [How to play](#how-to-play)
+2. [Controls](#controls)
+3. [The pier](#the-pier)
+4. [Progression and equipment](#progression-and-equipment)
+5. [The sea: zones, weather and the moon](#the-sea-zones-weather-and-the-moon)
+6. [Catches and the encyclopedia](#catches-and-the-encyclopedia)
+7. [Bounties, bottles and rewards](#bounties-bottles-and-rewards)
+8. [Character customisation](#character-customisation)
+9. [Settings](#settings)
+10. [Saving](#saving)
+11. [Installing and offline play](#installing-and-offline-play)
+12. [Technical overview](#technical-overview)
+13. [Running and deploying](#running-and-deploying)
+14. [Testing](#testing)
+15. [Maintaining this file](#maintaining-this-file)
+16. [Changelog](#changelog)
+
+---
+
+## How to play
+
+1. Walk to the **far tip of the pier** and sit in the fishing chair. You can only cast from the tip of the pier, or from a boat.
+2. **Hold the action button** to charge a cast and **release** to throw. Longer holds throw further.
+3. When a fish bites, hook it and **reel it in**, keeping the line tension in the safe zone. Pull too hard on a fish your rod can't handle and the line snaps.
+4. Keep what you want in your **bucket** or release it. Bring the bucket to the **Tackle Shop** to sell the catch.
+5. Spend your money on better rods, boats, bait, buckets and boat modules. Complete **bounties**, collect **message bottles**, recycle junk and fill the **encyclopedia**.
+
+Fish are only worth keeping if they fit: your bucket has a weight capacity, and heavier catches need a stronger rod.
+
+## Controls
+
+| Action | Touch | Keyboard |
+|---|---|---|
+| Walk / steer boat | Left thumbstick | `W` `A` `S` `D` or arrow keys |
+| Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space` |
+| Interact with the nearest pier object | Action button | `E` |
+| Open bag / bucket | **🪣 Bag** button | `B` |
+| Open encyclopedia | **📖 Log** button | `L` |
+| Toolbox or bucket (when nearby) | Action button | `T` |
+| Close a menu | **Close** button | `Esc` |
+
+The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, and so on. Tapping empty screen does nothing; only the button acts.
+
+## The pier
+
+The pier is a small harbour. Walk up to each object and press the action button.
+
+| Object | What it does |
+|---|---|
+| 🏪 **Tackle Shop** (west side of the boardwalk) | Buy rods, boats, boat modules, bait, buckets and the live bait cam. Sell your catch. Refuel your boat. |
+| 📋 **Bounty Board** | Take on contracts for cash and bait. |
+| 📜 **Bottle Gallery** | Browse the message-in-a-bottle collection. |
+| 🎬 **Director's Camera** | Change the camera lens and look. |
+| 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
+| 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
+| ⚓ **Moored boat** (down the stairs on the port side) | Board your boat once you own one. |
+| 🪑 **Pier tip** | Where you sit and fish from the pier. |
+
+Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform.
+
+## Progression and equipment
+
+### Rods
+A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking something heavier than your rod, or deeper than its zone, makes the line much easier to snap.
+
+| Rod | Cost | Max weight | Deepest zone |
+|---|---|---|---|
+| Bamboo Cane | free | 3.5 kg | 1 |
+| Ashwood Drift Rod | $75 | 7 kg | 1 |
+| Fiberglass Spin | $180 | 14 kg | 2 |
+| Graphite Inshore | $380 | 24 kg | 2 |
+| Carbon Surf Rod | $750 | 42 kg | 3 |
+| Titanium Rig | $1,800 | 85 kg | 4 |
+| Abyssal Leviathan Winch | $3,600 | 140 kg | 4 |
+
+### Boats
+Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. If you run dry far from shore, the coast guard tows you back for a **$100 emergency fee**.
+
+| Boat | Cost | Fuel tank | Reaches zone |
+|---|---|---|---|
+| Pier only | free | n/a | 1 |
+| Wooden Rowboat | $120 | 60 | 2 |
+| Fiberglass Skiff | $550 | 150 | 3 |
+| Deep-Sea Trawler | $1,800 | 350 | 4 |
+
+### Boat modules
+| Module | Cost | Effect |
+|---|---|---|
+| 📡 Sonar Fish Finder | $240 | Shows bearing and distance to the nearest Feeding Frenzy. |
+| 🔦 Bow Floodlight | $190 | A spotlight for dark nights and storms. |
+| 🫧 Livewell Aerator | $380 | Fish sell for 15% more. |
+
+There is also the **Rod-Tip Live Bait Cam** ($180), a picture-in-picture view of your bait and the fish while reeling.
+
+### Bait
+| Bait | Cost (pack of 10) | Effect |
+|---|---|---|
+| Bread Crumbs | free, unlimited | Basic bait for small common fish. |
+| Garden Worms | $25 | Heavier fish, 25% less junk, better Uncommon odds. |
+| Live Shrimp | $80 | 50% less junk, better Rare odds. |
+| Glowing Lure | $220 | 80% less junk, much better Epic and Legendary odds. |
+
+Choose your bait in the **Tackle Toolbox** on the pier. When special bait runs out you are switched back to Bread Crumbs.
+
+### Buckets
+| Bucket | Cost | Capacity |
+|---|---|---|
+| Rusty Tin Bucket | free | 6 kg |
+| Plastic Cooler | $100 | 18 kg |
+| Insulated Fish Box | $450 | 50 kg |
+| Refrigerated Hold | $1,500 | 150 kg |
+
+The bucket on the pier shows your upgrade, open with the catch inside. In the bag you can **sort** by newest, value, weight or name.
+
+## The sea: zones, weather and the moon
+
+| Zone | Name | Distance from the pier |
+|---|---|---|
+| 1 | Shallow Cove | 0 to 100 m |
+| 2 | Coastal Reef | 100 to 300 m |
+| 3 | Open Shelf | 300 to 650 m |
+| 4 | Abyssal Trench | 650 m and beyond |
+
+- **Weather** cycles between ☀️ Clear, ☁️ Overcast, 🌧️ Rain and ⛈️ Storm. Rougher weather means bigger waves.
+- **Storm-only catches** appear in storms (for example the Thunder Eel).
+- **The moon** has phases over the days. On a **full moon night** special glowing fish can be caught.
+- **Feeding Frenzies** are patches of churning water. Casting into one gives much faster bites and better odds at rare fish.
+- Days and nights pass in real time, and the sky, lighting and lamps change with them.
+
+## Catches and the encyclopedia
+
+The encyclopedia (📖 Log) tracks **63 catchable things**:
+
+| Kind | Count |
+|---|---|
+| Fish | 52 (9 Common, 10 Uncommon, 15 Rare, 13 Epic, 5 Legendary) |
+| Junk | 7 (boot, tin can, bottles, strongbox, hat, anchor and a message bottle) |
+| Flora | 4 (sea lettuce, kelp, bladderwrack, glowing abyssal moss) |
+
+- Fish per zone: 13 in Shallow Cove, 17 in Coastal Reef, 18 in Open Shelf, 15 in the Abyssal Trench (some species appear in more than one zone).
+- 6 fish are **full-moon exclusives** and 5 are **storm exclusives**.
+- The log shows your **personal best weight** and catch count per species, flags new discoveries with a **NEW** badge and a red dot on the Log button, and can be filtered by Fish, Junk, Flora or Undiscovered.
+- All catches are rendered as 3D models: smooth countershaded fish with species-specific fins, markings, bills, sails, spines and lures, plus modelled junk.
+
+## Bounties, bottles and rewards
+
+- **Bounties:** the board offers three contracts at a time from a pool of 14 (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
+- **Message in a bottle:** 36 collectable scrolls are hidden across the four zones. Keep a bottle in your bucket to add its message to the Gallery. Collect all 36 for a **$2,500 Master Archivist** reward.
+- **Eco cleanup:** junk and flora you sell are recycled. Every **100 kg** recycled earns a **$1,000 Mayor's Award**.
+
+## Character customisation
+
+Open it from the start screen (**🎨 Customise Look**), the ⚙️ drawer (**🎨 Look**) or **Settings → Appearance**.
+
+- A live **3D preview** that rotates by itself and can be dragged to turn.
+- **Male / Female** bodies. The female body has a different build and bust shape.
+- Tabs: **Body** (skin tone, eye colour), **Hair** (style and colour), **Face** (facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
+- **🎲 Random** rolls a whole new character (it keeps your chosen gender) and **↺ Reset** restores the default outfit.
+- Options:
+
+| Category | Choices |
+|---|---|
+| Skin tone | 6 |
+| Eye colour | 4 |
+| Hair styles | Short, Buzz, Wavy, Ponytail, Long, Bob, Bun, Braid, Bald |
+| Hair colours | 10 |
+| Facial hair | None, Stubble, Mustache, Goatee, Full beard |
+| Glasses | None, Round, Sunglasses |
+| Tops | Striped sweater, T-shirt, Tank top, Hoodie, Raincoat |
+| Bottoms | Waders, Shorts, Jeans, Skirt |
+| Shoes | Rubber boots, Sneakers, Sandals, Barefoot |
+| Hats | Sou'wester, Cap, Beanie, Bucket hat, Straw hat, None |
+| Clothing colours | 14 per item |
+
+Your look is saved and applied immediately in the game world, including while walking, sitting, casting and reeling.
+
+## Settings
+
+Open **🎛️** in the HUD.
+
+- **Sound effects** on or off (also on the 🔊 button).
+- **Haptics** (vibration) on or off, independent of sound.
+- **Graphics:** *High* or *Battery saver* (renders at lower resolution).
+- **Appearance:** opens the customisation screen.
+- **Install app** (when your browser offers it).
+- **Save data → Reset:** needs two taps to confirm. Settings are kept when you reset.
+
+Settings are stored separately from the save, so resetting progress never changes them.
+
+## Saving
+
+Progress is saved automatically in your browser's `localStorage`:
+
+| Key | Contents |
+|---|---|
+| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance and more (save format version 2) |
+| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order |
+| `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
+
+Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
+
+On iPhones the home-screen app and Safari can keep separate saves. Clearing site data erases progress.
+
+## Installing and offline play
+
+The game is a Progressive Web App: it has a web manifest, icons, and a service worker (`sw.js`).
+
+- The **page itself is fetched network-first**, so an installed copy picks up new versions whenever you open it online (GitHub Pages may cache it for a few minutes).
+- **Static files** (the bundled Three.js, icons, manifest) are cache-first, which is what makes offline play work.
+- If the list of static files changes, bump `CACHE_VERSION` in `sw.js`.
+
+## Technical overview
+
+The whole game is **one HTML file** (`index.html`) with no build step, plus a handful of static assets.
+
+```
+index.html                 the game: HTML, CSS and all JavaScript
+vendor/three.r128.min.js   Three.js r128, bundled (CDN copies are fallbacks)
+manifest.webmanifest       installable app manifest
+sw.js                      service worker (offline support)
+icons/                     app icons (192, 512, maskable, Apple touch)
+.github/workflows/static.yml   GitHub Pages deployment
+README.md                  this file
+CLAUDE.md                  working notes for AI-assisted changes
+```
+
+The script inside `index.html` is organised in labelled sections:
+
+| Section | Contents |
+|---|---|
+| A | Web Audio engine (soft synthesised sounds, ambience, haptics) |
+| B | Game data tables: rods, boats, modules, bait, buckets, zones, weather, the catch catalog, bottle messages, bounties |
+| C | Procedural pixel-art texture and icon factory |
+| D | 3D model builders: the lofted fish generator, junk models, boats, pier props, the pier and island, and the **AnglerFactory** (customisable character) |
+| E2 | Particles, ripples, feeding frenzies, weather and jumping fish |
+| F | Three.js rendering pipeline and screen shaders |
+| G | Runtime state and multi-touch controls |
+| H | Save state, validation and helper queries |
+| I | Boarding, docking and the rescue loop |
+| J | Fishing mechanics and the context-sensitive action button |
+| K | UI modals: shop, bucket, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
+| L | HUD and button synchronisation |
+| M | Main animation and physics loop |
+
+Notes on the models:
+
+- **Fish** are generated from a per-species spec (length, height, width, fin layout, markings and features) and lofted into a smooth body with vertex-colour countershading and a pixel scale texture. They are normalised to fit the catch preview.
+- **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom) with three detailed vessels on top.
+- **The character** is built from a skin body plus layered clothing shells, driven by a `look` object. It dresses the same animated rig the game already used (body, head, arms, legs), so walking, sitting, casting and reeling are unaffected. The customise screen uses a second rig with its own small renderer.
+- Models keep their footprints and orientation (fronts face +Z, boats point toward -Z), so collisions and interaction ranges do not change when art is updated.
+
+## Running and deploying
+
+Run locally with any static file server (the service worker needs `http://localhost`, not `file://`):
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open http://localhost:8000. Opening `index.html` directly also works, just without offline support.
+
+Deployment is **GitHub Pages from the `main` branch**. Merging to `main` publishes the site (the *Deploy static content to Pages* workflow and GitHub's own *pages build and deployment* both run).
+
+## Testing
+
+There is no test framework in the repository. Changes are checked with headless Chromium (Playwright) against a local copy:
+
+- the page boots with no console or page errors, including with a deliberately corrupted save,
+- settings, bucket sorting, encyclopedia filters, the bounty tracker and the customise screen work,
+- walking and collisions (shop reachable, railings hold, ramp and platform ends, no teleports),
+- the action button only responds to the button, not the canvas,
+- every one of the 63 catch models builds,
+- the app registers its service worker and reloads and runs offline,
+- contact-sheet renders of fish, boats, props and characters are reviewed by eye.
+
+## Maintaining this file
+
+**Every update to the game must update this README in the same change:**
+
+1. Update any section the change affects (controls, tables, counts, features).
+2. Add an entry at the top of the [Changelog](#changelog) with the date and a short summary.
+3. If counts changed (species, bounties, options), update the numbers above.
+
+`CLAUDE.md` repeats this rule for AI-assisted work.
+
+## Changelog
+
+### 2026-11-18, Customisable character
+- Rebuilt the fisherman with smooth, layered geometry instead of chunky low-poly parts: a skin body with clothing shells, proper head, hands and feet.
+- New **character customisation screen** with a live 3D preview, tabs and colour swatches for skin, eyes, hair, facial hair, glasses, top, bottom, shoes and hat. Separate male and female bodies, including the female bust shape.
+- **🎲 Random** character button and a **Reset** button.
+- Entry points on the start screen, the ⚙️ drawer and Settings.
+- Appearance is saved with the game and validated on load; existing saves keep their outfit.
+- Pier bunting moved well above the camera view.
+- Added this README and `CLAUDE.md`.
+
+### 2026-11-18, Fisherman and rod detail
+- Fisherman gets ears, brows, white eyes, a smile, shoulders, belt, hands, boot cuffs, a sou'wester flap and strap; the rod gets a cork grip, reel and line guides.
+
+### 2026-11-18, Open freezers and pier scenery
+- The cooler, fish box and freezer are **open**, with lined interiors, ice and fish inside and the lid hinged back.
+- Pier scenery: bunting, mooring bollards with rope, a life ring, bracing under the pier, barnacles and rope wraps on pilings, a rod rack, perched seagulls and a distant lighthouse.
+
+### 2026-11-18, Boats and pier props
+- Three new boats with a shared lofted hull (proper sterns): a clinker rowboat, a fibreglass skiff and a steel trawler.
+- Rebuilt tackle shop (with a shopkeeper), bounty board with pinned notices, bottle gallery with string lights, film camera (tripod fixed to stand the right way up), toolbox and four catch containers with fish in them.
+
+### 2026-11-18, Fish and junk model overhaul
+- New parametric fish generator: smooth countershaded bodies, real fin shapes, layered eyes (one per side), gill covers and mouth lines, with per-species features for all 52 fish.
+- Rebuilt boot, tin can, bottles, message bottle, anchor, pirate hat, strongbox and seaweed.
+
+### 2026-11-18, Controls, pier layout and sound
+- The action button only responds to the on-screen button; tapping empty screen no longer casts.
+- Railings along both sides of the pier; fishing only at the far tip.
+- The mooring ramp and platform are walkable and no longer snap you onto the pier.
+- The bottle gallery stand is wider and its sign text no longer clips.
+- Smoother, rounder sounds.
+
+### 2026-11-18, Bugfixes, settings, quality of life, content and installable app
+- Bundled Three.js locally; validated and backed-up saves; smooth collision around the bucket and toolbox.
+- Settings panel (sound, haptics, graphics quality, two-tap reset).
+- Bucket sorting, encyclopedia filters with NEW badges, HUD bounty tracker.
+- 13 new species (including storm and full-moon exclusives) and 7 new bounties.
+- Installable app: manifest, icons, offline service worker and an Install button.
+
+### 2026-11-18, First fixes
+- You can walk to the tackle shop along the boardwalk.
+- The boardwalk railing no longer teleports you onto the pier.
+- The fishing chair only unfolds at real water edges.
+- Restored the GitHub Pages deployment workflow.
+
+### Initial release
+- The original 3D retro fishing game: pier, shop, boats, zones, weather and moon, encyclopedia, bounties and message bottles.

@@ -1007,6 +1007,31 @@
       content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px;
       background: #f43f5e; border-radius: 50%; box-shadow: 0 0 0 2px #070c14;
     }
+    /* ---- Character customisation ---- */
+    .cust-window { width: min(98vw, 900px); max-height: 94dvh; }
+    .cust-body { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 12px; overflow-y: auto; }
+    .cust-preview { flex: 1 1 250px; min-width: 230px; display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+    #cust-canvas { width: 100%; height: min(42dvh, 340px); min-height: 200px; background: radial-gradient(circle at 50% 35%, #1e4a63, #0b2230 75%); border: 2px solid #334155; border-radius: 6px; touch-action: none; cursor: grab; }
+    .cust-gender { display: flex; gap: 8px; }
+    .cust-gender .pixel-btn { flex: 1; }
+    .cust-hint { font-size: 10px; color: #94a3b8; text-align: center; }
+    .cust-panel { flex: 2 1 320px; min-width: 260px; }
+    .cust-row { margin-bottom: 12px; }
+    .cust-label { font-size: 11px; font-weight: bold; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+    .cust-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cust-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #475569; cursor: pointer; padding: 0; }
+    .cust-swatch.active { outline: 3px solid #facc15; outline-offset: 2px; }
+    #cust-tabs { flex-wrap: wrap; margin-bottom: 12px; }
+    #cust-tabs .tab-btn { padding: 6px 9px; font-size: 11px; }
+    /* wide / landscape screens: preview and options sit side by side, each scrolling on its own */
+    @media (min-width: 640px) and (max-height: 620px), (min-width: 900px) {
+      .cust-window { height: min(94dvh, 640px); }
+      .cust-body { flex-wrap: nowrap; flex: 1; min-height: 0; overflow: hidden; }
+      .cust-preview { flex: 0 0 38%; min-width: 0; overflow-y: auto; }
+      #cust-canvas { height: auto; flex: 1; min-height: 110px; }
+      .cust-panel { flex: 1; min-width: 0; overflow-y: auto; padding-right: 4px; }
+      .cust-gender .pixel-btn { padding: 6px 4px; font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -1032,6 +1057,7 @@
           <button class="pixel-btn" id="btn-start-female" type="button" style="flex: 1;">👩 FEMALE FISHERMAN</button>
         </div>
       </div>
+      <button class="pixel-btn gold" id="btn-start-customize" type="button" style="width: 100%; margin-bottom: 10px;">🎨 CUSTOMISE LOOK</button>
       <button class="pixel-btn green" id="btn-start-game" type="button" style="width: 100%; min-height: 54px; font-size: 16px;">
         🎣 TAP TO START FISHING
       </button>
@@ -1130,6 +1156,7 @@
           <div style="display: flex; gap: 6px;">
             <button class="sleek-menu-btn active" id="btn-drawer-male" type="button" style="height: 28px; padding: 0 8px;">🧔 Male</button>
             <button class="sleek-menu-btn" id="btn-drawer-female" type="button" style="height: 28px; padding: 0 8px;">👩 Female</button>
+            <button class="sleek-menu-btn" id="btn-drawer-customize" type="button" style="height: 28px; padding: 0 8px;">🎨 Look</button>
           </div>
         </div>
         <div class="drawer-item" style="grid-column: 1 / -1; border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 4px;">
@@ -1291,6 +1318,10 @@
           <span class="setting-label">🖼️ Graphics<span class="setting-sub">Battery saver renders at lower resolution</span></span>
           <button class="pixel-btn" id="set-quality" type="button">High</button>
         </div>
+        <div class="setting-row">
+          <span class="setting-label">🎨 Appearance<span class="setting-sub">Clothes, hair, hats and shoes, or roll a random look</span></span>
+          <button class="pixel-btn gold" id="set-customize" type="button">Customise</button>
+        </div>
         <div class="setting-row" id="row-install" style="display:none;">
           <span class="setting-label">📲 Install app<span class="setting-sub">Add Pixel Fishing to your home screen and play offline</span></span>
           <button class="pixel-btn gold" id="set-install" type="button">Install</button>
@@ -1298,6 +1329,34 @@
         <div class="setting-row">
           <span class="setting-label">🗑️ Save data<span class="setting-sub">Erases cash, gear and catches. Settings are kept.</span></span>
           <button class="pixel-btn red" id="set-reset" type="button">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHARACTER CUSTOMISATION -->
+  <div class="modal-backdrop" id="modal-customize" style="z-index: 60;">
+    <div class="pixel-box modal-window cust-window">
+      <div class="modal-header">
+        <span class="modal-title">🎨 CUSTOMISE FISHERMAN</span>
+        <button class="pixel-btn green" id="cust-close" type="button">Done</button>
+      </div>
+      <div class="cust-body">
+        <div class="cust-preview">
+          <canvas id="cust-canvas"></canvas>
+          <div class="cust-gender">
+            <button class="pixel-btn green" id="cust-gender-male" type="button">🧔 Male</button>
+            <button class="pixel-btn" id="cust-gender-female" type="button">👩 Female</button>
+          </div>
+          <div class="cust-gender">
+            <button class="pixel-btn gold" id="cust-random" type="button">🎲 Random</button>
+            <button class="pixel-btn" id="cust-reset" type="button">↺ Reset</button>
+          </div>
+          <div class="cust-hint">Drag to rotate</div>
+        </div>
+        <div class="cust-panel">
+          <div class="tab-row" id="cust-tabs"></div>
+          <div id="cust-options"></div>
         </div>
       </div>
     </div>
@@ -2233,6 +2292,383 @@
       /* =========================================================================
          SECTION D: SCULPTED LOW-POLY 3D MESH BUILDERS
          ========================================================================= */
+      /* =========================================================================
+         ANGLER FACTORY: smooth, layered, customisable fisherman (skin body +
+         clothing shells). Dresses the existing animated rig without touching
+         any pivot, so walking / sitting / casting animations keep working.
+         ========================================================================= */
+      const ANGLER_OPTS = {
+        skin: ['#fde0c8', '#f5c9a0', '#e0a878', '#c68642', '#8d5524', '#5c3a21'],
+        hairColor: ['#111827', '#3b2314', '#78350f', '#a0522d', '#d6a85c', '#f1d9a0', '#b91c1c', '#9ca3af', '#7c3aed', '#0ea5e9'],
+        eyes: ['#3b2314', '#2563eb', '#16a34a', '#64748b'],
+        colors: ['#f8fafc', '#1e3a8a', '#dc2626', '#eab308', '#16a34a', '#0e7490', '#7c3aed', '#db2777', '#ea580c', '#475569', '#111827', '#a16207', '#365314', '#7dd3fc'],
+        hairStyle: [['short', 'Short'], ['buzz', 'Buzz'], ['wavy', 'Wavy'], ['ponytail', 'Ponytail'], ['long', 'Long'], ['bob', 'Bob'], ['bun', 'Bun'], ['braid', 'Braid'], ['bald', 'Bald']],
+        facial: [['none', 'None'], ['stubble', 'Stubble'], ['mustache', 'Mustache'], ['goatee', 'Goatee'], ['beard', 'Full beard']],
+        glasses: [['none', 'None'], ['round', 'Round'], ['sun', 'Sunglasses']],
+        top: [['sweater', 'Striped sweater'], ['tee', 'T-shirt'], ['tank', 'Tank top'], ['hoodie', 'Hoodie'], ['slicker', 'Raincoat']],
+        bottom: [['waders', 'Waders'], ['shorts', 'Shorts'], ['jeans', 'Jeans'], ['skirt', 'Skirt']],
+        shoes: [['boots', 'Rubber boots'], ['sneakers', 'Sneakers'], ['sandals', 'Sandals'], ['barefoot', 'Barefoot']],
+        hat: [['souwester', "Sou'wester"], ['cap', 'Cap'], ['beanie', 'Beanie'], ['bucket', 'Bucket hat'], ['straw', 'Straw hat'], ['none', 'None']]
+      };
+
+      class AnglerFactory {
+        static defaultLook(gender) {
+          const f = gender === 'female';
+          return {
+            gender: f ? 'female' : 'male', skin: 1, eyes: 0,
+            hairStyle: f ? 'ponytail' : 'short', hairColor: f ? 3 : 2, facial: f ? 'none' : 'beard', glasses: 'none',
+            top: 'sweater', topColor: 0, topAccent: f ? 7 : 1,
+            bottom: 'waders', bottomColor: f ? 5 : 12,
+            shoes: 'boots', shoeColor: 10,
+            hat: 'souwester', hatColor: 3
+          };
+        }
+
+        static sanitizeLook(src, gender) {
+          const def = this.defaultLook(gender === 'female' ? 'female' : 'male');
+          if (!src || typeof src !== 'object') return def;
+          const idx = (v, n, d) => { const k = Math.round(Number(v)); return Number.isFinite(k) && k >= 0 && k < n ? k : d; };
+          const pick = (v, list, d) => (list.some(o => o[0] === v) ? v : d);
+          return {
+            gender: src.gender === 'female' ? 'female' : (src.gender === 'male' ? 'male' : def.gender),
+            skin: idx(src.skin, ANGLER_OPTS.skin.length, def.skin),
+            eyes: idx(src.eyes, ANGLER_OPTS.eyes.length, def.eyes),
+            hairStyle: pick(src.hairStyle, ANGLER_OPTS.hairStyle, def.hairStyle),
+            hairColor: idx(src.hairColor, ANGLER_OPTS.hairColor.length, def.hairColor),
+            facial: pick(src.facial, ANGLER_OPTS.facial, def.facial),
+            glasses: pick(src.glasses, ANGLER_OPTS.glasses, def.glasses),
+            top: pick(src.top, ANGLER_OPTS.top, def.top),
+            topColor: idx(src.topColor, ANGLER_OPTS.colors.length, def.topColor),
+            topAccent: idx(src.topAccent, ANGLER_OPTS.colors.length, def.topAccent),
+            bottom: pick(src.bottom, ANGLER_OPTS.bottom, def.bottom),
+            bottomColor: idx(src.bottomColor, ANGLER_OPTS.colors.length, def.bottomColor),
+            shoes: pick(src.shoes, ANGLER_OPTS.shoes, def.shoes),
+            shoeColor: idx(src.shoeColor, ANGLER_OPTS.colors.length, def.shoeColor),
+            hat: pick(src.hat, ANGLER_OPTS.hat, def.hat),
+            hatColor: idx(src.hatColor, ANGLER_OPTS.colors.length, def.hatColor)
+          };
+        }
+
+        static isDefault(look) {
+          const other = this.defaultLook(look.gender === 'female' ? 'male' : 'female');
+          const mine = this.defaultLook(look.gender);
+          const same = d => Object.keys(d).every(k => k === 'gender' || d[k] === look[k]);
+          return same(mine) || same(other);
+        }
+
+        static randomLook(gender) {
+          const f = gender === 'female';
+          const r = n => Math.floor(Math.random() * n);
+          const pickId = (list, allowed) => { const ids = (allowed || list.map(o => o[0])); return ids[r(ids.length)]; };
+          const hairStyles = f ? ['short', 'wavy', 'ponytail', 'long', 'long', 'bob', 'bun', 'braid'] : ['short', 'short', 'buzz', 'wavy', 'bald', 'ponytail'];
+          const facial = f ? ['none'] : ['none', 'none', 'stubble', 'mustache', 'goatee', 'beard', 'beard'];
+          const top = pickId(ANGLER_OPTS.top);
+          const hat = ['souwester', 'cap', 'beanie', 'bucket', 'straw', 'none', 'none'][r(7)];
+          return this.sanitizeLook({
+            gender: f ? 'female' : 'male',
+            skin: r(ANGLER_OPTS.skin.length), eyes: r(ANGLER_OPTS.eyes.length),
+            hairStyle: hairStyles[r(hairStyles.length)], hairColor: r(ANGLER_OPTS.hairColor.length),
+            facial: facial[r(facial.length)], glasses: ['none', 'none', 'none', 'round', 'sun'][r(5)],
+            top, topColor: r(ANGLER_OPTS.colors.length), topAccent: r(ANGLER_OPTS.colors.length),
+            bottom: pickId(ANGLER_OPTS.bottom, f ? ['waders', 'shorts', 'jeans', 'skirt', 'skirt'] : ['waders', 'shorts', 'jeans']),
+            bottomColor: r(ANGLER_OPTS.colors.length),
+            shoes: pickId(ANGLER_OPTS.shoes), shoeColor: r(ANGLER_OPTS.colors.length),
+            hat, hatColor: r(ANGLER_OPTS.colors.length)
+          }, gender);
+        }
+
+        // Same pivots/positions the game's animation code expects.
+        static createRig() {
+          const root = new THREE.Group();
+          const bodyGroup = new THREE.Group();
+          const headGroup = new THREE.Group(); headGroup.position.y = 1.26;
+          const leftArm = new THREE.Group(); leftArm.position.set(-0.29, 0.98, 0);
+          const rightArm = new THREE.Group(); rightArm.position.set(0.29, 0.98, 0);
+          const leftLeg = new THREE.Group(); leftLeg.position.set(-0.12, 0.42, 0);
+          const rightLeg = new THREE.Group(); rightLeg.position.set(0.12, 0.42, 0);
+          bodyGroup.add(headGroup, leftArm, rightArm);
+          root.add(bodyGroup, leftLeg, rightLeg);
+          return { root, bodyGroup, headGroup, leftArm, rightArm, leftLeg, rightLeg };
+        }
+
+        static dispose(obj) {
+          obj.traverse(o => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+          });
+        }
+
+        static clear(group, keep) {
+          for (let i = group.children.length - 1; i >= 0; i--) {
+            const c = group.children[i];
+            if (keep && keep.includes(c)) continue;
+            group.remove(c); this.dispose(c);
+          }
+        }
+
+        static dress(rig, look) {
+          look = this.sanitizeLook(look, look && look.gender);
+          const female = look.gender === 'female';
+          this.clear(rig.bodyGroup, [rig.headGroup, rig.leftArm, rig.rightArm]);
+          [rig.headGroup, rig.leftArm, rig.rightArm, rig.leftLeg, rig.rightLeg].forEach(g => this.clear(g));
+
+          const C = i => new THREE.Color(ANGLER_OPTS.colors[i]);
+          const mat = (color, rough = 0.8, metal = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra));
+          const skinMat = mat(ANGLER_OPTS.skin[look.skin], 0.7);
+          const hairMat = mat(ANGLER_OPTS.hairColor[look.hairColor], 0.65);
+          const topMat = mat(C(look.topColor), 0.85, 0, { side: THREE.DoubleSide });
+          const accMat = mat(C(look.topAccent), 0.85, 0, { side: THREE.DoubleSide });
+          const botMat = mat(C(look.bottomColor), 0.85, 0, { side: THREE.DoubleSide });
+          const shoeMat = mat(C(look.shoeColor), look.shoes === 'boots' ? 0.35 : 0.8);
+          const soleMat = mat(look.shoes === 'boots' ? 0xeab308 : 0xf1f5f9, 0.8);
+          const hatMat = mat(C(look.hatColor), 0.7, 0, { side: THREE.DoubleSide });
+          const darkMat = new THREE.MeshBasicMaterial({ color: 0x0b1020 });
+          const brass = mat(0xd9a21b, 0.3, 0.8);
+
+          const put = (parent, geo, m, x = 0, y = 0, z = 0) => { const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); parent.add(mesh); return mesh; };
+          const sph = (parent, r, m, x, y, z, sx = 1, sy = 1, sz = 1, seg = 20) => { const mesh = put(parent, new THREE.SphereGeometry(r, seg, Math.max(8, seg - 6)), m, x, y, z); mesh.scale.set(sx, sy, sz); return mesh; };
+          const lathe = (parent, pts, m, seg = 32, sz = 1) => { const mesh = put(parent, new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg), m); mesh.scale.z = sz; return mesh; };
+          // tapered cylinder from point a (radius r1) to point b (radius r2)
+          const limb = (parent, a, b, r1, r2, m, open = false) => {
+            const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b);
+            const len = A.distanceTo(B);
+            const mesh = put(parent, new THREE.CylinderGeometry(r1, r2, len, 18, 1, open), m);
+            mesh.position.copy(A).add(B).multiplyScalar(0.5);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), A.clone().sub(B).normalize());
+            return mesh;
+          };
+
+          // ----- torso profile (radius by height), gender-specific -----
+          const prof = female
+            ? [[0.001, 0.44], [0.222, 0.45], [0.266, 0.52], [0.25, 0.6], [0.205, 0.7], [0.21, 0.8], [0.224, 0.92], [0.23, 1.0], [0.205, 1.06], [0.13, 1.1], [0.082, 1.12]]
+            : [[0.001, 0.44], [0.215, 0.45], [0.26, 0.52], [0.254, 0.62], [0.236, 0.7], [0.244, 0.8], [0.262, 0.92], [0.27, 1.0], [0.236, 1.06], [0.14, 1.1], [0.085, 1.12]];
+          const rAt = y => {
+            for (let i = 0; i < prof.length - 1; i++) {
+              const a = prof[i], b = prof[i + 1];
+              if (y >= a[1] && y <= b[1]) return a[0] + (b[0] - a[0]) * ((y - a[1]) / (b[1] - a[1]));
+            }
+            return prof[prof.length - 1][0];
+          };
+          const DEPTH = 0.82;
+          const shell = (y0, y1, off, m, steps = 12, flare = 0) => {
+            const pts = [];
+            for (let i = 0; i <= steps; i++) { const y = y0 + (y1 - y0) * (i / steps); pts.push([rAt(y) + off + flare * (1 - i / steps), y]); }
+            return lathe(rig.bodyGroup, pts, m, 36, DEPTH);
+          };
+          // skin body: torso, neck, shoulders
+          lathe(rig.bodyGroup, prof, skinMat, 36, DEPTH);
+          put(rig.bodyGroup, new THREE.CylinderGeometry(0.072, 0.085, 0.14, 16), skinMat, 0, 1.15, 0);
+          const shoulderR = female ? 0.075 : 0.085;
+          [-1, 1].forEach(s => sph(rig.bodyGroup, shoulderR, skinMat, s * (female ? 0.245 : 0.27), 1.0, 0));
+
+          // ----- hips / bottoms -----
+          const legPose = { hip: [0, 0.01, 0], knee: [0, -0.2, 0.01], ankle: [0, -0.355, 0] };
+          if (look.bottom === 'skirt') {
+            const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push([0.236 + t * 0.14 + Math.sin(t * Math.PI * 4) * 0.008, 0.7 - t * 0.3]); }
+            lathe(rig.bodyGroup, pts, botMat, 40, 0.92);
+            shell(0.62, 0.72, 0.012, botMat, 4);
+          } else {
+            shell(0.44, 0.71, 0.014, botMat, 8);
+            if (look.bottom === 'waders') {
+              shell(0.71, female ? 0.86 : 0.93, 0.02, botMat, 8);
+              // straps over the shoulders with brass buckles, front pocket
+              [-1, 1].forEach(s => {
+                put(rig.bodyGroup, new THREE.BoxGeometry(0.05, 0.3, 0.025), botMat, s * 0.11, 1.02, -0.2).rotation.x = -0.1;
+                put(rig.bodyGroup, new THREE.BoxGeometry(0.045, 0.34, 0.02), botMat, s * 0.12, 1.0, 0.19).rotation.x = 0.1;
+                put(rig.bodyGroup, new THREE.BoxGeometry(0.06, 0.04, 0.02), brass, s * 0.11, 0.9, -0.215);
+              });
+              put(rig.bodyGroup, new THREE.BoxGeometry(0.18, 0.1, 0.02), botMat, 0, 0.8, -0.21);
+            }
+          }
+
+          // ----- top -----
+          const longSleeves = look.top === 'sweater' || look.top === 'hoodie' || look.top === 'slicker';
+          const loose = look.top === 'hoodie' ? 0.03 : look.top === 'slicker' ? 0.04 : 0.016;
+          if (look.top !== 'tank') shell(look.top === 'slicker' ? 0.5 : 0.62, 1.07, loose, topMat, 14, look.top === 'slicker' ? 0.02 : 0);
+          else { shell(0.62, 1.0, 0.014, topMat, 12); [-1, 1].forEach(s => put(rig.bodyGroup, new THREE.BoxGeometry(0.05, 0.16, 0.03), topMat, s * (female ? 0.12 : 0.14), 1.06, -0.12).rotation.z = s * 0.2); }
+          if (look.top === 'sweater') {
+            [0.74, 0.86, 0.98].forEach(y => shell(y, y + 0.035, loose + 0.006, accMat, 2));
+            const collar = put(rig.bodyGroup, new THREE.TorusGeometry(0.1, 0.035, 10, 24), topMat, 0, 1.1, 0); collar.rotation.x = Math.PI / 2;
+          } else if (look.top === 'hoodie') {
+            const hood = put(rig.bodyGroup, new THREE.TorusGeometry(0.13, 0.055, 10, 24), topMat, 0, 1.1, 0.04); hood.rotation.x = Math.PI / 2 - 0.5;
+            put(rig.bodyGroup, new THREE.BoxGeometry(0.2, 0.1, 0.03), topMat, 0, 0.76, -0.245).rotation.x = 0.0;
+            [-0.04, 0.04].forEach(x => put(rig.bodyGroup, new THREE.CylinderGeometry(0.008, 0.008, 0.16, 5), accMat, x, 0.99, -0.225));
+          } else if (look.top === 'slicker') {
+            const col = put(rig.bodyGroup, new THREE.TorusGeometry(0.115, 0.04, 8, 24), topMat, 0, 1.09, 0); col.rotation.x = Math.PI / 2;
+            [0.9, 0.78, 0.66].forEach(y => sph(rig.bodyGroup, 0.016, brass, 0, y, -0.268 * DEPTH - 0.075));
+          } else if (look.top === 'tee') {
+            const col = put(rig.bodyGroup, new THREE.TorusGeometry(0.1, 0.02, 8, 24), accMat, 0, 1.1, 0); col.rotation.x = Math.PI / 2;
+          }
+          if (female) { // bust: shaped by the garment it sits under
+            const bustMat = look.top === 'tank' ? topMat : topMat;
+            [-1, 1].forEach(s => sph(rig.bodyGroup, 0.066, bustMat, s * 0.082, 0.86, -0.165, 1, 0.92, 0.8, 22));
+          }
+
+          // ----- head -----
+          const H = rig.headGroup;
+          sph(H, 0.205, skinMat, 0, 0, 0, female ? 0.97 : 1.0, 1.06, 0.99, 36);
+          sph(H, 0.17, skinMat, 0, -0.075, -0.045, female ? 0.9 : 0.96, 0.9, 0.9, 24); // jaw / chin
+          [-1, 1].forEach(s => {
+            const ear = sph(H, 0.042, skinMat, s * 0.2, 0.0, 0.01, 0.55, 1, 0.8, 12);
+            sph(H, 0.036, mat(0xffffff, 0.3), s * 0.075, 0.03, -0.178, 1, 1, 0.9, 14);
+            sph(H, 0.023, mat(ANGLER_OPTS.eyes[look.eyes], 0.3), s * 0.075, 0.03, -0.2, 1, 1, 0.6, 12);
+            sph(H, 0.012, darkMat, s * 0.075, 0.03, -0.209, 1, 1, 0.5, 8);
+            sph(H, 0.006, new THREE.MeshBasicMaterial({ color: 0xffffff }), s * 0.082, 0.04, -0.213, 1, 1, 0.5, 6);
+            const brow = put(H, new THREE.BoxGeometry(female ? 0.07 : 0.085, female ? 0.012 : 0.02, 0.016), hairMat.clone(), s * 0.075, female ? 0.088 : 0.082, -0.192); brow.rotation.z = s * -0.12;
+            if (female) { const lash = put(H, new THREE.BoxGeometry(0.05, 0.007, 0.01), darkMat, s * 0.075, 0.062, -0.205); lash.rotation.z = s * -0.18; sph(H, 0.03, new THREE.MeshBasicMaterial({ color: 0xfb7185, transparent: true, opacity: 0.35 }), s * 0.11, -0.04, -0.175, 1, 0.7, 0.4, 10); }
+          });
+          const nose = sph(H, 0.038, mat(new THREE.Color(ANGLER_OPTS.skin[look.skin]).multiplyScalar(0.94), 0.7), 0, -0.018, -0.205, 1, 1.1, 0.9, 14);
+          if (female) sph(H, 0.036, mat(0xe11d48, 0.45), 0, -0.083, -0.185, 1.5, 0.45, 0.5, 12);
+          else put(H, new THREE.TorusGeometry(0.045, 0.006, 4, 12, Math.PI), darkMat, 0, -0.068, -0.186).rotation.z = Math.PI;
+          if (female) put(H, new THREE.TorusGeometry(0.03, 0.005, 4, 10, Math.PI), darkMat, 0, -0.085, -0.19).rotation.z = Math.PI;
+
+          // facial hair
+          const fh = look.facial;
+          if (fh === 'stubble') {
+            const g = sph(H, 0.215, mat(ANGLER_OPTS.hairColor[look.hairColor], 0.9, 0, { transparent: true, opacity: 0.32 }), 0, -0.03, -0.005, 1, 1, 1, 26);
+            g.geometry.dispose(); g.geometry = new THREE.SphereGeometry(0.212, 28, 14, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5);
+          }
+          if (fh === 'mustache' || fh === 'beard' || fh === 'goatee') [-1, 1].forEach(s => { const m = sph(H, 0.038, hairMat, s * 0.032, -0.066, -0.19, 1.25, 0.55, 0.7, 12); m.rotation.z = s * -0.2; });
+          if (fh === 'goatee') sph(H, 0.04, hairMat, 0, -0.14, -0.15, 0.9, 1.3, 0.8, 12);
+          if (fh === 'beard') {
+            const b = put(H, new THREE.SphereGeometry(0.222, 32, 16, 0, Math.PI * 2, Math.PI * 0.52, Math.PI * 0.48), hairMat); b.scale.set(1.0, 1.1, 1.04); b.position.set(0, -0.03, -0.01);
+            sph(H, 0.07, hairMat, 0, -0.17, -0.12, 1.2, 0.9, 0.8, 14);
+          }
+
+          // hair (front cap + back cap cover the scalp; styles add volume)
+          const hs = look.hairStyle;
+          if (hs !== 'bald') {
+            const R = hs === 'buzz' ? 0.212 : 0.222;
+            const front = put(H, new THREE.SphereGeometry(R, 32, 14, Math.PI, Math.PI, 0, Math.PI * 0.36), hairMat); front.position.y = 0.01;
+            const back = put(H, new THREE.SphereGeometry(R, 32, 18, 0, Math.PI, 0, Math.PI * (hs === 'buzz' ? 0.62 : 0.8)), hairMat); back.position.y = 0.01; back.scale.set(1, 1.04, 1.03);
+            const sides = put(H, new THREE.SphereGeometry(R, 32, 14, 0, Math.PI * 2, 0, Math.PI * 0.46), hairMat); sides.position.y = 0.01;
+            if (hs === 'short') { [-1, 1].forEach(s => sph(H, 0.07, hairMat, s * 0.1, 0.17, -0.12, 1, 0.6, 0.7, 12)); sph(H, 0.09, hairMat, 0, 0.19, -0.1, 1.3, 0.6, 0.7, 12); }
+            if (hs === 'wavy') for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; sph(H, 0.07, hairMat, Math.cos(a) * 0.17, 0.12 + Math.sin(i * 2.1) * 0.03, Math.sin(a) * 0.17 + 0.02, 1, 0.85, 1, 10); }
+            if (hs === 'ponytail') {
+              const pts = [new THREE.Vector3(0, 0.1, 0.2), new THREE.Vector3(0, 0.0, 0.34), new THREE.Vector3(0, -0.14, 0.38), new THREE.Vector3(0, -0.3, 0.33)];
+              put(H, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.055, 10, false), hairMat);
+              sph(H, 0.06, hairMat, 0, -0.31, 0.33, 0.8, 1.4, 0.8, 10);
+              const tie = put(H, new THREE.TorusGeometry(0.058, 0.014, 6, 12), mat(C(look.hatColor), 0.5), 0, 0.09, 0.205); tie.rotation.x = 0.9;
+              [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.17, 0.06, -0.08, 0.7, 1.2, 0.7, 10));
+            }
+            if (hs === 'long') {
+              const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.215 + 0.03 * Math.sin(t * 2.4), 0.04 - t * 0.5]); }
+              const mesh = lathe(H, pts, new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65, side: THREE.DoubleSide }), 28, 1.0);
+              mesh.geometry.dispose(); mesh.geometry = new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 28, 0, Math.PI); mesh.position.z = 0.02;
+              [-1, 1].forEach(s => { const lock = sph(H, 0.055, hairMat, s * 0.19, -0.12, -0.03, 0.8, 3.2, 0.9, 12); });
+            }
+            if (hs === 'bob') { sph(H, 0.235, new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65 }), 0, -0.03, 0.03, 1.05, 0.8, 1.0, 26); [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.2, -0.05, -0.1, 0.8, 1.6, 0.8, 10)); }
+            if (hs === 'bun') { sph(H, 0.085, hairMat, 0, 0.24, 0.07, 1, 0.9, 1, 16); const t = put(H, new THREE.TorusGeometry(0.07, 0.014, 6, 14), mat(C(look.hatColor), 0.5), 0, 0.2, 0.07); t.rotation.x = Math.PI / 2; }
+            if (hs === 'braid') {
+              for (let i = 0; i < 8; i++) sph(H, 0.045 - i * 0.002, hairMat, 0.17 + i * 0.012, -0.03 - i * 0.075, -0.02 + (i % 2 ? 0.012 : -0.012), 1, 1.2, 1, 10);
+              sph(H, 0.03, mat(C(look.hatColor), 0.5), 0.26, -0.65, -0.02, 1, 1, 1, 8);
+            }
+          }
+
+          // glasses
+          if (look.glasses === 'sun') {
+            [-1, 1].forEach(s => sph(H, 0.052, mat(0x0b1020, 0.15, 0.4), s * 0.075, 0.03, -0.195, 1.1, 0.78, 0.35, 16));
+            put(H, new THREE.BoxGeometry(0.05, 0.012, 0.012), darkMat, 0, 0.04, -0.2);
+            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.012, 0.012, 0.19), darkMat, s * 0.14, 0.04, -0.1));
+          } else if (look.glasses === 'round') {
+            [-1, 1].forEach(s => put(H, new THREE.TorusGeometry(0.042, 0.007, 6, 20), brass, s * 0.075, 0.03, -0.205));
+            put(H, new THREE.BoxGeometry(0.04, 0.008, 0.008), brass, 0, 0.04, -0.205);
+            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.008, 0.008, 0.18), brass, s * 0.123, 0.04, -0.12));
+          }
+
+          // hats
+          const hat = look.hat;
+          if (hat === 'souwester') {
+            lathe(H, [[0.001, 0.25], [0.12, 0.245], [0.205, 0.2], [0.232, 0.1], [0.235, 0.05]], hatMat, 30);
+            lathe(H, [[0.235, 0.05], [0.29, 0.03], [0.4, -0.02]], hatMat, 30, 1.05).position.set(0, 0.0, 0.05);
+            const flap = put(H, new THREE.CylinderGeometry(0.245, 0.34, 0.22, 18, 1, true, -Math.PI / 2, Math.PI), hatMat); flap.position.set(0, -0.08, 0.06);
+            [-1, 1].forEach(s => put(H, new THREE.CylinderGeometry(0.006, 0.006, 0.26, 4), darkMat, s * 0.19, -0.1, -0.06).rotation.set(0.2, 0, s * -0.3));
+            sph(H, 0.022, brass, 0, 0.255, 0, 1, 1, 1, 8);
+          } else if (hat === 'cap') {
+            const dome = put(H, new THREE.SphereGeometry(0.228, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), hatMat); dome.position.y = 0.02; dome.scale.set(1, 0.95, 1.02);
+            const visor = put(H, new THREE.CylinderGeometry(0.2, 0.2, 0.014, 24, 1, false, Math.PI * 0.5 + 0.2, Math.PI - 0.4), hatMat); visor.position.set(0, 0.04, -0.2); visor.scale.set(1, 1, 1.0); visor.rotation.y = Math.PI; visor.position.z = -0.1; visor.scale.set(1.05, 1, 1.0);
+            put(H, new THREE.TorusGeometry(0.226, 0.01, 6, 28), accMat, 0, 0.03, 0).rotation.x = Math.PI / 2;
+            sph(H, 0.02, accMat, 0, 0.245, 0, 1, 1, 1, 8);
+          } else if (hat === 'beanie') {
+            const dome = put(H, new THREE.SphereGeometry(0.232, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.56), hatMat); dome.position.y = 0.02; dome.scale.set(1, 1.05, 1.02);
+            const cuff = put(H, new THREE.TorusGeometry(0.225, 0.03, 10, 30), accMat, 0, 0.065, 0); cuff.rotation.x = Math.PI / 2;
+            sph(H, 0.06, accMat, 0, 0.27, 0, 1, 1, 1, 14);
+          } else if (hat === 'bucket') {
+            lathe(H, [[0.001, 0.2], [0.17, 0.195], [0.22, 0.16], [0.24, 0.07], [0.3, 0.02], [0.36, 0.0]], hatMat, 30);
+            put(H, new THREE.TorusGeometry(0.238, 0.012, 6, 28), accMat, 0, 0.07, 0).rotation.x = Math.PI / 2;
+          } else if (hat === 'straw') {
+            const dome = put(H, new THREE.SphereGeometry(0.22, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(0xe9c46a, 0.9, 0, { side: THREE.DoubleSide })); dome.position.y = 0.05; dome.scale.set(1, 0.9, 1);
+            const brim = put(H, new THREE.CylinderGeometry(0.46, 0.46, 0.014, 34), mat(0xe9c46a, 0.9), 0, 0.055, 0); brim.scale.set(1, 1, 1.0);
+            put(H, new THREE.TorusGeometry(0.218, 0.022, 8, 30), hatMat, 0, 0.1, 0).rotation.x = Math.PI / 2;
+          }
+
+          // ----- arms -----
+          const armDef = [[rig.leftArm, -1, [0.03, -0.17, -0.07], [0.11, -0.26, -0.26]], [rig.rightArm, 1, [0.0, -0.16, -0.07], [-0.05, -0.24, -0.26]]];
+          armDef.forEach(([arm, s, E, Hd]) => {
+            sph(arm, 0.072, longSleeves ? topMat : (look.top === 'tank' ? skinMat : topMat), 0, 0.0, 0, 1, 1, 1, 16);
+            limb(arm, [0, 0, 0], E, 0.062, 0.052, skinMat);
+            sph(arm, 0.052, skinMat, E[0], E[1], E[2], 1, 1, 1, 14);
+            limb(arm, E, Hd, 0.05, 0.04, skinMat);
+            // sleeves
+            if (look.top === 'tee') limb(arm, [0, 0.01, 0], [E[0] * 0.5, E[1] * 0.5, E[2] * 0.5], 0.074, 0.068, topMat, true);
+            if (longSleeves) {
+              const off = look.top === 'hoodie' ? 0.02 : look.top === 'slicker' ? 0.026 : 0.012;
+              limb(arm, [0, 0.0, 0], E, 0.062 + off, 0.054 + off, topMat, true);
+              sph(arm, 0.054 + off, topMat, E[0], E[1], E[2], 1, 1, 1, 14);
+              const W = [E[0] + (Hd[0] - E[0]) * 0.78, E[1] + (Hd[1] - E[1]) * 0.78, E[2] + (Hd[2] - E[2]) * 0.78];
+              limb(arm, E, W, 0.052 + off, 0.045 + off, topMat, true);
+              const cuff = put(arm, new THREE.TorusGeometry(0.047 + off, 0.012, 6, 14), look.top === 'sweater' ? accMat : topMat, W[0], W[1], W[2]);
+              cuff.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(Hd[0] - E[0], Hd[1] - E[1], Hd[2] - E[2]).normalize());
+            }
+            // hand with thumb and fingers
+            sph(arm, 0.05, skinMat, Hd[0], Hd[1], Hd[2], 1, 0.95, 1.05, 14);
+            sph(arm, 0.02, skinMat, Hd[0] - s * 0.035, Hd[1] + 0.03, Hd[2] - 0.02, 1, 1, 1.4, 8);
+            for (let f = 0; f < 3; f++) put(arm, new THREE.CylinderGeometry(0.014, 0.012, 0.07, 6), skinMat, Hd[0] + s * 0.028, Hd[1] - 0.02 + f * 0.02, Hd[2] - 0.045).rotation.x = Math.PI / 2;
+          });
+
+          // ----- legs & feet -----
+          [rig.leftLeg, rig.rightLeg].forEach((leg, li) => {
+            const s = li === 0 ? -1 : 1;
+            const hip = legPose.hip, knee = legPose.knee, ankle = legPose.ankle;
+            limb(leg, hip, knee, 0.105, 0.085, skinMat);
+            sph(leg, 0.085, skinMat, knee[0], knee[1], knee[2], 1, 1, 1, 14);
+            limb(leg, knee, ankle, 0.082, 0.056, skinMat);
+            // bottoms on the legs
+            if (look.bottom === 'shorts') { limb(leg, [0, 0.03, 0], [0, -0.14, 0], 0.114, 0.118, botMat, true); put(leg, new THREE.TorusGeometry(0.118, 0.008, 6, 20), accMat, 0, -0.14, 0).rotation.x = Math.PI / 2; }
+            if (look.bottom === 'jeans' || look.bottom === 'waders') {
+              limb(leg, [0, 0.03, 0], knee, 0.114, 0.095, botMat, true);
+              sph(leg, 0.096, botMat, knee[0], knee[1], knee[2], 1, 1, 1, 14);
+              limb(leg, knee, [0, look.shoes === 'boots' ? -0.24 : -0.34, 0], 0.094, look.bottom === 'jeans' ? 0.075 : 0.088, botMat, true);
+              if (look.bottom === 'jeans') put(leg, new THREE.TorusGeometry(0.078, 0.01, 6, 18), accMat, 0, -0.335, 0).rotation.x = Math.PI / 2;
+            }
+            // feet and shoes
+            const shoe = look.shoes;
+            const footY = -0.385;
+            if (shoe === 'barefoot' || shoe === 'sandals') {
+              sph(leg, 0.075, skinMat, 0, footY, -0.05, 0.9, 0.55, 1.55, 16);
+              for (let t = 0; t < 5; t++) sph(leg, 0.014, skinMat, -0.036 + t * 0.018, footY - 0.005, -0.13, 1, 1, 1, 8);
+              if (shoe === 'sandals') {
+                put(leg, new THREE.BoxGeometry(0.15, 0.022, 0.27), shoeMat, 0, -0.41, -0.05);
+                put(leg, new THREE.BoxGeometry(0.15, 0.018, 0.03), shoeMat, 0, -0.372, -0.06).rotation.x = 0.0;
+                put(leg, new THREE.BoxGeometry(0.15, 0.018, 0.03), shoeMat, 0, -0.34, 0.02);
+              }
+            } else if (shoe === 'sneakers') {
+              lathe(leg, [[0.086, -0.31], [0.092, -0.34], [0.1, -0.4]], shoeMat, 20);
+              sph(leg, 0.095, shoeMat, 0, footY, -0.06, 0.95, 0.72, 1.7, 18);
+              put(leg, new THREE.BoxGeometry(0.2, 0.03, 0.34), soleMat, 0, -0.41, -0.05);
+              for (let l = 0; l < 3; l++) put(leg, new THREE.BoxGeometry(0.07, 0.008, 0.012), mat(0xf8fafc, 0.5), 0, -0.34 - l * 0.0, -0.1 - l * 0.035).position.y = -0.345 + l * -0.005;
+            } else { // rubber boots
+              lathe(leg, [[0.098, -0.2], [0.104, -0.22], [0.1, -0.3], [0.108, -0.4]], shoeMat, 24);
+              put(leg, new THREE.TorusGeometry(0.1, 0.013, 6, 20), mat(0x111827, 0.4), 0, -0.2, 0).rotation.x = Math.PI / 2;
+              sph(leg, 0.1, shoeMat, 0, footY - 0.005, -0.065, 1.0, 0.72, 1.7, 20);
+              put(leg, new THREE.BoxGeometry(0.215, 0.034, 0.36), soleMat, 0, -0.412, -0.05);
+              put(leg, new THREE.BoxGeometry(0.055, 0.04, 0.016), brass, 0, -0.27, -0.108);
+            }
+          });
+          return look;
+        }
+      }
+
       class WorldBuilder {
         /* ------------------------------------------------------------------
            LOFTED FISH GENERATOR
@@ -4074,7 +4510,7 @@
               const N = 18;
               for (let i = 0; i < N; i++) {
                 const t0 = i / N, t1 = (i + 0.8) / N;
-                const p = t => [(-1 + 2 * t) * 2.45, 3.3 - Math.sin(t * Math.PI) * 0.36, 0.16];
+                const p = t => [(-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.16];
                 const a = p(t0), b = p(t1), mid = p((t0 + t1) / 2);
                 posByColor[i % 4].push(a[0], a[1], a[2], b[0], b[1], b[2], mid[0], mid[1] - 0.34, mid[2]);
               }
@@ -4083,9 +4519,9 @@
                 g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); g.computeVertexNormals();
                 pierGroup.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: cols[i][0], side: THREE.DoubleSide, roughness: 0.85 })));
               });
-              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * 2.45, 3.3 - Math.sin(t * Math.PI) * 0.36, 0.16); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
+              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.16); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
               pierGroup.add(line);
-              [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.06, 1.8, K.darkWood, x, 2.45 + 0.4, 0.16, 6));
+              [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.075, 3.4, K.darkWood, x, 3.25, 0.16, 6));
             }
 
             // seagulls perched on rail posts and pilings
@@ -4701,6 +5137,8 @@
             stripeMat,
             maleFacialGroup,
             femaleHairGroup,
+            leftArm,
+            rightArm,
             leftLeg,
             rightLeg,
             chairGroup,
@@ -5664,26 +6102,26 @@
           modules: [],
           bounties: generateBountyContracts(),
           seenSpecies: [],
+          look: AnglerFactory.defaultLook('male'),
           saveVersion: 2
         };
       }
 
+      function dressAngler() {
+        AnglerFactory.dress({
+          bodyGroup: world.bodyGroup, headGroup: world.headGroup, leftArm: world.leftArm, rightArm: world.rightArm,
+          leftLeg: world.leftLeg, rightLeg: world.rightLeg
+        }, state.look);
+      }
+
       function applyAnglerGender(gender, notify = false) {
         const chosen = gender === 'female' ? 'female' : 'male';
+        const wasDefault = !state.look || AnglerFactory.isDefault(state.look);
         state.anglerGender = chosen;
+        // an untouched outfit swaps to the other gender's default; a customised one keeps its clothes
+        if (wasDefault) state.look = AnglerFactory.defaultLook(chosen); else state.look.gender = chosen;
         const isFemale = chosen === 'female';
-
-        if (world.maleFacialGroup) world.maleFacialGroup.visible = !isFemale;
-        if (world.femaleHairGroup) world.femaleHairGroup.visible = isFemale;
-        if (world.chest) {
-          world.chest.scale.set(isFemale ? 0.92 : 1.0, 1.0, isFemale ? 0.92 : 1.0);
-        }
-        if (world.waderMat) {
-          world.waderMat.color.setHex(isFemale ? 0x0f766e : 0x365314);
-        }
-        if (world.stripeMat) {
-          world.stripeMat.color.setHex(isFemale ? 0xbe185d : 0x1e3a8a);
-        }
+        dressAngler();
 
         const startMaleBtn = document.getElementById('btn-start-male');
         const startFemaleBtn = document.getElementById('btn-start-female');
@@ -5725,6 +6163,162 @@
         sfx.playCoin();
         applyAnglerGender('female', true);
       });
+
+      /* =========================================================================
+         CHARACTER CUSTOMISATION SCREEN (live 3D preview, tabs, random + reset)
+         ========================================================================= */
+      const custModal = document.getElementById('modal-customize');
+      const custCanvas = document.getElementById('cust-canvas');
+      const CUST_FRAMES = {
+        body: { y: 0.78, z: 3.5, ly: 0.7 },
+        hair: { y: 1.3, z: 1.6, ly: 1.27 },
+        face: { y: 1.3, z: 1.45, ly: 1.27 },
+        top: { y: 0.92, z: 2.5, ly: 0.82 },
+        bottom: { y: 0.42, z: 2.6, ly: 0.34 },
+        shoes: { y: 0.2, z: 2.2, ly: 0.12 },
+        hat: { y: 1.3, z: 1.75, ly: 1.27 }
+      };
+      const CUST_TABS = [
+        { id: 'body', label: '🧍 Body', rows: [
+          { key: 'skin', label: 'Skin tone', kind: 'swatch', list: ANGLER_OPTS.skin },
+          { key: 'eyes', label: 'Eye colour', kind: 'swatch', list: ANGLER_OPTS.eyes }] },
+        { id: 'hair', label: '💇 Hair', rows: [
+          { key: 'hairStyle', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hairStyle },
+          { key: 'hairColor', label: 'Hair colour', kind: 'swatch', list: ANGLER_OPTS.hairColor }] },
+        { id: 'face', label: '🙂 Face', rows: [
+          { key: 'facial', label: 'Facial hair', kind: 'chips', list: ANGLER_OPTS.facial },
+          { key: 'glasses', label: 'Glasses', kind: 'chips', list: ANGLER_OPTS.glasses }] },
+        { id: 'top', label: '👕 Top', rows: [
+          { key: 'top', label: 'Style', kind: 'chips', list: ANGLER_OPTS.top },
+          { key: 'topColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors },
+          { key: 'topAccent', label: 'Accent / stripes', kind: 'swatch', list: ANGLER_OPTS.colors }] },
+        { id: 'bottom', label: '👖 Bottom', rows: [
+          { key: 'bottom', label: 'Style', kind: 'chips', list: ANGLER_OPTS.bottom },
+          { key: 'bottomColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] },
+        { id: 'shoes', label: '🥾 Shoes', rows: [
+          { key: 'shoes', label: 'Style', kind: 'chips', list: ANGLER_OPTS.shoes },
+          { key: 'shoeColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] },
+        { id: 'hat', label: '🎩 Hat', rows: [
+          { key: 'hat', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hat },
+          { key: 'hatColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] }
+      ];
+      let custTab = 'body';
+      let custRenderer = null, custScene = null, custCam = null, custRig = null;
+      let custYaw = 0, custDragYaw = 0, custDragging = false, custLastX = 0, custLooping = false;
+      const custFrame = { y: 0.78, z: 3.5, ly: 0.7 };
+
+      function initCustPreview() {
+        if (custRenderer) return;
+        custRenderer = new THREE.WebGLRenderer({ canvas: custCanvas, alpha: true, antialias: true });
+        custRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        custScene = new THREE.Scene();
+        custScene.add(new THREE.HemisphereLight(0xe0f2fe, 0x334155, 1.0));
+        const key = new THREE.DirectionalLight(0xfff1d6, 1.15); key.position.set(2, 4, 4); custScene.add(key);
+        const rim = new THREE.DirectionalLight(0x7dd3fc, 0.5); rim.position.set(-3, 2, -3); custScene.add(rim);
+        custCam = new THREE.PerspectiveCamera(32, 1, 0.1, 30);
+        custRig = AnglerFactory.createRig();
+        custRig.root.rotation.y = Math.PI;
+        custScene.add(custRig.root);
+        const floor = new THREE.Mesh(new THREE.CircleGeometry(0.7, 32), new THREE.MeshBasicMaterial({ color: 0x0b2a3c, transparent: true, opacity: 0.6 }));
+        floor.rotation.x = -Math.PI / 2; floor.position.y = 0.005; custScene.add(floor);
+        const pointerDown = e => { custDragging = true; custLastX = e.clientX; custCanvas.setPointerCapture(e.pointerId); };
+        custCanvas.addEventListener('pointerdown', pointerDown);
+        custCanvas.addEventListener('pointermove', e => { if (!custDragging) return; custDragYaw += (e.clientX - custLastX) * 0.012; custLastX = e.clientX; });
+        const end = () => { custDragging = false; };
+        custCanvas.addEventListener('pointerup', end); custCanvas.addEventListener('pointercancel', end);
+      }
+
+      function custResize() {
+        if (!custRenderer) return;
+        const r = custCanvas.getBoundingClientRect();
+        const w = Math.max(120, Math.floor(r.width)), h = Math.max(120, Math.floor(r.height));
+        custRenderer.setSize(w, h, false);
+        custCam.aspect = w / h; custCam.updateProjectionMatrix();
+      }
+
+      function custLoop() {
+        if (!custModal.classList.contains('open')) { custLooping = false; return; }
+        requestAnimationFrame(custLoop);
+        if (!custDragging) custYaw += 0.008;
+        custRig.root.rotation.y = Math.PI + custYaw + custDragYaw;
+        const f = CUST_FRAMES[custTab] || CUST_FRAMES.body;
+        custFrame.y += (f.y - custFrame.y) * 0.12; custFrame.z += (f.z - custFrame.z) * 0.12; custFrame.ly += (f.ly - custFrame.ly) * 0.12;
+        custCam.position.set(0, custFrame.y, custFrame.z);
+        custCam.lookAt(0, custFrame.ly, 0);
+        custRenderer.render(custScene, custCam);
+      }
+
+      function custRefresh() {
+        dressAngler();
+        if (custRig) AnglerFactory.dress(custRig, state.look);
+        const female = state.look.gender === 'female';
+        document.getElementById('cust-gender-male').classList.toggle('green', !female);
+        document.getElementById('cust-gender-female').classList.toggle('green', female);
+        const host = document.getElementById('cust-options');
+        host.innerHTML = '';
+        const tab = CUST_TABS.find(t => t.id === custTab) || CUST_TABS[0];
+        tab.rows.forEach(row => {
+          const wrap = document.createElement('div');
+          wrap.className = 'cust-row';
+          wrap.innerHTML = `<div class="cust-label">${row.label}</div>`;
+          const line = document.createElement('div');
+          line.className = row.kind === 'swatch' ? 'cust-swatches' : 'chip-row';
+          (row.list || []).forEach((entry, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            if (row.kind === 'swatch') {
+              b.className = 'cust-swatch' + (state.look[row.key] === i ? ' active' : '');
+              b.style.background = entry; b.setAttribute('aria-label', `${row.label} ${i + 1}`);
+              b.onclick = () => { state.look[row.key] = i; saveGame(); custRefresh(); };
+            } else {
+              b.className = 'pixel-btn' + (state.look[row.key] === entry[0] ? ' active gold' : '');
+              b.textContent = entry[1];
+              b.onclick = () => { state.look[row.key] = entry[0]; saveGame(); custRefresh(); };
+            }
+            line.appendChild(b);
+          });
+          wrap.appendChild(line);
+          host.appendChild(wrap);
+        });
+        document.querySelectorAll('#cust-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === custTab));
+      }
+
+      function openCustomize() {
+        initCustPreview();
+        custModal.classList.add('open');
+        custResize();
+        custRefresh();
+        if (!custLooping) { custLooping = true; requestAnimationFrame(custLoop); }
+      }
+
+      const custTabsEl = document.getElementById('cust-tabs');
+      CUST_TABS.forEach(t => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'pixel-btn tab-btn'; b.dataset.tab = t.id; b.textContent = t.label;
+        b.onclick = () => { custTab = t.id; custRefresh(); };
+        custTabsEl.appendChild(b);
+      });
+      document.getElementById('cust-gender-male').addEventListener('click', () => { applyAnglerGender('male', false); custRefresh(); });
+      document.getElementById('cust-gender-female').addEventListener('click', () => { applyAnglerGender('female', false); custRefresh(); });
+      document.getElementById('cust-random').addEventListener('click', () => {
+        state.look = AnglerFactory.randomLook(state.look.gender);
+        saveGame(); sfx.playCoin(); custRefresh();
+      });
+      document.getElementById('cust-reset').addEventListener('click', () => {
+        state.look = AnglerFactory.defaultLook(state.look.gender);
+        saveGame(); custRefresh();
+      });
+      document.getElementById('cust-close').addEventListener('click', () => { custModal.classList.remove('open'); updateHUD(); });
+      [['btn-start-customize', true], ['btn-drawer-customize', false], ['set-customize', false]].forEach(([id, stop]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', e => {
+          if (stop) e.stopPropagation();
+          document.getElementById('modal-settings').classList.remove('open');
+          sfx.init(); openCustomize();
+        });
+      });
+      window.addEventListener('resize', () => { if (custModal.classList.contains('open')) custResize(); });
 
       function getMoonPhase() {
         const idx = (state.dayCount || 0) % MOON_PHASES.length;
@@ -5820,6 +6414,10 @@
           : [];
         if (out.bounties.length === 0) out.bounties = generateBountyContracts();
 
+        // appearance: sanitised against the option lists; the look's gender is the source of truth
+        out.look = AnglerFactory.sanitizeLook(src.look, out.anglerGender);
+        if (!src.look) out.look.gender = out.anglerGender;
+        out.anglerGender = out.look.gender;
         out.saveVersion = SAVE_VERSION;
         return out;
       }
