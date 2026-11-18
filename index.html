@@ -1408,6 +1408,10 @@
           <button class="pixel-btn" id="set-quality" type="button">High</button>
         </div>
         <div class="setting-row">
+          <span class="setting-label">🖥️ Full screen<span class="setting-sub">Enter full screen when the game starts (not available on iPhone Safari)</span></span>
+          <button class="pixel-btn green" id="set-fullscreen" type="button">ON</button>
+        </div>
+        <div class="setting-row">
           <span class="setting-label">🖐️ Handedness<span class="setting-sub">Swap the thumbstick and action button</span></span>
           <button class="pixel-btn" id="set-hand" type="button">Right</button>
         </div>
@@ -1674,7 +1678,7 @@
 
       /* Player settings (stored separately from the save so a save reset keeps them) */
       const SETTINGS_KEY = 'pixel_fishing_settings_v1';
-      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false };
+      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false, fullscreen: true };
       try {
         const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
         if (saved && typeof saved === 'object') {
@@ -1686,6 +1690,7 @@
           if (saved.joyMode === 'floating' || saved.joyMode === 'fixed') settings.joyMode = saved.joyMode;
           if (['S', 'M', 'L'].includes(saved.btnSize)) settings.btnSize = saved.btnSize;
           if (typeof saved.autoHideHud === 'boolean') settings.autoHideHud = saved.autoHideHud;
+          if (typeof saved.fullscreen === 'boolean') settings.fullscreen = saved.fullscreen;
         }
       } catch {}
       function saveSettings() {
@@ -1972,6 +1977,22 @@
       const sfx = new AudioEngine();
 
       const startOverlayEl = document.getElementById('start-overlay');
+      /* Full screen needs a user gesture; iPhone Safari does not allow it for web pages (the installed app is already full screen). */
+      function enterFullscreen() {
+        try {
+          const el = document.documentElement;
+          if (document.fullscreenElement || document.webkitFullscreenElement) return;
+          const req = el.requestFullscreen || el.webkitRequestFullscreen;
+          if (req) { const p = req.call(el); if (p && p.catch) p.catch(() => {}); }
+        } catch {}
+      }
+      function exitFullscreen() {
+        try {
+          if (!(document.fullscreenElement || document.webkitFullscreenElement)) return;
+          const ex = document.exitFullscreen || document.webkitExitFullscreen;
+          if (ex) { const p = ex.call(document); if (p && p.catch) p.catch(() => {}); }
+        } catch {}
+      }
       const startBtnEl = document.getElementById('btn-start-game');
       const dismissStartScreen = e => {
         if (e) {
@@ -1983,11 +2004,7 @@
         updateHUD();
         sfx.init();
         sfx.playCoin();
-        try {
-          if (document.documentElement.requestFullscreen && window.innerWidth < 900 && !document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => {});
-          }
-        } catch {}
+        if (settings.fullscreen) enterFullscreen();
       };
       startBtnEl.addEventListener('pointerup', dismissStartScreen);
       startBtnEl.addEventListener('touchend', dismissStartScreen, { passive: false });
@@ -8443,6 +8460,7 @@
         document.getElementById('set-joy').textContent = settings.joyMode === 'floating' ? 'Floating' : 'Fixed';
         document.getElementById('set-btn').textContent = settings.btnSize;
         paint(document.getElementById('set-autohide'), settings.autoHideHud, 'ON', 'OFF');
+        paint(document.getElementById('set-fullscreen'), settings.fullscreen, 'ON', 'OFF');
         applyControlSettings();
         setQualityBtn.textContent = settings.quality === 'low' ? 'Battery saver' : 'High';
         setQualityBtn.classList.toggle('gold', settings.quality === 'low');
@@ -8465,6 +8483,10 @@
       });
       document.getElementById('set-btn').addEventListener('click', () => {
         settings.btnSize = { S: 'M', M: 'L', L: 'S' }[settings.btnSize]; saveSettings(); renderSettings();
+      });
+      document.getElementById('set-fullscreen').addEventListener('click', () => {
+        settings.fullscreen = !settings.fullscreen; saveSettings(); renderSettings();
+        if (settings.fullscreen) enterFullscreen(); else exitFullscreen();
       });
       document.getElementById('set-autohide').addEventListener('click', () => {
         settings.autoHideHud = !settings.autoHideHud; saveSettings(); renderSettings();
