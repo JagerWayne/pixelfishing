@@ -1626,24 +1626,36 @@
           return this.enabled;
         }
 
-        playTone({ freq = 440, endFreq = null, type = 'square', duration = 0.12, vol = 0.12, delay = 0 }) {
+        // Smooth, rounded tones: harsh square/sawtooth waves are mapped to softer ones, every note
+        // fades in over a few milliseconds (no clicks) and is low-pass filtered to remove the buzzy highs.
+        playTone({ freq = 440, endFreq = null, type = 'sine', duration = 0.12, vol = 0.12, delay = 0 }) {
           if (!this.enabled) return;
           this.init();
           if (!this.ctx || this.ctx.state !== 'running') return;
+          const SOFT_WAVE = { square: 'sine', sawtooth: 'triangle' };
+          const wave = SOFT_WAVE[type] || type;
           const now = this.ctx.currentTime + delay;
+          const attack = Math.min(0.025, duration * 0.3);
+          const level = vol * 0.8;
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
-          osc.type = type;
+          const lp = this.ctx.createBiquadFilter();
+          lp.type = 'lowpass';
+          lp.frequency.value = Math.min(2400, Math.max(500, freq * 3));
+          lp.Q.value = 0.4;
+          osc.type = wave;
           osc.frequency.setValueAtTime(freq, now);
           if (endFreq !== null) {
             osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
           }
-          gain.gain.setValueAtTime(vol, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-          osc.connect(gain);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.linearRampToValueAtTime(level, now + attack);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.04);
+          osc.connect(lp);
+          lp.connect(gain);
           gain.connect(this.ctx.destination);
           osc.start(now);
-          osc.stop(now + duration + 0.01);
+          osc.stop(now + duration + 0.06);
         }
 
         playNoise({ duration = 0.18, vol = 0.12, filterFreq = 900, filterType = 'bandpass' }) {
@@ -1661,15 +1673,24 @@
 
           const filter = this.ctx.createBiquadFilter();
           filter.type = filterType;
-          filter.frequency.value = filterFreq;
+          filter.frequency.value = Math.min(filterFreq, 1400);
+          filter.Q.value = 0.5;
+
+          // Extra low-pass takes the hiss off the top so bursts sound like soft whooshes, not static.
+          const soften = this.ctx.createBiquadFilter();
+          soften.type = 'lowpass';
+          soften.frequency.value = 1800;
 
           const gain = this.ctx.createGain();
           const now = this.ctx.currentTime;
-          gain.gain.setValueAtTime(vol, now);
+          const attack = Math.min(0.03, duration * 0.3);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.linearRampToValueAtTime(vol * 0.75, now + attack);
           gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
           noise.connect(filter);
-          filter.connect(gain);
+          filter.connect(soften);
+          soften.connect(gain);
           gain.connect(this.ctx.destination);
           noise.start(now);
         }
@@ -1677,7 +1698,7 @@
         playCast() {
           this.vibrate(20);
           this.playTone({ freq: 260, endFreq: 720, type: 'triangle', duration: 0.18, vol: 0.14 });
-          this.playNoise({ duration: 0.16, vol: 0.08, filterFreq: 1600 });
+          this.playNoise({ duration: 0.2, vol: 0.08, filterFreq: 900 });
         }
 
         playSplash() {
@@ -1687,8 +1708,8 @@
 
         playBiteAlert() {
           this.vibrate([45, 40, 65]);
-          this.playTone({ freq: 660, type: 'square', duration: 0.08, vol: 0.14, delay: 0 });
-          this.playTone({ freq: 990, type: 'square', duration: 0.14, vol: 0.16, delay: 0.09 });
+          this.playTone({ freq: 587.33, type: 'sine', duration: 0.14, vol: 0.14, delay: 0 });
+          this.playTone({ freq: 783.99, type: 'sine', duration: 0.22, vol: 0.15, delay: 0.12 });
         }
 
         playReelTick(tensionRatio = 0.5) {
@@ -1697,13 +1718,13 @@
           this.lastReelTick = now;
           if (tensionRatio > 0.8) this.vibrate(8);
           const pitch = 280 + tensionRatio * 420;
-          this.playTone({ freq: pitch, endFreq: pitch * 0.85, type: 'square', duration: 0.04, vol: 0.06 });
+          this.playTone({ freq: pitch * 0.7, endFreq: pitch * 0.6, type: 'sine', duration: 0.06, vol: 0.05 });
         }
 
         playLineSnap() {
           this.vibrate([80, 40, 120]);
-          this.playTone({ freq: 520, endFreq: 65, type: 'sawtooth', duration: 0.28, vol: 0.2 });
-          this.playNoise({ duration: 0.14, vol: 0.14, filterFreq: 2200 });
+          this.playTone({ freq: 420, endFreq: 90, type: 'triangle', duration: 0.3, vol: 0.18 });
+          this.playNoise({ duration: 0.16, vol: 0.1, filterFreq: 900 });
         }
 
         playCatchFanfare(isJunk = false) {
@@ -1714,15 +1735,15 @@
           } else {
             const notes = [523.25, 659.25, 783.99, 1046.5];
             notes.forEach((n, idx) => {
-              this.playTone({ freq: n, type: 'square', duration: 0.13, vol: 0.13, delay: idx * 0.09 });
+              this.playTone({ freq: n, type: 'sine', duration: 0.24, vol: 0.14, delay: idx * 0.1 });
             });
           }
         }
 
         playCoin() {
           this.vibrate(15);
-          this.playTone({ freq: 987.77, type: 'square', duration: 0.07, vol: 0.13, delay: 0 });
-          this.playTone({ freq: 1318.5, type: 'square', duration: 0.18, vol: 0.13, delay: 0.07 });
+          this.playTone({ freq: 880, type: 'sine', duration: 0.1, vol: 0.13, delay: 0 });
+          this.playTone({ freq: 1174.66, type: 'sine', duration: 0.24, vol: 0.12, delay: 0.08 });
         }
 
         playEngineChug(speedFactor = 1) {
@@ -1730,13 +1751,13 @@
           const interval = Math.max(95, 190 - speedFactor * 35);
           if (now - this.lastEngineTick < interval) return;
           this.lastEngineTick = now;
-          this.playTone({ freq: 58 + speedFactor * 14, endFreq: 42, type: 'sawtooth', duration: 0.07, vol: 0.05 });
+          this.playTone({ freq: 58 + speedFactor * 14, endFreq: 44, type: 'sine', duration: 0.09, vol: 0.06 });
         }
 
         playRescueHorn() {
           this.vibrate([120, 60, 160]);
-          this.playTone({ freq: 185, endFreq: 178, type: 'sawtooth', duration: 0.45, vol: 0.16, delay: 0 });
-          this.playTone({ freq: 146.8, endFreq: 142, type: 'sawtooth', duration: 0.65, vol: 0.16, delay: 0.52 });
+          this.playTone({ freq: 185, endFreq: 178, type: 'triangle', duration: 0.5, vol: 0.15, delay: 0 });
+          this.playTone({ freq: 146.8, endFreq: 142, type: 'triangle', duration: 0.7, vol: 0.15, delay: 0.55 });
         }
       }
 
@@ -2002,22 +2023,30 @@
           return tex;
         }
 
-        static makeSignTexture(text) {
+        static makeSignTexture(text, width = 256, height = 64) {
+          const k = width / 256;
           const canvas = document.createElement('canvas');
-          canvas.width = 256;
-          canvas.height = 64;
+          canvas.width = width;
+          canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.imageSmoothingEnabled = false;
           ctx.fillStyle = '#3e210e';
-          ctx.fillRect(0, 0, 256, 64);
+          ctx.fillRect(0, 0, width, height);
           ctx.strokeStyle = '#ffd24c';
-          ctx.lineWidth = 4;
-          ctx.strokeRect(4, 4, 248, 56);
+          ctx.lineWidth = 4 * k;
+          ctx.strokeRect(4 * k, 4 * k, width - 8 * k, height - 8 * k);
           ctx.fillStyle = '#fef08a';
-          ctx.font = 'bold 26px "Courier New", monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(text, 128, 34);
+          // Shrink the font until the text fits inside the frame (long names used to be clipped).
+          let fontPx = Math.round(26 * k);
+          const maxTextWidth = width - 28 * k;
+          do {
+            ctx.font = `bold ${fontPx}px "Courier New", monospace`;
+            if (ctx.measureText(text).width <= maxTextWidth) break;
+            fontPx -= 1;
+          } while (fontPx > 8);
+          ctx.fillText(text, width / 2, height / 2 + 2 * k);
           const tex = new THREE.CanvasTexture(canvas);
           if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
           return tex;
@@ -2118,7 +2147,7 @@
 
           const shopSign = this.makeSignTexture('⚓ TACKLE SHOP');
           const bountySign = this.makeSignTexture('📋 BOUNTIES');
-          const gallerySign = this.makeSignTexture('📜 BOTTLE GALLERY');
+          const gallerySign = this.makeSignTexture('📜 BOTTLE GALLERY', 512, 128);
 
           return { wood, water, sand, grass, awning, hull, scales, shopSign, bountySign, gallerySign };
         }
@@ -3026,24 +3055,24 @@
           });
           const corkMat = new THREE.MeshStandardMaterial({ color: 0x92400e, flatShading: true });
 
-          const table = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.88, 0.78), woodMat);
+          const table = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.88, 0.78), woodMat);
           table.position.set(0, 0.44, 0.05);
 
-          [-0.78, 0.78].forEach(px => {
-            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.25, 6), postMat);
-            post.position.set(px, 1.12, -0.25);
+          [-1.1, 1.1].forEach(px => {
+            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.6, 6), postMat);
+            post.position.set(px, 1.3, -0.25);
             group.add(post);
           });
 
-          const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.08, 0.34), woodMat);
+          const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.08, 0.34), woodMat);
           shelf.position.set(0, 1.38, -0.16);
 
-          const header = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.38, 0.12), signMat);
-          header.position.set(0, 2.12, -0.22);
+          const header = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, 0.12), signMat);
+          header.position.set(0, 2.3, -0.22);
 
           const bottleCoords = [
-            [-0.52, 0.98, 0.12], [-0.16, 0.98, 0.18], [0.22, 0.98, 0.08], [0.56, 0.98, 0.16],
-            [-0.44, 1.52, -0.14], [0.0, 1.52, -0.14], [0.44, 1.52, -0.14]
+            [-0.9, 0.98, 0.12], [-0.45, 0.98, 0.18], [0.0, 0.98, 0.08], [0.45, 0.98, 0.16], [0.9, 0.98, 0.1],
+            [-0.8, 1.52, -0.14], [-0.27, 1.52, -0.14], [0.27, 1.52, -0.14], [0.8, 1.52, -0.14]
           ];
           bottleCoords.forEach(([bx, by, bz], idx) => {
             const bGroup = new THREE.Group();
@@ -3358,6 +3387,10 @@
           // First section of the main pier railings (Z = 0.12 down to Z = -4.2)
           addRailingSegment(-2.45, 0.12, -2.45, -4.2);
           addRailingSegment(2.45, 0.12, 2.45, -4.2);
+          // Railings continue down both sides to the far end. The port side keeps an opening
+          // (Z -4.2 to -6.9) for the stairs down to the mooring platform.
+          addRailingSegment(2.45, -4.2, 2.45, -9.9);
+          addRailingSegment(-2.45, -6.9, -2.45, -9.9);
 
           // 3D Tackle Shop on the Waterfront Edge with Back to the Sea, Facing South (+Z) so Player Walks in Front
           const tackleShop = this.buildTackleShop(textures);
@@ -4768,15 +4801,6 @@
       primaryBtn.addEventListener('pointerup', onPrimaryEnd);
       primaryBtn.addEventListener('pointercancel', onPrimaryEnd);
 
-      mainCanvas.addEventListener('pointerdown', e => {
-        if (isAnyModalOpen() || actionPointerId !== null) return;
-        sfx.init();
-        actionPointerId = e.pointerId;
-        isHoldingAction = true;
-        primaryBtn.classList.add('pressed');
-        handleActionPress();
-      });
-
       window.addEventListener('pointerup', onPrimaryEnd);
       window.addEventListener('pointercancel', onPrimaryEnd);
 
@@ -5136,10 +5160,8 @@
       }
 
       function isAtPierWaterEdge() {
-        // The side rails only count as "water edge" outside the stair opening to the mooring platform
-        // (left side, Z -6.85..-4.35): that gap leads to the boat, so the angler shouldn't unfold the chair and sit there.
-        const atStairOpening = playerX < 0 && playerZ >= -6.85 && playerZ <= -4.35;
-        return !onBoat && playerX >= -2.1 && (playerZ <= -8.95 || (playerZ < -4.25 && Math.abs(playerX) >= 1.95 && !atStairOpening));
+        // Only the far tip of the pier is a fishing spot; the sides are railed off.
+        return !onBoat && playerZ <= -8.95 && Math.abs(playerX) <= 2.1;
       }
 
       function canDockAtPier() {
@@ -5310,7 +5332,7 @@
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            showToast('Walk to the water edge to cast, or visit the Shop / Gallery / Boat!');
+            showToast('Walk to the end of the pier to cast, or visit the Shop / Gallery / Boat!');
             return;
           }
         }
@@ -7007,6 +7029,13 @@
             // Z = 0.45 clamps X to the pier and snaps the player sideways into the middle of the pier.
             if (nextZ < 0.45 && Math.abs(playerX) > 2.05 && playerZ >= 0.40) nextZ = 0.45;
 
+            // On the stairs / mooring platform (port side of the pier, below the boardwalk): stop at its ends
+            // BEFORE narrowing X to the pier width, otherwise a step past the platform edge snaps the player
+            // sideways onto the pier.
+            if (playerX < -2.05 && playerZ < 0.4) {
+              nextZ = THREE.MathUtils.clamp(nextZ, -6.75, -4.45);
+            }
+
             const [initMinX, initMaxX] = getPierXBounds(nextZ);
             let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
 
@@ -7034,7 +7063,7 @@
             const shopMinX = -9.35;
             const shopMaxX = -5.85;
             const shopMaxZ = 2.55;
-            if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ) {
+            if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ && nextZ > 0) {
               const penZ = shopMaxZ - nextZ;
               const penXLeft = nextX - shopMinX;
               const penXRight = shopMaxX - nextX;
@@ -7048,7 +7077,7 @@
             const bntMinX = -5.2;
             const bntMaxX = -3.2;
             const bntMaxZ = 1.65;
-            if (nextX > bntMinX && nextX < bntMaxX && nextZ < bntMaxZ) {
+            if (nextX > bntMinX && nextX < bntMaxX && nextZ < bntMaxZ && nextZ > 0) {
               const penZ = bntMaxZ - nextZ;
               const penXLeft = nextX - bntMinX;
               const penXRight = bntMaxX - nextX;
@@ -7059,10 +7088,10 @@
             }
 
             // Solid collision box around the 3D Bottle Gallery (4.4, 0.8)
-            const galMinX = 3.35;
-            const galMaxX = 5.45;
+            const galMinX = 3.1;
+            const galMaxX = 5.7;
             const galMaxZ = 1.75;
-            if (nextX > galMinX && nextX < galMaxX && nextZ < galMaxZ) {
+            if (nextX > galMinX && nextX < galMaxX && nextZ < galMaxZ && nextZ > 0) {
               const penZ = galMaxZ - nextZ;
               const penXLeft = nextX - galMinX;
               const penXRight = galMaxX - nextX;
@@ -7137,9 +7166,7 @@
           } else if (isNearMooredBoat()) {
             targetYaw = Math.atan2(-(-7.6 - playerX), -(-5.6 - playerZ));
           } else if (isAtPierWaterEdge()) {
-            if (playerZ > -9.0 && playerX < -1.9) targetYaw = Math.PI * 0.5;
-            else if (playerZ > -9.0 && playerX > 1.9) targetYaw = -Math.PI * 0.5;
-            else targetYaw = 0;
+            targetYaw = 0;
           }
           const angleDiff = Math.atan2(Math.sin(targetYaw - playerYaw), Math.cos(targetYaw - playerYaw));
           playerYaw += angleDiff * Math.min(1, dt * 12);
