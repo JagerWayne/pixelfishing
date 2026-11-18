@@ -4949,7 +4949,10 @@
       }
 
       function isAtPierWaterEdge() {
-        return !onBoat && playerX >= -2.1 && (playerZ <= -8.95 || (playerZ < -4.25 && Math.abs(playerX) >= 1.95));
+        // The side rails only count as "water edge" outside the stair opening to the mooring platform
+        // (left side, Z -6.85..-4.35): that gap leads to the boat, so the angler shouldn't unfold the chair and sit there.
+        const atStairOpening = playerX < 0 && playerZ >= -6.85 && playerZ <= -4.35;
+        return !onBoat && playerX >= -2.1 && (playerZ <= -8.95 || (playerZ < -4.25 && Math.abs(playerX) >= 1.95 && !atStairOpening));
       }
 
       function canDockAtPier() {
