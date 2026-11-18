@@ -317,6 +317,14 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-18, Mobile interface, part 3: sheets and feedback
+- **Bottom-sheet menus** on phones (full-screen-height in short landscape): drag handle, **tap outside or swipe down to close**, dialog roles for screen readers, focus handling. The catch screen stays modal.
+- **Shop:** cash in the header, tabs stay pinned while the list scrolls, and buttons you cannot afford say how much more you need.
+- **Catch screen:** Keep and Release stay pinned at the bottom.
+- **Feedback:** every button gives a soft tick and a short buzz (respecting the Sound and Haptics settings).
+- **Start screen:** collapsible *How to play*. Animations are switched off for players with reduced-motion on.
+- Bag and Log buttons removed from the bottom of the screen (they are in the menu).
+
 ### 2026-11-18, Sea collisions
 - Boats now collide with the **lighthouse and its rocks** and with the **channel buoys**: you slide along them, lose speed, and get a thump, a buzz and a short warning toast.
 
