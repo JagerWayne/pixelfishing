@@ -3358,6 +3358,10 @@
           // First section of the main pier railings (Z = 0.12 down to Z = -4.2)
           addRailingSegment(-2.45, 0.12, -2.45, -4.2);
           addRailingSegment(2.45, 0.12, 2.45, -4.2);
+          // Railings continue down both sides to the far end. The port side keeps an opening
+          // (Z -4.2 to -6.9) for the stairs down to the mooring platform.
+          addRailingSegment(2.45, -4.2, 2.45, -9.9);
+          addRailingSegment(-2.45, -6.9, -2.45, -9.9);
 
           // 3D Tackle Shop on the Waterfront Edge with Back to the Sea, Facing South (+Z) so Player Walks in Front
           const tackleShop = this.buildTackleShop(textures);
@@ -4768,15 +4772,6 @@
       primaryBtn.addEventListener('pointerup', onPrimaryEnd);
       primaryBtn.addEventListener('pointercancel', onPrimaryEnd);
 
-      mainCanvas.addEventListener('pointerdown', e => {
-        if (isAnyModalOpen() || actionPointerId !== null) return;
-        sfx.init();
-        actionPointerId = e.pointerId;
-        isHoldingAction = true;
-        primaryBtn.classList.add('pressed');
-        handleActionPress();
-      });
-
       window.addEventListener('pointerup', onPrimaryEnd);
       window.addEventListener('pointercancel', onPrimaryEnd);
 
@@ -5136,10 +5131,8 @@
       }
 
       function isAtPierWaterEdge() {
-        // The side rails only count as "water edge" outside the stair opening to the mooring platform
-        // (left side, Z -6.85..-4.35): that gap leads to the boat, so the angler shouldn't unfold the chair and sit there.
-        const atStairOpening = playerX < 0 && playerZ >= -6.85 && playerZ <= -4.35;
-        return !onBoat && playerX >= -2.1 && (playerZ <= -8.95 || (playerZ < -4.25 && Math.abs(playerX) >= 1.95 && !atStairOpening));
+        // Only the far tip of the pier is a fishing spot; the sides are railed off.
+        return !onBoat && playerZ <= -8.95 && Math.abs(playerX) <= 2.1;
       }
 
       function canDockAtPier() {
@@ -5310,7 +5303,7 @@
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            showToast('Walk to the water edge to cast, or visit the Shop / Gallery / Boat!');
+            showToast('Walk to the end of the pier to cast, or visit the Shop / Gallery / Boat!');
             return;
           }
         }
@@ -7007,6 +7000,13 @@
             // Z = 0.45 clamps X to the pier and snaps the player sideways into the middle of the pier.
             if (nextZ < 0.45 && Math.abs(playerX) > 2.05 && playerZ >= 0.40) nextZ = 0.45;
 
+            // On the stairs / mooring platform (port side of the pier, below the boardwalk): stop at its ends
+            // BEFORE narrowing X to the pier width, otherwise a step past the platform edge snaps the player
+            // sideways onto the pier.
+            if (playerX < -2.05 && playerZ < 0.4) {
+              nextZ = THREE.MathUtils.clamp(nextZ, -6.75, -4.45);
+            }
+
             const [initMinX, initMaxX] = getPierXBounds(nextZ);
             let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
 
@@ -7034,7 +7034,7 @@
             const shopMinX = -9.35;
             const shopMaxX = -5.85;
             const shopMaxZ = 2.55;
-            if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ) {
+            if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ && nextZ > 0) {
               const penZ = shopMaxZ - nextZ;
               const penXLeft = nextX - shopMinX;
               const penXRight = shopMaxX - nextX;
@@ -7048,7 +7048,7 @@
             const bntMinX = -5.2;
             const bntMaxX = -3.2;
             const bntMaxZ = 1.65;
-            if (nextX > bntMinX && nextX < bntMaxX && nextZ < bntMaxZ) {
+            if (nextX > bntMinX && nextX < bntMaxX && nextZ < bntMaxZ && nextZ > 0) {
               const penZ = bntMaxZ - nextZ;
               const penXLeft = nextX - bntMinX;
               const penXRight = bntMaxX - nextX;
@@ -7062,7 +7062,7 @@
             const galMinX = 3.35;
             const galMaxX = 5.45;
             const galMaxZ = 1.75;
-            if (nextX > galMinX && nextX < galMaxX && nextZ < galMaxZ) {
+            if (nextX > galMinX && nextX < galMaxX && nextZ < galMaxZ && nextZ > 0) {
               const penZ = galMaxZ - nextZ;
               const penXLeft = nextX - galMinX;
               const penXRight = galMaxX - nextX;
@@ -7137,9 +7137,7 @@
           } else if (isNearMooredBoat()) {
             targetYaw = Math.atan2(-(-7.6 - playerX), -(-5.6 - playerZ));
           } else if (isAtPierWaterEdge()) {
-            if (playerZ > -9.0 && playerX < -1.9) targetYaw = Math.PI * 0.5;
-            else if (playerZ > -9.0 && playerX > 1.9) targetYaw = -Math.PI * 0.5;
-            else targetYaw = 0;
+            targetYaw = 0;
           }
           const angleDiff = Math.atan2(Math.sin(targetYaw - playerYaw), Math.cos(targetYaw - playerYaw));
           playerYaw += angleDiff * Math.min(1, dt * 12);
