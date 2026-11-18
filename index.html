@@ -559,6 +559,8 @@
       gap: 10px;
       pointer-events: none;
       margin-top: auto;
+      position: relative;
+      z-index: 1;
     }
 
     .touch-zone-left {
@@ -569,8 +571,8 @@
     }
 
     #virtual-joystick {
-      width: var(--joy-size);
-      height: var(--joy-size);
+      width: calc(var(--joy-size) * var(--ui-scale, 1));
+      height: calc(var(--joy-size) * var(--ui-scale, 1));
       border-radius: 50%;
       background: rgba(15, 23, 42, 0.65);
       border: 3px solid rgba(122, 162, 214, 0.8);
@@ -583,8 +585,8 @@
     }
 
     #joystick-knob {
-      width: calc(var(--joy-size) * 0.42);
-      height: calc(var(--joy-size) * 0.42);
+      width: calc(var(--joy-size) * var(--ui-scale, 1) * 0.42);
+      height: calc(var(--joy-size) * var(--ui-scale, 1) * 0.42);
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);
       border: 3px solid #e0f2fe;
@@ -616,8 +618,8 @@
     }
 
     #btn-primary-action {
-      width: var(--act-size);
-      height: var(--act-size);
+      width: calc(var(--act-size) * var(--ui-scale, 1));
+      height: calc(var(--act-size) * var(--ui-scale, 1));
       border-radius: 50%;
       background: radial-gradient(circle at 35% 30%, #22c55e, #15803d);
       border: 4px solid #bbf7d0;
@@ -1018,6 +1020,8 @@
 
     @media (max-height: 480px) {
       :root { --joy-size: 104px; --act-size: 92px; }
+      .hud-top { position: relative; }
+      .hud-stack { position: absolute; top: 100%; left: 0; margin-top: 6px; }
       #center-hud {
         bottom: calc(var(--controls-h) + var(--safe-bottom) + 12px);
         width: min(74vw, 380px);
@@ -1028,6 +1032,25 @@
         height: 92px;
       }
     }
+    /* ---- Control options (Settings -> Controls) ---- */
+    body[data-btn="S"] { --ui-scale: 0.85; }
+    body[data-btn="L"] { --ui-scale: 1.2; }
+    #mobile-controls[data-hand="left"] { flex-direction: row-reverse; }
+    #mobile-controls[data-hand="left"] .touch-zone-right { align-items: flex-start; }
+    /* floating joystick: the stick stays home as a faint hint, and jumps under the thumb while touched */
+    #joy-zone { display: none; position: absolute; bottom: 0; left: 0; width: 50%; height: 62%; pointer-events: none; touch-action: none; z-index: 0; }
+    body[data-joy="floating"] #joy-zone { display: block; pointer-events: auto; }
+    body[data-hand="left"][data-joy="floating"] #joy-zone { left: auto; right: 0; }
+    body[data-joy="floating"] #virtual-joystick { opacity: 0.4; pointer-events: none; }
+    body[data-joy="floating"] .touch-zone-left { min-width: calc(var(--joy-size) * var(--ui-scale, 1)); min-height: calc(var(--joy-size) * var(--ui-scale, 1)); pointer-events: none; }
+    body[data-joy="floating"] #virtual-joystick.live { position: fixed; opacity: 1; z-index: 30; }
+    /* auto-hide: while a line is in the water only the essentials stay */
+    .hud-top, .quick-dock { transition: opacity 0.25s; }
+    body[data-autohide="1"][data-fishing="1"] .hud-gauges,
+    body[data-autohide="1"][data-fishing="1"] .hud-stack,
+    body[data-autohide="1"][data-fishing="1"] .quick-dock,
+    body[data-autohide="1"][data-fishing="1"] #live-bait-pip { opacity: 0.12; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) { .hud-top, .quick-dock { transition: none; } }
     /* ---- Settings panel ---- */
     .setting-row {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1225,6 +1248,7 @@
     </div>
 
     <!-- Bottom Thumb-Zone Mobile Controls -->
+    <div id="joy-zone" aria-hidden="true"></div>
     <div id="mobile-controls">
       <div class="touch-zone-left">
         <div id="virtual-joystick" role="slider" aria-label="Movement and Rod Control Stick">
@@ -1368,6 +1392,22 @@
         <div class="setting-row">
           <span class="setting-label">🖼️ Graphics<span class="setting-sub">Battery saver renders at lower resolution</span></span>
           <button class="pixel-btn" id="set-quality" type="button">High</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🖐️ Handedness<span class="setting-sub">Swap the thumbstick and action button</span></span>
+          <button class="pixel-btn" id="set-hand" type="button">Right</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🕹️ Thumbstick<span class="setting-sub">Floating appears wherever you touch on that side</span></span>
+          <button class="pixel-btn" id="set-joy" type="button">Fixed</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🔘 Button size<span class="setting-sub">Thumbstick and action button</span></span>
+          <button class="pixel-btn" id="set-btn" type="button">M</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🙈 Fade HUD while fishing<span class="setting-sub">Dims gauges and shortcuts once your line is out</span></span>
+          <button class="pixel-btn" id="set-autohide" type="button">OFF</button>
         </div>
         <div class="setting-row">
           <span class="setting-label">🎨 Appearance<span class="setting-sub">Clothes, hair, hats and shoes, or roll a random look</span></span>
@@ -1602,7 +1642,7 @@
 
       /* Player settings (stored separately from the save so a save reset keeps them) */
       const SETTINGS_KEY = 'pixel_fishing_settings_v1';
-      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest' };
+      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false };
       try {
         const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
         if (saved && typeof saved === 'object') {
@@ -1610,6 +1650,10 @@
           if (typeof saved.haptics === 'boolean') settings.haptics = saved.haptics;
           if (saved.quality === 'low' || saved.quality === 'high') settings.quality = saved.quality;
           if (['newest', 'value', 'weight', 'name'].includes(saved.bucketSort)) settings.bucketSort = saved.bucketSort;
+          if (saved.hand === 'left' || saved.hand === 'right') settings.hand = saved.hand;
+          if (saved.joyMode === 'floating' || saved.joyMode === 'fixed') settings.joyMode = saved.joyMode;
+          if (['S', 'M', 'L'].includes(saved.btnSize)) settings.btnSize = saved.btnSize;
+          if (typeof saved.autoHideHud === 'boolean') settings.autoHideHud = saved.autoHideHud;
         }
       } catch {}
       function saveSettings() {
@@ -6092,6 +6136,7 @@
       function releaseAllInputs() {
         for (const k in keys) keys[k] = false;
         resetJoystick();
+        joyEl.classList.remove('live');
         if (isHoldingAction) {
           isHoldingAction = false;
           actionPointerId = null;
@@ -6102,30 +6147,47 @@
         }
       }
 
-      joyEl.addEventListener('pointerdown', e => {
+      const joyZone = document.getElementById('joy-zone');
+      const startJoy = e => {
         e.preventDefault();
         e.stopPropagation();
         sfx.init();
         if (joyState.pointerId !== null) return;
+        if (isAnyModalOpen()) return;
+        if (e.currentTarget === joyZone) {
+          // floating: centre the stick under the first touch (kept fully on screen)
+          const size = joyEl.getBoundingClientRect().width || 120;
+          const half = size / 2;
+          const x = Math.max(half + 4, Math.min(innerWidth - half - 4, e.clientX));
+          const y = Math.max(half + 4, Math.min(innerHeight - half - 4, e.clientY));
+          joyEl.style.left = (x - half) + 'px';
+          joyEl.style.top = (y - half) + 'px';
+          joyEl.style.width = joyEl.style.height = size + 'px';
+          joyEl.classList.add('live');
+        }
         joyState.active = true;
         joyState.pointerId = e.pointerId;
-        joyEl.setPointerCapture(e.pointerId);
+        e.currentTarget.setPointerCapture(e.pointerId);
         updateJoystickFromClient(e.clientX, e.clientY);
-      });
-
-      joyEl.addEventListener('pointermove', e => {
+      };
+      const moveJoy = e => {
         if (e.pointerId !== joyState.pointerId) return;
         e.preventDefault();
         updateJoystickFromClient(e.clientX, e.clientY);
-      });
-
+      };
       const onJoyEnd = e => {
         if (e.pointerId === joyState.pointerId) {
           resetJoystick();
+          joyEl.classList.remove('live');
+          joyEl.style.left = joyEl.style.top = joyEl.style.width = joyEl.style.height = '';
         }
       };
-      joyEl.addEventListener('pointerup', onJoyEnd);
-      joyEl.addEventListener('pointercancel', onJoyEnd);
+      for (const t of [joyEl, joyZone]) {
+        t.addEventListener('pointerdown', startJoy);
+        t.addEventListener('pointermove', moveJoy);
+        t.addEventListener('pointerup', onJoyEnd);
+        t.addEventListener('pointercancel', onJoyEnd);
+      }
 
       primaryBtn.addEventListener('pointerdown', e => {
         e.preventDefault();
@@ -8231,9 +8293,36 @@
         };
         paint(setSoundBtn, sfx.enabled, 'ON', 'OFF');
         paint(setHapticsBtn, sfx.hapticsEnabled, 'ON', 'OFF');
+        document.getElementById('set-hand').textContent = settings.hand === 'left' ? 'Left' : 'Right';
+        document.getElementById('set-joy').textContent = settings.joyMode === 'floating' ? 'Floating' : 'Fixed';
+        document.getElementById('set-btn').textContent = settings.btnSize;
+        paint(document.getElementById('set-autohide'), settings.autoHideHud, 'ON', 'OFF');
+        applyControlSettings();
         setQualityBtn.textContent = settings.quality === 'low' ? 'Battery saver' : 'High';
         setQualityBtn.classList.toggle('gold', settings.quality === 'low');
       }
+
+      function applyControlSettings() {
+        const ctl = document.getElementById('mobile-controls');
+        ctl.dataset.hand = settings.hand;
+        document.body.dataset.hand = settings.hand;
+        document.body.dataset.joy = settings.joyMode;
+        document.body.dataset.btn = settings.btnSize;
+        document.body.dataset.autohide = settings.autoHideHud ? '1' : '0';
+        if (settings.joyMode !== 'floating') document.getElementById('virtual-joystick').classList.remove('live');
+      }
+      document.getElementById('set-hand').addEventListener('click', () => {
+        settings.hand = settings.hand === 'left' ? 'right' : 'left'; saveSettings(); renderSettings();
+      });
+      document.getElementById('set-joy').addEventListener('click', () => {
+        settings.joyMode = settings.joyMode === 'floating' ? 'fixed' : 'floating'; saveSettings(); renderSettings();
+      });
+      document.getElementById('set-btn').addEventListener('click', () => {
+        settings.btnSize = { S: 'M', M: 'L', L: 'S' }[settings.btnSize]; saveSettings(); renderSettings();
+      });
+      document.getElementById('set-autohide').addEventListener('click', () => {
+        settings.autoHideHud = !settings.autoHideHud; saveSettings(); renderSettings();
+      });
 
       function toggleSound() {
         settings.sound = sfx.toggle();
@@ -9298,6 +9387,8 @@
         lastTime = now;
 
         updateSimulation(dt);
+        const fishingNow = mode === 'CASTING' || mode === 'WAITING_BITE' || mode === 'BITE_WINDOW' || mode === 'REELING' ? '1' : '0';
+        if (document.body.dataset.fishing !== fishingNow) document.body.dataset.fishing = fishingNow;
         hudClockTimer += dt;
         if (hudClockTimer >= 0.5) {
           hudClockTimer = 0;
