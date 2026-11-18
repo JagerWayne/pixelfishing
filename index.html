@@ -1565,6 +1565,7 @@
           <button class="pixel-btn tab-btn" data-shop-tab="modules">Modules</button>
           <button class="pixel-btn tab-btn" data-shop-tab="baits">Bait (10x)</button>
           <button class="pixel-btn tab-btn" data-shop-tab="buckets">Buckets</button>
+          <button class="pixel-btn tab-btn" data-shop-tab="paint">Paint</button>
         </div>
 
         <div class="upgrade-grid" id="shop-items-container"></div>
@@ -2205,7 +2206,8 @@
         { tier: 0, name: 'None (Pier Only)', cost: 0, maxFuel: 0, speed: 0, burnRate: 0, maxZone: 1, desc: 'Fish directly from the wooden harbor pier.' },
         { tier: 1, name: 'Wooden Rowboat', cost: 120, maxFuel: 60, speed: 14, burnRate: 0.20, maxZone: 2, desc: 'Clinker hull with 5HP outboard. Reaches Coastal Reef (300m).' },
         { tier: 2, name: 'Fiberglass Skiff', cost: 550, maxFuel: 150, speed: 22, burnRate: 0.17, maxZone: 3, desc: 'Agile planing center-console skiff. Safely navigates Open Shelf (650m).' },
-        { tier: 3, name: 'Deep-Sea Trawler', cost: 1800, maxFuel: 350, speed: 30, burnRate: 0.14, maxZone: 4, desc: 'Heavy steel expedition vessel built for Abyssal Trench swells (1200m+).' }
+        { tier: 3, name: 'Deep-Sea Trawler', cost: 1800, maxFuel: 350, speed: 30, burnRate: 0.14, maxZone: 4, desc: 'Heavy steel expedition vessel built for Abyssal Trench swells (1200m+).' },
+        { tier: 4, name: 'Expedition Yacht', cost: 6500, maxFuel: 700, speed: 38, burnRate: 0.12, maxZone: 5, desc: 'Twin-engine ocean yacht with a flybridge. The only boat that reaches the Mariana Rift (1500m+).' }
       ];
 
       const BOAT_MODULES = [
@@ -2221,7 +2223,8 @@
         { tier: 4, name: 'Graphite Inshore', cost: 380, maxWeight: 24.0, forgiveness: 0.41, maxZone: 2, color: 0x0d9488, desc: 'Fast-taper graphite blank with smooth drag for trophy reef predators.' },
         { tier: 5, name: 'Carbon Surf Rod', cost: 750, maxWeight: 42.0, forgiveness: 0.48, maxZone: 3, color: 0x334155, desc: 'High-modulus carbon blank built for pelagic Open Shelf gamefish.' },
         { tier: 6, name: 'Titanium Rig', cost: 1800, maxWeight: 85.0, forgiveness: 0.56, maxZone: 4, color: 0x94a3b8, desc: 'Roller-guide offshore rod engineered to battle deep trench monsters.' },
-        { tier: 7, name: 'Abyssal Leviathan Winch', cost: 3600, maxWeight: 140.0, forgiveness: 0.66, maxZone: 4, color: 0xfacc15, desc: 'Gold-anodized heavy roller winch capable of hauling any beast in the sea.' }
+        { tier: 7, name: 'Abyssal Leviathan Winch', cost: 3600, maxWeight: 140.0, forgiveness: 0.66, maxZone: 4, color: 0xfacc15, desc: 'Gold-anodized heavy roller winch capable of hauling any beast in the sea.' },
+        { tier: 8, name: 'Mythril Deepcaster', cost: 9000, maxWeight: 220.0, forgiveness: 0.74, maxZone: 5, color: 0x67e8f9, desc: 'Mythril-alloy winch rod with a self-cooling reel, forged for the monsters of the Mariana Rift.' }
       ];
 
       const LIVE_CAM_UPGRADE = {
@@ -2242,14 +2245,16 @@
         { tier: 1, name: 'Rusty Tin Bucket', cost: 0, capacity: 6.0, desc: 'Small galvanized pail. Holds up to 6.0 kg of catch.' },
         { tier: 2, name: 'Plastic Cooler', cost: 100, capacity: 18.0, desc: '24-quart marine ice chest. Holds up to 18.0 kg.' },
         { tier: 3, name: 'Insulated Fish Box', cost: 450, capacity: 50.0, desc: 'Heavy-duty deck fish box. Holds up to 50.0 kg.' },
-        { tier: 4, name: 'Refrigerated Hold', cost: 1500, capacity: 150.0, desc: 'Chilled commercial catch hold. Holds up to 150.0 kg.' }
+        { tier: 4, name: 'Refrigerated Hold', cost: 1500, capacity: 150.0, desc: 'Chilled commercial catch hold. Holds up to 150.0 kg.' },
+        { tier: 5, name: 'Deep-Freeze Vault', cost: 4000, capacity: 400.0, desc: 'Gilded cryogenic vault for rift-sized catches. Holds up to 400.0 kg.' }
       ];
 
       const ZONES = [
         { id: 1, name: 'Shallow Cove', minM: 0, maxM: 100, waterColor: 0x3b8ea5, fogColor: 0x9ecae1, waveAmp: 0.18, waveFreq: 1.6 },
         { id: 2, name: 'Coastal Reef', minM: 100, maxM: 300, waterColor: 0x2c6e85, fogColor: 0x74a9cf, waveAmp: 0.34, waveFreq: 1.3 },
         { id: 3, name: 'Open Shelf', minM: 300, maxM: 650, waterColor: 0x2b547e, fogColor: 0x4b749f, waveAmp: 0.58, waveFreq: 1.05 },
-        { id: 4, name: 'Abyssal Trench', minM: 650, maxM: 9999, waterColor: 0x1e2542, fogColor: 0x161d33, waveAmp: 0.92, waveFreq: 0.85 }
+        { id: 4, name: 'Abyssal Trench', minM: 650, maxM: 1500, waterColor: 0x1e2542, fogColor: 0x161d33, waveAmp: 0.92, waveFreq: 0.85 },
+        { id: 5, name: 'Mariana Rift', minM: 1500, maxM: 99999, waterColor: 0x0b1733, fogColor: 0x0a1226, waveAmp: 1.15, waveFreq: 0.75 }
       ];
 
       const WEATHER_TYPES = [
@@ -2263,15 +2268,15 @@
         { id: 'sw_lettuce', name: 'Slimy Sea Lettuce', category: 'Flora', rarity: 'Flora', zones: [1, 2], minW: 0.2, maxW: 0.5, value: 2, color: '#4ade80', accent: '#166534', shape: 'seaweed', desc: 'Translucent green fronds clinging to your hook.' },
         { id: 'sw_kelp', name: 'Tangled Kelp Ribbon', category: 'Flora', rarity: 'Flora', zones: [1, 2, 3], minW: 0.5, maxW: 1.2, value: 4, color: '#3f6212', accent: '#84cc16', shape: 'seaweed', desc: 'Long rubbery brown-green kelp blade.' },
         { id: 'sw_bladder', name: 'Bubble Bladderwrack', category: 'Flora', rarity: 'Flora', zones: [1, 2], minW: 0.3, maxW: 0.8, value: 3, color: '#65a30d', accent: '#bef264', shape: 'seaweed', desc: 'Poppable air-filled coastal seaweed.' },
-        { id: 'sw_abyssal', name: 'Glowing Abyssal Moss', category: 'Flora', rarity: 'Uncommon', zones: [3, 4], minW: 0.4, maxW: 1.0, value: 12, color: '#2dd4bf', accent: '#a5f3fc', shape: 'seaweed', desc: 'Bioluminescent deep-trench algae prized by alchemists.' },
+        { id: 'sw_abyssal', name: 'Glowing Abyssal Moss', category: 'Flora', rarity: 'Uncommon', zones: [3, 4, 5], minW: 0.4, maxW: 1.0, value: 12, color: '#2dd4bf', accent: '#a5f3fc', shape: 'seaweed', desc: 'Bioluminescent deep-trench algae prized by alchemists.' },
 
         { id: 'jk_boot', name: 'Waterlogged Old Boot', category: 'Junk', rarity: 'Junk', zones: [1, 2, 3], minW: 1.1, maxW: 1.8, value: 1, color: '#78350f', accent: '#451a03', shape: 'boot', desc: 'A classic angler rite of passage. Size 11, left foot.' },
         { id: 'jk_can', name: 'Rusty Tin Can', category: 'Junk', rarity: 'Junk', zones: [1, 2], minW: 0.3, maxW: 0.6, value: 1, color: '#94a3b8', accent: '#b45309', shape: 'can', desc: 'Corroded sardine tin. Ironic.' },
         { id: 'jk_bottle', name: 'Shattered Glass Bottle', category: 'Junk', rarity: 'Junk', zones: [1, 2, 3], minW: 0.4, maxW: 0.9, value: 2, color: '#34d399', accent: '#d1fae5', shape: 'bottle', desc: 'Sea-frosted green glass bottle without a map inside.' },
-        { id: 'jk_msg_bottle', name: 'Message in a Bottle', category: 'Junk', rarity: 'Uncommon', zones: [1, 2, 3, 4], isMessageBottle: true, minW: 0.5, maxW: 1.1, value: 8, color: '#2dd4bf', accent: '#fef08a', shape: 'bottle', desc: 'A corked sea-glass bottle containing a weathered parchment scroll.' },
-        { id: 'jk_anchor', name: 'Barnacle-Crusted Anchor', category: 'Junk', rarity: 'Junk', zones: [1, 2, 3, 4], minW: 8.5, maxW: 14.0, value: 15, color: '#475569', accent: '#f472b6', shape: 'anchor', desc: 'Dead-weight iron fluke anchor! Snaps beginner rods.' },
-        { id: 'jk_hat', name: 'Soggy Pirate Hat', category: 'Junk', rarity: 'Uncommon', zones: [2, 3, 4], minW: 0.5, maxW: 0.9, value: 18, color: '#1e293b', accent: '#facc15', shape: 'hat', desc: 'Water-stained tricorne with tarnished gold trim.' },
-        { id: 'jk_box', name: 'Locked Sunken Strongbox', category: 'Junk', rarity: 'Rare', zones: [2, 3, 4], minW: 4.0, maxW: 7.5, value: 65, color: '#92400e', accent: '#fbbf24', shape: 'box', desc: 'Salt-encrusted oak coffer rattling with old silver.' },
+        { id: 'jk_msg_bottle', name: 'Message in a Bottle', category: 'Junk', rarity: 'Uncommon', zones: [1, 2, 3, 4, 5], isMessageBottle: true, minW: 0.5, maxW: 1.1, value: 8, color: '#2dd4bf', accent: '#fef08a', shape: 'bottle', desc: 'A corked sea-glass bottle containing a weathered parchment scroll.' },
+        { id: 'jk_anchor', name: 'Barnacle-Crusted Anchor', category: 'Junk', rarity: 'Junk', zones: [1, 2, 3, 4, 5], minW: 8.5, maxW: 14.0, value: 15, color: '#475569', accent: '#f472b6', shape: 'anchor', desc: 'Dead-weight iron fluke anchor! Snaps beginner rods.' },
+        { id: 'jk_hat', name: 'Soggy Pirate Hat', category: 'Junk', rarity: 'Uncommon', zones: [2, 3, 4, 5], minW: 0.5, maxW: 0.9, value: 18, color: '#1e293b', accent: '#facc15', shape: 'hat', desc: 'Water-stained tricorne with tarnished gold trim.' },
+        { id: 'jk_box', name: 'Locked Sunken Strongbox', category: 'Junk', rarity: 'Rare', zones: [2, 3, 4, 5], minW: 4.0, maxW: 7.5, value: 65, color: '#92400e', accent: '#fbbf24', shape: 'box', desc: 'Salt-encrusted oak coffer rattling with old silver.' },
 
         // Zone 1: Shallow Cove
         { id: 'f_minnow', name: 'Sunlit Minnow', category: 'Fish', rarity: 'Common', zones: [1], minW: 0.2, maxW: 0.6, value: 6, color: '#fde047', accent: '#38bdf8', shape: 'fish_slim', desc: 'Darting golden-flanked fry common around wooden pilings.' },
@@ -2311,6 +2316,12 @@
         { id: 'f_gulper', name: 'Pelican Gulper Eel', category: 'Fish', rarity: 'Rare', zones: [4], minW: 14.0, maxW: 32.0, value: 350, color: '#1e1b4b', accent: '#f472b6', shape: 'fish_eel', desc: 'Whip-tailed abyssal swallower with a glowing pink tail tip.' },
         { id: 'f_goblin', name: 'Abyssal Goblin Shark', category: 'Fish', rarity: 'Epic', zones: [4], minW: 35.0, maxW: 72.0, value: 640, color: '#be185d', accent: '#fbcfe8', shape: 'fish_marlin', desc: 'Prehistoric rose-skinned trench shark with a blade-like snout.' },
         { id: 'f_dragonfish', name: 'Black Dragonfish', category: 'Fish', rarity: 'Epic', zones: [4], minW: 16.0, maxW: 38.0, value: 490, color: '#090d16', accent: '#a855f7', shape: 'fish_eel', desc: 'Velvet-black bioluminescent hunter emitting eerie violet light.' },
+        { id: 'f_riftlamprey', name: 'Rift Lamprey King', category: 'Fish', rarity: 'Rare', zones: [5], minW: 20.0, maxW: 45.0, value: 420, color: '#14532d', accent: '#86efac', shape: 'fish_eel', desc: 'Sucker-mouthed rift predator that glows faintly green in the dark.' },
+        { id: 'f_hadalangler', name: 'Hadal Anglerking', category: 'Fish', rarity: 'Epic', zones: [5], minW: 50.0, maxW: 110.0, value: 820, color: '#3b0764', accent: '#f0abfc', shape: 'fish_angler', glowing: true, desc: 'Crushing-depth ambusher whose lure lights up the whole rift wall.' },
+        { id: 'f_sabrefish', name: 'Crystal Sabrefish', category: 'Fish', rarity: 'Epic', zones: [5], minW: 60.0, maxW: 120.0, value: 900, color: '#0ea5e9', accent: '#e0f2fe', shape: 'fish_marlin', desc: 'Glass-clear hunter with a blade-like bill that flashes like ice.' },
+        { id: 'f_voidtuna', name: 'Void Bluefin', category: 'Fish', rarity: 'Legendary', zones: [5], minW: 120.0, maxW: 210.0, value: 1900, color: '#111827', accent: '#38bdf8', shape: 'fish_tuna', desc: 'A black, star-flecked giant that swims where light has never reached.' },
+        { id: 'f_magmaeel', name: 'Magma Ribbon', category: 'Fish', rarity: 'Legendary', zones: [5], minW: 140.0, maxW: 230.0, value: 2100, color: '#7f1d1d', accent: '#fdba74', shape: 'fish_eel', glowing: true, desc: 'A glowing ember-red serpent that lives beside the rift vents.' },
+        { id: 'f_marianatitan', name: 'Mariana Titan', category: 'Fish', rarity: 'Legendary', zones: [5], minW: 180.0, maxW: 260.0, value: 2600, color: '#0b1020', accent: '#facc15', shape: 'fish_tuna', desc: 'The undisputed ruler of the Mariana Rift, armoured in black and gold.' },
         { id: 'f_leviathan', name: 'Trench Leviathan', category: 'Fish', rarity: 'Legendary', zones: [4], minW: 60.0, maxW: 115.0, value: 1250, color: '#312e81', accent: '#fde047', shape: 'fish_tuna', desc: 'Colossal armored sovereign of the deepest ocean abyss.' },
 
         // FULL MOON EXCLUSIVE GLOWING FISH
@@ -2401,6 +2412,8 @@
         { id: 'b_abyss_exped', title: 'Abyssal Research', desc: 'Land 1 Fish from Abyssal Trench (Zone 4)', type: 'zone_fish', zone: 4, target: 1, rewardCash: 750, rewardBaitTier: 4, rewardBaitQty: 6 },
         { id: 'b_herring_run', title: 'Herring Run', desc: 'Catch 5 Fish in Shallow Cove (Zone 1)', type: 'zone_fish', zone: 1, target: 5, rewardCash: 70, rewardBaitTier: 2, rewardBaitQty: 5 },
         { id: 'b_tidy_up', title: 'Big Beach Cleanup', desc: 'Catch 6 Junk or Flora items anywhere', type: 'junk', target: 6, rewardCash: 120, rewardBaitTier: 2, rewardBaitQty: 8 },
+        { id: 'b_rift_pioneer', title: 'Rift Pioneer', desc: 'Land 1 Fish from the Mariana Rift (Zone 5)', type: 'zone_fish', zone: 5, target: 1, rewardCash: 1500, rewardBaitTier: 4, rewardBaitQty: 8 },
+        { id: 'b_rift_giant', title: 'Rift Heavyweight', desc: 'Land a fish weighing at least 100 kg', type: 'min_weight', minW: 100.0, target: 1, rewardCash: 2500, rewardBaitTier: 4, rewardBaitQty: 10 },
         { id: 'b_reef_lunker', title: 'Reef Heavyweight', desc: 'Land a fish weighing at least 8.0 kg', type: 'min_weight', minW: 8.0, target: 1, rewardCash: 300, rewardBaitTier: 3, rewardBaitQty: 4 },
         { id: 'b_shelf_haul', title: 'Open Shelf Haul', desc: 'Catch 4 Fish in Open Shelf (Zone 3)', type: 'zone_fish', zone: 3, target: 4, rewardCash: 520, rewardBaitTier: 4, rewardBaitQty: 4 },
         { id: 'b_trophy_case', title: 'Trophy Case', desc: 'Land 4 Rare, Epic, or Legendary catches', type: 'rare_plus', target: 4, rewardCash: 480, rewardBaitTier: 4, rewardBaitQty: 3 },
@@ -4293,6 +4306,33 @@
             // anchor and bow bollard
             box(0.18, 0.18, 0.3, steel, 0, 1.08, -2.6);
           }
+          if (tier === 4) {
+            // ---- Expedition yacht: twin outboards, flybridge and an aft helm ----
+            const hull = this.loftHull({ L: 11.0, beam: 4.0, draft: 0.9, depth: 2.5, bowRise: 0.6, sternRise: 0.15, sternW: 0.9, planks: 0,
+              bands: [{ y0: -9, y1: -0.2, color: '#1e3a8a' }, { y0: -0.2, y1: -0.05, color: '#f8fafc' }, { y0: -0.05, y1: 0.55, color: '#f8fafc' }, { y0: 0.55, y1: 0.72, color: '#facc15' }, { y0: 0.72, y1: 9, color: '#f8fafc' }] });
+            hull.L = 11.0; group.add(new THREE.Mesh(hull.geo, hullMat), new THREE.Mesh(hull.transom, hullMat));
+            const white = M(0xf8fafc, 0.35), navy = M(0x1e3a8a, 0.45), steel = M(0xcbd5e1, 0.3, 0.8), teak = M(0xb9854a, 0.8);
+            const glassM = M(0x0b1220, 0.12, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.3 });
+            addRails(hull, steel, 0.05, 0.12, 0.08, 0.97);
+            box(3.2, 0.06, 8.6, teak, 0, 0.52, 0.25);                       // teak aft deck
+            box(3.0, 1.5, 3.6, white, 0, 1.3, -2.5);                        // main cabin
+            box(3.1, 0.1, 3.7, navy, 0, 2.1, -2.5);
+            [-0.9, 0, 0.9].forEach(x => box(0.7, 0.5, 0.04, glassM, x, 1.6, -4.32));
+            [-1, 1].forEach(sd => [-3.4, -2.5, -1.6].forEach(z => box(0.04, 0.45, 0.6, glassM, sd * 1.51, 1.6, z)));
+            box(1.7, 0.9, 1.4, white, 0, 2.65, -2.6);                       // flybridge pilot house
+            box(1.8, 0.08, 1.5, navy, 0, 3.15, -2.6);
+            box(1.5, 0.4, 0.04, glassM, 0, 2.8, -3.32);
+            cyl(0.05, 0.05, 0.5, steel, 0, 3.45, -2.6, 6);                  // radar and mast
+            box(1.0, 0.06, 0.14, steel, 0, 3.75, -2.6);
+            cyl(0.04, 0.06, 2.0, steel, 0, 4.2, -3.0, 6);
+            box(1.1, 0.95, 0.55, white, 0, 1.0, -0.45);                     // aft helm console
+            box(1.14, 0.06, 0.6, navy, 0, 1.5, -0.45);
+            const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 6, 14), M(0x111827, 0.6)); wheel.position.set(0, 1.62, -0.72); wheel.rotation.x = -0.8; group.add(wheel);
+            const screen = box(1.1, 0.5, 0.03, glassM, 0, 1.8, -0.78); screen.rotation.x = -0.3;
+            box(2.4, 0.4, 0.5, white, 0, 0.78, 3.0); box(2.4, 0.08, 0.55, navy, 0, 1.02, 3.0);   // aft bench
+            outboard(-0.95, 0.95, 5.55, 0x111827, 0x94a3b8); outboard(0.95, 0.95, 5.55, 0x111827, 0x94a3b8);
+            [[-1, 0xdc2626], [1, 0x16a34a]].forEach(([sd, c]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: c })); l.position.set(sd * 1.0, 1.4, -4.2); group.add(l); });
+          }
           return group;
         }
 
@@ -4357,6 +4397,8 @@
         }
 
         static buildPierBucketMesh(tier, itemCount, textures) {
+          const goldVault = tier >= 5;
+          if (tier > 4) tier = 4;
           const group = new THREE.Group();
           const K = this.propKit(textures);
           const fishColors = [[0x38bdf8, 0xf97316], [0xf97316, 0xfacc15], [0x4ade80, 0x38bdf8], [0xe879f9, 0xfacc15]];
@@ -4443,6 +4485,15 @@
               for (let i = 0; i < 5; i++) K.sph(group, 0.09 + (i % 2) * 0.04, new THREE.MeshBasicMaterial({ color: 0xcffafe, transparent: true, opacity: 0.18, depthWrite: false }), -0.55 + i * 0.28, h + 0.1 + (i % 3) * 0.05, 0.1 - (i % 2) * 0.2, 8, 6);
             }
             addFish(iceLevel + 0.1, Math.min(0.34, (w - 0.4) / 3.5), d * 0.22);
+          }
+          if (goldVault) { // the Deep-Freeze Vault: the freezer in bronze and gold
+            group.traverse(o => {
+              if (!o.material || !o.material.color) return;
+              const hex = o.material.color.getHex();
+              if (hex === 0x0f172a) o.material.color.setHex(0x92400e);
+              else if (hex === 0x1e293b) o.material.color.setHex(0xfacc15);
+              else if (hex === 0x22d3ee) o.material.color.setHex(0xfbbf24);
+            });
           }
           return group;
         }
@@ -5192,7 +5243,8 @@
           const buoySpecs = [
             { z: -118, color: 0x22c55e },
             { z: -318, color: 0xf59e0b },
-            { z: -668, color: 0xef4444 }
+            { z: -668, color: 0xef4444 },
+            { z: -1518, color: 0xa855f7 }
           ];
           buoySpecs.forEach(spec => {
             [-14, 14].forEach((bx, sideIdx) => {
@@ -5887,7 +5939,8 @@
             { zoneId: 1, minX: -3.6, maxX: 3.6, minZ: -29, maxZ: -18.5, radius: 4.5 },
             { zoneId: 2, minX: -18, maxX: 18, minZ: -280, maxZ: -135, radius: 6.5 },
             { zoneId: 3, minX: -26, maxX: 26, minZ: -620, maxZ: -340, radius: 8.0 },
-            { zoneId: 4, minX: -34, maxX: 34, minZ: -950, maxZ: -690, radius: 9.5 }
+            { zoneId: 4, minX: -34, maxX: 34, minZ: -1400, maxZ: -690, radius: 9.5 },
+            { zoneId: 5, minX: -42, maxX: 42, minZ: -2200, maxZ: -1560, radius: 10.5 }
           ];
           frenzyZones.forEach(fz => {
             const fGroup = new THREE.Group();
@@ -6544,7 +6597,8 @@
       const BOAT_RIDE = {
         1: { x: 0, y: 0.36, z: 1.35, sit: true,  hands: [0.25, 0.95] },  // rowboat: stern thwart, right hand on the tiller
         2: { x: 0, y: 0.13, z: 0.12, sit: false, hands: [1.0, 1.0] },    // skiff: standing behind the console, hands on the wheel
-        3: { x: 0, y: 0.53, z: -0.55, sit: false, hands: [1.0, 1.0] }    // trawler: standing at the wheelhouse door
+        3: { x: 0, y: 0.53, z: -0.55, sit: false, hands: [1.0, 1.0] },   // trawler: standing at the wheelhouse door
+        4: { x: 0, y: 0.55, z: 0.3, sit: false, hands: [1.0, 1.0] }      // yacht: standing behind the aft helm console
       };
       let boatSitProgress = 0, boatHandsProgress = 0;
       const rideVec = new THREE.Vector3();
@@ -6839,6 +6893,8 @@
         { id: 'zone_2', icon: '🪸', name: 'Reef Explorer', desc: 'Sail into the Coastal Reef.', goal: 2, prog: () => stat('maxZone'), cash: 60 },
         { id: 'zone_3', icon: '🌅', name: 'Shelf Explorer', desc: 'Sail into the Open Shelf.', goal: 3, prog: () => stat('maxZone'), cash: 150 },
         { id: 'zone_4', icon: '🕳️', name: 'Trench Explorer', desc: 'Sail into the Abyssal Trench.', goal: 4, prog: () => stat('maxZone'), cash: 400 },
+        { id: 'zone_5', icon: '🌌', name: 'Rift Pioneer', desc: 'Sail into the Mariana Rift.', goal: 5, prog: () => stat('maxZone'), cash: 1500 },
+        { id: 'fresh_coat', icon: '🎨', name: 'Fresh Coat', desc: 'Own 3 boat paints.', goal: 3, prog: () => (state.ownedPaints || []).length, cash: 200 },
         { id: 'treasure_1', icon: '🪙', name: 'Treasure Hunter', desc: 'Find a floating treasure chest.', goal: 1, prog: () => stat('treasures'), cash: 100 },
         { id: 'treasure_10', icon: '🏴‍☠️', name: 'Pirate King', desc: 'Find 10 treasure chests.', goal: 10, prog: () => stat('treasures'), cash: 800 },
         { id: 'boss_1', icon: '🦑', name: 'Boss Slayer', desc: 'Land a boss fish.', goal: 1, prog: () => stat('bossCatches'), cash: 1000 },
@@ -6923,6 +6979,14 @@
       const marketMult = id => marketFor(state.dayCount || 0).mult[id] || 1;
       const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id)));
 
+      const BOAT_PAINTS = [
+        { id: 'classic', name: 'Classic', cost: 0, rank: 0, hue: 0, sat: 1, light: 1 },
+        { id: 'sunset', name: 'Sunset Orange', cost: 150, rank: 0, hue: 0.07, sat: 1.1, light: 1.05 },
+        { id: 'emerald', name: 'Emerald', cost: 250, rank: 0, hue: 0.33, sat: 1.0, light: 0.95 },
+        { id: 'violet', name: 'Royal Violet', cost: 400, rank: 4, hue: 0.62, sat: 1.0, light: 1.0 },
+        { id: 'midnight', name: 'Midnight', cost: 600, rank: 8, hue: 0, sat: 0.15, light: 0.35 },
+        { id: 'gilded', name: 'Gilded', cost: 1500, rank: 12, hue: 0.1, sat: 1.4, light: 1.25 }
+      ];
       function defaultSaveState() {
         return {
           cash: 25.0,
@@ -6954,6 +7018,8 @@
           stats: {},
           achievements: [],
           rankClaimed: 0,
+          paint: 'classic',
+          ownedPaints: ['classic'],
           saveVersion: 2
         };
       }
@@ -7415,6 +7481,9 @@
         }
         out.xp = src.xp === undefined ? out.xp : int(src.xp, 0, 0, 1e9);
         out.achievements = Array.isArray(src.achievements) ? [...new Set(src.achievements.filter(id => ACHIEVEMENTS.some(a => a.id === id)))] : [];
+        out.ownedPaints = ['classic'].concat(Array.isArray(src.ownedPaints) ? src.ownedPaints.filter(id => id !== 'classic' && BOAT_PAINTS.some(p => p.id === id)) : []);
+        out.ownedPaints = [...new Set(out.ownedPaints)];
+        out.paint = out.ownedPaints.includes(src.paint) ? src.paint : 'classic';
         out.rankClaimed = Math.min(rankIndexFor(out.xp), int(src.rankClaimed, rankIndexFor(out.xp), 0, RANKS.length - 1));
         if (src.rankClaimed === undefined) out.rankClaimed = rankIndexFor(out.xp);
 
@@ -7545,9 +7614,32 @@
       }
 
       let boatSpotlight = null;
+      /* Boat paint: hue / saturation / lightness shift of the hull's vertex colours (white stays white) */
+      function paintSwatch(p) {
+        const c = new THREE.Color(0xb91c1c), h = {};
+        c.getHSL(h); c.setHSL((h.h + p.hue + 1) % 1, Math.min(1, h.s * p.sat), Math.min(0.95, h.l * p.light));
+        return '#' + c.getHexString();
+      }
+      function applyBoatPaint(mesh) {
+        const paint = BOAT_PAINTS.find(p => p.id === state.paint) || BOAT_PAINTS[0];
+        if (paint.id === 'classic') return;
+        const c = new THREE.Color(), hsl = {};
+        mesh.traverse(o => {
+          if (!o.isMesh || !o.geometry.attributes.color) return;
+          const col = o.geometry.attributes.color;
+          for (let i = 0; i < col.count; i++) {
+            c.setRGB(col.getX(i), col.getY(i), col.getZ(i)); c.getHSL(hsl);
+            c.setHSL((hsl.h + paint.hue + 1) % 1, Math.min(1, hsl.s * paint.sat), Math.min(0.95, hsl.l * paint.light));
+            col.setXYZ(i, c.r, c.g, c.b);
+          }
+          col.needsUpdate = true;
+        });
+      }
+
       function rebuildPlayerBoatVisual() {
         scene.remove(playerBoatMesh);
         playerBoatMesh = WorldBuilder.buildBoatMesh(state.boatTier, textures);
+        applyBoatPaint(playerBoatMesh);
         {
           const bb = new THREE.Box3().setFromObject(playerBoatMesh);
           if (isFinite(bb.max.z - bb.min.z) && state.boatTier > 0) {
@@ -8942,6 +9034,45 @@
             card.appendChild(btn);
             container.appendChild(card);
           });
+        } else if (activeShopTab === 'paint') {
+          if (state.boatTier === 0) {
+            container.innerHTML = '<div class="shop-card"><div class="card-stats">Buy a boat first, then give it a new coat of paint here.</div></div>';
+          } else {
+            const rankNo = rankIndexFor(state.xp) + 1;
+            BOAT_PAINTS.forEach(p => {
+              const owned = state.ownedPaints.includes(p.id), locked = !owned && rankNo < p.rank;
+              const card = document.createElement('div');
+              card.className = `shop-card ${state.paint === p.id ? 'equipped' : ''}`;
+              card.innerHTML = `
+                <div>
+                  <div class="card-title">
+                    <span><span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${paintSwatch(p)}; border:2px solid #f1f5f9; vertical-align:-2px; margin-right:6px;"></span>${p.name}</span>
+                    <span style="color: #ffd24c;">${p.cost === 0 ? 'FREE' : '$' + p.cost}</span>
+                  </div>
+                  <div class="card-stats">${p.rank ? 'Unlocks at rank ' + p.rank + ' (' + RANKS[p.rank - 1].name + ')' : 'Hull colour for every boat you own.'}</div>
+                </div>`;
+              const btn = document.createElement('button');
+              btn.className = owned ? 'pixel-btn green' : 'pixel-btn gold';
+              if (state.paint === p.id) { btn.textContent = 'Applied'; btn.disabled = true; }
+              else if (owned) {
+                btn.textContent = 'Apply Paint';
+                btn.onclick = () => { state.paint = p.id; sfx.playCoin(); saveGame(); rebuildPlayerBoatVisual(); renderShop(); showToast(`${p.name} paint applied!`); };
+              } else if (locked) { btn.textContent = `Locked (rank ${p.rank})`; btn.disabled = true; }
+              else {
+                btn.textContent = `Buy Paint ($${p.cost})`;
+                btn.disabled = state.cash < p.cost;
+                btn.onclick = () => {
+                  if (state.cash < p.cost) return;
+                  state.cash = +(state.cash - p.cost).toFixed(2);
+                  state.ownedPaints.push(p.id); state.paint = p.id;
+                  sfx.playCoin(); checkAchievements(); saveGame(); rebuildPlayerBoatVisual(); renderShop(); updateHUD();
+                  showToast(`${p.name} paint applied!`);
+                };
+              }
+              card.appendChild(btn);
+              container.appendChild(card);
+            });
+          }
         }
       }
 
@@ -10067,7 +10198,7 @@
               if (resolveX) nextX = cx + (Math.sign(dx) || Math.sign(prevX - cx) || 1) * hx;
               else nextZ = cz + (Math.sign(dz) || Math.sign(prevZ - cz) || 1) * hz;
             };
-            pushOutOfBox(-1.55, -7.6, 0.55 + state.bucketTier * 0.14, 0.65);
+            pushOutOfBox(-1.55, -7.6, 0.55 + Math.min(state.bucketTier, 4) * 0.14, 0.65);
             pushOutOfBox(1.55, -7.6, 0.55, 0.45);
 
             // Solid collision cylinder around the 3D Fourth-Wall Film Camera (8.2, 0.9)
