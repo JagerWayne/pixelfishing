@@ -131,6 +131,9 @@ The bucket on the pier shows your upgrade, open with the catch inside. In the ba
 
 ## The sea: zones, weather and the moon
 
+Solid objects at sea (the lighthouse rocks and the buoys) block boats; steer around them.
+
+
 | Zone | Name | Distance from the pier |
 |---|---|---|
 | 1 | Shallow Cove | 0 to 100 m |
@@ -313,6 +316,9 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Sea collisions
+- Boats now collide with the **lighthouse and its rocks** and with the **channel buoys**: you slide along them, lose speed, and get a thump, a buzz and a short warning toast.
 
 ### 2026-11-18, Mobile interface, part 2: controls
 - **New control settings:** left-handed layout, floating thumbstick, small/medium/large buttons and an option to fade the HUD while fishing. Stored in the settings, validated on load.

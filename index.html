@@ -1924,6 +1924,12 @@
           this.playTone({ freq: 620, endFreq: 520, type: 'sine', duration: 0.05, vol: 0.05 });
         }
 
+        playBump() {
+          this.vibrate(35);
+          this.playNoise({ duration: 0.2, vol: 0.16, filterFreq: 260, filterType: 'lowpass' });
+          this.playTone({ freq: 140, endFreq: 70, type: 'triangle', duration: 0.18, vol: 0.14 });
+        }
+
         playCoin() {
           this.vibrate(15);
           this.playTone({ freq: 880, type: 'sine', duration: 0.1, vol: 0.13, delay: 0 });
@@ -4873,6 +4879,19 @@
             });
           });
 
+          // Solid objects on the sea for boat collision, as circles {x, z, r}.
+          // Keep the lighthouse numbers in sync with the lighthouse built above (position 52,-150, scale 1.6).
+          const seaObstacles = [];
+          {
+            const LH = { x: 52, z: -150, s: 1.6 };
+            for (let i = 0; i < 6; i++) {
+              const rad = 3 + (i % 3);
+              seaObstacles.push({ name: 'rocks', x: LH.x + Math.cos(i * 1.2) * 3.5 * LH.s, z: LH.z + Math.sin(i * 1.2) * 3.0 * LH.s, r: rad * LH.s * 1.05 });
+            }
+            seaObstacles.push({ name: 'lighthouse', x: LH.x, z: LH.z, r: 1.8 * LH.s });
+            buoys.forEach(b => seaObstacles.push({ name: 'buoy', x: b.position.x, z: b.position.z, r: 1.0 }));
+          }
+
           // Celestial Sun, Phased Moon, Starfield & Pier Harbor Lantern
           const skyGroup = new THREE.Group();
           const sunOrb = new THREE.Mesh(
@@ -5330,6 +5349,7 @@
             oceanMat,
             waveUniforms,
             buoys,
+            seaObstacles,
             filmCamera,
             skyGroup,
             sunOrb,
@@ -6075,6 +6095,7 @@
       let boatPos = new THREE.Vector3(-4.8, 0, -7.5);
       let boatYaw = 0;
       let boatVel = 0;
+      let lastBumpAt = -10;
 
       let castCharge = 0;
       let castDir = 1;
@@ -9070,6 +9091,25 @@
               const dz = -Math.cos(boatYaw) * boatVel * dt;
               boatPos.x = THREE.MathUtils.clamp(boatPos.x + dx, -110, 110);
               boatPos.z = Math.min(-8.5, boatPos.z + dz);
+
+              // Collide with the lighthouse rocks, buoys and anything else solid on the sea: slide along it and lose speed
+              const BOAT_R = 1.5;
+              for (const ob of world.seaObstacles) {
+                const ox = boatPos.x - ob.x, oz = boatPos.z - ob.z;
+                const d = Math.hypot(ox, oz), minD = ob.r + BOAT_R;
+                if (d < minD) {
+                  const nx = d > 0.001 ? ox / d : 0, nz = d > 0.001 ? oz / d : 1;
+                  boatPos.x = ob.x + nx * minD;
+                  boatPos.z = Math.min(-8.5, ob.z + nz * minD);
+                  const into = dx * -nx + dz * -nz; // positive when heading at the obstacle
+                  if (into > 0) boatVel *= 0.55;
+                  if (elapsed - lastBumpAt > 0.9 && Math.abs(boatVel) > 1.5) {
+                    lastBumpAt = elapsed;
+                    sfx.playBump();
+                    showToast(ob.name === 'buoy' ? '🛟 Bumped a buoy!' : '🪨 Watch the rocks!');
+                  }
+                }
+              }
 
               if (Math.random() < 0.45) {
                 const sternWake = boatPos.clone().add(new THREE.Vector3(Math.sin(boatYaw) * 2.4, 0, Math.cos(boatYaw) * 2.4));
