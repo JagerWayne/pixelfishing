@@ -61,7 +61,7 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 ## The pier
 
-The pier is a small harbour. Walk up to each object and press the action button.
+The pier is a small harbour. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close.
 
 | Object | What it does |
 |---|---|
@@ -72,9 +72,11 @@ The pier is a small harbour. Walk up to each object and press the action button.
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
 | ⚓ **Moored boat** (down the stairs on the port side) | Board your boat once you own one. |
-| 🪑 **Pier tip** | Where you sit and fish from the pier. |
+| 🪑 **Pier tip** | Where you sit and fish from the pier (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
 
-Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform.
+Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform. The deck has boards with grain along their length and dark timber underneath, and the lamp posts and every stand are lit at night.
+
+The **lighthouse** out at sea has a rotating beam. Its flare is drawn at a fixed size on screen and is never fogged, so you can see it flash from anywhere on the sea, even 2000 m away, day or night (brighter at night).
 
 ## Progression and equipment
 
@@ -322,6 +324,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Version 2.3.0: lighthouse, stand reach, longer pier, new deck wood
+- **Lighthouse:** a rotating beacon with two sweeping beams and a flare that flashes as the beam passes you. The flare is not affected by fog or distance, so it is visible even 2000 m out.
+- **Stand reach:** the shop, bounty board, gallery, camera, bucket, toolbox and moored boat now react only when you are within about a metre of their front, instead of from several metres away (and no longer overlap each other).
+- **Longer pier:** two more planks (1.44 m). The bucket and toolbox stay where they were; the walking limit, fishing spot, rails, lamps, pilings, stringers and boat collision moved out with the tip.
+- **Pier wood:** the boardwalk was built twice on top of itself (flickering planks near the island); fixed. New board texture with the grain along each plank, three tints, dark joists and underlay so the gaps are no longer see-through, trim along the island edge, and the stone abutment no longer shows through the gaps.
+- Version bumped to **v2.3.0**.
 
 ### 2026-11-18, Version 2.2.0: pier lighting and loading screen
 - **Lighting:** every stand now has its own light: warm string lights and a glow under the tackle shop awning, a gooseneck lamp over the bounty board, a teal light for the bottle gallery, a lamp post by the film camera, and a lantern on the mooring piling. The pier lamps moved onto the rails in pairs (entrance, around the bucket and toolbox, and the tip). Each light also lays a soft glow on the deck at night. Battery-saver graphics keep the glows but drop the extra real lights.

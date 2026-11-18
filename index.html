@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '2.2.0';
+    window.PF_VERSION = '2.3.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4635,7 +4635,7 @@
 
           // Stone Pier Abutment & Timber Ramp Steps Connecting Terrace (Z = 6.2) to Pier (Z = 3.2)
           const abutment = new THREE.Mesh(new THREE.BoxGeometry(6.0, 2.2, 3.6), stoneMat);
-          abutment.position.set(0, 0.40, 4.6);
+          abutment.position.set(0, 0.30, 4.6);
           scene.add(abutment);
 
           // Rolling Island Hills Behind the Harbor Terrace
