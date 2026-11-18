@@ -6659,7 +6659,8 @@
             let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
 
             // Prevent walking across the side railing gap onto the boat stairs before Z = -4.45
-            if (nextX < -2.05 && nextZ > -4.45) {
+            // (only on the pier deck itself; the boardwalk at Z >= 0.45 is wide open so players can reach the shop)
+            if (nextX < -2.05 && nextZ > -4.45 && nextZ < 0.45) {
               if (prevX >= -2.04) nextX = -2.05;
               else nextZ = -4.45;
             }
