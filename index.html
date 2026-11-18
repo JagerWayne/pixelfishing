@@ -974,6 +974,16 @@
         height: 92px;
       }
     }
+
+    /* ---- Settings panel ---- */
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 13px; color: #e2e8f0; }
+    .setting-sub { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .setting-row .pixel-btn { min-width: 84px; }
   </style>
 </head>
 <body>
@@ -1052,6 +1062,7 @@
           <button class="sleek-menu-btn" id="btn-open-bucket" type="button">🪣 Bag</button>
           <button class="sleek-menu-btn" id="btn-open-log" type="button">📖 Log</button>
           <button class="sleek-menu-btn" id="btn-toggle-audio" type="button" aria-label="Toggle Sound">🔊</button>
+          <button class="sleek-menu-btn" id="btn-open-settings" type="button" aria-label="Settings" title="Settings">🎛️</button>
         </div>
       </div>
 
@@ -1235,6 +1246,34 @@
     </div>
   </div>
 
+  <!-- MODAL: SETTINGS -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="pixel-box modal-window" style="width: min(96vw, 440px);">
+      <div class="modal-header">
+        <span class="modal-title">🎛️ SETTINGS</span>
+        <button class="pixel-btn red" data-close="modal-settings">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-row">
+          <span class="setting-label">🔊 Sound effects<span class="setting-sub">Waves, reel clicks and splashes</span></span>
+          <button class="pixel-btn green" id="set-sound" type="button">ON</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">📳 Haptics<span class="setting-sub">Vibration on bites and catches (phones)</span></span>
+          <button class="pixel-btn green" id="set-haptics" type="button">ON</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🖼️ Graphics<span class="setting-sub">Battery saver renders at lower resolution</span></span>
+          <button class="pixel-btn" id="set-quality" type="button">High</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🗑️ Save data<span class="setting-sub">Erases cash, gear and catches. Settings are kept.</span></span>
+          <button class="pixel-btn red" id="set-reset" type="button">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL 2B: PIER TACKLE TOOLBOX (BAIT SELECTOR) -->
   <div class="modal-backdrop" id="modal-toolbox">
     <div class="pixel-box modal-window" style="width: min(96vw, 520px); border-color: #f97316;">
@@ -1411,13 +1450,29 @@
         return;
       }
 
+      /* Player settings (stored separately from the save so a save reset keeps them) */
+      const SETTINGS_KEY = 'pixel_fishing_settings_v1';
+      const settings = { sound: true, haptics: true, quality: 'high' };
+      try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+          if (typeof saved.sound === 'boolean') settings.sound = saved.sound;
+          if (typeof saved.haptics === 'boolean') settings.haptics = saved.haptics;
+          if (saved.quality === 'low' || saved.quality === 'high') settings.quality = saved.quality;
+        }
+      } catch {}
+      function saveSettings() {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+      }
+
       /* =========================================================================
          SECTION A: MOBILE-SAFE WEB AUDIO, AMBIENT SOUNDSCAPE & HAPTIC SYNTHESIZER
          ========================================================================= */
       class AudioEngine {
         constructor() {
           this.ctx = null;
-          this.enabled = true;
+          this.enabled = settings.sound;
+          this.hapticsEnabled = settings.haptics;
           this.lastEngineTick = 0;
           this.lastReelTick = 0;
           this.ambientStarted = false;
@@ -1530,7 +1585,7 @@
         }
 
         vibrate(pattern) {
-          if (this.enabled && navigator.vibrate) {
+          if (this.hapticsEnabled && navigator.vibrate) {
             try { navigator.vibrate(pattern); } catch {}
           }
         }
@@ -4378,7 +4433,7 @@
       function resizeViewport() {
         const w = window.visualViewport ? window.visualViewport.width : window.innerWidth;
         const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const dpr = Math.min(window.devicePixelRatio || 1, settings.quality === 'low' ? 1 : 2);
         camera.fov = w < h ? 62 : 52;
         camera.aspect = w / Math.max(1, h);
         camera.updateProjectionMatrix();
@@ -6014,7 +6069,7 @@
         showToast(`Refueled +${unitsToBuy.toFixed(1)}u ($${cost.toFixed(2)}).`);
       });
 
-      document.getElementById('btn-reset-save').addEventListener('click', () => {
+      function performSaveReset() {
         const preservedGender = state.anglerGender || 'male';
         state = defaultSaveState();
         state.anglerGender = preservedGender;
@@ -6029,7 +6084,29 @@
         renderShop();
         updateHUD();
         showToast('Save data reset to starter gear!');
-      });
+        document.getElementById('modal-settings').classList.remove('open');
+        document.getElementById('modal-shop').classList.remove('open');
+      }
+
+      // Two-tap confirmation so a stray tap can never wipe progress.
+      function wireTwoTap(btn, idleText, action) {
+        let armed = false;
+        let timer = null;
+        btn.addEventListener('click', () => {
+          if (!armed) {
+            armed = true;
+            btn.textContent = 'Tap again!';
+            timer = setTimeout(() => { armed = false; btn.textContent = idleText; }, 4000);
+            return;
+          }
+          clearTimeout(timer);
+          armed = false;
+          btn.textContent = idleText;
+          action();
+        });
+      }
+      wireTwoTap(document.getElementById('btn-reset-save'), 'Reset Save', performSaveReset);
+      wireTwoTap(document.getElementById('set-reset'), 'Reset', performSaveReset);
 
       function openBucketModal() {
         const cap = getBucketCapacity();
@@ -6321,11 +6398,54 @@
         const isOpen = drawer.classList.toggle('open');
         e.currentTarget.classList.toggle('active', isOpen);
       });
-      document.getElementById('btn-toggle-audio').addEventListener('click', e => {
-        const on = sfx.toggle();
-        e.target.textContent = on ? '🔊' : '🔇';
-        showToast(on ? 'Audio & Haptics ON' : 'Audio & Haptics OFF');
+      const audioBtn = document.getElementById('btn-toggle-audio');
+      const setSoundBtn = document.getElementById('set-sound');
+      const setHapticsBtn = document.getElementById('set-haptics');
+      const setQualityBtn = document.getElementById('set-quality');
+      const setResetBtn = document.getElementById('set-reset');
+
+      function renderSettings() {
+        audioBtn.textContent = sfx.enabled ? '🔊' : '🔇';
+        const paint = (btn, on, onText, offText) => {
+          btn.textContent = on ? onText : offText;
+          btn.classList.toggle('green', on);
+        };
+        paint(setSoundBtn, sfx.enabled, 'ON', 'OFF');
+        paint(setHapticsBtn, sfx.hapticsEnabled, 'ON', 'OFF');
+        setQualityBtn.textContent = settings.quality === 'low' ? 'Battery saver' : 'High';
+        setQualityBtn.classList.toggle('gold', settings.quality === 'low');
+      }
+
+      function toggleSound() {
+        settings.sound = sfx.toggle();
+        saveSettings();
+        renderSettings();
+        return settings.sound;
+      }
+
+      audioBtn.addEventListener('click', () => {
+        showToast(toggleSound() ? 'Sound ON' : 'Sound OFF');
       });
+      setSoundBtn.addEventListener('click', toggleSound);
+      setHapticsBtn.addEventListener('click', () => {
+        sfx.hapticsEnabled = !sfx.hapticsEnabled;
+        settings.haptics = sfx.hapticsEnabled;
+        saveSettings();
+        renderSettings();
+        if (sfx.hapticsEnabled) sfx.vibrate(30);
+      });
+      setQualityBtn.addEventListener('click', () => {
+        settings.quality = settings.quality === 'low' ? 'high' : 'low';
+        saveSettings();
+        renderSettings();
+        resizeViewport();
+      });
+      document.getElementById('btn-open-settings').addEventListener('click', () => {
+        renderSettings();
+        document.getElementById('modal-settings').classList.add('open');
+      });
+
+      renderSettings();
 
       /* =========================================================================
          SECTION L: HUD & PRIMARY MOBILE ACTION BUTTON SYNCHRONIZATION
