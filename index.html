@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#070b14" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <title>Pixel Fishing - 3D Retro Mobile Adventure</title>
   <style>
     /* =========================================================================
@@ -974,6 +977,36 @@
         height: 92px;
       }
     }
+
+    /* ---- Settings panel ---- */
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 13px; color: #e2e8f0; }
+    .setting-sub { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .setting-row .pixel-btn { min-width: 84px; }
+    /* ---- QoL: bounty pill, sort/filter bars, NEW badge ---- */
+    #hud-bounty-pill {
+      pointer-events: none; display: none; align-items: center; justify-content: center; gap: 6px;
+      padding: 4px 10px; background: rgba(40, 28, 6, 0.88); border: 2px solid #facc15;
+      box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 11px; font-weight: bold;
+      color: #fde68a; align-self: center; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip-row .pixel-btn { padding: 4px 8px; font-size: 11px; min-height: 0; }
+    .chip-row .pixel-btn.active { outline: 2px solid #facc15; }
+    .new-badge {
+      display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 9px; font-weight: bold;
+      background: #f43f5e; color: #fff; border-radius: 3px; vertical-align: middle;
+    }
+    .menu-dot { position: relative; }
+    .menu-dot.has-new::after {
+      content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px;
+      background: #f43f5e; border-radius: 50%; box-shadow: 0 0 0 2px #070c14;
+    }
   </style>
 </head>
 <body>
@@ -1050,12 +1083,15 @@
         </div>
         <div class="hud-menu-btns">
           <button class="sleek-menu-btn" id="btn-open-bucket" type="button">🪣 Bag</button>
-          <button class="sleek-menu-btn" id="btn-open-log" type="button">📖 Log</button>
+          <button class="sleek-menu-btn menu-dot" id="btn-open-log" type="button">📖 Log</button>
           <button class="sleek-menu-btn" id="btn-toggle-audio" type="button" aria-label="Toggle Sound">🔊</button>
+          <button class="sleek-menu-btn" id="btn-open-settings" type="button" aria-label="Settings" title="Settings">🎛️</button>
         </div>
       </div>
 
       <!-- Sonar Fish Finder Compass Pill (Visible when Sonar Module installed) -->
+      <div id="hud-bounty-pill"></div>
+
       <div id="hud-sonar-pill">
         <span>📡 SONAR:</span>
         <span id="hud-sonar-text" style="color:#fef08a;">SCANNING FRENZIES...</span>
@@ -1235,6 +1271,38 @@
     </div>
   </div>
 
+  <!-- MODAL: SETTINGS -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="pixel-box modal-window" style="width: min(96vw, 440px);">
+      <div class="modal-header">
+        <span class="modal-title">🎛️ SETTINGS</span>
+        <button class="pixel-btn red" data-close="modal-settings">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-row">
+          <span class="setting-label">🔊 Sound effects<span class="setting-sub">Waves, reel clicks and splashes</span></span>
+          <button class="pixel-btn green" id="set-sound" type="button">ON</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">📳 Haptics<span class="setting-sub">Vibration on bites and catches (phones)</span></span>
+          <button class="pixel-btn green" id="set-haptics" type="button">ON</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🖼️ Graphics<span class="setting-sub">Battery saver renders at lower resolution</span></span>
+          <button class="pixel-btn" id="set-quality" type="button">High</button>
+        </div>
+        <div class="setting-row" id="row-install" style="display:none;">
+          <span class="setting-label">📲 Install app<span class="setting-sub">Add Pixel Fishing to your home screen and play offline</span></span>
+          <button class="pixel-btn gold" id="set-install" type="button">Install</button>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🗑️ Save data<span class="setting-sub">Erases cash, gear and catches. Settings are kept.</span></span>
+          <button class="pixel-btn red" id="set-reset" type="button">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL 2B: PIER TACKLE TOOLBOX (BAIT SELECTOR) -->
   <div class="modal-backdrop" id="modal-toolbox">
     <div class="pixel-box modal-window" style="width: min(96vw, 520px); border-color: #f97316;">
@@ -1378,8 +1446,13 @@
     </div>
   </div>
 
-  <!-- Synchronous Three.js r128 Bundle with Multi-CDN Fallbacks -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Synchronous Three.js r128 (bundled locally, with CDN fallbacks) -->
+  <script src="vendor/three.r128.min.js"></script>
+  <script>
+    if (!window.THREE) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+    }
+  </script>
   <script>
     if (!window.THREE) {
       document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');
@@ -1406,13 +1479,30 @@
         return;
       }
 
+      /* Player settings (stored separately from the save so a save reset keeps them) */
+      const SETTINGS_KEY = 'pixel_fishing_settings_v1';
+      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest' };
+      try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+        if (saved && typeof saved === 'object') {
+          if (typeof saved.sound === 'boolean') settings.sound = saved.sound;
+          if (typeof saved.haptics === 'boolean') settings.haptics = saved.haptics;
+          if (saved.quality === 'low' || saved.quality === 'high') settings.quality = saved.quality;
+          if (['newest', 'value', 'weight', 'name'].includes(saved.bucketSort)) settings.bucketSort = saved.bucketSort;
+        }
+      } catch {}
+      function saveSettings() {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+      }
+
       /* =========================================================================
          SECTION A: MOBILE-SAFE WEB AUDIO, AMBIENT SOUNDSCAPE & HAPTIC SYNTHESIZER
          ========================================================================= */
       class AudioEngine {
         constructor() {
           this.ctx = null;
-          this.enabled = true;
+          this.enabled = settings.sound;
+          this.hapticsEnabled = settings.haptics;
           this.lastEngineTick = 0;
           this.lastReelTick = 0;
           this.ambientStarted = false;
@@ -1525,7 +1615,7 @@
         }
 
         vibrate(pattern) {
-          if (this.enabled && navigator.vibrate) {
+          if (this.hapticsEnabled && navigator.vibrate) {
             try { navigator.vibrate(pattern); } catch {}
           }
         }
@@ -1661,6 +1751,7 @@
         }
         if (!startOverlayEl.classList.contains('open')) return;
         startOverlayEl.classList.remove('open');
+        updateHUD();
         sfx.init();
         sfx.playCoin();
         try {
@@ -1801,7 +1892,25 @@
         { id: 'st_ray', name: 'Storm Surge Ray', category: 'Fish', rarity: 'Rare', zones: [1, 2], stormOnly: true, glowing: true, minW: 2.5, maxW: 6.8, value: 165, color: '#38bdf8', accent: '#facc15', shape: 'fish_flat', desc: '⛈️ STORM EXCLUSIVE: Crackles with static arcs when thunder rolls across the bay.' },
         { id: 'st_mackerel', name: 'Thunderhead Mackerel', category: 'Fish', rarity: 'Rare', zones: [2, 3], stormOnly: true, glowing: true, minW: 4.5, maxW: 12.5, value: 230, color: '#6366f1', accent: '#fef08a', shape: 'fish_slim', desc: '⛈️ STORM EXCLUSIVE: Lightning-fast pelagic hunter drawn to choppy squalls.' },
         { id: 'st_moray', name: 'Tempest Moray', category: 'Fish', rarity: 'Epic', zones: [2, 3, 4], stormOnly: true, glowing: true, minW: 12.0, maxW: 29.0, value: 480, color: '#7c3aed', accent: '#67e8f9', shape: 'fish_eel', desc: '⛈️ STORM EXCLUSIVE: Voltage-charged reef serpent that surfaces in torrential rain.' },
-        { id: 'st_kraken', name: 'Voltaic Kraken', category: 'Fish', rarity: 'Legendary', zones: [3, 4], stormOnly: true, glowing: true, minW: 42.0, maxW: 105.0, value: 1550, color: '#1e1b4b', accent: '#facc15', shape: 'fish_angler', desc: '⛈️ STORM EXCLUSIVE: Mythic bio-electric titan awakened only by tempest lightning.' }
+        { id: 'st_kraken', name: 'Voltaic Kraken', category: 'Fish', rarity: 'Legendary', zones: [3, 4], stormOnly: true, glowing: true, minW: 42.0, maxW: 105.0, value: 1550, color: '#1e1b4b', accent: '#facc15', shape: 'fish_angler', desc: '⛈️ STORM EXCLUSIVE: Mythic bio-electric titan awakened only by tempest lightning.' },
+
+        // --- Content update: new species ---
+        // Zone 1: Shallow Cove
+        { id: 'f_herring', name: 'Harbor Herring', category: 'Fish', rarity: 'Common', zones: [1], minW: 0.3, maxW: 1.0, value: 10, color: '#94a3b8', accent: '#38bdf8', shape: 'fish_slim', desc: 'Silver schooling baitfish that boils the surface near the pilings at dawn.' },
+        { id: 'f_seahorse', name: 'Dwarf Seahorse', category: 'Fish', rarity: 'Rare', zones: [1], minW: 0.1, maxW: 0.3, value: 58, color: '#fbbf24', accent: '#f97316', shape: 'fish_slim', desc: 'A tiny upright drifter that clings to seagrass with its curled tail.' },
+        // Zone 2: Coastal Reef
+        { id: 'f_clownfish', name: 'Reef Clownfish', category: 'Fish', rarity: 'Uncommon', zones: [2], minW: 0.2, maxW: 0.7, value: 44, color: '#f97316', accent: '#f8fafc', shape: 'fish_round', desc: 'Bold orange-and-white banded fish that shelters among stinging anemones.' },
+        { id: 'f_angelfish', name: 'Emperor Angelfish', category: 'Fish', rarity: 'Rare', zones: [2], minW: 1.0, maxW: 2.8, value: 78, color: '#1d4ed8', accent: '#facc15', shape: 'fish_round', desc: 'Regal blue reef dweller striped in electric yellow.' },
+        { id: 'st_thundereel', name: 'Thunder Eel', category: 'Fish', rarity: 'Epic', zones: [2, 3], stormOnly: true, minW: 4.0, maxW: 9.5, value: 215, color: '#475569', accent: '#fde047', shape: 'fish_eel', desc: '⛈️ STORM EXCLUSIVE: Crackles with static as it thrashes up through the squall.' },
+        // Zone 3: Open Shelf
+        { id: 'f_skipjack', name: 'Skipjack Tuna', category: 'Fish', rarity: 'Common', zones: [3], minW: 4.0, maxW: 9.0, value: 88, color: '#1e3a8a', accent: '#e2e8f0', shape: 'fish_tuna', desc: 'Fast striped tuna that herds baitfish in tight, roiling schools.' },
+        { id: 'f_cobia', name: 'Open-Water Cobia', category: 'Fish', rarity: 'Uncommon', zones: [3], minW: 8.0, maxW: 20.0, value: 120, color: '#57534e', accent: '#e7e5e4', shape: 'fish_standard', desc: 'Powerful dark-backed brawler that follows rays and turtles.' },
+        { id: 'fm_opah', name: 'Moonlit Opah', category: 'Fish', rarity: 'Epic', zones: [3], fullMoonOnly: true, glowing: true, minW: 25.0, maxW: 45.0, value: 335, color: '#f43f5e', accent: '#fde68a', shape: 'fish_round', desc: '🌕 FULL MOON EXCLUSIVE: A huge crimson disc spangled with silver moons.' },
+        // Zone 4: Abyssal Trench
+        { id: 'f_lanternfish', name: 'Trench Lanternfish', category: 'Fish', rarity: 'Common', zones: [4], minW: 0.3, maxW: 1.0, value: 60, color: '#0e7490', accent: '#22d3ee', shape: 'fish_slim', glowing: true, desc: 'Rows of tiny photophores make this fish a drifting constellation.' },
+        { id: 'f_blobfish', name: 'Pale Blobfish', category: 'Fish', rarity: 'Uncommon', zones: [4], minW: 3.0, maxW: 8.0, value: 165, color: '#fda4af', accent: '#fb7185', shape: 'fish_round', desc: 'Looks far gloomier out of the crushing deep than it ever did in it.' },
+        { id: 'f_ghostshark', name: 'Ghost Shark', category: 'Fish', rarity: 'Epic', zones: [4], minW: 20.0, maxW: 45.0, value: 525, color: '#cbd5e1', accent: '#94a3b8', shape: 'fish_tuna', desc: 'Pale cartilaginous wanderer with huge dark eyes and a whip-like tail.' },
+        { id: 'fm_ribbonserpent', name: 'Moon Ribbon Serpent', category: 'Fish', rarity: 'Legendary', zones: [4], fullMoonOnly: true, glowing: true, minW: 80.0, maxW: 140.0, value: 1400, color: '#a78bfa', accent: '#fef08a', shape: 'fish_eel', desc: '🌕 FULL MOON EXCLUSIVE: A shimmering ribbon of living starlight coiled in the trench.' }
       ];
 
       // 36 Unique Depth-Based Collectible Messages (9 per Zone)
@@ -1858,7 +1967,14 @@
         { id: 'b_reef_haul', title: 'Reef Chef Special', desc: 'Catch 3 Fish in Coastal Reef (Zone 2)', type: 'zone_fish', zone: 2, target: 3, rewardCash: 160, rewardBaitTier: 3, rewardBaitQty: 5 },
         { id: 'b_rare_hunter', title: 'Rare Specimen Bounty', desc: 'Land 2 Rare, Epic, or Legendary catches', type: 'rare_plus', target: 2, rewardCash: 240, rewardBaitTier: 3, rewardBaitQty: 5 },
         { id: 'b_shelf_sport', title: 'Bluewater Sportfisher', desc: 'Catch 2 Fish in Open Shelf (Zone 3)', type: 'zone_fish', zone: 3, target: 2, rewardCash: 380, rewardBaitTier: 4, rewardBaitQty: 4 },
-        { id: 'b_abyss_exped', title: 'Abyssal Research', desc: 'Land 1 Fish from Abyssal Trench (Zone 4)', type: 'zone_fish', zone: 4, target: 1, rewardCash: 750, rewardBaitTier: 4, rewardBaitQty: 6 }
+        { id: 'b_abyss_exped', title: 'Abyssal Research', desc: 'Land 1 Fish from Abyssal Trench (Zone 4)', type: 'zone_fish', zone: 4, target: 1, rewardCash: 750, rewardBaitTier: 4, rewardBaitQty: 6 },
+        { id: 'b_herring_run', title: 'Herring Run', desc: 'Catch 5 Fish in Shallow Cove (Zone 1)', type: 'zone_fish', zone: 1, target: 5, rewardCash: 70, rewardBaitTier: 2, rewardBaitQty: 5 },
+        { id: 'b_tidy_up', title: 'Big Beach Cleanup', desc: 'Catch 6 Junk or Flora items anywhere', type: 'junk', target: 6, rewardCash: 120, rewardBaitTier: 2, rewardBaitQty: 8 },
+        { id: 'b_reef_lunker', title: 'Reef Heavyweight', desc: 'Land a fish weighing at least 8.0 kg', type: 'min_weight', minW: 8.0, target: 1, rewardCash: 300, rewardBaitTier: 3, rewardBaitQty: 4 },
+        { id: 'b_shelf_haul', title: 'Open Shelf Haul', desc: 'Catch 4 Fish in Open Shelf (Zone 3)', type: 'zone_fish', zone: 3, target: 4, rewardCash: 520, rewardBaitTier: 4, rewardBaitQty: 4 },
+        { id: 'b_trophy_case', title: 'Trophy Case', desc: 'Land 4 Rare, Epic, or Legendary catches', type: 'rare_plus', target: 4, rewardCash: 480, rewardBaitTier: 4, rewardBaitQty: 3 },
+        { id: 'b_trench_pair', title: 'Trench Double Header', desc: 'Catch 2 Fish in Abyssal Trench (Zone 4)', type: 'zone_fish', zone: 4, target: 2, rewardCash: 1100, rewardBaitTier: 4, rewardBaitQty: 6 },
+        { id: 'b_titan', title: 'Titan Hunter', desc: 'Land a fish weighing at least 40.0 kg', type: 'min_weight', minW: 40.0, target: 1, rewardCash: 1500, rewardBaitTier: 4, rewardBaitQty: 8 }
       ];
 
       /* =========================================================================
@@ -4373,7 +4489,7 @@
       function resizeViewport() {
         const w = window.visualViewport ? window.visualViewport.width : window.innerWidth;
         const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const dpr = Math.min(window.devicePixelRatio || 1, settings.quality === 'low' ? 1 : 2);
         camera.fov = w < h ? 62 : 52;
         camera.aspect = w / Math.max(1, h);
         camera.updateProjectionMatrix();
@@ -4762,7 +4878,9 @@
           mayorRewardsClaimed: 0,
           vfxShader: 'none',
           modules: [],
-          bounties: generateBountyContracts()
+          bounties: generateBountyContracts(),
+          seenSpecies: [],
+          saveVersion: 2
         };
       }
 
@@ -4845,23 +4963,92 @@
         return Array.isArray(state.modules) && state.modules.includes(modId);
       }
 
+      const SAVE_VERSION = 2;
+      const SAVE_BACKUP_KEY = SAVE_KEY + '_backup';
+
+      // Coerce every field of a parsed save to a safe type/range so a corrupted or hand-edited
+      // save can never crash the game; unknown or invalid fields fall back to defaults.
+      function sanitizeSave(raw) {
+        const def = defaultSaveState();
+        const src = raw && typeof raw === 'object' ? raw : {};
+        const num = (v, d, min, max) => {
+          const n = Number(v);
+          return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
+        };
+        const int = (v, d, min, max) => Math.round(num(v, d, min, max));
+        const out = { ...def };
+
+        out.cash = +num(src.cash, def.cash, 0, 1e9).toFixed(2);
+        out.anglerGender = src.anglerGender === 'female' ? 'female' : 'male';
+        out.boatTier = int(src.boatTier, 0, 0, BOAT_TIERS.length - 1);
+        out.rodTier = int(src.rodTier, 1, 1, ROD_TIERS.length);
+        out.bucketTier = int(src.bucketTier, 1, 1, BUCKET_TIERS.length);
+        out.baitTier = int(src.baitTier, 1, 1, BAIT_TIERS.length);
+        out.baitCount = int(src.baitCount, 0, 0, 9999);
+        out.hasLiveBaitCam = !!src.hasLiveBaitCam;
+        out.galleryRewardClaimed = !!src.galleryRewardClaimed;
+        out.fuel = num(src.fuel, 0, 0, BOAT_TIERS[out.boatTier].maxFuel);
+        out.dayCount = int(src.dayCount, 0, 0, 1e6);
+        out.timeOfDay = num(src.timeOfDay, def.timeOfDay, 0, 1);
+        out.weather = WEATHER_TYPES.some(w => w.id === src.weather) ? src.weather : 'CLEAR';
+        out.junkRecycledKg = num(src.junkRecycledKg, 0, 0, 1e9);
+        out.mayorRewardsClaimed = int(src.mayorRewardsClaimed, 0, 0, 1e6);
+        out.vfxShader = typeof src.vfxShader === 'string' ? src.vfxShader : 'none';
+
+        out.baitStock = { 2: 0, 3: 0, 4: 0 };
+        if (src.baitStock && typeof src.baitStock === 'object') {
+          for (const t of [2, 3, 4]) out.baitStock[t] = int(src.baitStock[t], 0, 0, 9999);
+        }
+        if (out.baitTier > 1 && out.baitCount > 0 && !out.baitStock[out.baitTier]) {
+          out.baitStock[out.baitTier] = out.baitCount;
+        }
+
+        const knownIds = new Set(CATCH_CATALOG.map(c => c.id));
+        out.discovered = Array.isArray(src.discovered)
+          ? [...new Set(src.discovered.filter(id => knownIds.has(id)))] : [];
+        out.foundMessages = Array.isArray(src.foundMessages)
+          ? [...new Set(src.foundMessages.filter(id => BOTTLE_MESSAGES.some(m => m.id === id)))] : [];
+        out.seenSpecies = Array.isArray(src.seenSpecies)
+          ? [...new Set(src.seenSpecies.filter(id => knownIds.has(id)))] : [];
+        out.modules = Array.isArray(src.modules)
+          ? [...new Set(src.modules.filter(id => BOAT_MODULES.some(m => m.id === id)))] : [];
+
+        out.bucket = Array.isArray(src.bucket)
+          ? src.bucket.filter(e => e && typeof e === 'object' && knownIds.has(e.id) && Number.isFinite(Number(e.weight)) && Number.isFinite(Number(e.value)))
+              .map(e => ({ ...e, weight: Number(e.weight), value: Number(e.value) }))
+          : [];
+
+        out.speciesStats = {};
+        if (src.speciesStats && typeof src.speciesStats === 'object') {
+          for (const id of Object.keys(src.speciesStats)) {
+            const st = src.speciesStats[id];
+            if (knownIds.has(id) && st && typeof st === 'object') {
+              out.speciesStats[id] = { ...st, count: int(st.count, 0, 0, 1e9), maxWeight: num(st.maxWeight, 0, 0, 1e6) };
+            }
+          }
+        }
+
+        // Old saves: everything already discovered counts as seen (no flood of NEW badges)
+        if (!Array.isArray(src.seenSpecies)) out.seenSpecies = [...out.discovered];
+
+        out.bounties = Array.isArray(src.bounties)
+          ? src.bounties.filter(b => b && typeof b === 'object' && Number.isFinite(Number(b.target)) && Number.isFinite(Number(b.rewardCash)))
+          : [];
+        if (out.bounties.length === 0) out.bounties = generateBountyContracts();
+
+        out.saveVersion = SAVE_VERSION;
+        return out;
+      }
+
       function loadSaveState() {
+        let text = null;
+        try { text = localStorage.getItem(SAVE_KEY); } catch {}
+        if (!text) return defaultSaveState();
         try {
-          const raw = localStorage.getItem(SAVE_KEY);
-          if (!raw) return defaultSaveState();
-          const parsed = { ...defaultSaveState(), ...JSON.parse(raw) };
-          if (!parsed.speciesStats) parsed.speciesStats = {};
-          if (!Array.isArray(parsed.foundMessages)) parsed.foundMessages = [];
-          if (!parsed.baitStock) parsed.baitStock = { 2: 0, 3: 0, 4: 0 };
-          if (parsed.baitTier > 1 && parsed.baitCount > 0 && !parsed.baitStock[parsed.baitTier]) {
-            parsed.baitStock[parsed.baitTier] = parsed.baitCount;
-          }
-          if (!Array.isArray(parsed.modules)) parsed.modules = [];
-          if (!Array.isArray(parsed.bounties) || parsed.bounties.length === 0) {
-            parsed.bounties = generateBountyContracts();
-          }
-          return parsed;
+          return sanitizeSave(JSON.parse(text));
         } catch {
+          // Unreadable save: keep the raw text so progress isn't silently destroyed, then start fresh.
+          try { localStorage.setItem(SAVE_BACKUP_KEY, text); } catch {}
           return defaultSaveState();
         }
       }
@@ -4949,7 +5136,10 @@
       }
 
       function isAtPierWaterEdge() {
-        return !onBoat && playerX >= -2.1 && (playerZ <= -8.95 || (playerZ < -4.25 && Math.abs(playerX) >= 1.95));
+        // The side rails only count as "water edge" outside the stair opening to the mooring platform
+        // (left side, Z -6.85..-4.35): that gap leads to the boat, so the angler shouldn't unfold the chair and sit there.
+        const atStairOpening = playerX < 0 && playerZ >= -6.85 && playerZ <= -4.35;
+        return !onBoat && playerX >= -2.1 && (playerZ <= -8.95 || (playerZ < -4.25 && Math.abs(playerX) >= 1.95 && !atStairOpening));
       }
 
       function canDockAtPier() {
@@ -5406,6 +5596,7 @@
       document.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', () => {
           document.getElementById(btn.dataset.close).classList.remove('open');
+          updateHUD();
         });
       });
 
@@ -5941,7 +6132,7 @@
         showToast(`Refueled +${unitsToBuy.toFixed(1)}u ($${cost.toFixed(2)}).`);
       });
 
-      document.getElementById('btn-reset-save').addEventListener('click', () => {
+      function performSaveReset() {
         const preservedGender = state.anglerGender || 'male';
         state = defaultSaveState();
         state.anglerGender = preservedGender;
@@ -5956,7 +6147,29 @@
         renderShop();
         updateHUD();
         showToast('Save data reset to starter gear!');
-      });
+        document.getElementById('modal-settings').classList.remove('open');
+        document.getElementById('modal-shop').classList.remove('open');
+      }
+
+      // Two-tap confirmation so a stray tap can never wipe progress.
+      function wireTwoTap(btn, idleText, action) {
+        let armed = false;
+        let timer = null;
+        btn.addEventListener('click', () => {
+          if (!armed) {
+            armed = true;
+            btn.textContent = 'Tap again!';
+            timer = setTimeout(() => { armed = false; btn.textContent = idleText; }, 4000);
+            return;
+          }
+          clearTimeout(timer);
+          armed = false;
+          btn.textContent = idleText;
+          action();
+        });
+      }
+      wireTwoTap(document.getElementById('btn-reset-save'), 'Reset Save', performSaveReset);
+      wireTwoTap(document.getElementById('set-reset'), 'Reset', performSaveReset);
 
       function openBucketModal() {
         const cap = getBucketCapacity();
@@ -5971,7 +6184,26 @@
           container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Cast a line to catch fish!</p>';
         } else {
           const atShop = isNearPierShop();
-          state.bucket.forEach((entry, idx) => {
+          const sortBar = document.createElement('div');
+          sortBar.className = 'chip-row';
+          sortBar.innerHTML = '<span style="font-size:11px; color:#94a3b8; align-self:center;">Sort:</span>';
+          [['newest', 'Newest'], ['value', '$ Value'], ['weight', 'Weight'], ['name', 'Name']].forEach(([key, label]) => {
+            const b = document.createElement('button');
+            b.className = `pixel-btn ${settings.bucketSort === key ? 'active gold' : ''}`;
+            b.textContent = label;
+            b.onclick = () => { settings.bucketSort = key; saveSettings(); openBucketModal(); };
+            sortBar.appendChild(b);
+          });
+          container.appendChild(sortBar);
+
+          const sorters = {
+            newest: (a, b) => b.idx - a.idx,
+            value: (a, b) => b.entry.value - a.entry.value,
+            weight: (a, b) => b.entry.weight - a.entry.weight,
+            name: (a, b) => a.entry.name.localeCompare(b.entry.name)
+          };
+          const ordered = state.bucket.map((entry, idx) => ({ entry, idx })).sort(sorters[settings.bucketSort] || sorters.newest);
+          ordered.forEach(({ entry, idx }) => {
             const row = document.createElement('div');
             row.className = 'item-row';
             row.innerHTML = `
@@ -6168,15 +6400,36 @@
         }
       });
 
-      function openLogModal() {
+      let logFilter = 'All';
+
+      function updateLogNewDot() {
+        const hasNew = state.discovered.some(id => !state.seenSpecies.includes(id));
+        document.getElementById('btn-open-log').classList.toggle('has-new', hasNew);
+      }
+
+      function renderLog() {
         const msgFoundCount = (state.foundMessages || []).length;
         document.getElementById('log-modal-title').textContent =
           `📖 ENCYCLOPEDIA (${state.discovered.length} / ${CATCH_CATALOG.length})`;
         const grid = document.getElementById('log-grid-container');
         grid.innerHTML = '';
 
+        const bar = document.createElement('div');
+        bar.className = 'chip-row';
+        bar.style.gridColumn = '1 / -1';
+        ['All', 'Fish', 'Junk', 'Flora', 'Undiscovered'].forEach(f => {
+          const b = document.createElement('button');
+          b.className = `pixel-btn ${logFilter === f ? 'active gold' : ''}`;
+          b.textContent = f;
+          b.onclick = () => { logFilter = f; renderLog(); };
+          bar.appendChild(b);
+        });
+        grid.appendChild(bar);
+
         CATCH_CATALOG.forEach(item => {
           const found = state.discovered.includes(item.id);
+          if (logFilter === 'Undiscovered' ? found : (logFilter !== 'All' && item.category !== logFilter)) return;
+          const isNew = found && !state.seenSpecies.includes(item.id);
           const stat = (state.speciesStats && state.speciesStats[item.id]) || null;
           const recordTxt = item.isMessageBottle
             ? ` • <b style="color:#2dd4bf;">${msgFoundCount}/${BOTTLE_MESSAGES.length} Scrolls</b>`
@@ -6188,14 +6441,25 @@
           card.innerHTML = `
             <img class="item-icon" src="${ITEM_ICONS[item.id]}" style="${found ? '' : 'filter: brightness(0);'}" alt="" />
             <div style="font-size: 11px; line-height: 1.35;">
-              <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}</div>
+              <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}${isNew ? '<span class="new-badge">NEW</span>' : ''}</div>
               <div style="color: #94a3b8;">Zones: ${item.zones.join(', ')} • ${item.rarity}</div>
               <div style="color: #ffd24c;">${found ? `~$${item.value}${recordTxt}` : 'Undiscovered'}</div>
             </div>
           `;
           grid.appendChild(card);
         });
+      }
+
+      function openLogModal() {
+        renderLog();
         document.getElementById('modal-log').classList.add('open');
+        // Mark everything as seen once shown (badges stay visible for this viewing).
+        const unseen = state.discovered.filter(id => !state.seenSpecies.includes(id));
+        if (unseen.length) {
+          state.seenSpecies.push(...unseen);
+          saveGame();
+        }
+        updateLogNewDot();
       }
 
       function openGalleryModal() {
@@ -6248,11 +6512,77 @@
         const isOpen = drawer.classList.toggle('open');
         e.currentTarget.classList.toggle('active', isOpen);
       });
-      document.getElementById('btn-toggle-audio').addEventListener('click', e => {
-        const on = sfx.toggle();
-        e.target.textContent = on ? '🔊' : '🔇';
-        showToast(on ? 'Audio & Haptics ON' : 'Audio & Haptics OFF');
+      const audioBtn = document.getElementById('btn-toggle-audio');
+      const setSoundBtn = document.getElementById('set-sound');
+      const setHapticsBtn = document.getElementById('set-haptics');
+      const setQualityBtn = document.getElementById('set-quality');
+      const setResetBtn = document.getElementById('set-reset');
+
+      function renderSettings() {
+        audioBtn.textContent = sfx.enabled ? '🔊' : '🔇';
+        const paint = (btn, on, onText, offText) => {
+          btn.textContent = on ? onText : offText;
+          btn.classList.toggle('green', on);
+        };
+        paint(setSoundBtn, sfx.enabled, 'ON', 'OFF');
+        paint(setHapticsBtn, sfx.hapticsEnabled, 'ON', 'OFF');
+        setQualityBtn.textContent = settings.quality === 'low' ? 'Battery saver' : 'High';
+        setQualityBtn.classList.toggle('gold', settings.quality === 'low');
+      }
+
+      function toggleSound() {
+        settings.sound = sfx.toggle();
+        saveSettings();
+        renderSettings();
+        return settings.sound;
+      }
+
+      audioBtn.addEventListener('click', () => {
+        showToast(toggleSound() ? 'Sound ON' : 'Sound OFF');
       });
+      setSoundBtn.addEventListener('click', toggleSound);
+      setHapticsBtn.addEventListener('click', () => {
+        sfx.hapticsEnabled = !sfx.hapticsEnabled;
+        settings.haptics = sfx.hapticsEnabled;
+        saveSettings();
+        renderSettings();
+        if (sfx.hapticsEnabled) sfx.vibrate(30);
+      });
+      setQualityBtn.addEventListener('click', () => {
+        settings.quality = settings.quality === 'low' ? 'high' : 'low';
+        saveSettings();
+        renderSettings();
+        resizeViewport();
+      });
+      document.getElementById('btn-open-settings').addEventListener('click', () => {
+        renderSettings();
+        document.getElementById('modal-settings').classList.add('open');
+      });
+
+      renderSettings();
+
+      // ---- Installable app: service worker + install prompt ----
+      let deferredInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        document.getElementById('row-install').style.display = 'flex';
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        document.getElementById('row-install').style.display = 'none';
+        showToast('📲 Installed! Find Pixel Fishing on your home screen.');
+      });
+      document.getElementById('set-install').addEventListener('click', async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        try { await deferredInstallPrompt.userChoice; } catch {}
+        deferredInstallPrompt = null;
+        document.getElementById('row-install').style.display = 'none';
+      });
+      if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      }
 
       /* =========================================================================
          SECTION L: HUD & PRIMARY MOBILE ACTION BUTTON SYNCHRONIZATION
@@ -6349,7 +6679,25 @@
         }
       }
 
+      function updateBountyPill() {
+        const pill = document.getElementById('hud-bounty-pill');
+        const active = (state.bounties || []).filter(b => !b.claimed);
+        if (active.length === 0 || isAnyModalOpen()) {
+          pill.style.display = 'none';
+          return;
+        }
+        const ready = active.find(b => b.progress >= b.target);
+        const b = ready || active.reduce((best, cur) => (cur.progress / cur.target > best.progress / best.target ? cur : best), active[0]);
+        pill.classList.toggle('ready', !!ready);
+        pill.textContent = ready
+          ? `✅ ${b.title} done — claim at the Pier Board!`
+          : `📜 ${b.title}: ${b.progress}/${b.target}`;
+        pill.style.display = 'flex';
+      }
+
       function updateHUD() {
+        updateBountyPill();
+        updateLogNewDot();
         document.getElementById('hud-cash').textContent = `$${state.cash.toFixed(2)}`;
         document.getElementById('hud-weather').textContent = getWeatherObj().label;
 
@@ -6724,29 +7072,24 @@
               else nextX = galMaxX;
             }
 
-            // Solid collision box around the 3D pier bucket (-1.55, -7.6)
-            const bucketHalfX = 0.55 + state.bucketTier * 0.14;
-            const bucketHalfZ = 0.65;
-            const dxB = nextX - (-1.55);
-            const dzB = nextZ - (-7.6);
-            if (Math.abs(dxB) < bucketHalfX && Math.abs(dzB) < bucketHalfZ) {
-              const penX = bucketHalfX - Math.abs(dxB);
-              const penZ = bucketHalfZ - Math.abs(dzB);
-              if (penX < penZ) nextX = -1.55 + Math.sign(dxB || 1) * bucketHalfX;
-              else nextZ = -7.6 + Math.sign(dzB || 1) * bucketHalfZ;
-            }
-
-            // Solid collision box around the 3D Tackle Toolbox (1.55, -7.6)
-            const tbHalfX = 0.55;
-            const tbHalfZ = 0.45;
-            const dxTB = nextX - 1.55;
-            const dzTB = nextZ - (-7.6);
-            if (Math.abs(dxTB) < tbHalfX && Math.abs(dzTB) < tbHalfZ) {
-              const penX = tbHalfX - Math.abs(dxTB);
-              const penZ = tbHalfZ - Math.abs(dzTB);
-              if (penX < penZ) nextX = 1.55 + Math.sign(dxTB || 1) * tbHalfX;
-              else nextZ = -7.6 + Math.sign(dzTB || 1) * tbHalfZ;
-            }
+            // Solid collision boxes around the pier bucket (-1.55, -7.6) and tackle toolbox (1.55, -7.6).
+            // Resolve along the axis the player entered from (using the previous position) so the
+            // player slides along the box instead of being snapped across it.
+            const pushOutOfBox = (cx, cz, hx, hz) => {
+              const dx = nextX - cx;
+              const dz = nextZ - cz;
+              if (Math.abs(dx) >= hx || Math.abs(dz) >= hz) return;
+              const cameFromSide = Math.abs(prevX - cx) >= hx;
+              const cameFromEnd = Math.abs(prevZ - cz) >= hz;
+              let resolveX;
+              if (cameFromSide && !cameFromEnd) resolveX = true;
+              else if (cameFromEnd && !cameFromSide) resolveX = false;
+              else resolveX = (hx - Math.abs(dx)) < (hz - Math.abs(dz));
+              if (resolveX) nextX = cx + (Math.sign(dx) || Math.sign(prevX - cx) || 1) * hx;
+              else nextZ = cz + (Math.sign(dz) || Math.sign(prevZ - cz) || 1) * hz;
+            };
+            pushOutOfBox(-1.55, -7.6, 0.55 + state.bucketTier * 0.14, 0.65);
+            pushOutOfBox(1.55, -7.6, 0.55, 0.45);
 
             // Solid collision cylinder around the 3D Fourth-Wall Film Camera (8.2, 0.9)
             const camDX = nextX - 8.2;
