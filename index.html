@@ -1450,6 +1450,24 @@
     </div>
   </div>
 
+  <!-- MODAL: CONFIRM A CHEAT -->
+  <div class="modal-backdrop" id="modal-cheat-confirm" style="z-index: 70;">
+    <div class="pixel-box modal-window" style="width: min(94vw, 380px);">
+      <div class="modal-header">
+        <span class="modal-title">⚠️ APPLY CHEAT?</span>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <div class="cheat-title" id="cheat-confirm-section" style="margin-bottom: 4px;"></div>
+        <div id="cheat-confirm-name" style="font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 8px;"></div>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 14px;">This changes your game right away and is saved like normal progress.</div>
+        <div style="display: flex; gap: 10px;">
+          <button class="pixel-btn green" id="cheat-confirm-yes" type="button" style="flex: 1; min-height: 48px;">Apply</button>
+          <button class="pixel-btn red" id="cheat-confirm-no" data-close="modal-cheat-confirm" type="button" style="flex: 1; min-height: 48px;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CHARACTER CUSTOMISATION -->
   <div class="modal-backdrop" id="modal-customize" style="z-index: 60;">
     <div class="pixel-box modal-window cust-window">
@@ -6266,6 +6284,7 @@
       window.addEventListener('keydown', e => {
         keys[e.code] = true;
         if (e.code === 'Escape') {
+          if (cheatConfirmModal.classList.contains('open')) { pendingCheat = null; cheatConfirmModal.classList.remove('open'); return; }
           closeAllModals();
           return;
         }
@@ -6652,6 +6671,23 @@
           ['Turn all toggles off', () => { Object.keys(cheats).forEach(k => { cheats[k] = false; }); renderCheatMenu(); showToast('Cheat toggles off'); }]] }
       ];
 
+      // Every cheat asks first: the chosen action waits here until the player taps Apply.
+      let pendingCheat = null;
+      const cheatConfirmModal = document.getElementById('modal-cheat-confirm');
+      function askCheat(sectionTitle, label, fn) {
+        pendingCheat = fn;
+        document.getElementById('cheat-confirm-section').textContent = sectionTitle;
+        document.getElementById('cheat-confirm-name').textContent = label;
+        cheatConfirmModal.classList.add('open');
+      }
+      document.getElementById('cheat-confirm-yes').addEventListener('click', () => {
+        const fn = pendingCheat;
+        pendingCheat = null;
+        cheatConfirmModal.classList.remove('open');
+        if (fn) { sfx.playCoin(); fn(); }
+      });
+      document.getElementById('cheat-confirm-no').addEventListener('click', () => { pendingCheat = null; });
+
       function renderCheatMenu() {
         const host = document.getElementById('cheat-body');
         host.innerHTML = '';
@@ -6664,14 +6700,14 @@
           (sec.items || []).forEach(([label, fn]) => {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'pixel-btn'; b.textContent = label;
-            b.onclick = () => { sfx.playCoin(); fn(); };
+            b.onclick = () => askCheat(sec.title, label, fn);
             grid.appendChild(b);
           });
           (sec.toggles || []).forEach(([key, label]) => {
             const b = document.createElement('button');
             b.type = 'button'; b.className = 'pixel-btn' + (cheats[key] ? ' on' : '');
             b.textContent = `${cheats[key] ? '✅' : '⬜'} ${label}`;
-            b.onclick = () => { cheats[key] = !cheats[key]; sfx.playCoin(); renderCheatMenu(); };
+            b.onclick = () => askCheat(sec.title, `Turn ${cheats[key] ? 'OFF' : 'ON'}: ${label}`, () => { cheats[key] = !cheats[key]; renderCheatMenu(); });
             grid.appendChild(b);
           });
           wrap.appendChild(grid);

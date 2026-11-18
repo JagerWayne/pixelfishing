@@ -200,7 +200,7 @@ Your look is saved and applied immediately in the game world. While walking, the
 
 There is a hidden cheat menu. Stand close to the **seagull perched behind the tackle shop** (beside the left end of the shop works) and press the action button while it reads **WALK EDGE** **31 times in a row**. Pressing any other key or button resets the count, and so does an action press anywhere else.
 
-The menu can add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. The toggles reset when you reload; changes to money and gear are saved like normal progress.
+The menu can add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
 
 ## Settings
 
@@ -316,6 +316,9 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Cheat confirmation
+- Every secret-menu cheat (including the toggles) now opens an **Apply cheat?** dialog with Apply and Cancel before anything changes.
 
 ### 2026-11-18, Mobile interface, part 3: sheets and feedback
 - **Bottom-sheet menus** on phones (full-screen-height in short landscape): drag handle, **tap outside or swipe down to close**, dialog roles for screen readers, focus handling. The catch screen stays modal.
