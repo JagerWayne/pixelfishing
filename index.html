@@ -2234,6 +2234,791 @@
          SECTION D: SCULPTED LOW-POLY 3D MESH BUILDERS
          ========================================================================= */
       class WorldBuilder {
+        /* ------------------------------------------------------------------
+           LOFTED FISH GENERATOR
+           Smooth countershaded bodies, real fin shapes, layered eyes and
+           per-species features. Nose points toward +X, up is +Y, width is Z.
+           ------------------------------------------------------------------ */
+        static fishSpec(item) {
+          const mix2 = (hex, f) => '#' + new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), f).getHexString();
+          const spec = {
+            L: 1.5, H: 0.30, W: 0.16, peak: 0.42, noseQ: 0.6, ped: 0.10, belly: 0.85,
+            bend: 0, bendFreq: 1.5,
+            caudal: { type: 'fork', size: 0.36 },
+            dorsal: [{ t0: 0.30, t1: 0.62, h: 0.22, sweep: 0.6, front: 0.45 }],
+            anal: [{ t0: 0.26, t1: 0.46, h: 0.12, sweep: 0.6, front: 0.4 }],
+            pectoral: { size: 0.22, t: 0.74, y: -0.25, ratio: 1.0 },
+            pelvic: { size: 0.13, t: 0.62 },
+            eye: { r: 0.05, t: 0.875, y: 0.22 },
+            gill: true, mouth: 0.1,
+            bands: [], bellyColor: null, finColor: null,
+            spines: 0, spineLen: 0.09, bill: 0, teeth: 0, lure: false, finlets: 0, barbel: false,
+            flatEyes: false, tallFins: false, crest: false, target: 1.7
+          };
+          const id = item.id;
+          switch (item.shape) {
+            case 'fish_slim':
+              Object.assign(spec, { L: 1.9, H: 0.17, W: 0.10, peak: 0.45, ped: 0.12, target: 2.0 });
+              spec.dorsal = [{ t0: 0.34, t1: 0.52, h: 0.12, sweep: 0.7, front: 0.4 }];
+              spec.anal = [{ t0: 0.30, t1: 0.44, h: 0.09, sweep: 0.7, front: 0.4 }];
+              spec.caudal = { type: 'fork', size: 0.30 };
+              spec.pectoral = { size: 0.16, t: 0.76, y: -0.2, ratio: 0.9 };
+              spec.pelvic = { size: 0.09, t: 0.62 };
+              spec.eye = { r: 0.04, t: 0.9, y: 0.2 };
+              break;
+            case 'fish_round':
+              Object.assign(spec, { L: 1.05, H: 0.50, W: 0.17, peak: 0.48, noseQ: 0.8, ped: 0.2, target: 1.45 });
+              spec.dorsal = [{ t0: 0.16, t1: 0.80, h: 0.30, sweep: 0.9, front: 0.35 }];
+              spec.anal = [{ t0: 0.22, t1: 0.72, h: 0.22, sweep: 0.9, front: 0.35 }];
+              spec.caudal = { type: 'round', size: 0.28 };
+              spec.pectoral = { size: 0.24, t: 0.72, y: -0.12, ratio: 1.3 };
+              spec.pelvic = { size: 0.16, t: 0.62 };
+              spec.eye = { r: 0.06, t: 0.86, y: 0.2 };
+              break;
+            case 'fish_flat':
+              Object.assign(spec, { L: 1.5, H: 0.46, W: 0.12, peak: 0.5, noseQ: 0.85, ped: 0.18, target: 1.6 });
+              spec.dorsal = [{ t0: 0.12, t1: 0.9, h: 0.07, sweep: 0.2, front: 0.5 }];
+              spec.anal = [{ t0: 0.12, t1: 0.8, h: 0.07, sweep: 0.2, front: 0.5 }];
+              spec.finColor = mix2(item.color, 0.25);
+              spec.caudal = { type: 'round', size: 0.24 };
+              spec.pectoral = { size: 0.14, t: 0.72, y: -0.05, ratio: 1.0 };
+              spec.pelvic = { size: 0.0, t: 0.6 };
+              spec.eye = { r: 0.05, t: 0.84, y: 0.35 };
+              break;
+            case 'fish_spiky':
+              Object.assign(spec, { L: 1.15, H: 0.42, W: 0.38, peak: 0.5, noseQ: 0.75, ped: 0.16, spines: 46, target: 1.45 });
+              spec.dorsal = [{ t0: 0.20, t1: 0.34, h: 0.11, sweep: 0.5, front: 0.5 }];
+              spec.anal = [{ t0: 0.22, t1: 0.32, h: 0.09, sweep: 0.5, front: 0.5 }];
+              spec.caudal = { type: 'round', size: 0.2 };
+              spec.pectoral = { size: 0.16, t: 0.74, y: -0.1, ratio: 1.2 };
+              spec.pelvic = { size: 0.0, t: 0.6 };
+              spec.eye = { r: 0.075, t: 0.86, y: 0.28 };
+              break;
+            case 'fish_tuna':
+              Object.assign(spec, { L: 2.1, H: 0.32, W: 0.27, peak: 0.5, noseQ: 0.55, ped: 0.06, finlets: 6, target: 2.2 });
+              spec.dorsal = [
+                { t0: 0.52, t1: 0.62, h: 0.24, sweep: 1.1, front: 0.2 },
+                { t0: 0.34, t1: 0.44, h: 0.1, sweep: 1.0, front: 0.3 }
+              ];
+              spec.anal = [{ t0: 0.32, t1: 0.42, h: 0.1, sweep: 1.0, front: 0.3 }];
+              spec.caudal = { type: 'lunate', size: 0.44 };
+              spec.pectoral = { size: 0.3, t: 0.74, y: -0.22, ratio: 0.6 };
+              spec.pelvic = { size: 0.1, t: 0.62 };
+              spec.eye = { r: 0.05, t: 0.9, y: 0.12 };
+              break;
+            case 'fish_marlin':
+              Object.assign(spec, { L: 2.0, H: 0.30, W: 0.22, peak: 0.48, noseQ: 0.55, ped: 0.05, finlets: 5, bill: 0.7, target: 2.5 });
+              spec.dorsal = [
+                { t0: 0.42, t1: 0.76, h: 0.38, sweep: 0.9, front: 0.25 },
+                { t0: 0.26, t1: 0.34, h: 0.08, sweep: 1.0, front: 0.3 }
+              ];
+              spec.anal = [{ t0: 0.28, t1: 0.36, h: 0.09, sweep: 1.0, front: 0.3 }];
+              spec.caudal = { type: 'lunate', size: 0.46 };
+              spec.pectoral = { size: 0.26, t: 0.72, y: -0.25, ratio: 0.5 };
+              spec.pelvic = { size: 0.14, t: 0.6 };
+              spec.eye = { r: 0.05, t: 0.88, y: 0.1 };
+              break;
+            case 'fish_eel':
+              Object.assign(spec, { L: 3.0, H: 0.13, W: 0.11, peak: 0.55, noseQ: 0.5, ped: 0.35, bend: 0.2, bendFreq: 1.6, target: 2.4 });
+              spec.dorsal = [{ t0: 0.04, t1: 0.86, h: 0.09, sweep: 0.0, front: 0.5 }];
+              spec.anal = [{ t0: 0.04, t1: 0.8, h: 0.07, sweep: 0.0, front: 0.5 }];
+              spec.caudal = { type: 'round', size: 0.12 };
+              spec.pectoral = { size: 0.08, t: 0.84, y: -0.1, ratio: 1.0 };
+              spec.pelvic = { size: 0.0, t: 0.6 };
+              spec.eye = { r: 0.04, t: 0.93, y: 0.35 };
+              spec.mouth = 0.2;
+              break;
+            case 'fish_angler':
+              Object.assign(spec, { L: 1.15, H: 0.52, W: 0.42, peak: 0.62, noseQ: 0.35, ped: 0.12, lure: true, teeth: 9, target: 1.5 });
+              spec.dorsal = [{ t0: 0.24, t1: 0.38, h: 0.16, sweep: 0.5, front: 0.5 }];
+              spec.anal = [{ t0: 0.22, t1: 0.34, h: 0.12, sweep: 0.5, front: 0.5 }];
+              spec.caudal = { type: 'round', size: 0.24 };
+              spec.pectoral = { size: 0.2, t: 0.66, y: -0.15, ratio: 1.3 };
+              spec.pelvic = { size: 0.0, t: 0.6 };
+              spec.eye = { r: 0.05, t: 0.84, y: 0.4 };
+              spec.mouth = 0.3;
+              break;
+            default: break; // fish_standard
+          }
+
+          // Species touches
+          const A = item.accent, C = item.color;
+          const bar = (t0, t1, color, cy0 = -1, cy1 = 1) => ({ t0, t1, color, cy0, cy1 });
+          switch (id) {
+            case 'f_minnow': spec.bellyColor = '#fffbe6'; break;
+            case 'f_sardine': spec.bands = [bar(0.25, 0.92, A, 0.1, 0.45)]; spec.bellyColor = '#ffffff'; break;
+            case 'f_herring': spec.bands = [bar(0.2, 0.9, A, 0.2, 0.5)]; spec.bellyColor = '#f1f5f9'; break;
+            case 'f_perch':
+              spec.bands = [0.36, 0.46, 0.56, 0.66, 0.76].map(t => bar(t, t + 0.045, A, 0.0, 1.0)); spec.bellyColor = '#fde68a';
+              spec.finColor = '#ef4444'; spec.dorsal = [{ t0: 0.26, t1: 0.46, h: 0.2, sweep: 0.5, front: 0.4 }, { t0: 0.5, t1: 0.64, h: 0.15, sweep: 0.5, front: 0.4 }];
+              break;
+            case 'f_mullet': spec.bands = [bar(0.2, 0.95, A, 0.0, 0.2)]; spec.bellyColor = '#f8fafc'; break;
+            case 'f_seabream': spec.bands = [bar(0.8, 0.98, A, 0.4, 0.95)]; spec.bellyColor = '#e2e8f0'; break;
+            case 'f_seahorse': break;
+            case 'f_flounder': spec.bands = [bar(0.1, 0.9, A, 0.55, 0.8)]; break;
+            case 'f_seabass': spec.bands = [bar(0.2, 0.9, '#64748b', 0.35, 0.7)]; break;
+            case 'f_snapper': spec.bellyColor = '#fecaca'; spec.finColor = '#dc2626'; break;
+            case 'f_puffer': spec.bellyColor = '#fef9c3'; spec.bands = [bar(0.3, 0.8, A, 0.55, 1.0)]; break;
+            case 'f_lionfish':
+              spec.L = 1.4; spec.H = 0.30; spec.W = 0.17; spec.spines = 0;
+              spec.bands = [0.28, 0.38, 0.48, 0.58, 0.68, 0.78].map((t, i) => bar(t, t + 0.045, i % 2 ? C : '#f8fafc'));
+              spec.dorsal = [{ t0: 0.28, t1: 0.74, h: 0.5, sweep: 0.2, front: 0.5, spiky: true }];
+              spec.anal = [{ t0: 0.28, t1: 0.44, h: 0.2, sweep: 0.3, front: 0.5, spiky: true }];
+              spec.pectoral = { size: 0.5, t: 0.74, y: -0.1, ratio: 1.5, fan: true };
+              break;
+            case 'f_moray': spec.bands = [0.2, 0.34, 0.48, 0.62, 0.76].map(t => bar(t, t + 0.06, A, 0.2, 1.0)); spec.mouth = 0.3; spec.teeth = 6; spec.eye.r = 0.035; break;
+            case 'f_parrotfish': spec.H = 0.36; spec.noseQ = 0.4; spec.bands = [bar(0.5, 0.95, A, -0.1, 0.5)]; break;
+            case 'f_grouper': spec.H = 0.36; spec.W = 0.22; spec.noseQ = 0.4; spec.mouth = 0.2; spec.bellyColor = '#d6d3d1'; break;
+            case 'f_trigger': spec.bands = [bar(0.7, 0.92, A, -1, 1)]; break;
+            case 'f_mandarin':
+              spec.bands = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map((t, i) => bar(t, t + 0.05, i % 2 ? A : '#fb923c')); spec.bellyColor = C; break;
+            case 'f_clownfish':
+              spec.bands = [bar(0.34, 0.42, '#ffffff'), bar(0.6, 0.67, '#ffffff'), bar(0.88, 0.94, '#ffffff'), bar(0.31, 0.34, '#111827'), bar(0.42, 0.45, '#111827'), bar(0.57, 0.6, '#111827'), bar(0.67, 0.7, '#111827')];
+              spec.bellyColor = C; spec.finColor = '#fb923c'; break;
+            case 'f_angelfish':
+              spec.H = 0.6; spec.L = 1.15; spec.tallFins = true; spec.bands = [bar(0.3, 0.9, A, 0.45, 0.8)]; spec.bellyColor = '#93c5fd';
+              spec.dorsal = [{ t0: 0.14, t1: 0.74, h: 0.5, sweep: 1.5, front: 0.2 }]; spec.anal = [{ t0: 0.2, t1: 0.7, h: 0.4, sweep: 1.5, front: 0.2 }]; break;
+            case 'f_blobfish':
+              spec.L = 1.1; spec.H = 0.46; spec.W = 0.34; spec.peak = 0.62; spec.noseQ = 0.3; spec.ped = 0.12; spec.eye = { r: 0.04, t: 0.8, y: 0.15 };
+              spec.dorsal = [{ t0: 0.2, t1: 0.4, h: 0.1, sweep: 0.3, front: 0.5 }]; spec.mouth = 0.25; spec.bellyColor = '#fecdd3'; break;
+            case 'f_mahi':
+              spec.H = 0.38; spec.noseQ = 0.32; spec.L = 1.9; spec.bands = [bar(0.2, 0.95, '#22c55e', 0.15, 0.55)]; spec.bellyColor = '#fef08a';
+              spec.dorsal = [{ t0: 0.14, t1: 0.92, h: 0.24, sweep: 0.5, front: 0.5 }]; break;
+            case 'f_barracuda': spec.L = 2.3; spec.teeth = 8; spec.mouth = 0.22; spec.bands = [0.3, 0.42, 0.54, 0.66].map(t => bar(t, t + 0.04, A, 0.1, 1.0)); spec.bellyColor = '#f8fafc'; break;
+            case 'f_wahoo': spec.L = 2.2; spec.bands = [0.25, 0.35, 0.45, 0.55, 0.65, 0.75].map(t => bar(t, t + 0.04, A, -0.2, 1.0)); spec.finlets = 6; break;
+            case 'f_skipjack': spec.bands = [0.3, 0.4, 0.5, 0.6].map(t => bar(t, t + 0.04, '#0f172a', -0.8, -0.2)); spec.bellyColor = '#e2e8f0'; break;
+            case 'f_cobia': spec.bands = [bar(0.2, 0.95, '#1c1917', 0.0, 0.25)]; spec.bellyColor = '#e7e5e4'; spec.H = 0.26; spec.L = 1.9; break;
+            case 'f_sailfish': spec.bill = 0.55; spec.dorsal[0] = { t0: 0.34, t1: 0.9, h: 0.5, sweep: 0.8, front: 0.4 }; spec.bellyColor = '#e0f2fe'; break;
+            case 'f_swordfish': spec.bill = 0.95; spec.dorsal[0] = { t0: 0.5, t1: 0.6, h: 0.3, sweep: 1.1, front: 0.2 }; spec.target = 2.8; break;
+            case 'fm_astralmarlin': spec.bill = 0.75; break;
+            case 'f_sunfish':
+              spec.L = 1.15; spec.H = 0.75; spec.W = 0.2; spec.peak = 0.5; spec.noseQ = 0.7; spec.ped = 0.5; spec.target = 1.6;
+              spec.caudal = { type: 'square', size: 0.34 }; spec.dorsal = [{ t0: 0.2, t1: 0.5, h: 0.5, sweep: 1.4, front: 0.2 }]; spec.anal = [{ t0: 0.2, t1: 0.48, h: 0.42, sweep: 1.4, front: 0.2 }];
+              spec.eye = { r: 0.05, t: 0.84, y: 0.1 }; spec.mouth = 0.05; break;
+            case 'f_angler': spec.bands = []; break;
+            case 'f_viperfish': spec.L = 1.9; spec.H = 0.2; spec.W = 0.13; spec.noseQ = 0.4; spec.teeth = 8; spec.barbel = true; spec.mouth = 0.28; spec.lure = false; break;
+            case 'f_gulper': spec.L = 2.8; spec.H = 0.16; spec.peak = 0.78; spec.noseQ = 0.35; spec.mouth = 0.5; spec.bend = 0.22; spec.teeth = 5; spec.dorsal = [{ t0: 0.04, t1: 0.7, h: 0.07, sweep: 0, front: 0.5 }]; break;
+            case 'f_oarfish': spec.L = 3.2; spec.crest = true; spec.bellyColor = '#f1f5f9'; spec.bend = 0.14; spec.dorsal = [{ t0: 0.04, t1: 0.96, h: 0.2, sweep: 0.0, front: 0.5, spiky: true }]; break;
+            case 'f_coelacanth': spec.H = 0.38; spec.W = 0.24; spec.pectoral = { size: 0.3, t: 0.7, y: -0.28, ratio: 1.6 }; spec.pelvic = { size: 0.22, t: 0.52 }; spec.caudal = { type: 'round', size: 0.4 }; spec.bands = [0.25, 0.4, 0.55, 0.7].map(t => bar(t, t + 0.05, '#f8fafc', 0.2, 0.9)); break;
+            case 'f_goblin': spec.bill = 0.45; spec.L = 2.0; spec.H = 0.3; spec.teeth = 6; spec.bellyColor = '#f5d0fe'; spec.finlets = 0; break;
+            case 'f_dragonfish': spec.barbel = true; spec.teeth = 7; spec.mouth = 0.25; spec.L = 2.6; spec.bend = 0.16; break;
+            case 'f_leviathan': spec.spines = 10; spec.spineLen = 0.14; spec.teeth = 8; spec.L = 2.4; break;
+            case 'f_lanternfish': spec.bands = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map(t => bar(t, t + 0.025, A, -0.7, -0.5)); break;
+            case 'fm_moonglow': spec.bands = [bar(0.2, 0.9, A, -0.8, -0.4)]; break;
+            case 'fm_celestial': spec.bands = [bar(0.2, 0.4, '#f8fafc', 0.1, 0.9), bar(0.56, 0.7, '#fb923c', 0.0, 1.0), bar(0.8, 0.9, '#f8fafc', 0.0, 0.9)]; break;
+            case 'fm_opah': spec.bands = [bar(0.3, 0.8, '#f8fafc', -0.2, 0.2)]; spec.finColor = '#ef4444'; break;
+            case 'st_thundereel': spec.bands = [0.2, 0.4, 0.6, 0.8].map(t => bar(t, t + 0.05, A, 0.3, 1.0)); break;
+            case 'fm_ribbonserpent': spec.crest = true; spec.dorsal = [{ t0: 0.04, t1: 0.96, h: 0.16, sweep: 0.0, front: 0.5, spiky: true }]; break;
+            default: break;
+          }
+          return spec;
+        }
+
+        static buildFishModel(item, textures) {
+          const spec = this.fishSpec(item);
+          const isGlowing = !!item.glowing;
+          const mix = (a, b, f) => new THREE.Color(a).lerp(new THREE.Color(b), f);
+          const back = new THREE.Color(item.color);
+          const belly = spec.bellyColor ? new THREE.Color(spec.bellyColor) : mix(item.color, '#ffffff', 0.55);
+          const finBase = new THREE.Color(spec.finColor || item.accent);
+          const finTip = mix(finBase, '#ffffff', 0.35);
+
+          const bodyMat = new THREE.MeshStandardMaterial({
+            vertexColors: true, map: textures.scales, roughness: isGlowing ? 0.25 : 0.42, metalness: 0.18,
+            emissive: isGlowing ? new THREE.Color(item.color) : new THREE.Color(0x000000), emissiveIntensity: isGlowing ? 0.55 : 0
+          });
+          const finMat = new THREE.MeshStandardMaterial({
+            vertexColors: true, side: THREE.DoubleSide, roughness: 0.6, metalness: 0.0,
+            emissive: isGlowing ? new THREE.Color(item.accent) : new THREE.Color(0x000000), emissiveIntensity: isGlowing ? 0.5 : 0
+          });
+          const darkMat = new THREE.MeshBasicMaterial({ color: 0x0b1020 });
+
+          const { L, H, W } = spec;
+          const env = (t, peak, q, ped) => {
+            const a = Math.log(0.5) / Math.log(peak);
+            const bump = Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(t, a))), q);
+            return ped + (1 - ped) * bump;
+          };
+          const hAt = t => H * env(t, spec.peak, spec.noseQ, spec.ped);
+          const wAt = t => W * env(t, spec.peak, spec.noseQ * 0.9, spec.ped);
+          const bendAt = t => spec.bend * Math.sin(t * spec.bendFreq * Math.PI * 2 + 0.6) * (0.35 + 0.65 * (1 - t));
+          const xAt = t => (t - 0.5) * L;
+          const topY = t => bendAt(t) + hAt(t);
+          const botY = t => bendAt(t) - hAt(t) * spec.belly;
+
+          const group = new THREE.Group();
+          const inner = new THREE.Group();
+          group.add(inner);
+
+          // ---------- body ----------
+          const NS = 34, NR = 18;
+          const pos = [], col = [], uvs = [], idx = [];
+          const tmp = new THREE.Color();
+          for (let i = 0; i <= NS; i++) {
+            const t = i / NS;
+            const h = hAt(t), w = wAt(t), yo = bendAt(t);
+            for (let j = 0; j <= NR; j++) {
+              const ang = (j / NR) * Math.PI * 2;
+              const cy = Math.sin(ang), cz = Math.cos(ang);
+              pos.push(xAt(t), yo + cy * h * (cy < 0 ? spec.belly : 1), cz * w);
+              // countershading: dark back -> light belly
+              const bf = THREE.MathUtils.smoothstep(-cy, -0.05, 0.55);
+              tmp.copy(back).lerp(belly, bf);
+              if (cy > 0.55) tmp.multiplyScalar(0.9);
+              for (const b of spec.bands) {
+                if (t >= b.t0 && t <= b.t1 && cy >= b.cy0 && cy <= b.cy1) tmp.set(b.color);
+              }
+              col.push(tmp.r, tmp.g, tmp.b);
+              uvs.push((j / NR) * 10, t * 17);
+            }
+          }
+          for (let i = 0; i < NS; i++) {
+            for (let j = 0; j < NR; j++) {
+              const a = i * (NR + 1) + j, b = a + NR + 1;
+              idx.push(a, b, a + 1, b, b + 1, a + 1);
+            }
+          }
+          const bodyGeo = new THREE.BufferGeometry();
+          bodyGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+          bodyGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+          bodyGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+          bodyGeo.setIndex(idx);
+          bodyGeo.computeVertexNormals();
+          const nrm = bodyGeo.attributes.normal;
+          for (let i = 0; i <= NS; i++) { // close the shading seam
+            const a = i * (NR + 1), b = a + NR;
+            const nx = nrm.getX(a) + nrm.getX(b), ny = nrm.getY(a) + nrm.getY(b), nz = nrm.getZ(a) + nrm.getZ(b);
+            const l = Math.hypot(nx, ny, nz) || 1;
+            nrm.setXYZ(a, nx / l, ny / l, nz / l); nrm.setXYZ(b, nx / l, ny / l, nz / l);
+          }
+          const body = new THREE.Mesh(bodyGeo, bodyMat);
+          inner.add(body);
+          // tail cap
+          {
+            const capPos = [], capIdx = [];
+            const t = 0, h = hAt(t), w = wAt(t), yo = bendAt(t);
+            capPos.push(xAt(t), yo, 0);
+            for (let j = 0; j <= NR; j++) {
+              const ang = (j / NR) * Math.PI * 2, cy = Math.sin(ang), cz = Math.cos(ang);
+              capPos.push(xAt(t), yo + cy * h * (cy < 0 ? spec.belly : 1), cz * w);
+            }
+            for (let j = 1; j <= NR; j++) capIdx.push(0, j, j + 1);
+            const cg = new THREE.BufferGeometry();
+            cg.setAttribute('position', new THREE.Float32BufferAttribute(capPos, 3));
+            const cc = []; for (let k = 0; k < capPos.length / 3; k++) cc.push(back.r * 0.8, back.g * 0.8, back.b * 0.8);
+            cg.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3));
+            cg.setIndex(capIdx); cg.computeVertexNormals();
+            inner.add(new THREE.Mesh(cg, new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.6 })));
+          }
+
+          // ---------- fin helpers ----------
+          const gradColor = (g, axisFn) => {
+            const p = g.attributes.position, cs = [];
+            let maxD = 0.0001;
+            for (let k = 0; k < p.count; k++) maxD = Math.max(maxD, axisFn(p.getX(k), p.getY(k)));
+            for (let k = 0; k < p.count; k++) {
+              const f = Math.min(1, axisFn(p.getX(k), p.getY(k)) / maxD);
+              tmp.copy(finBase).lerp(finTip, f);
+              cs.push(tmp.r, tmp.g, tmp.b);
+            }
+            g.setAttribute('color', new THREE.Float32BufferAttribute(cs, 3));
+          };
+          const addShapeFin = (shape, setup) => {
+            const g = new THREE.ShapeGeometry(shape, 10);
+            gradColor(g, (x, y) => Math.hypot(x, y));
+            const m = new THREE.Mesh(g, finMat);
+            setup(m);
+            inner.add(m);
+            return m;
+          };
+          // Ribbon fins that follow the body outline (dorsal / anal / fringes / sails)
+          const addRibbon = (f, onTop) => {
+            const n = 16, p = [], c = [], ix = [];
+            for (let k = 0; k <= n; k++) {
+              const u = k / n;
+              const t = f.t0 + (f.t1 - f.t0) * u;
+              const shape = f.spiky
+                ? (0.55 + 0.45 * Math.abs(Math.sin(u * Math.PI * (n * 0.5)))) * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.8)), 0.6)
+                : Math.pow(Math.max(0, Math.sin(Math.PI * Math.pow(u, Math.log(0.5) / Math.log(f.front)))), 0.8);
+              const fh = f.h * Math.max(0.12, shape);
+              const x = xAt(t), by = onTop ? topY(t) - 0.015 : botY(t) + 0.015;
+              const dir = onTop ? 1 : -1;
+              p.push(x, by, 0, x - f.sweep * fh * 0.5, by + dir * fh, 0);
+              tmp.copy(finBase); c.push(tmp.r, tmp.g, tmp.b);
+              tmp.copy(finTip); c.push(tmp.r, tmp.g, tmp.b);
+              if (k < n) { const a = k * 2; ix.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+            g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+            g.setIndex(ix); g.computeVertexNormals();
+            inner.add(new THREE.Mesh(g, finMat));
+          };
+
+          // ---------- caudal fin ----------
+          {
+            const s = spec.caudal.size, pedH = hAt(0) * 0.9 + 0.01;
+            const sh = new THREE.Shape();
+            switch (spec.caudal.type) {
+              case 'lunate':
+                sh.moveTo(0, pedH * 0.6);
+                sh.bezierCurveTo(-s * 0.4, s * 0.3, -s * 0.8, s * 0.9, -s * 1.15, s * 1.05);
+                sh.bezierCurveTo(-s * 0.75, s * 0.45, -s * 0.55, s * 0.12, -s * 0.5, 0);
+                sh.bezierCurveTo(-s * 0.55, -s * 0.12, -s * 0.75, -s * 0.45, -s * 1.15, -s * 1.05);
+                sh.bezierCurveTo(-s * 0.8, -s * 0.9, -s * 0.4, -s * 0.3, 0, -pedH * 0.6);
+                break;
+              case 'round':
+                sh.moveTo(0, pedH * 0.6);
+                sh.bezierCurveTo(-s * 0.5, s * 0.75, -s * 1.1, s * 0.5, -s * 1.1, 0);
+                sh.bezierCurveTo(-s * 1.1, -s * 0.5, -s * 0.5, -s * 0.75, 0, -pedH * 0.6);
+                break;
+              case 'square':
+                sh.moveTo(0, pedH * 0.8);
+                sh.bezierCurveTo(-s * 0.4, s * 0.5, -s * 0.9, s * 0.7, -s * 0.95, s * 0.5);
+                sh.lineTo(-s * 0.95, -s * 0.5);
+                sh.bezierCurveTo(-s * 0.9, -s * 0.7, -s * 0.4, -s * 0.5, 0, -pedH * 0.8);
+                break;
+              default: // fork
+                sh.moveTo(0, pedH * 0.6);
+                sh.bezierCurveTo(-s * 0.3, s * 0.35, -s * 0.7, s * 0.8, -s * 1.0, s * 0.9);
+                sh.bezierCurveTo(-s * 0.75, s * 0.4, -s * 0.6, s * 0.12, -s * 0.55, 0);
+                sh.bezierCurveTo(-s * 0.6, -s * 0.12, -s * 0.75, -s * 0.4, -s * 1.0, -s * 0.9);
+                sh.bezierCurveTo(-s * 0.7, -s * 0.8, -s * 0.3, -s * 0.35, 0, -pedH * 0.6);
+            }
+            addShapeFin(sh, m => m.position.set(xAt(0) + 0.01, bendAt(0), 0));
+          }
+
+          // ---------- dorsal / anal ----------
+          spec.dorsal.forEach(f => addRibbon(f, true));
+          spec.anal.forEach(f => addRibbon(f, false));
+
+          // finlets (tuna, marlin, wahoo)
+          for (let k = 0; k < spec.finlets; k++) {
+            const t = 0.1 + k * 0.028;
+            [[true, topY(t)], [false, botY(t)]].forEach(([top, y]) => {
+              const d = top ? 1 : -1;
+              const g = new THREE.BufferGeometry();
+              const x = xAt(t);
+              g.setAttribute('position', new THREE.Float32BufferAttribute([x, y, 0, x - 0.05, y, 0, x - 0.045, y + d * 0.07, 0], 3));
+              g.setAttribute('color', new THREE.Float32BufferAttribute([finBase.r, finBase.g, finBase.b, finBase.r, finBase.g, finBase.b, finTip.r, finTip.g, finTip.b], 3));
+              g.setIndex([0, 1, 2]); g.computeVertexNormals();
+              inner.add(new THREE.Mesh(g, finMat));
+            });
+          }
+
+          // ---------- pectoral & pelvic ----------
+          const leaf = (s, ratio) => {
+            const sh = new THREE.Shape();
+            sh.moveTo(0, 0.01);
+            sh.bezierCurveTo(-s * 0.2, s * 0.36 * ratio, -s * 0.8, s * 0.32 * ratio, -s, -s * 0.12);
+            sh.bezierCurveTo(-s * 0.7, -s * 0.2 * ratio, -s * 0.3, -s * 0.24 * ratio, 0, -0.01);
+            return sh;
+          };
+          if (spec.pectoral.size > 0) {
+            const pf = spec.pectoral, t = pf.t, y = bendAt(t) + hAt(t) * pf.y;
+            [-1, 1].forEach(side => {
+              if (pf.fan) {
+                for (let k = 0; k < 7; k++) { // lionfish feathery fan
+                  const sh = leaf(pf.size * (0.7 + 0.3 * Math.sin(k * 0.9)), 0.25);
+                  addShapeFin(sh, m => {
+                    m.position.set(xAt(t), y, side * wAt(t) * 0.9);
+                    m.rotation.y = side * (0.5 + k * 0.1);
+                    m.rotation.z = -0.5 + k * 0.17;
+                  });
+                }
+              } else {
+                addShapeFin(leaf(pf.size, pf.ratio), m => {
+                  m.position.set(xAt(t), y, side * wAt(t) * 0.92);
+                  m.rotation.y = side * 0.55;
+                  m.rotation.z = -0.15;
+                });
+              }
+            });
+          }
+          if (spec.pelvic.size > 0) {
+            const pf = spec.pelvic, t = pf.t, y = botY(t) + 0.02;
+            [-1, 1].forEach(side => {
+              addShapeFin(leaf(pf.size, 0.8), m => {
+                m.position.set(xAt(t), y, side * wAt(t) * 0.5);
+                m.rotation.y = side * 0.4;
+                m.rotation.z = -0.55;
+              });
+            });
+          }
+
+          // ---------- head features ----------
+          // eyes
+          {
+            const e = spec.eye, t = e.t, ey = bendAt(t) + hAt(t) * e.y, ew = wAt(t);
+            const scl = new THREE.MeshStandardMaterial({ color: spec.flatEyes ? 0xfde68a : 0xf8fafc, roughness: 0.2 });
+            const irisMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(item.accent).lerp(new THREE.Color(0xfbbf24), 0.5), roughness: 0.3 });
+            const sides = spec.flatEyes ? [1, 1] : [-1, 1];
+            sides.forEach((side, k) => {
+              const ex = xAt(t) + (spec.flatEyes ? (k ? -0.12 : 0) : 0);
+              const eyeG = new THREE.Group();
+              const ball = new THREE.Mesh(new THREE.SphereGeometry(e.r, 12, 10), scl);
+              const iris = new THREE.Mesh(new THREE.SphereGeometry(e.r * 0.78, 10, 8), irisMat);
+              iris.position.z = e.r * 0.28;
+              const pupil = new THREE.Mesh(new THREE.SphereGeometry(e.r * 0.5, 8, 8), darkMat);
+              pupil.position.z = e.r * 0.62;
+              const glint = new THREE.Mesh(new THREE.SphereGeometry(e.r * 0.16, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+              glint.position.set(e.r * 0.2, e.r * 0.25, e.r * 0.86);
+              eyeG.add(ball, iris, pupil, glint);
+              eyeG.position.set(ex, ey, side * (ew * 0.86 + e.r * 0.25 + (spec.flatEyes ? k * 0.0 : 0)));
+              eyeG.rotation.y = side > 0 ? 0.0 : Math.PI;
+              inner.add(eyeG);
+            });
+          }
+          // gill cover
+          if (spec.gill) {
+            const t = Math.min(0.88, spec.eye.t - 0.1);
+            [-1, 1].forEach(side => {
+              if (spec.flatEyes && side < 0) return;
+              const arc = new THREE.Mesh(new THREE.TorusGeometry(hAt(t) * 0.62, 0.011, 5, 14, Math.PI), darkMat);
+              arc.position.set(xAt(t), bendAt(t) + hAt(t) * 0.02, side * wAt(t) * 0.97);
+              arc.rotation.z = Math.PI / 2;
+              arc.scale.set(0.55, 1, 1);
+              inner.add(arc);
+            });
+          }
+          // mouth line: a thin dark tube hugging the face from the nose back along each side
+          {
+            const t0 = Math.max(0.7, 1 - spec.mouth / L);
+            [-1, 1].forEach(side => {
+              if (spec.flatEyes && side < 0) return;
+              const pts = [];
+              for (let k = 0; k <= 8; k++) {
+                const t = t0 + (0.995 - t0) * (k / 8);
+                pts.push(new THREE.Vector3(xAt(t), bendAt(t) - hAt(t) * 0.14, side * wAt(t) * 0.99));
+              }
+              inner.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.008, 4, false), darkMat));
+            });
+          }
+          // spines (puffer, leviathan)
+          if (spec.spines > 0) {
+            const sp = [], si = [];
+            const R = spec.spineLen * 0.35;
+            let seed = 7;
+            const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+            for (let k = 0; k < spec.spines; k++) {
+              const t = 0.18 + rnd() * 0.7, ang = rnd() * Math.PI * 2;
+              const cy = Math.sin(ang), cz = Math.cos(ang);
+              const bx = xAt(t), by = bendAt(t) + cy * hAt(t) * (cy < 0 ? spec.belly : 1), bz = cz * wAt(t);
+              const nx = 0.0, ny = cy * 1.0, nz = cz * 1.0;
+              const nl = Math.hypot(nx, ny, nz) || 1;
+              const dx = nx / nl, dy = ny / nl, dz = nz / nl;
+              const n0 = sp.length / 3;
+              // base triangle perpendicular-ish to the normal
+              const ax = 1, ay = 0, az = 0;
+              const bxv = dy * az - dz * ay, byv = dz * ax - dx * az, bzv = dx * ay - dy * ax;
+              const bl = Math.hypot(bxv, byv, bzv) || 1;
+              const ux = bxv / bl, uy = byv / bl, uz = bzv / bl;
+              sp.push(bx + ax * R, by + ay * R, bz + az * R);
+              sp.push(bx - ax * R * 0.5 + ux * R, by - ay * R * 0.5 + uy * R, bz - az * R * 0.5 + uz * R);
+              sp.push(bx - ax * R * 0.5 - ux * R, by - ay * R * 0.5 - uy * R, bz - az * R * 0.5 - uz * R);
+              sp.push(bx + dx * spec.spineLen, by + dy * spec.spineLen, bz + dz * spec.spineLen);
+              si.push(n0, n0 + 1, n0 + 2, n0, n0 + 3, n0 + 1, n0 + 1, n0 + 3, n0 + 2, n0 + 2, n0 + 3, n0);
+            }
+            const g = new THREE.BufferGeometry();
+            g.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+            g.setIndex(si); g.computeVertexNormals();
+            inner.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: mix(item.accent, '#fef3c7', 0.4), roughness: 0.5, side: THREE.DoubleSide })));
+          }
+          // bill (marlin / swordfish / goblin shark)
+          if (spec.bill > 0) {
+            const billMat = new THREE.MeshStandardMaterial({ color: mix(item.color, '#0f172a', 0.45), roughness: 0.4, metalness: 0.2 });
+            const bg = new THREE.ConeGeometry(0.045, spec.bill, 8);
+            bg.rotateZ(-Math.PI / 2);
+            bg.translate(xAt(1) + spec.bill / 2 - 0.02, bendAt(1), 0);
+            inner.add(new THREE.Mesh(bg, billMat));
+          }
+          // teeth
+          if (spec.teeth > 0) {
+            const toothMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+            for (let k = 0; k < spec.teeth; k++) {
+              const u = k / Math.max(1, spec.teeth - 1);
+              const t = 1 - (0.02 + u * (spec.mouth / L) * 0.95);
+              [-1, 1].forEach(side => {
+                if (spec.flatEyes && side < 0) return;
+                [1, -1].forEach(row => {
+                  const tg = new THREE.ConeGeometry(0.012, 0.06, 4);
+                  const tm = new THREE.Mesh(tg, toothMat);
+                  tm.position.set(xAt(t), bendAt(t) - hAt(t) * 0.12 + row * 0.015, side * wAt(t) * 0.86);
+                  tm.rotation.x = row > 0 ? Math.PI : 0;
+                  inner.add(tm);
+                });
+              });
+            }
+          }
+          // anglerfish lure
+          if (spec.lure) {
+            const t = 0.82;
+            const base = new THREE.Vector3(xAt(t), topY(t), 0);
+            const curve = new THREE.CatmullRomCurve3([base, base.clone().add(new THREE.Vector3(0.14, 0.2, 0)), base.clone().add(new THREE.Vector3(0.36, 0.28, 0)), base.clone().add(new THREE.Vector3(0.46, 0.14, 0))]);
+            inner.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 12, 0.012, 5, false), new THREE.MeshStandardMaterial({ color: mix(item.color, '#0f172a', 0.4) })));
+            const tip = curve.getPoint(1);
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: 0x7dd3fc }));
+            bulb.position.copy(tip);
+            const halo = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.28, depthWrite: false }));
+            halo.position.copy(tip);
+            inner.add(bulb, halo);
+          }
+          // chin barbel (viperfish / dragonfish)
+          if (spec.barbel) {
+            const base = new THREE.Vector3(xAt(0.96), botY(0.96), 0);
+            const curve = new THREE.CatmullRomCurve3([base, base.clone().add(new THREE.Vector3(0.04, -0.2, 0)), base.clone().add(new THREE.Vector3(-0.08, -0.38, 0))]);
+            inner.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 8, 0.008, 4, false), new THREE.MeshBasicMaterial({ color: 0x1f2937 })));
+            const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(item.accent) }));
+            bulb.position.copy(curve.getPoint(1));
+            inner.add(bulb);
+          }
+          // oarfish-style crest
+          if (spec.crest) {
+            for (let k = 0; k < 8; k++) {
+              const t = 0.88 - k * 0.012;
+              const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.28 - k * 0.012, 4), new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 }));
+              tuft.position.set(xAt(t), topY(t) + 0.1, 0);
+              tuft.rotation.z = 0.5;
+              inner.add(tuft);
+            }
+          }
+
+          // ---------- normalise so every species fits the catch preview ----------
+          const box = new THREE.Box3().setFromObject(inner);
+          const size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+          const s = Math.min(spec.target / Math.max(0.01, size.x), 1.35 / Math.max(0.01, size.y), 1.35 / Math.max(0.01, size.z * 1.5));
+          inner.position.set(-ctr.x * s, -ctr.y * s, -ctr.z * s);
+          inner.scale.setScalar(s);
+          return group;
+        }
+
+        /* ------------------------------------------------------------------
+           JUNK, FLORA & BOTTLE MODELS (anything that isn't a fish)
+           Upright, roughly 1 unit tall so the catch preview frames them well.
+           ------------------------------------------------------------------ */
+        static buildJunkModel(item, textures) {
+          const g = new THREE.Group();
+          const col = new THREE.Color(item.color), acc = new THREE.Color(item.accent);
+          const std = (c, rough = 0.6, metal = 0.0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: rough, metalness: metal }, extra));
+          const dark = c => new THREE.Color(c).multiplyScalar(0.55);
+          const lathe = (pts, mat, seg = 20) => new THREE.Mesh(new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg), mat);
+
+          switch (item.shape) {
+            case 'seaweed': {
+              const bladeMat = new THREE.MeshStandardMaterial({
+                color: col, side: THREE.DoubleSide, roughness: 0.55,
+                emissive: item.glowing || item.id === 'sw_abyssal' ? acc : new THREE.Color(0x000000), emissiveIntensity: item.id === 'sw_abyssal' ? 0.6 : 0
+              });
+              const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.17, 0), std(0x64748b, 0.9, 0, { flatShading: true }));
+              rock.scale.set(1.2, 0.7, 1); rock.position.y = -0.62;
+              g.add(rock);
+              const n = item.id === 'sw_kelp' ? 5 : 6;
+              for (let i = 0; i < n; i++) {
+                const len = 1.0 + (i % 3) * 0.18, wid = item.id === 'sw_kelp' ? 0.2 : 0.14;
+                const geo = new THREE.PlaneGeometry(wid, len, 3, 16);
+                const p = geo.attributes.position;
+                const ph = i * 1.7;
+                for (let v = 0; v < p.count; v++) {
+                  const y = p.getY(v) + len / 2; // 0..len
+                  const u = y / len;
+                  const taper = 1 - 0.55 * u;
+                  p.setX(v, p.getX(v) * taper + Math.sin(y * 3.2 + ph) * 0.09 * (0.4 + u) + Math.sin(i * 1.3) * 0.05);
+                  p.setZ(v, Math.cos(y * 2.6 + ph) * 0.07 * u);
+                }
+                geo.computeVertexNormals();
+                const blade = new THREE.Mesh(geo, i % 2 ? bladeMat : std(acc, 0.55, 0, { side: THREE.DoubleSide }));
+                blade.position.set((i - n / 2) * 0.1, -0.55, (i % 2 ? 0.05 : -0.05));
+                blade.rotation.y = i * 0.9;
+                blade.rotation.z = (i - n / 2) * 0.06;
+                g.add(blade);
+              }
+              if (item.id === 'sw_bladder') { // poppable air bladders
+                for (let i = 0; i < 7; i++) {
+                  const b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), std(0xbef264, 0.3));
+                  b.position.set(Math.sin(i * 1.9) * 0.2, -0.2 + i * 0.1, Math.cos(i * 1.9) * 0.1);
+                  g.add(b);
+                }
+              }
+              break;
+            }
+            case 'boot': {
+              const leather = std(col, 0.78, 0.0, { flatShading: false });
+              const sole = std(acc.clone().lerp(new THREE.Color(0x1c1917), 0.6), 0.9);
+              const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.21, 0.78, 16, 1, true), std(col, 0.78, 0, { side: THREE.DoubleSide }));
+              shaft.position.set(-0.12, 0.2, 0);
+              const inside = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.19, 0.02, 16), std(0x1c1917, 0.95));
+              inside.position.set(-0.12, 0.45, 0);
+              const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.025, 6, 20), std(dark(col), 0.8));
+              cuff.rotation.x = Math.PI / 2; cuff.position.set(-0.12, 0.59, 0);
+              const ankle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), leather);
+              ankle.scale.set(1, 0.9, 0.95); ankle.position.set(-0.1, -0.2, 0);
+              const toe = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), leather);
+              toe.scale.set(1.6, 0.8, 0.95); toe.position.set(0.2, -0.3, 0);
+              const soleMesh = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.07, 0.4), sole);
+              soleMesh.position.set(0.1, -0.44, 0);
+              const heel = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.11, 0.38), sole);
+              heel.position.set(-0.26, -0.5, 0);
+              g.add(shaft, inside, cuff, ankle, toe, soleMesh, heel);
+              for (let i = 0; i < 4; i++) { // laces
+                const lace = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.025, 0.2), std(0xe7e5e4, 0.9));
+                lace.position.set(0.02 + i * 0.075, -0.06 - i * 0.07, 0.0);
+                lace.rotation.z = -0.5;
+                g.add(lace);
+              }
+              const weed = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 5, 12, Math.PI * 1.3), std(0x4d7c0f, 0.6));
+              weed.position.set(0.1, 0.35, 0.2); weed.rotation.set(0.4, 0.8, 0.2);
+              g.add(weed);
+              break;
+            }
+            case 'can': {
+              const metal = std(col, 0.35, 0.7);
+              const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.6, 24), metal);
+              const label = new THREE.Mesh(new THREE.CylinderGeometry(0.278, 0.278, 0.34, 24, 1, true), std(acc, 0.7, 0.1, { side: THREE.DoubleSide }));
+              [-0.3, 0.3].forEach(y => {
+                const rim = new THREE.Mesh(new THREE.TorusGeometry(0.265, 0.025, 6, 24), std(0x94a3b8, 0.3, 0.8));
+                rim.rotation.x = Math.PI / 2; rim.position.y = y; g.add(rim);
+              });
+              for (let i = 0; i < 6; i++) { // ridges
+                const ridge = new THREE.Mesh(new THREE.TorusGeometry(0.272, 0.008, 4, 24), std(0x64748b, 0.4, 0.6));
+                ridge.rotation.x = Math.PI / 2; ridge.position.y = -0.24 + i * 0.1; if (Math.abs(ridge.position.y) < 0.18) continue; g.add(ridge);
+              }
+              const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.02, 24, 1, false, 0, Math.PI * 1.4), std(0xcbd5e1, 0.3, 0.8));
+              lid.position.y = 0.3; lid.rotation.x = -0.35; lid.position.set(0, 0.31, 0.03);
+              for (let i = 0; i < 5; i++) { // rust blotches
+                const r = new THREE.Mesh(new THREE.SphereGeometry(0.07 + (i % 2) * 0.03, 7, 5), std(0x9a3412, 0.95));
+                r.scale.set(1, 0.35, 1); const a = i * 1.3;
+                r.position.set(Math.cos(a) * 0.272, -0.2 + (i % 3) * 0.16, Math.sin(a) * 0.272);
+                r.lookAt(r.position.clone().multiplyScalar(3)); g.add(r);
+              }
+              g.add(body, label, lid);
+              break;
+            }
+            case 'bottle': {
+              const glass = new THREE.MeshStandardMaterial({
+                color: item.isMessageBottle ? 0x2dd4bf : col, transparent: true, opacity: item.isMessageBottle ? 0.62 : 0.72,
+                roughness: 0.12, metalness: 0.1, emissive: item.isMessageBottle ? new THREE.Color(0x0f766e) : new THREE.Color(0x000000), emissiveIntensity: 0.25
+              });
+              const profile = [[0.001, -0.5], [0.2, -0.49], [0.255, -0.4], [0.26, -0.1], [0.24, 0.12], [0.17, 0.26], [0.1, 0.36], [0.075, 0.46], [0.08, 0.56], [0.1, 0.6], [0.1, 0.64], [0.07, 0.64]];
+              const bottle = lathe(profile, glass, 22);
+              g.add(bottle);
+              const shine = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.4, 0.02), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
+              shine.position.set(-0.18, -0.08, 0.17); shine.rotation.y = 0.5; g.add(shine);
+              if (item.isMessageBottle) {
+                const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.062, 0.16, 12), std(0xb45309, 0.95));
+                cork.position.y = 0.66;
+                const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5, 10), std(0xfef3c7, 0.9, 0, { emissive: new THREE.Color(0xfde047), emissiveIntensity: 0.3 }));
+                scroll.position.set(0.02, -0.12, 0); scroll.rotation.z = 0.2;
+                const ribbon = new THREE.Mesh(new THREE.TorusGeometry(0.074, 0.012, 5, 14), std(0xdc2626, 0.7));
+                ribbon.rotation.y = Math.PI / 2; ribbon.position.set(0.02, -0.12, 0); ribbon.rotation.z = 0.2;
+                const sand = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 6, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45), std(0xfde68a, 0.95));
+                sand.position.y = -0.5; sand.scale.set(1, 0.5, 1);
+                g.add(cork, scroll, ribbon, sand);
+              } else {
+                const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.07, 12), std(0xe2e8f0, 0.5, 0.4));
+                cap.position.y = 0.67;
+                const crack = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.3, 0.01), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                crack.position.set(0.12, 0.05, 0.22); crack.rotation.z = 0.5;
+                g.add(cap, crack);
+              }
+              break;
+            }
+            case 'anchor': {
+              const iron = std(col, 0.6, 0.5);
+              const shank = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 1.15, 10), iron);
+              shank.position.y = 0.02;
+              const stock = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.62, 8), iron);
+              stock.rotation.z = Math.PI / 2; stock.position.y = 0.42;
+              [-0.31, 0.31].forEach(x => { const k = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), iron); k.position.set(x, 0.42, 0); g.add(k); });
+              const ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 8, 16), iron);
+              ring.position.y = 0.66;
+              // curved arms: a half circle that sweeps out from the bottom of the shank
+              const arc = [];
+              for (let i = 0; i <= 16; i++) { const a = Math.PI + (i / 16) * Math.PI; arc.push(new THREE.Vector3(Math.cos(a) * 0.4, Math.sin(a) * 0.32 - 0.5 + 0.32, 0)); }
+              const arms = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(arc), 24, 0.055, 8, false), iron);
+              arms.position.y = -0.28;
+              g.add(shank, stock, ring, arms);
+              [-1, 1].forEach(side => { // flukes
+                const sh = new THREE.Shape();
+                sh.moveTo(0, 0); sh.lineTo(0.19, 0.04); sh.lineTo(0.02, 0.26); sh.closePath();
+                const fluke = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.08, bevelEnabled: false }), iron);
+                fluke.position.set(side * 0.4, -0.3, -0.04);
+                fluke.rotation.z = side > 0 ? -0.5 : Math.PI + 0.5; fluke.scale.x = side;
+                g.add(fluke);
+              });
+              const rope = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 14, Math.PI * 1.6), std(0xa8845a, 0.95));
+              rope.position.set(0.05, 0.78, 0); rope.rotation.set(0.3, 0.2, 0.5);
+              g.add(rope);
+              const coral = std(acc, 0.8);
+              for (let i = 0; i < 9; i++) { // barnacles & coral
+                const c = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 5), coral);
+                c.position.set((Math.sin(i * 2.1)) * 0.07, -0.3 + i * 0.1, Math.cos(i * 2.1) * 0.07);
+                c.lookAt(c.position.clone().multiplyScalar(4)); c.rotateX(Math.PI / 2); g.add(c);
+              }
+              break;
+            }
+            case 'hat': {
+              const felt = std(col, 0.85), gold = std(acc, 0.3, 0.8);
+              const crown = lathe([[0.001, 0.32], [0.14, 0.31], [0.25, 0.24], [0.3, 0.1], [0.3, 0.0]], felt, 18);
+              crown.position.y = -0.05;
+              g.add(crown);
+              for (let i = 0; i < 3; i++) { // three folded-up brim flaps
+                const flap = new THREE.Group();
+                const sh = new THREE.Shape();
+                sh.moveTo(-0.34, 0); sh.lineTo(0.34, 0); sh.lineTo(0.5, 0.52); sh.quadraticCurveTo(0, 0.62, -0.5, 0.52); sh.closePath();
+                const panel = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.035, bevelEnabled: false }), felt);
+                panel.rotation.x = Math.PI / 2 + 0.5; // extend outward, tilt up
+                panel.position.set(0, -0.04, 0.2);
+                const trim = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.025, 0.04), gold);
+                trim.position.set(0, 0.25, 0.7); trim.rotation.x = 0.55 - 0.1;
+                flap.add(panel);
+                flap.rotation.y = (i * Math.PI * 2) / 3;
+                g.add(flap);
+              }
+              const band = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 6, 22), gold);
+              band.rotation.x = Math.PI / 2; band.position.y = 0.0; g.add(band);
+              const skull = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), std(0xf8fafc, 0.6));
+              skull.position.set(0, 0.12, 0.3); g.add(skull);
+              const feather = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(-0.2, 0.2, 0.2), new THREE.Vector3(-0.35, 0.45, 0.15), new THREE.Vector3(-0.5, 0.5, 0.0)]), 8, 0.02, 5, false), std(0xdc2626, 0.7));
+              g.add(feather);
+              g.position.y = -0.1;
+              break;
+            }
+            case 'box': {
+              const wood = std(col, 0.85), iron = std(0x334155, 0.5, 0.6), brass = std(acc, 0.3, 0.8);
+              const base = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.46, 0.62), wood);
+              base.position.y = -0.1;
+              const lidGeo = new THREE.CylinderGeometry(0.31, 0.31, 0.95, 16, 1, false, 0, Math.PI);
+              lidGeo.rotateZ(Math.PI / 2); lidGeo.rotateY(Math.PI / 2);
+              const lid = new THREE.Mesh(lidGeo, wood);
+              lid.rotation.y = Math.PI / 2 * 0; lid.rotation.x = 0;
+              lid.position.y = 0.13; lid.rotation.z = 0;
+              lid.rotation.set(0, 0, 0);
+              lid.rotateY(-Math.PI / 2); lid.rotateX(0);
+              g.add(base, lid);
+              [-0.3, 0, 0.3].forEach(x => { // iron straps over body & lid
+                const strapB = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.48, 0.64), iron); strapB.position.set(x, -0.1, 0);
+                const strapL = new THREE.Mesh(new THREE.CylinderGeometry(0.325, 0.325, 0.07, 16, 1, false, 0, Math.PI), iron);
+                strapL.rotation.z = Math.PI / 2; strapL.rotation.y = 0; strapL.position.set(x, 0.13, 0);
+                strapL.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+                g.add(strapB, strapL);
+                [-0.25, 0.25].forEach(z => { const rv = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 5), brass); rv.position.set(x, -0.1 + 0.15, z * 1.25); g.add(rv); });
+              });
+              const lock = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.17, 0.05), brass);
+              lock.position.set(0, 0.05, 0.33);
+              const key = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.05, 8), new THREE.MeshBasicMaterial({ color: 0x1c1917 }));
+              key.rotation.x = Math.PI / 2; key.position.set(0, 0.05, 0.36);
+              g.add(lock, key);
+              [[-0.47, -0.31], [0.47, -0.31], [-0.47, 0.31], [0.47, 0.31]].forEach(([x, z]) => { // corner brackets
+                const cb = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.07), brass); cb.position.set(x, -0.1, z); g.add(cb);
+              });
+              g.rotation.y = 0.5;
+              break;
+            }
+            default: break;
+          }
+          return g;
+        }
+
         static buildSculptedFishMesh(item, textures) {
           const group = new THREE.Group();
           const isGlowing = !!item.glowing;
@@ -2253,6 +3038,10 @@
             roughness: 0.4,
             flatShading: true
           });
+
+          if (['seaweed', 'boot', 'can', 'bottle', 'anchor', 'hat', 'box'].includes(item.shape)) {
+            return this.buildJunkModel(item, textures);
+          }
 
           if (item.shape === 'seaweed') {
             for (let i = -1; i <= 1; i++) {
@@ -2350,72 +3139,7 @@
             return group;
           }
 
-          let lenScale = 1.0, heightScale = 0.42, widthScale = 0.26;
-          if (item.shape === 'fish_slim') { lenScale = 1.3; heightScale = 0.25; widthScale = 0.18; }
-          if (item.shape === 'fish_flat') { lenScale = 1.0; heightScale = 0.55; widthScale = 0.12; }
-          if (item.shape === 'fish_round') { lenScale = 0.85; heightScale = 0.65; widthScale = 0.62; }
-          if (item.shape === 'fish_eel') { lenScale = 1.75; heightScale = 0.18; widthScale = 0.16; }
-          if (item.shape === 'fish_tuna' || item.shape === 'fish_marlin') { lenScale = 1.45; heightScale = 0.42; widthScale = 0.30; }
-
-          const profile = [
-            new THREE.Vector2(0.001, -0.75),
-            new THREE.Vector2(0.28, -0.45),
-            new THREE.Vector2(0.55, -0.1),
-            new THREE.Vector2(0.52, 0.25),
-            new THREE.Vector2(0.28, 0.55),
-            new THREE.Vector2(0.001, 0.78)
-          ];
-          const bodyGeo = new THREE.LatheGeometry(profile, 10);
-          bodyGeo.rotateZ(-Math.PI / 2);
-          const body = new THREE.Mesh(bodyGeo, mainMat);
-          body.scale.set(lenScale, heightScale / 0.5, widthScale / 0.5);
-          group.add(body);
-
-          const tailGeo = new THREE.ConeGeometry(0.34, 0.45, 4);
-          tailGeo.rotateZ(Math.PI / 2);
-          tailGeo.scale(1, 1.1, 0.22);
-          const tail = new THREE.Mesh(tailGeo, accentMat);
-          tail.position.x = -0.78 * lenScale;
-          group.add(tail);
-
-          const dorsalGeo = new THREE.ConeGeometry(0.24, 0.38, 4);
-          dorsalGeo.scale(1.2, 1, 0.18);
-          const dorsal = new THREE.Mesh(dorsalGeo, accentMat);
-          dorsal.position.set(-0.05, 0.45 * heightScale * 1.6, 0);
-          dorsal.rotation.z = -0.25;
-          group.add(dorsal);
-
-          if (item.shape === 'fish_marlin') {
-            const spear = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.65, 5), accentMat);
-            spear.rotation.z = -Math.PI / 2;
-            spear.position.x = 0.95 * lenScale;
-            group.add(spear);
-          } else if (item.shape === 'fish_angler') {
-            const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.45, 5), accentMat);
-            stalk.position.set(0.45, 0.38, 0);
-            stalk.rotation.z = -0.5;
-            const bulb = new THREE.Mesh(
-              new THREE.SphereGeometry(0.08, 6, 6),
-              new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
-            );
-            bulb.position.set(0.62, 0.56, 0);
-            group.add(stalk, bulb);
-          }
-
-          const eyeGeo = new THREE.SphereGeometry(0.055, 6, 6);
-          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-          const pupilGeo = new THREE.SphereGeometry(0.03, 6, 6);
-          const pupilMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
-
-          [-1, 1].forEach(side => {
-            const eye = new THREE.Mesh(eyeGeo, eyeMat);
-            eye.position.set(0.42 * lenScale, 0.08 * heightScale, side * widthScale * 0.85);
-            const pupil = new THREE.Mesh(pupilGeo, pupilMat);
-            pupil.position.set(0.45 * lenScale, 0.08 * heightScale, side * widthScale * 0.96);
-            group.add(eye, pupil);
-          });
-
-          return group;
+          return this.buildFishModel(item, textures);
         }
 
         static buildBaitMesh(baitTier) {
