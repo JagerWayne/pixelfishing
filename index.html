@@ -7555,7 +7555,8 @@
         el.className = 'toast';
         el.textContent = text;
         toastStack.appendChild(el);
-        while (toastStack.children.length > 3) dropToast(toastStack.children[0], true);
+        const live = () => [...toastStack.children].filter(t => !t.dataset.closing);
+        while (live().length > 3) dropToast(live()[0], true);
         requestAnimationFrame(() => el.classList.add('show'));
         el._timer = setTimeout(() => dropToast(el), ttl);
       }
@@ -7564,7 +7565,7 @@
         el.dataset.closing = '1';
         clearTimeout(el._timer);
         el.classList.remove('show');
-        setTimeout(() => el.remove(), instant ? 0 : 220);
+        if (instant) el.remove(); else setTimeout(() => el.remove(), 220);
       }
 
       // Measure the HUD so toasts, banners and meters position themselves without hard-coded pixels.
