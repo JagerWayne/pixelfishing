@@ -4433,6 +4433,39 @@
           rHand.position.set(-0.05, -0.24, -0.26);
           rightArm.add(rSleeve, rHand);
 
+          // ---- Detail pass: shoulders, neck, belt, face, hat flap, fingers (all inside the existing animated groups) ----
+          {
+            const addD = (parent, geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); parent.add(m); return m; };
+            const beltMat = new THREE.MeshStandardMaterial({ color: 0x422006, roughness: 0.7 });
+            const darkMat = new THREE.MeshBasicMaterial({ color: 0x0b1020 });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+            // torso: neck, rounded shoulders, extra sweater stripes, belt and buckle, bib buttons
+            addD(bodyGroup, new THREE.CylinderGeometry(0.075, 0.09, 0.1, 10), skinMat, 0, 1.1, 0);
+            [-1, 1].forEach(sx => addD(bodyGroup, new THREE.SphereGeometry(0.095, 10, 8), sweaterMat, sx * 0.265, 1.02, 0));
+            [0.78, 0.94, 1.0].forEach(y => addD(bodyGroup, new THREE.CylinderGeometry(0.246 + (y - 0.78) * 0.02, 0.252 + (y - 0.78) * 0.02, 0.035, 10), stripeMat, 0, y, 0));
+            addD(bodyGroup, new THREE.CylinderGeometry(0.292, 0.292, 0.05, 12), beltMat, 0, 0.71, 0);
+            addD(bodyGroup, new THREE.BoxGeometry(0.075, 0.06, 0.03), brassMat, 0, 0.71, -0.292);
+            [-0.1, 0.1].forEach(bx => addD(bodyGroup, new THREE.SphereGeometry(0.022, 6, 5), brassMat, bx, 0.9, -0.27));
+            // face: ears, white eyes behind the dark pupils, brows and a small smile
+            [-1, 1].forEach(sx => {
+              const ear = addD(headGroup, new THREE.SphereGeometry(0.045, 8, 6), skinMat, sx * 0.205, 0.0, 0.0); ear.scale.set(0.6, 1, 0.8);
+              addD(headGroup, new THREE.SphereGeometry(0.034, 8, 6), whiteMat, sx * 0.075, 0.03, -0.172);
+              const brow = addD(headGroup, new THREE.BoxGeometry(0.075, 0.016, 0.016), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 }), sx * 0.075, 0.085, -0.19, 0, 0, sx * -0.12);
+            });
+            const smile = addD(headGroup, new THREE.TorusGeometry(0.05, 0.007, 4, 10, Math.PI), darkMat, 0, -0.065, -0.183, 0, 0, Math.PI);
+            // sou'wester: long back flap, chin straps and a brass button
+            const flap = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.34, 0.2, 14, 1, true, -Math.PI / 2, Math.PI), new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.45, side: THREE.DoubleSide }));
+            flap.position.set(0, -0.07, 0.07); hatGroup.add(flap);
+            [-1, 1].forEach(sx => addD(headGroup, new THREE.CylinderGeometry(0.006, 0.006, 0.26, 4), new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.8 }), sx * 0.185, -0.11, -0.05, 0.25, 0, sx * -0.35));
+            addD(hatGroup, new THREE.SphereGeometry(0.024, 6, 5), brassMat, 0, 0.145, 0);
+            // hands: thumb and three fingers wrapped around the rod grip
+            [[leftArm, 0.11, -0.26, -0.26, -1], [rightArm, -0.05, -0.24, -0.26, 1]].forEach(([arm, hx, hy, hz, side]) => {
+              addD(arm, new THREE.SphereGeometry(0.02, 6, 5), skinMat, hx - side * 0.045, hy + 0.025, hz - 0.03);
+              for (let f = 0; f < 3; f++) addD(arm, new THREE.CylinderGeometry(0.014, 0.012, 0.07, 5), skinMat, hx + side * 0.03, hy - 0.01 + f * 0.022 - 0.02, hz - 0.045, Math.PI / 2, 0, 0);
+              addD(arm, new THREE.TorusGeometry(0.058, 0.018, 5, 10), stripeMat, hx + (side > 0 ? 0.015 : -0.015), hy + 0.07, hz + 0.075, 0.72, 0, 0);
+            });
+          }
+
           bodyGroup.add(chest, chestStripe, collar, waderHips, waderBib, bibPocket, headGroup, leftArm, rightArm);
           anglerGroup.add(bodyGroup);
 
@@ -4461,6 +4494,14 @@
           rSole.position.set(0, -0.405, -0.03);
           rightLeg.add(rWader, rBoot, rBootToe, rSole);
 
+          // Boot details: folded cuffs, buckles and sole tread
+          [[leftLeg, lBoot], [rightLeg, rBoot]].forEach(([leg]) => {
+            const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.02, 5, 12), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 }));
+            cuff.rotation.x = Math.PI / 2; cuff.position.y = -0.21; leg.add(cuff);
+            const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.035, 0.015), brassMat); buckle.position.set(0, -0.27, -0.112); leg.add(buckle);
+            for (let i = 0; i < 4; i++) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.012, 0.02), new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.9 })); t.position.set(0, -0.428, -0.14 + i * 0.07); leg.add(t); }
+            const knee = new THREE.Mesh(new THREE.SphereGeometry(0.095, 8, 6), waderMat); knee.scale.set(1, 0.7, 0.9); knee.position.set(0, 0.0, 0.0); leg.add(knee);
+          });
           anglerGroup.add(leftLeg, rightLeg);
 
           // Folding Aluminum & Canvas Fisherman's Chair (Unfolds & appears only at the pier fishing edge)
@@ -4570,6 +4611,22 @@
             parentJoint.add(joint);
             rodSegments.push(joint);
             parentJoint = joint;
+          }
+
+          // Rod details: cork grip, spinning reel, line guides and a tip cap (attached to the animated joints)
+          {
+            const cork = new THREE.MeshStandardMaterial({ color: 0xc9a26b, roughness: 0.95 });
+            const steelM = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.8, roughness: 0.3 });
+            const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.056, 0.34, 10), cork); grip.position.y = 0.0; rodSegments[0].add(grip);
+            const cap = new THREE.Mesh(new THREE.SphereGeometry(0.056, 8, 6), new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.8 })); cap.position.y = -0.17; rodSegments[0].add(cap);
+            const reelBody = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.07, 12), steelM); reelBody.rotation.z = Math.PI / 2; reelBody.position.set(0.1, 0.24, 0); rodSegments[0].add(reelBody);
+            const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.03, 12), new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4, metalness: 0.3 })); spool.rotation.z = Math.PI / 2; spool.position.set(0.15, 0.24, 0); rodSegments[0].add(spool);
+            const crank = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.09, 4), steelM); crank.position.set(-0.02, 0.24, 0.05); crank.rotation.x = 0.0; rodSegments[0].add(crank);
+            const stand = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.04, 0.03), steelM); stand.position.set(0.06, 0.17, 0); rodSegments[0].add(stand);
+            [0.28, 0.1].forEach((y, i) => rodSegments.slice(1).forEach((j, k) => {
+              const ring = new THREE.Mesh(new THREE.TorusGeometry(0.02 - k * 0.003, 0.004, 4, 8), steelM); ring.position.set(0, 0.12 + i * 0.26, 0.016 - k * 0.003); ring.rotation.x = Math.PI / 2; j.add(ring);
+            }));
+            const tipCap = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 5), steelM); tipCap.position.y = 0.58; rodSegments[3].add(tipCap);
           }
 
           const rodTipAnchor = new THREE.Object3D();
