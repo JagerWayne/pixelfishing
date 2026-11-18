@@ -8,8 +8,9 @@ description of the game, its systems and its structure.
 1. **Update `README.md` in the same change.** Update any section the change touches (controls, tables, counts,
    features, technical overview) and add a new entry at the **top of the Changelog** with today's date and a short
    summary. Do not leave the README describing old behaviour.
-2. If you add, remove or rename static files (assets, icons, scripts), update the file list in the README and bump
-   `CACHE_VERSION` in `sw.js`.
+2. If you add, remove or rename static files (assets, icons, scripts), update the file list in the README, `PRECACHE` in `sw.js`
+   and `STATIC` in the loader at the top of `index.html`. Bump `PF_VERSION` (top of `index.html`) for every release: it is shown on the
+   start screen and names the offline cache (there is no `CACHE_VERSION` any more).
 3. Keep numbers in the README accurate (species counts, bounty pool, option counts, prices). Re-read them from the
    data tables in `index.html` rather than from memory.
 

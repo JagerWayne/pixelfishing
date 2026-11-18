@@ -233,7 +233,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
 
-The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version shown there is `GAME_VERSION` in `index.html`; bump it with each release.
+The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version shown there is `PF_VERSION` at the top of `index.html`; bump it with each release (it also names the offline cache).
 
 On iPhones the home-screen app and Safari can keep separate saves. Clearing site data erases progress.
 
@@ -241,9 +241,11 @@ On iPhones the home-screen app and Safari can keep separate saves. Clearing site
 
 The game is a Progressive Web App: it has a web manifest, icons, and a service worker (`sw.js`).
 
-- The **page itself is fetched network-first**, so an installed copy picks up new versions whenever you open it online (GitHub Pages may cache it for a few minutes).
-- **Static files** (the bundled Three.js, icons, manifest) are cache-first, which is what makes offline play work.
-- If the list of static files changes, bump `CACHE_VERSION` in `sw.js`.
+- A **loading screen** shows `Loading... 412 KB / 1.07 MB. Please Wait!` while the game downloads, then `Starting the game...`.
+- **Every start re-checks and overwrites the cache.** The loader downloads the 3D engine fresh each time (bypassing the browser cache), overwrites the offline copy, removes caches from older versions and re-fetches the icons and manifest. The service worker is registered as `sw.js?v=<PF_VERSION>` and is re-checked on every load, so a new version always installs a new worker and a new cache. If you are offline, the cached copy is used.
+- The **page itself is fetched network-first and never from the browser cache**, so an installed copy picks up new versions whenever you open it online.
+- **Static files** (icons, manifest) are cache-first, which is what makes offline play work.
+- There is no cache number to bump any more: change `PF_VERSION` in `index.html` for a release. If the list of static files changes, update `PRECACHE` in `sw.js` and `STATIC` in the loader.
 
 ## Technical overview
 
@@ -320,6 +322,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Version 2.2.0: pier lighting and loading screen
+- **Lighting:** every stand now has its own light: warm string lights and a glow under the tackle shop awning, a gooseneck lamp over the bounty board, a teal light for the bottle gallery, a lamp post by the film camera, and a lantern on the mooring piling. The pier lamps moved onto the rails in pairs (entrance, around the bucket and toolbox, and the tip). Each light also lays a soft glow on the deck at night. Battery-saver graphics keep the glows but drop the extra real lights.
+- **Loading screen** with a progress bar and `Loading... [size] / [size]. Please Wait!`.
+- **Cache refresh on every load:** the 3D engine is re-downloaded and the offline cache overwritten at each start, the service worker is versioned (`sw.js?v=...`) and re-checked every time, and old caches are deleted. The page is never served from the browser cache.
+- Version bumped to **v2.2.0**.
 
 ### 2026-11-18, Version 2.1.0
 - Game version bumped to **v2.1.0** (shown on the start screen): boat camera and controls update, boat collisions, full screen, cheat confirmation and the mobile interface.
