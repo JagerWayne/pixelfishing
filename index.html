@@ -6655,6 +6655,10 @@
               return [-2.05, 2.05];
             };
 
+            // Stop at the boardwalk sea-edge railing BEFORE narrowing X to the pier width; otherwise a step across
+            // Z = 0.45 clamps X to the pier and snaps the player sideways into the middle of the pier.
+            if (nextZ < 0.45 && Math.abs(playerX) > 2.05 && playerZ >= 0.40) nextZ = 0.45;
+
             const [initMinX, initMaxX] = getPierXBounds(nextZ);
             let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
 
