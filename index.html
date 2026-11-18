@@ -717,37 +717,6 @@
     .toast.show { opacity: 1; transform: none; }
 
     /* Thumb-reach quick buttons between the stick and the action button */
-    .quick-dock {
-      pointer-events: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding-bottom: 4px;
-    }
-    .dock-btn {
-      position: relative;
-      width: 60px;
-      height: 52px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1px;
-      background: rgba(24, 38, 61, 0.92);
-      color: #f8fafc;
-      border: 2px solid var(--border-light);
-      box-shadow: 0 2px 0 #070c14;
-      border-radius: 6px;
-      font-family: inherit;
-      font-weight: bold;
-      font-size: var(--fs-xs);
-      text-transform: uppercase;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    .dock-btn .ic { font-size: 20px; line-height: 1; }
-    .dock-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #070c14; }
 
     /* Menu sheet */
     .modal-backdrop.sheet-modal { align-items: flex-end; padding-bottom: 0; }
@@ -1049,12 +1018,53 @@
     body[data-joy="floating"] .touch-zone-left { min-width: calc(var(--joy-size) * var(--ui-scale, 1)); min-height: calc(var(--joy-size) * var(--ui-scale, 1)); pointer-events: none; }
     body[data-joy="floating"] #virtual-joystick.live { position: fixed; opacity: 1; z-index: 30; }
     /* auto-hide: while a line is in the water only the essentials stay */
-    .hud-top, .quick-dock { transition: opacity 0.25s; }
+    .hud-top { transition: opacity 0.25s; }
     body[data-autohide="1"][data-fishing="1"] .hud-gauges,
     body[data-autohide="1"][data-fishing="1"] .hud-stack,
-    body[data-autohide="1"][data-fishing="1"] .quick-dock,
     body[data-autohide="1"][data-fishing="1"] #live-bait-pip { opacity: 0.12; pointer-events: none; }
-    @media (prefers-reduced-motion: reduce) { .hud-top, .quick-dock { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .hud-top { transition: none; } }
+    /* ---- Bottom-sheet modals (phones), near full-screen in short landscape ---- */
+    @keyframes sheetUp { from { transform: translateY(40px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+    .modal-window { position: relative; }
+    @media (max-width: 600px) and (min-height: 481px) {
+      .modal-backdrop:not(#modal-catch) {
+        align-items: flex-end;
+        padding-left: 0; padding-right: 0; padding-bottom: 0;
+      }
+      .modal-backdrop:not(#modal-catch) .modal-window {
+        width: 100% !important; max-width: none !important;
+        max-height: 92vh; max-height: 92dvh;
+        border-radius: 14px 14px 0 0;
+        padding-bottom: var(--safe-bottom);
+        animation: sheetUp 0.22s ease-out;
+      }
+      .modal-backdrop:not(#modal-catch):not(.sheet-modal) .modal-header { padding-top: 16px; }
+      .modal-backdrop:not(#modal-catch):not(.sheet-modal) .modal-header::before {
+        content: ''; position: absolute; top: 6px; left: 50%; width: 44px; height: 5px;
+        margin-left: -22px; border-radius: 3px; background: #475569;
+      }
+    }
+    @media (max-height: 480px) {
+      .modal-backdrop { padding-top: calc(4px + var(--safe-top)); padding-bottom: calc(4px + var(--safe-bottom)); }
+      .modal-window { max-height: calc(100vh - 8px - var(--safe-top) - var(--safe-bottom)); max-height: calc(100dvh - 8px - var(--safe-top) - var(--safe-bottom)); }
+      .modal-header { padding: 6px 12px; }
+    }
+    .modal-header { touch-action: none; }
+    .modal-window:focus { outline: none; }
+    .modal-window.dragging { transition: none; }
+    /* shop: tabs stay reachable while the list scrolls; cash sits in the header */
+    #shop-cash-head { color: var(--accent-gold); font-weight: 900; font-size: 14px; margin-left: auto; }
+    #modal-shop .tab-row { position: sticky; top: -14px; z-index: 3; background: var(--bg-panel-solid); padding: 8px 0; flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; }
+    #modal-shop .tab-row .pixel-btn { flex: 0 0 auto; }
+    /* catch: Keep / Release always visible */
+    #catch-action-btns { position: sticky; bottom: 0; z-index: 2; background: var(--bg-panel-solid); padding: 8px 0 2px; }
+    /* start screen: collapsible how-to */
+    .howto { margin-bottom: 14px; text-align: left; }
+    .howto summary { cursor: pointer; font-size: 13px; font-weight: bold; color: #38bdf8; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    .howto p { margin: 0 0 8px !important; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
     /* ---- Settings panel ---- */
     .setting-row {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -1130,10 +1140,13 @@
     <div class="pixel-box" style="max-width: 420px; width: 100%; padding: 22px; text-align: center;">
       <div style="font-size: 12px; color: #38bdf8; font-weight: bold; letter-spacing: 1px;">3D RETRO ADVENTURE</div>
       <h1 style="margin: 6px 0 10px; color: #ffd24c; font-size: 26px; text-shadow: 2px 2px 0 #000;">PIXEL FISHING</h1>
-      <p style="font-size: 13px; line-height: 1.5; color: #cbd5e1; margin-bottom: 14px;">
-        Use the <b>Left Thumbstick</b> to walk the pier, steer your boat, and counter-pull fighting fish.<br/><br/>
-        Visit the <b>Tackle Shop</b>, <b>Bounty Board</b>, <b>Bottle Gallery</b>, <b>Tackle Toolbox</b>, <b>Moored Boat</b>, or the <b>Director's Camera</b> on the pier!
-      </p>
+      <details class="howto">
+        <summary>❓ How to play</summary>
+        <p style="font-size: 13px; line-height: 1.5; color: #cbd5e1; margin-bottom: 14px;">
+          Use the <b>Thumbstick</b> to walk the pier, steer your boat, and counter-pull fighting fish. Hold the <b>action button</b> to cast and release to throw.<br/><br/>
+          Visit the <b>Tackle Shop</b>, <b>Bounty Board</b>, <b>Bottle Gallery</b>, <b>Tackle Toolbox</b>, <b>Moored Boat</b>, or the <b>Director's Camera</b> on the pier!
+        </p>
+      </details>
       <div style="margin-bottom: 14px;">
         <div style="font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; letter-spacing: 0.5px;">CHOOSE ANGLER</div>
         <div style="display: flex; gap: 8px;">
@@ -1177,7 +1190,7 @@
         <div class="hud-right">
           <span class="hud-chip" id="hud-weather" title="Weather">☀️ Clear</span>
           <span class="hud-chip" id="hud-time">12:00</span>
-          <button class="sleek-menu-btn" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
+          <button class="sleek-menu-btn menu-dot" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
         </div>
       </div>
 
@@ -1264,10 +1277,6 @@
         </div>
       </div>
 
-      <div class="quick-dock">
-        <button class="dock-btn" id="btn-open-bucket" type="button" aria-label="Open bag"><span class="ic">🪣</span>Bag</button>
-        <button class="dock-btn menu-dot" id="btn-open-log" type="button" aria-label="Open encyclopedia"><span class="ic">📖</span>Log</button>
-      </div>
 
       <div class="touch-zone-right">
         <button id="btn-primary-action" type="button">
@@ -1318,6 +1327,7 @@
     <div class="pixel-box modal-window">
       <div class="modal-header">
         <span class="modal-title">⚓ HARBOR DOCK & OUTFITTER</span>
+        <span id="shop-cash-head">$0</span>
         <button class="pixel-btn red" data-close="modal-shop">Close</button>
       </div>
       <div class="modal-body">
@@ -1907,6 +1917,17 @@
               this.playTone({ freq: n, type: 'sine', duration: 0.24, vol: 0.14, delay: idx * 0.1 });
             });
           }
+        }
+
+        playTick() {
+          this.vibrate(8);
+          this.playTone({ freq: 620, endFreq: 520, type: 'sine', duration: 0.05, vol: 0.05 });
+        }
+
+        playBump() {
+          this.vibrate(35);
+          this.playNoise({ duration: 0.2, vol: 0.16, filterFreq: 260, filterType: 'lowpass' });
+          this.playTone({ freq: 140, endFreq: 70, type: 'triangle', duration: 0.18, vol: 0.14 });
         }
 
         playCoin() {
@@ -4858,6 +4879,19 @@
             });
           });
 
+          // Solid objects on the sea for boat collision, as circles {x, z, r}.
+          // Keep the lighthouse numbers in sync with the lighthouse built above (position 52,-150, scale 1.6).
+          const seaObstacles = [];
+          {
+            const LH = { x: 52, z: -150, s: 1.6 };
+            for (let i = 0; i < 6; i++) {
+              const rad = 3 + (i % 3);
+              seaObstacles.push({ name: 'rocks', x: LH.x + Math.cos(i * 1.2) * 3.5 * LH.s, z: LH.z + Math.sin(i * 1.2) * 3.0 * LH.s, r: rad * LH.s * 1.05 });
+            }
+            seaObstacles.push({ name: 'lighthouse', x: LH.x, z: LH.z, r: 1.8 * LH.s });
+            buoys.forEach(b => seaObstacles.push({ name: 'buoy', x: b.position.x, z: b.position.z, r: 1.0 }));
+          }
+
           // Celestial Sun, Phased Moon, Starfield & Pier Harbor Lantern
           const skyGroup = new THREE.Group();
           const sunOrb = new THREE.Mesh(
@@ -5315,6 +5349,7 @@
             oceanMat,
             waveUniforms,
             buoys,
+            seaObstacles,
             filmCamera,
             skyGroup,
             sunOrb,
@@ -6060,6 +6095,7 @@
       let boatPos = new THREE.Vector3(-4.8, 0, -7.5);
       let boatYaw = 0;
       let boatVel = 0;
+      let lastBumpAt = -10;
 
       let castCharge = 0;
       let castDir = 1;
@@ -7364,6 +7400,77 @@
         });
       });
 
+      /* Modal behaviour shared by every sheet: dialog roles, tap outside, swipe down, focus return */
+      (function enhanceModals() {
+        let n = 0;
+        document.querySelectorAll('.modal-backdrop').forEach(back => {
+          if (back.id === 'modal-catch') return;
+          const win = back.querySelector('.modal-window');
+          const closeBtn = back.querySelector('[data-close], .modal-header .pixel-btn.red');
+          if (!win) return;
+          const title = back.querySelector('.modal-title');
+          if (title && !title.id) title.id = 'mt-' + (++n);
+          win.setAttribute('role', 'dialog');
+          win.setAttribute('aria-modal', 'true');
+          if (title) win.setAttribute('aria-labelledby', title.id);
+          win.tabIndex = -1;
+          const dismiss = () => { if (closeBtn) closeBtn.click(); else { back.classList.remove('open'); updateHUD(); } };
+          back.addEventListener('pointerdown', e => { back._downOnBackdrop = e.target === back; });
+          back.addEventListener('click', e => { if (e.target === back && back._downOnBackdrop) dismiss(); });
+          // swipe down on the header or handle
+          let startY = null, dy = 0;
+          const grab = back.querySelectorAll('.modal-header, .sheet-handle');
+          grab.forEach(g => {
+            g.addEventListener('pointerdown', e => {
+              if (e.target.closest('button')) return;
+              startY = e.clientY; dy = 0; g.setPointerCapture(e.pointerId);
+            });
+            g.addEventListener('pointermove', e => {
+              if (startY === null) return;
+              dy = Math.max(0, e.clientY - startY);
+              win.classList.add('dragging');
+              win.style.transform = `translateY(${dy}px)`;
+            });
+            const end = () => {
+              if (startY === null) return;
+              startY = null; win.classList.remove('dragging'); win.style.transform = '';
+              if (dy > 80) dismiss();
+              dy = 0;
+            };
+            g.addEventListener('pointerup', end);
+            g.addEventListener('pointercancel', end);
+          });
+          // focus in on open, back to the opener on close
+          let opener = null, wasOpen = false;
+          new MutationObserver(() => {
+            const open = back.classList.contains('open');
+            if (open && !wasOpen) { opener = document.activeElement; setTimeout(() => win.focus({ preventScroll: true }), 30); }
+            if (!open && wasOpen) { win.style.transform = ''; if (opener && opener.focus && document.contains(opener)) { try { opener.blur(); } catch {} } opener = null; }
+            wasOpen = open;
+          }).observe(back, { attributes: true, attributeFilter: ['class'] });
+        });
+      })();
+
+      /* Shop: say how much is missing instead of leaving a dead button */
+      function decorateShop() {
+        document.querySelectorAll('#shop-items-container .pixel-btn[disabled]').forEach(btn => {
+          const m = /\$([\d,]+(?:\.\d+)?)\)?\s*$/.exec(btn.textContent);
+          if (!m) return;
+          const cost = parseFloat(m[1].replace(/,/g, ''));
+          if (cost > state.cash) btn.textContent = `Need $${Math.ceil(cost - state.cash).toLocaleString()} more`;
+        });
+      }
+      const renderShopBase = renderShop;
+      renderShop = function () { renderShopBase(); decorateShop(); };
+
+      /* Light tick + buzz on every UI button (never on the action button, joystick or cheat counting) */
+      document.addEventListener('pointerdown', e => {
+        const b = e.target.closest && e.target.closest('button, .tab-btn');
+        if (!b || b.disabled || b.closest('#btn-primary-action, #virtual-joystick, #joy-zone')) return;
+        if (b.id === 'btn-primary-action') return;
+        sfx.init(); sfx.playTick();
+      }, { passive: true });
+
       function openShopModal() {
         if (getDistanceMeters() > 15) {
           showToast('Dock at the Pier to visit the Tackle Shop!');
@@ -7544,6 +7651,7 @@
       function renderShop() {
         const totalBucketVal = state.bucket.reduce((s, i) => s + i.value, 0);
         document.getElementById('shop-cash-banner').textContent = `Cash: $${state.cash.toFixed(2)}`;
+        document.getElementById('shop-cash-head').textContent = `💵 $${state.cash.toFixed(2)}`;
         document.getElementById('shop-bucket-banner').textContent =
           `Bucket Value: $${totalBucketVal.toFixed(2)} (${getBucketWeight().toFixed(1)} / ${getBucketCapacity().toFixed(1)} kg)`;
 
@@ -8168,7 +8276,7 @@
 
       function updateLogNewDot() {
         const hasNew = state.discovered.some(id => !state.seenSpecies.includes(id));
-        document.getElementById('btn-open-log').classList.toggle('has-new', hasNew);
+        document.getElementById('btn-toggle-drawer').classList.toggle('has-new', hasNew);
         document.getElementById('menu-log').classList.toggle('has-new', hasNew);
       }
 
@@ -8270,8 +8378,6 @@
         });
       }
 
-      document.getElementById('btn-open-bucket').addEventListener('click', openBucketModal);
-      document.getElementById('btn-open-log').addEventListener('click', openLogModal);
       document.getElementById('btn-toggle-drawer').addEventListener('click', () => {
         document.getElementById('modal-menu').classList.add('open');
       });
@@ -8985,6 +9091,25 @@
               const dz = -Math.cos(boatYaw) * boatVel * dt;
               boatPos.x = THREE.MathUtils.clamp(boatPos.x + dx, -110, 110);
               boatPos.z = Math.min(-8.5, boatPos.z + dz);
+
+              // Collide with the lighthouse rocks, buoys and anything else solid on the sea: slide along it and lose speed
+              const BOAT_R = 1.5;
+              for (const ob of world.seaObstacles) {
+                const ox = boatPos.x - ob.x, oz = boatPos.z - ob.z;
+                const d = Math.hypot(ox, oz), minD = ob.r + BOAT_R;
+                if (d < minD) {
+                  const nx = d > 0.001 ? ox / d : 0, nz = d > 0.001 ? oz / d : 1;
+                  boatPos.x = ob.x + nx * minD;
+                  boatPos.z = Math.min(-8.5, ob.z + nz * minD);
+                  const into = dx * -nx + dz * -nz; // positive when heading at the obstacle
+                  if (into > 0) boatVel *= 0.55;
+                  if (elapsed - lastBumpAt > 0.9 && Math.abs(boatVel) > 1.5) {
+                    lastBumpAt = elapsed;
+                    sfx.playBump();
+                    showToast(ob.name === 'buoy' ? '🛟 Bumped a buoy!' : '🪨 Watch the rocks!');
+                  }
+                }
+              }
 
               if (Math.random() < 0.45) {
                 const sternWake = boatPos.clone().add(new THREE.Vector3(Math.sin(boatYaw) * 2.4, 0, Math.cos(boatYaw) * 2.4));
