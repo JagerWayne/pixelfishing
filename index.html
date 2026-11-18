@@ -984,6 +984,26 @@
     .setting-label { font-size: 13px; color: #e2e8f0; }
     .setting-sub { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; }
     .setting-row .pixel-btn { min-width: 84px; }
+    /* ---- QoL: bounty pill, sort/filter bars, NEW badge ---- */
+    #hud-bounty-pill {
+      pointer-events: none; display: none; align-items: center; justify-content: center; gap: 6px;
+      padding: 4px 10px; background: rgba(40, 28, 6, 0.88); border: 2px solid #facc15;
+      box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 11px; font-weight: bold;
+      color: #fde68a; align-self: center; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip-row .pixel-btn { padding: 4px 8px; font-size: 11px; min-height: 0; }
+    .chip-row .pixel-btn.active { outline: 2px solid #facc15; }
+    .new-badge {
+      display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 9px; font-weight: bold;
+      background: #f43f5e; color: #fff; border-radius: 3px; vertical-align: middle;
+    }
+    .menu-dot { position: relative; }
+    .menu-dot.has-new::after {
+      content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px;
+      background: #f43f5e; border-radius: 50%; box-shadow: 0 0 0 2px #070c14;
+    }
   </style>
 </head>
 <body>
@@ -1060,13 +1080,15 @@
         </div>
         <div class="hud-menu-btns">
           <button class="sleek-menu-btn" id="btn-open-bucket" type="button">🪣 Bag</button>
-          <button class="sleek-menu-btn" id="btn-open-log" type="button">📖 Log</button>
+          <button class="sleek-menu-btn menu-dot" id="btn-open-log" type="button">📖 Log</button>
           <button class="sleek-menu-btn" id="btn-toggle-audio" type="button" aria-label="Toggle Sound">🔊</button>
           <button class="sleek-menu-btn" id="btn-open-settings" type="button" aria-label="Settings" title="Settings">🎛️</button>
         </div>
       </div>
 
       <!-- Sonar Fish Finder Compass Pill (Visible when Sonar Module installed) -->
+      <div id="hud-bounty-pill"></div>
+
       <div id="hud-sonar-pill">
         <span>📡 SONAR:</span>
         <span id="hud-sonar-text" style="color:#fef08a;">SCANNING FRENZIES...</span>
@@ -1452,13 +1474,14 @@
 
       /* Player settings (stored separately from the save so a save reset keeps them) */
       const SETTINGS_KEY = 'pixel_fishing_settings_v1';
-      const settings = { sound: true, haptics: true, quality: 'high' };
+      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest' };
       try {
         const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
         if (saved && typeof saved === 'object') {
           if (typeof saved.sound === 'boolean') settings.sound = saved.sound;
           if (typeof saved.haptics === 'boolean') settings.haptics = saved.haptics;
           if (saved.quality === 'low' || saved.quality === 'high') settings.quality = saved.quality;
+          if (['newest', 'value', 'weight', 'name'].includes(saved.bucketSort)) settings.bucketSort = saved.bucketSort;
         }
       } catch {}
       function saveSettings() {
@@ -1721,6 +1744,7 @@
         }
         if (!startOverlayEl.classList.contains('open')) return;
         startOverlayEl.classList.remove('open');
+        updateHUD();
         sfx.init();
         sfx.playCoin();
         try {
@@ -4823,6 +4847,7 @@
           vfxShader: 'none',
           modules: [],
           bounties: generateBountyContracts(),
+          seenSpecies: [],
           saveVersion: 2
         };
       }
@@ -4951,6 +4976,8 @@
           ? [...new Set(src.discovered.filter(id => knownIds.has(id)))] : [];
         out.foundMessages = Array.isArray(src.foundMessages)
           ? [...new Set(src.foundMessages.filter(id => BOTTLE_MESSAGES.some(m => m.id === id)))] : [];
+        out.seenSpecies = Array.isArray(src.seenSpecies)
+          ? [...new Set(src.seenSpecies.filter(id => knownIds.has(id)))] : [];
         out.modules = Array.isArray(src.modules)
           ? [...new Set(src.modules.filter(id => BOAT_MODULES.some(m => m.id === id)))] : [];
 
@@ -4968,6 +4995,9 @@
             }
           }
         }
+
+        // Old saves: everything already discovered counts as seen (no flood of NEW badges)
+        if (!Array.isArray(src.seenSpecies)) out.seenSpecies = [...out.discovered];
 
         out.bounties = Array.isArray(src.bounties)
           ? src.bounties.filter(b => b && typeof b === 'object' && Number.isFinite(Number(b.target)) && Number.isFinite(Number(b.rewardCash)))
@@ -5534,6 +5564,7 @@
       document.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', () => {
           document.getElementById(btn.dataset.close).classList.remove('open');
+          updateHUD();
         });
       });
 
@@ -6121,7 +6152,26 @@
           container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Cast a line to catch fish!</p>';
         } else {
           const atShop = isNearPierShop();
-          state.bucket.forEach((entry, idx) => {
+          const sortBar = document.createElement('div');
+          sortBar.className = 'chip-row';
+          sortBar.innerHTML = '<span style="font-size:11px; color:#94a3b8; align-self:center;">Sort:</span>';
+          [['newest', 'Newest'], ['value', '$ Value'], ['weight', 'Weight'], ['name', 'Name']].forEach(([key, label]) => {
+            const b = document.createElement('button');
+            b.className = `pixel-btn ${settings.bucketSort === key ? 'active gold' : ''}`;
+            b.textContent = label;
+            b.onclick = () => { settings.bucketSort = key; saveSettings(); openBucketModal(); };
+            sortBar.appendChild(b);
+          });
+          container.appendChild(sortBar);
+
+          const sorters = {
+            newest: (a, b) => b.idx - a.idx,
+            value: (a, b) => b.entry.value - a.entry.value,
+            weight: (a, b) => b.entry.weight - a.entry.weight,
+            name: (a, b) => a.entry.name.localeCompare(b.entry.name)
+          };
+          const ordered = state.bucket.map((entry, idx) => ({ entry, idx })).sort(sorters[settings.bucketSort] || sorters.newest);
+          ordered.forEach(({ entry, idx }) => {
             const row = document.createElement('div');
             row.className = 'item-row';
             row.innerHTML = `
@@ -6318,15 +6368,36 @@
         }
       });
 
-      function openLogModal() {
+      let logFilter = 'All';
+
+      function updateLogNewDot() {
+        const hasNew = state.discovered.some(id => !state.seenSpecies.includes(id));
+        document.getElementById('btn-open-log').classList.toggle('has-new', hasNew);
+      }
+
+      function renderLog() {
         const msgFoundCount = (state.foundMessages || []).length;
         document.getElementById('log-modal-title').textContent =
           `📖 ENCYCLOPEDIA (${state.discovered.length} / ${CATCH_CATALOG.length})`;
         const grid = document.getElementById('log-grid-container');
         grid.innerHTML = '';
 
+        const bar = document.createElement('div');
+        bar.className = 'chip-row';
+        bar.style.gridColumn = '1 / -1';
+        ['All', 'Fish', 'Junk', 'Flora', 'Undiscovered'].forEach(f => {
+          const b = document.createElement('button');
+          b.className = `pixel-btn ${logFilter === f ? 'active gold' : ''}`;
+          b.textContent = f;
+          b.onclick = () => { logFilter = f; renderLog(); };
+          bar.appendChild(b);
+        });
+        grid.appendChild(bar);
+
         CATCH_CATALOG.forEach(item => {
           const found = state.discovered.includes(item.id);
+          if (logFilter === 'Undiscovered' ? found : (logFilter !== 'All' && item.category !== logFilter)) return;
+          const isNew = found && !state.seenSpecies.includes(item.id);
           const stat = (state.speciesStats && state.speciesStats[item.id]) || null;
           const recordTxt = item.isMessageBottle
             ? ` • <b style="color:#2dd4bf;">${msgFoundCount}/${BOTTLE_MESSAGES.length} Scrolls</b>`
@@ -6338,14 +6409,25 @@
           card.innerHTML = `
             <img class="item-icon" src="${ITEM_ICONS[item.id]}" style="${found ? '' : 'filter: brightness(0);'}" alt="" />
             <div style="font-size: 11px; line-height: 1.35;">
-              <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}</div>
+              <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}${isNew ? '<span class="new-badge">NEW</span>' : ''}</div>
               <div style="color: #94a3b8;">Zones: ${item.zones.join(', ')} • ${item.rarity}</div>
               <div style="color: #ffd24c;">${found ? `~$${item.value}${recordTxt}` : 'Undiscovered'}</div>
             </div>
           `;
           grid.appendChild(card);
         });
+      }
+
+      function openLogModal() {
+        renderLog();
         document.getElementById('modal-log').classList.add('open');
+        // Mark everything as seen once shown (badges stay visible for this viewing).
+        const unseen = state.discovered.filter(id => !state.seenSpecies.includes(id));
+        if (unseen.length) {
+          state.seenSpecies.push(...unseen);
+          saveGame();
+        }
+        updateLogNewDot();
       }
 
       function openGalleryModal() {
@@ -6542,7 +6624,25 @@
         }
       }
 
+      function updateBountyPill() {
+        const pill = document.getElementById('hud-bounty-pill');
+        const active = (state.bounties || []).filter(b => !b.claimed);
+        if (active.length === 0 || isAnyModalOpen()) {
+          pill.style.display = 'none';
+          return;
+        }
+        const ready = active.find(b => b.progress >= b.target);
+        const b = ready || active.reduce((best, cur) => (cur.progress / cur.target > best.progress / best.target ? cur : best), active[0]);
+        pill.classList.toggle('ready', !!ready);
+        pill.textContent = ready
+          ? `✅ ${b.title} done — claim at the Pier Board!`
+          : `📜 ${b.title}: ${b.progress}/${b.target}`;
+        pill.style.display = 'flex';
+      }
+
       function updateHUD() {
+        updateBountyPill();
+        updateLogNewDot();
         document.getElementById('hud-cash').textContent = `$${state.cash.toFixed(2)}`;
         document.getElementById('hud-weather').textContent = getWeatherObj().label;
 
