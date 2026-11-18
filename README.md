@@ -96,6 +96,8 @@ A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking som
 ### Boats
 Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
 
+You ride each boat properly: on the **Wooden Rowboat** you sit on the stern thwart with a hand on the tiller, on the **Fiberglass Skiff** you stand behind the console with both hands on the wheel, and on the **Deep-Sea Trawler** you stand at the wheelhouse door. The rider moves, tilts and banks with the hull, hands go to the wheel while you steer, and the fishing rod is stowed until you cast.
+
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
 | Pier only | free | n/a | 1 |
@@ -106,7 +108,7 @@ Boats take you out of the cove. They burn fuel (refill at the shop) and limit wh
 ### Boat modules
 | Module | Cost | Effect |
 |---|---|---|
-| 📡 Sonar Fish Finder | $240 | Shows bearing and distance to the nearest Feeding Frenzy. |
+| 📡 Sonar Fish Finder | $240 | Reveals Feeding Frenzies on the water (the glowing rings and ripples) and shows the bearing and distance to the nearest one. Only while you are aboard the boat; without Sonar the frenzy cannot be seen (the bonus still applies if you happen to cast into one). |
 | 🔦 Bow Floodlight | $190 | A spotlight for dark nights and storms. |
 | 🫧 Livewell Aerator | $380 | Fish sell for 15% more. |
 
@@ -324,6 +326,11 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-18, Version 2.4.0: sonar frenzies and a proper boat ride
+- **Frenzy:** the FRENZY readout and the frenzy rings and ripples on the water now need the **Sonar** module and are only shown while you are aboard a boat (driving, casting or reeling). Before, the readout also showed on the pier and the rings were visible to everyone. The frenzy fishing bonus itself is unchanged.
+- **Boat ride:** the angler no longer floats at the middle of every boat. He sits on the rowboat's stern thwart, stands behind the skiff's console and at the trawler's wheelhouse door, and moves, tilts and bobs with the hull. His hands go to the wheel or tiller while steering and the rod is stowed until you cast.
+- Version bumped to **v2.4.0**.
 
 ### 2026-11-18, Version 2.3.1: coasting and softer lights
 - **Out of fuel:** the boat no longer stops dead. It coasts and slows down by water drag, and the coast guard tow starts only once it has stopped. Fuel is burned only under power, so gliding is free.

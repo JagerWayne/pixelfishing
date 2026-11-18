@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '2.3.1';
+    window.PF_VERSION = '2.4.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -2146,7 +2146,7 @@
       ];
 
       const BOAT_MODULES = [
-        { id: 'sonar', name: 'Sonar Fish Finder', cost: 240, icon: '📡', desc: 'Displays live compass bearing & distance to the nearest Feeding Frenzy.' },
+        { id: 'sonar', name: 'Sonar Fish Finder', cost: 240, icon: '📡', desc: 'Reveals feeding frenzies on the water and shows the live bearing & distance to the nearest one while you are aboard.' },
         { id: 'spotlight', name: 'Bow Floodlight', cost: 190, icon: '🔦', desc: 'High-beam marine spotlight that cuts through dark nights and storms.' },
         { id: 'livewell', name: 'Livewell Aerator', cost: 380, icon: '🫧', desc: 'Oxygenates your catch hold, boosting all fish sale values by +15%.' }
       ];
@@ -5923,6 +5923,7 @@
           this.ripples.push({ mesh, life: 0, maxLife: 0.85, maxScale });
         }
 
+        // Feeding frenzies (rings and ripples on the water) are only visible with a sonar, while aboard a boat (vfx.frenzyVisible).
         update(dt, anchorPos, getWaveHeightFn, elapsed, zone, rainRate = 0) {
           this.rainMat.opacity = rainRate * 0.65;
           if (rainRate > 0.01) {
@@ -5940,6 +5941,7 @@
           }
 
           for (const f of this.frenzies) {
+            f.mesh.visible = !!this.frenzyVisible;
             f.ttl -= dt;
             if (f.ttl <= 0) {
               this.relocateFrenzy(f);
@@ -5949,7 +5951,7 @@
             f.innerRing.rotation.z = -elapsed * 1.1;
             const pulse = 0.88 + Math.sin(elapsed * 4 + f.zoneId) * 0.14;
             f.innerRing.scale.setScalar(pulse);
-            if (Math.random() < 0.08) {
+            if (this.frenzyVisible && Math.random() < 0.08) {
               this.spawnRipple(new THREE.Vector3(f.x + (Math.random() - 0.5) * f.radius, f.mesh.position.y, f.z + (Math.random() - 0.5) * f.radius), 0xfef08a, 1.5);
             }
           }
@@ -6442,6 +6444,15 @@
       let lastBumpAt = -10;
       let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0;
       let boatPowered = false; // true while the engine is driving the boat (burns fuel)
+      /* Where the angler rides on each boat (boat-local metres; the bow points to -Z) and how he holds on while steering.
+         y is the height of his feet (or of his seat when `sit`). hands: arm raise (radians) for the left / right arm. */
+      const BOAT_RIDE = {
+        1: { x: 0, y: 0.36, z: 1.35, sit: true,  hands: [0.25, 0.95] },  // rowboat: stern thwart, right hand on the tiller
+        2: { x: 0, y: 0.13, z: 0.12, sit: false, hands: [1.0, 1.0] },    // skiff: standing behind the console, hands on the wheel
+        3: { x: 0, y: 0.53, z: -0.55, sit: false, hands: [1.0, 1.0] }    // trawler: standing at the wheelhouse door
+      };
+      let boatSitProgress = 0, boatHandsProgress = 0;
+      const rideVec = new THREE.Vector3();
 
       let castCharge = 0;
       let castDir = 1;
@@ -9127,9 +9138,9 @@
         }
 
         const sonarPill = document.getElementById('hud-sonar-pill');
-        if (hasModule('sonar') && state.boatTier > 0) {
+        if (hasModule('sonar') && state.boatTier > 0 && onBoat) {
           sonarPill.style.display = 'inline-flex';
-          const refPos = onBoat ? boatPos : world.anglerGroup.position;
+          const refPos = boatPos;
           const nearest = vfx.getNearestFrenzy(refPos);
           if (nearest) {
             const dx = nearest.spot.x - refPos.x;
@@ -9591,12 +9602,17 @@
             Math.cos(elapsed * 1.8) * 0.06 * zone.waveAmp * 2 + boatTurnRate * 0.09 * spdRatio
           );
 
-          world.anglerGroup.position.set(boatPos.x, boatPos.y + 0.45, boatPos.z);
-          world.anglerGroup.rotation.y = boatYaw;
+          // the rider is carried by the hull: he sits or stands at the boat's ride spot and tilts, banks and bobs with it
+          const ride = BOAT_RIDE[state.boatTier] || BOAT_RIDE[1];
+          playerBoatMesh.updateMatrixWorld(true);
+          rideVec.set(ride.x, ride.y, ride.z);
+          playerBoatMesh.localToWorld(rideVec);
+          world.anglerGroup.position.copy(rideVec);
+          world.anglerGroup.quaternion.copy(playerBoatMesh.quaternion);
         }
 
         // Animated Rod Show / Stow & 4-Segment Dynamic Bending
-        const shouldShowRod = onBoat || isAtPierWaterEdge() || mode !== 'PIER_IDLE';
+        const shouldShowRod = (mode === 'BOAT_DRIVING' || mode === 'RESCUE_SEQUENCE') ? false : (onBoat || isAtPierWaterEdge() || mode !== 'PIER_IDLE');
         const targetRodVis = shouldShowRod ? 1.0 : 0.0;
         rodVisProgress = THREE.MathUtils.lerp(rodVisProgress, targetRodVis, Math.min(1, dt * 9.5));
         const easedRodVis = rodVisProgress * rodVisProgress * (3 - 2 * rodVisProgress);
@@ -9875,7 +9891,15 @@
 
         // Smoothly sit the fisherman down onto the unfolded chair after the legs open
         const sitT = THREE.MathUtils.clamp((chairOpenProgress - 0.35) / 0.65, 0, 1);
-        const sitEase = sitT * sitT * (3 - 2 * sitT);
+        const chairSitEase = sitT * sitT * (3 - 2 * sitT);
+        // riding a boat: sit on the thwart (rowboat) and hold the wheel or tiller while steering
+        const rideSpot = onBoat ? (BOAT_RIDE[state.boatTier] || BOAT_RIDE[1]) : null;
+        boatSitProgress = THREE.MathUtils.lerp(boatSitProgress, rideSpot && rideSpot.sit ? 1 : 0, Math.min(1, dt * 6));
+        boatHandsProgress = THREE.MathUtils.lerp(boatHandsProgress, onBoat && mode === 'BOAT_DRIVING' ? 1 : 0, Math.min(1, dt * 6));
+        const boatSitEase = boatSitProgress * boatSitProgress * (3 - 2 * boatSitProgress);
+        const sitEase = Math.max(chairSitEase, boatSitEase);
+        const handsEase = boatHandsProgress * boatHandsProgress * (3 - 2 * boatHandsProgress);
+        const handsL = rideSpot ? rideSpot.hands[0] * handsEase : 0, handsR = rideSpot ? rideSpot.hands[1] * handsEase : 0;
 
         if (isWalkingPier) {
           const stride = Math.sin(elapsed * 13);
@@ -9901,8 +9925,8 @@
           world.leftLeg.rotation.x = sitEase * 1.18;
           world.rightLeg.rotation.x = sitEase * 1.18;
           // arms ease back to the rod-holding pose
-          world.leftArm.rotation.x = THREE.MathUtils.lerp(world.leftArm.rotation.x, 0, Math.min(1, dt * 10));
-          world.rightArm.rotation.x = THREE.MathUtils.lerp(world.rightArm.rotation.x, 0, Math.min(1, dt * 10));
+          world.leftArm.rotation.x = THREE.MathUtils.lerp(world.leftArm.rotation.x, handsL, Math.min(1, dt * 10));
+          world.rightArm.rotation.x = THREE.MathUtils.lerp(world.rightArm.rotation.x, handsR, Math.min(1, dt * 10));
           world.leftLeg.position.set(-0.12, 0.42 + sitEase * 0.05, -sitEase * 0.08);
           world.rightLeg.position.set(0.12, 0.42 + sitEase * 0.05, -sitEase * 0.08);
         }
@@ -9934,6 +9958,7 @@
         }
 
         const anchorPos = onBoat ? boatPos : world.anglerGroup.position;
+        vfx.frenzyVisible = onBoat && state.boatTier > 0 && hasModule('sonar');
         vfx.update(dt, anchorPos, getWaveHeight, elapsed, zone, weather.rainRate);
 
         // Smooth camera tracking across entire pier (including left boat slip & portrait mobile screens)
