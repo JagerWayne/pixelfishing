@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.1.0';
+    window.PF_VERSION = '3.3.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1527,6 +1527,7 @@
           <button class="menu-tile" id="menu-trophies" data-closes-menu type="button">🏆<span>Trophies</span></button>
           <button class="menu-tile" id="btn-drawer-customize" data-closes-menu type="button">🎨<span>Look</span></button>
           <button class="menu-tile" id="btn-toggle-audio" data-label="Sound" type="button" aria-label="Toggle sound">🔊</button>
+          <button class="menu-tile" id="btn-toggle-view" data-label="View" data-closes-menu type="button" aria-label="Toggle first person view (V)">🎥</button>
         </div>
         <div class="menu-info">
           <div class="drawer-item wide"><span class="drawer-label">RANK:</span><span class="drawer-val" id="hud-rank">Deckhand</span></div>
@@ -1930,7 +1931,7 @@
 
       /* Player settings (stored separately from the save so a save reset keeps them) */
       const SETTINGS_KEY = 'pixel_fishing_settings_v1';
-      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false, fullscreen: true };
+      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false, fullscreen: true, firstPerson: false };
       try {
         const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
         if (saved && typeof saved === 'object') {
@@ -1943,6 +1944,7 @@
           if (['S', 'M', 'L'].includes(saved.btnSize)) settings.btnSize = saved.btnSize;
           if (typeof saved.autoHideHud === 'boolean') settings.autoHideHud = saved.autoHideHud;
           if (typeof saved.fullscreen === 'boolean') settings.fullscreen = saved.fullscreen;
+          if (typeof saved.firstPerson === 'boolean') settings.firstPerson = saved.firstPerson;
         }
       } catch {}
       function saveSettings() {
@@ -5001,7 +5003,7 @@
             });
 
             // mooring bollards at the pier tip with rope coils
-            [-2.15, 2.15].forEach(x => {
+            [-2.2, 2.2].forEach(x => {
               K.cyl(pierGroup, 0.12, 0.16, 0.34, K.iron, x, deckY + 0.17, -9.6, 10);
               K.cyl(pierGroup, 0.19, 0.12, 0.08, K.iron, x, deckY + 0.38, -9.6, 10);
               const rope = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 5, 12), K.rope);
@@ -5009,16 +5011,16 @@
             });
             // life ring station on the starboard rail, and a coiled hose
             const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.085, 8, 18), K.M(0xf97316, 0.5));
-            ring.rotation.y = Math.PI / 2; ring.position.set(2.36, 2.2, -3.0); pierGroup.add(ring);
+            ring.rotation.y = Math.PI / 2; ring.position.set(2.30, 2.2, -3.48); pierGroup.add(ring);
             for (let i = 0; i < 4; i++) {
               const band = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.1), K.M(0xf8fafc, 0.5));
               const a = (i / 4) * Math.PI * 2;
-              band.position.set(2.36, 2.2 + Math.cos(a) * 0.26, -3.0 + Math.sin(a) * 0.26); band.rotation.x = a; pierGroup.add(band);
+              band.position.set(2.30, 2.2 + Math.cos(a) * 0.26, -3.48 + Math.sin(a) * 0.26); band.rotation.x = a; pierGroup.add(band);
             }
-            // rod rack at the tip, port side
-            K.box(pierGroup, 0.06, 0.5, 0.5, K.darkWood, -2.3, deckY + 0.25, -8.4);
+            // rod rack at the tip, port side: in the bay between two rail posts (z -8.38 and -9.86), inside the rail line
+            K.box(pierGroup, 0.06, 0.5, 0.5, K.darkWood, -2.34, deckY + 0.25, -9.12);
             [0xd97706, 0x0284c7, 0x16a34a].forEach((c, i) => {
-              const r = K.cyl(pierGroup, 0.013, 0.02, 1.9, K.M(c, 0.4, 0.2), -2.2, deckY + 0.95, -8.15 - i * 0.18, 5); r.rotation.z = -0.3;
+              const r = K.cyl(pierGroup, 0.013, 0.02, 1.9, K.M(c, 0.4, 0.2), -2.26, deckY + 0.95, -8.94 - i * 0.18, 5); r.rotation.z = -0.12;
             });
 
             // bunting across the pier entrance
@@ -5028,7 +5030,7 @@
               const N = 18;
               for (let i = 0; i < N; i++) {
                 const t0 = i / N, t1 = (i + 0.8) / N;
-                const p = t => [(-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.16];
+                const p = t => [(-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.30];
                 const a = p(t0), b = p(t1), mid = p((t0 + t1) / 2);
                 posByColor[i % 4].push(a[0], a[1], a[2], b[0], b[1], b[2], mid[0], mid[1] - 0.34, mid[2]);
               }
@@ -5037,12 +5039,12 @@
                 g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); g.computeVertexNormals();
                 pierGroup.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: cols[i][0], side: THREE.DoubleSide, roughness: 0.85 })));
               });
-              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.16); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
+              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.30); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
               pierGroup.add(line);
-              [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.075, 3.4, K.darkWood, x, 3.25, 0.16, 6));
+              [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.075, 3.4, K.darkWood, x, 3.25, 0.30, 6));
             }
 
-            // seagulls perched on rail posts and pilings
+            // seagull builder: only the one hiding behind the tackle shop is placed (the secret-menu gull)
             const buildGull = yaw => {
               const g = new THREE.Group();
               const white = K.M(0xf8fafc, 0.7), grey = K.M(0x94a3b8, 0.7), orange = K.M(0xf59e0b, 0.5);
@@ -5057,11 +5059,8 @@
               const tail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 4), white); tail.rotation.x = Math.PI / 2 + 0.3; tail.position.set(0, 0.17, 0.2); g.add(tail);
               g.rotation.y = yaw; return g;
             };
-            [[2.45, 2.62, -6.2, 0.6], [-2.45, 2.62, -8.4, -0.5], [2.4, 2.66, -3.2, 2.2], [-2.4, 2.66, -11.25, 3.4], [2.4, 2.66, -11.25, 0.2], [-10.4, 2.66, 0.0, 1.0]].forEach(([x, y, z, yaw]) => {
-              const gull = buildGull(yaw); gull.position.set(x, y, z); pierGroup.add(gull);
-            });
-            // the seagull behind the tackle shop, hiding on the rail
-            cheatGull = buildGull(0.5); cheatGull.position.set(-7.6, 2.62, 0.12); pierGroup.add(cheatGull);
+            // the secret-menu seagull, perched on the end post of the boardwalk rail (west corner)
+            cheatGull = buildGull(1.0); cheatGull.position.set(-10.4, 2.62, 0.12); pierGroup.add(cheatGull);
 
             // distant lighthouse on a rock out at sea
             const lh = new THREE.Group();
@@ -6213,18 +6212,10 @@ const mainCanvas = document.getElementById('game-canvas');
       const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.2, 650);
 
       const SHADER_PRESETS = [
-        { id: 'none', mode: 0, label: 'Standard Lens', desc: 'Clean, natural 3D coastal optics with crisp retro textures.' },
+        { id: 'none', mode: 0, label: 'Normal', desc: 'Clean, natural 3D coastal optics with crisp retro textures.' },
         { id: 'crt', mode: 1, label: '8-Bit CRT Monitor', desc: 'Curved arcade glass, RGB phosphor shift & scanlines.' },
-        { id: 'pixel', mode: 2, label: 'Chunky Pixelate', desc: 'Low-res pixel grid mosaic with posterized retro colors.' },
-        { id: 'sunset', mode: 3, label: 'Golden Hour Film', desc: 'Warm Kodak amber film stock with sunlit lens vignette.' },
-        { id: 'dream', mode: 4, label: 'Dreamy Soft Bloom', desc: 'Pastel halation glow around highlights and sunlit water.' },
-        { id: 'noir', mode: 5, label: 'Ink Noir Sketch', desc: 'High-contrast monochrome cinema with crisp Sobel ink edges.' },
-        { id: 'nvg', mode: 6, label: 'Night Vision Sonar', desc: 'Tactical phosphor-green night optics with amplified low-light gain.' },
-        { id: 'vapor', mode: 7, label: 'Neon Vaporwave', desc: 'Synthwave magenta-cyan split-tone grading with horizon glow.' },
-        { id: 'gameboy', mode: 8, label: 'Pocket DMG-01', desc: 'Classic 4-shade olive-green handheld LCD dot-matrix palette.' },
-        { id: 'thermal', mode: 9, label: 'Thermal Predator', desc: 'False-color infrared heat-map spectrum from deep indigo to white-hot.' },
-        { id: 'sepia', mode: 10, label: '1920s Silent Reel', desc: 'Warm archival sepia silver-gelatin film with projector flicker & grain.' },
-        { id: 'caustics', mode: 11, label: 'Subsea Caustics', desc: 'Shimmering aquatic light ripples and deep cerulean refractions.' }
+        { id: 'pixel', mode: 2, label: 'Pixelate', desc: 'Low-res pixel grid mosaic with posterized retro colors.' },
+        { id: 'gameboy', mode: 8, label: 'Pocket DMG-01', desc: 'Classic 4-shade olive-green handheld LCD with dithering and dark outlines so boats, rails and fish stay readable against the sea.' }
       ];
 
       let renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
@@ -6305,152 +6296,47 @@ const mainCanvas = document.getElementById('game-canvas');
               return;
             }
 
-            if (uMode == 3) {
-              vec3 col = texture2D(tDiffuse, uv).rgb;
-              col.r = pow(col.r, 0.90) * 1.12;
-              col.g = pow(col.g, 0.96) * 1.03;
-              col.b = pow(col.b, 1.12) * 0.86;
-              float sunGlow = smoothstep(0.95, 0.0, length(uv - vec2(0.5, 0.72)));
-              col += vec3(0.14, 0.08, 0.02) * sunGlow;
-              float dist = length(uv - 0.5);
-              col *= smoothstep(0.95, 0.35, dist);
-              gl_FragColor = vec4(col, 1.0);
-              return;
-            }
-
-            if (uMode == 4) {
-              vec2 texel = 2.5 / uResolution;
-              vec3 base = texture2D(tDiffuse, uv).rgb;
-              vec3 blur = (
-                texture2D(tDiffuse, uv + vec2(texel.x, texel.y)).rgb +
-                texture2D(tDiffuse, uv + vec2(-texel.x, texel.y)).rgb +
-                texture2D(tDiffuse, uv + vec2(texel.x, -texel.y)).rgb +
-                texture2D(tDiffuse, uv + vec2(-texel.x, -texel.y)).rgb
-              ) * 0.25;
-              vec3 highlight = max(blur - 0.52, 0.0) * 1.45;
-              vec3 col = mix(base, blur, 0.22) + highlight;
-              col = mix(col, vec3(0.92, 0.95, 1.0), 0.06);
-              gl_FragColor = vec4(col, 1.0);
-              return;
-            }
-
-            if (uMode == 5) {
-              vec2 texel = 1.35 / uResolution;
-              float tl = dot(texture2D(tDiffuse, uv + vec2(-texel.x, texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-              float t  = dot(texture2D(tDiffuse, uv + vec2(0.0, texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-              float tr = dot(texture2D(tDiffuse, uv + vec2(texel.x, texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-              float l  = dot(texture2D(tDiffuse, uv + vec2(-texel.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
-              float r  = dot(texture2D(tDiffuse, uv + vec2(texel.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114));
-              float bl = dot(texture2D(tDiffuse, uv + vec2(-texel.x, -texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-              float b  = dot(texture2D(tDiffuse, uv + vec2(0.0, -texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-              float br = dot(texture2D(tDiffuse, uv + vec2(texel.x, -texel.y)).rgb, vec3(0.299, 0.587, 0.114));
-              float gx = -tl - 2.0 * l - bl + tr + 2.0 * r + br;
-              float gy = -tl - 2.0 * t - tr + bl + 2.0 * b + br;
-              float edge = smoothstep(0.18, 0.52, length(vec2(gx, gy)));
-              vec3 raw = texture2D(tDiffuse, uv).rgb;
-              float luma = dot(raw, vec3(0.299, 0.587, 0.114));
-              luma = smoothstep(0.12, 0.88, luma);
-              vec3 noir = mix(vec3(luma * 0.94, luma * 0.96, luma * 1.02), raw, 0.22);
-              noir *= (1.0 - edge * 0.85);
-              gl_FragColor = vec4(noir, 1.0);
-              return;
-            }
-
-            if (uMode == 6) {
-              // Night Vision Sonar
-              vec3 raw = texture2D(tDiffuse, uv).rgb;
-              float luma = dot(raw, vec3(0.299, 0.587, 0.114));
-              float noise = fract(sin(dot(uv * uResolution.xy + uTime * 37.0, vec2(12.9898, 78.233))) * 43758.5453) * 0.12;
-              float amp = clamp(pow(luma, 0.65) * 1.65 + noise, 0.0, 1.0);
-              float scan = 0.92 + 0.08 * sin(uv.y * uResolution.y * 0.9);
-              float vig = smoothstep(0.95, 0.28, length(uv - 0.5));
-              vec3 nvg = vec3(amp * 0.18, amp * 1.05, amp * 0.34) * scan * vig;
-              gl_FragColor = vec4(nvg, 1.0);
-              return;
-            }
-
-            if (uMode == 7) {
-              // Neon Vaporwave
-              vec3 raw = texture2D(tDiffuse, uv).rgb;
-              float luma = dot(raw, vec3(0.299, 0.587, 0.114));
-              vec3 shadowCol = vec3(0.12, 0.85, 0.98);
-              vec3 highCol = vec3(0.98, 0.22, 0.78);
-              vec3 graded = mix(raw, mix(shadowCol, highCol, smoothstep(0.18, 0.82, luma)), 0.55);
-              graded.r *= 1.12;
-              graded.b *= 1.15;
-              float gridLine = smoothstep(0.96, 1.0, abs(sin(uv.y * 80.0 - uTime * 1.5))) * 0.08;
-              gl_FragColor = vec4(graded + vec3(gridLine, 0.0, gridLine * 1.2), 1.0);
-              return;
-            }
-
             if (uMode == 8) {
-              // Pocket DMG-01 (High-Contrast 4-Tone Classic Handheld Palette)
-              float pixelSize = max(3.0, min(uResolution.x, uResolution.y) / 175.0);
-              vec2 grid = uResolution / pixelSize;
-              vec2 pUv = (floor(uv * grid) + 0.5) / grid;
-              vec2 stepUv = 1.0 / grid;
+              // Pocket DMG-01: 4 olive shades, ordered dithering, local-contrast boost and dark outlines
+              // wherever neighbouring pixels differ in COLOUR (not just brightness), so a red bow against
+              // blue water no longer melts into one flat shade.
+              float pixelSize = max(3.0, min(uResolution.x, uResolution.y) / 170.0);
+              vec2 grid = floor(uResolution / pixelSize);
+              vec2 cell = floor(uv * grid);
+              vec2 pUv = (cell + 0.5) / grid;
+              vec2 st = 1.0 / grid;
+              vec3 W = vec3(0.299, 0.587, 0.114);
 
-              vec3 raw = texture2D(tDiffuse, pUv).rgb;
-              float luma = dot(raw, vec3(0.299, 0.587, 0.114));
+              vec3 c  = texture2D(tDiffuse, pUv).rgb;
+              vec3 cl = texture2D(tDiffuse, pUv - vec2(st.x, 0.0)).rgb;
+              vec3 cr = texture2D(tDiffuse, pUv + vec2(st.x, 0.0)).rgb;
+              vec3 cd = texture2D(tDiffuse, pUv - vec2(0.0, st.y)).rgb;
+              vec3 cu = texture2D(tDiffuse, pUv + vec2(0.0, st.y)).rgb;
 
-              // Local neighborhood luminance for crisp edge & detail contrast
-              float nLuma = (
-                dot(texture2D(tDiffuse, pUv + vec2(stepUv.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114)) +
-                dot(texture2D(tDiffuse, pUv - vec2(stepUv.x, 0.0)).rgb, vec3(0.299, 0.587, 0.114)) +
-                dot(texture2D(tDiffuse, pUv + vec2(0.0, stepUv.y)).rgb, vec3(0.299, 0.587, 0.114)) +
-                dot(texture2D(tDiffuse, pUv - vec2(0.0, stepUv.y)).rgb, vec3(0.299, 0.587, 0.114))
-              ) * 0.25;
+              float l = dot(c, W) + 0.12;                    // lift mid-tones so water sits on a mid shade, not the darkest one
+              float nb = (dot(cl, W) + dot(cr, W) + dot(cd, W) + dot(cu, W)) * 0.25 + 0.12;
 
-              float detailBoost = (luma - nLuma) * 1.45;
-              float contrasted = clamp((luma - 0.44) * 1.68 + 0.48 + detailBoost, 0.0, 1.0);
+              float v = l + (l - nb) * 1.2;                  // local contrast
+              v = clamp((v - 0.50) * 1.7 + 0.50, 0.0, 1.0);  // global contrast around mid grey
 
-              vec3 c0 = vec3(0.04, 0.15, 0.04);
-              vec3 c1 = vec3(0.16, 0.34, 0.14);
-              vec3 c2 = vec3(0.54, 0.70, 0.07);
-              vec3 c3 = vec3(0.74, 0.88, 0.14);
-              vec3 pal = contrasted < 0.28 ? c0 : (contrasted < 0.52 ? c1 : (contrasted < 0.76 ? c2 : c3));
+              // colour-difference edges -> darkest shade
+              float e = max(max(length(c - cl), length(c - cr)), max(length(c - cd), length(c - cu)));
+              float edge = smoothstep(0.16, 0.34, e);
+              v = mix(v, 0.0, edge * 0.85);
+
+              // 4x4 ordered dither adds in-between tones without extra palette colours
+              vec2 q = mod(cell, 4.0);
+              float b2 = fract(floor(q.x * 0.5) * 0.5 + floor(q.y * 0.5) * floor(q.y * 0.5) * 0.75);
+              float b1 = fract(mod(q.x, 2.0) * 0.5 + mod(q.y, 2.0) * mod(q.y, 2.0) * 0.75);
+              float dith = b2 * 0.25 + b1;
+              v = clamp(v + (dith - 0.5) * 0.10, 0.0, 1.0);
+
+              vec3 c0 = vec3(0.04, 0.16, 0.05);
+              vec3 c1 = vec3(0.19, 0.38, 0.19);
+              vec3 c2 = vec3(0.55, 0.67, 0.06);
+              vec3 c3 = vec3(0.78, 0.86, 0.22);
+              vec3 pal = v < 0.25 ? c0 : (v < 0.50 ? c1 : (v < 0.75 ? c2 : c3));
               gl_FragColor = vec4(pal, 1.0);
-              return;
-            }
-
-            if (uMode == 9) {
-              // Thermal Predator Heat-Map
-              vec3 raw = texture2D(tDiffuse, uv).rgb;
-              float t = clamp(dot(raw, vec3(0.35, 0.45, 0.20)) * 1.2, 0.0, 1.0);
-              vec3 col;
-              if (t < 0.25) col = mix(vec3(0.04, 0.02, 0.28), vec3(0.45, 0.05, 0.68), t / 0.25);
-              else if (t < 0.55) col = mix(vec3(0.45, 0.05, 0.68), vec3(0.95, 0.22, 0.12), (t - 0.25) / 0.30);
-              else if (t < 0.82) col = mix(vec3(0.95, 0.22, 0.12), vec3(0.99, 0.88, 0.15), (t - 0.55) / 0.27);
-              else col = mix(vec3(0.99, 0.88, 0.15), vec3(1.0, 1.0, 1.0), (t - 0.82) / 0.18);
-              gl_FragColor = vec4(col, 1.0);
-              return;
-            }
-
-            if (uMode == 10) {
-              // 1920s Silent Reel Sepia
-              float jitterX = sin(uTime * 41.0) * 0.0008;
-              vec3 raw = texture2D(tDiffuse, uv + vec2(jitterX, 0.0)).rgb;
-              float luma = dot(raw, vec3(0.299, 0.587, 0.114));
-              float grain = (fract(sin(dot(uv * 320.0 + uTime * 19.0, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.09;
-              float flicker = 0.94 + 0.06 * sin(uTime * 27.0);
-              float vig = smoothstep(0.96, 0.32, length(uv - 0.5));
-              vec3 sepia = vec3(luma * 1.18, luma * 0.96, luma * 0.70) * flicker * vig + grain;
-              gl_FragColor = vec4(clamp(sepia, 0.0, 1.0), 1.0);
-              return;
-            }
-
-            if (uMode == 11) {
-              // Subsea Caustics & Aquatic Refraction
-              vec2 ripple = vec2(
-                sin(uv.y * 22.0 + uTime * 2.4) * 0.0035,
-                cos(uv.x * 18.0 + uTime * 1.9) * 0.0035
-              );
-              vec3 raw = texture2D(tDiffuse, uv + ripple).rgb;
-              float c1 = sin(uv.x * 26.0 + uTime * 1.8 + sin(uv.y * 18.0 - uTime * 1.4));
-              float c2 = cos(uv.y * 24.0 - uTime * 1.6 + cos(uv.x * 20.0 + uTime * 1.3));
-              float caustic = pow(max(0.0, (c1 + c2) * 0.5), 3.0) * 0.38;
-              vec3 aqua = raw * vec3(0.76, 0.96, 1.14) + vec3(0.15, 0.45, 0.55) * caustic;
-              gl_FragColor = vec4(aqua, 1.0);
               return;
             }
 
@@ -6615,6 +6501,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let playerX = 0;
       let playerZ = 3.6;
       let playerYaw = 0;
+      /* Camera views: stand auto-zoom (idle 0.5 s in front of a stand) + first-person (from the player's head) */
+      const STAND_IDLE_DELAY = 0.5;
+      const standFocus = { idle: 0, stand: null };
+      let pierMoveInput = 0;
+      const camLookCur = new THREE.Vector3(0, 1.35, -6);
+      let camLookInit = false;
       let rodVisProgress = 1.0;
       let chairOpenProgress = 0.0;
       let boatPos = new THREE.Vector3(-4.8, 0, -7.5);
@@ -6643,7 +6535,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const cheats = { fastBites: false, noSnap: false, luck: false, freeBait: false, freeFuel: false };
       let cheatTaps = 0;
       const CHEAT_TAPS = 31;
-      const CHEAT_GULL = { x: -7.6, z: 0.12, radius: 2.7 };
+      const CHEAT_GULL = { x: -10.4, z: 0.12, radius: 2.7 };
       let waitTimer = 0;
       let biteTimer = 0;
       let activeCatch = null;
@@ -6820,6 +6712,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           if (isNearPierToolbox()) openToolboxModal();
           else if (isNearPierBucket()) openBucketModal();
           else showToast('Walk near the Toolbox or Bucket on the pier!');
+        } else if (e.code === 'KeyV') {
+          toggleFirstPerson(true);
         } else if (e.code === 'KeyL') {
           openLogModal();
         } else if (e.code === 'KeyE') {
@@ -7289,7 +7183,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       window.addEventListener('resize', () => { if (custModal.classList.contains('open')) custResize(); });
 
       /* =========================================================================
-         SECRET CHEAT MENU (unlocked by pressing WALK EDGE 31 times beside the seagull behind the tackle shop)
+         SECRET CHEAT MENU (unlocked by pressing WALK EDGE 31 times beside the seagull on the west corner of the boardwalk)
          ========================================================================= */
       const cheatModal = document.getElementById('modal-cheats');
       const cheatDone = msg => { saveGame(); updateHUD(); if (typeof renderShop === 'function') renderShop(); if (msg) showToast(msg); };
@@ -7616,6 +7510,33 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       }
       function nearSpot(x, z, radius) {
         return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - x, playerZ - z) <= radius;
+      }
+
+      /* Stands that auto-zoom the camera. cx/cy/cz = centre of the display, halfW/halfH = half size that must fit on
+         screen, side = which side the camera swings to (+1 = towards +X) so the player never blocks the view. */
+      const STAND_VIEWS = [
+        { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
+        { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 3.0, cz: 0.8, halfW: 1.0,  halfH: 1.3, side: 1 },
+        { id: 'gallery', near: () => isNearPierGallery(),  cx: 4.4,  cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: -1 },
+        { id: 'trophy',  near: () => isNearPierTrophies(), cx: 6.55, cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
+        { id: 'camera',  near: () => isNearPierCamera(),   cx: 8.2,  cy: 3.1, cz: 0.9, halfW: 1.0,  halfH: 1.1, side: -1 }
+      ];
+      function currentStandView() {
+        for (const st of STAND_VIEWS) if (st.near()) return st;
+        return null;
+      }
+      const _standPos = new THREE.Vector3(), _standLook = new THREE.Vector3();
+      function standCameraPose(st) {
+        const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+        const th = tv * camera.aspect;
+        const dist = THREE.MathUtils.clamp(Math.max(st.halfH / tv, st.halfW / th) * 1.2 + 0.8, 3.4, 12);
+        const yaw = 0.68 * st.side, pitch = 0.24;
+        _standLook.set(st.cx, st.cy, st.cz);
+        _standPos.set(
+          st.cx + Math.sin(yaw) * Math.cos(pitch) * dist,
+          st.cy + Math.sin(pitch) * dist,
+          st.cz + Math.cos(yaw) * Math.cos(pitch) * dist
+        );
       }
 
       function isNearPierShop() { return nearStandFront(-7.6, 2.05, 2.55, 1.0); }
@@ -9637,6 +9558,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         return settings.sound;
       }
 
+      document.getElementById('btn-toggle-view').addEventListener('click', () => toggleFirstPerson(true));
+      updateViewButton();
       audioBtn.addEventListener('click', () => {
         showToast(toggleSound() ? 'Sound ON' : 'Sound OFF');
       });
@@ -9923,6 +9846,56 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         );
       }
 
+      /* First person: the camera sits in the player's head (head model hidden so it never blocks the view),
+         looks where the player faces, follows the line while fishing, and looks at a stand once you idle in front of it. */
+      const _fpHead = new THREE.Vector3(), _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3();
+      let fpBlend = 0, fpEyeY = null;
+      function updateFirstPersonCamera(dt) {
+        const fp = !!settings.firstPerson;
+        if (world.headGroup.visible === fp) world.headGroup.visible = !fp;
+        if (!fp) { fpBlend = 0; return; }
+        world.anglerGroup.updateMatrixWorld(true);
+        _fpFwd.set(0, 0, -1).applyQuaternion(world.anglerGroup.quaternion);
+        _fpFwd.y = 0;
+        if (_fpFwd.lengthSq() < 1e-4) _fpFwd.set(0, 0, -1);
+        _fpFwd.normalize();
+        // Eye position: over the player's feet at a fixed head height, so torso pitch, head sway and boat roll
+        // never tilt or bob the horizon.
+        // low-pass the eye height: it follows sitting down / standing up but ignores the walking bounce
+        const eyeGoal = (world.bodyGroup.position.y + world.headGroup.position.y) * world.anglerGroup.scale.y;
+        fpEyeY = fpEyeY === null ? eyeGoal : fpEyeY + (eyeGoal - fpEyeY) * (1 - Math.exp(-3 * dt));
+        const eyeLocalY = fpEyeY;
+        camera.position.copy(world.anglerGroup.position).addScaledVector(_fpFwd, 0.14);
+        camera.position.y += eyeLocalY + 0.03;
+
+        if (standFocus.stand && !onBoat) {
+          _fpGoal.set(standFocus.stand.cx, standFocus.stand.cy, standFocus.stand.cz);
+          fpBlend = 1;
+        } else {
+          // dead level: same height as the eye, straight ahead
+          _fpGoal.copy(camera.position).addScaledVector(_fpFwd, 10);
+          fpBlend = Math.max(0, fpBlend - dt * 2.5);
+        }
+        if (!camLookInit) { camLookCur.copy(_fpGoal); camLookInit = true; }
+        if (fpBlend > 0) camLookCur.lerp(_fpGoal, 1 - Math.exp(-8 * dt));
+        else camLookCur.copy(_fpGoal);   // no smoothing while turning: the horizon stays put and the view tracks the stick exactly
+        camera.up.set(0, 1, 0);
+        camera.lookAt(camLookCur);
+      }
+
+      function updateViewButton() {
+        const b = document.getElementById('btn-toggle-view');
+        if (!b) return;
+        b.textContent = settings.firstPerson ? '👁️' : '🎥';
+        b.setAttribute('data-label', settings.firstPerson ? 'First' : 'Third');
+      }
+      function toggleFirstPerson(notify = true) {
+        settings.firstPerson = !settings.firstPerson;
+        saveSettings();
+        updateViewButton();
+        if (notify) showToast(settings.firstPerson ? '👁️ First-person view' : '🎥 Third-person view');
+      }
+
       function updateSimulation(dt) {
         elapsed += dt;
         const zone = getCurrentZone();
@@ -10100,6 +10073,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             playerBoatMesh.rotation.set(Math.sin(elapsed * 1.8) * 0.04, 0.0, Math.cos(elapsed * 1.5) * 0.05);
           }
 
+          pierMoveInput = 0;
           if (mode === 'PIER_IDLE' && !isAnyModalOpen()) {
             let moveX = joyState.x;
             let moveZ = joyState.y;
@@ -10109,6 +10083,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
             moveX = THREE.MathUtils.clamp(moveX, -1, 1);
             moveZ = THREE.MathUtils.clamp(moveZ, -1, 1);
+            pierMoveInput = Math.hypot(moveX, moveZ);
+            if (settings.firstPerson) {
+              // First-person controls: left / right turn on the spot, up / down walk forward / backward
+              playerYaw -= moveX * 2.3 * dt;
+              const walk = -moveZ;
+              moveX = -Math.sin(playerYaw) * walk;
+              moveZ = -Math.cos(playerYaw) * walk;
+            }
 
             const prevX = playerX;
             const prevZ = playerZ;
@@ -10256,8 +10238,23 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
           world.anglerGroup.position.set(playerX, playerY, playerZ);
           const walkSpeed = Math.hypot(walkDX, walkDZ);
+          // Stand auto-zoom: stand still in front of a stand for STAND_IDLE_DELAY seconds, no key press needed.
+          // While a menu is open the current view is kept; any movement input releases it at once.
+          if (!isAnyModalOpen()) {
+            const here = mode === 'PIER_IDLE' ? currentStandView() : null;
+            const moving = walkSpeed > 0.002 || pierMoveInput > 0.15;
+            if (here && !moving) {
+              standFocus.idle += dt;
+              if (standFocus.idle >= STAND_IDLE_DELAY) standFocus.stand = here;
+            } else {
+              standFocus.idle = 0;
+              standFocus.stand = null;
+            }
+          }
           let targetYaw = playerYaw;
-          if (walkSpeed > 0.001) {
+          if (settings.firstPerson) {
+            targetYaw = playerYaw; // facing is controlled by the stick, not by the walking direction
+          } else if (walkSpeed > 0.001) {
             targetYaw = Math.atan2(-walkDX, -walkDZ);
           } else if (isNearPierShop()) {
             targetYaw = Math.atan2(-(-7.6 - playerX), -(1.0 - playerZ));
@@ -10282,6 +10279,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           playerYaw += angleDiff * Math.min(1, dt * 12);
           world.anglerGroup.rotation.set(0, playerYaw, 0);
         } else {
+          standFocus.idle = 0; standFocus.stand = null;
           playerBoatMesh.visible = true;
           const boat = getCurrentBoat();
 
@@ -10721,8 +10719,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             5.6 + Math.sin(elapsed * 1.4) * 0.06,
             camZ
           );
-          camera.position.lerp(targetCamPos, camSmooth);
-          camera.lookAt(playerX * lateralFollow, 1.35, playerZ - 6.0);
+          const lookGoal = new THREE.Vector3(playerX * lateralFollow, 1.35, playerZ - 6.0);
+          if (standFocus.stand) {
+            standCameraPose(standFocus.stand);
+            targetCamPos.copy(_standPos);
+            lookGoal.copy(_standLook);
+          }
+          if (!camLookInit) { camLookCur.copy(lookGoal); camLookInit = true; }
+          const lookSmooth = 1 - Math.exp(-(standFocus.stand ? 5.5 : 9) * dt);
+          camLookCur.lerp(lookGoal, lookSmooth);
+          camera.position.lerp(targetCamPos, standFocus.stand ? 1 - Math.exp(-5.0 * dt) : camSmooth);
+          camera.lookAt(camLookCur);
         } else {
           const speedZoom = Math.min(1.6, Math.abs(boatVel) * 0.05);
           // Chase camera: it swings round behind the boat with a short lag so turns feel smooth
@@ -10743,8 +10750,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const targetCamPos = boatPos.clone().add(backOffset);
           camera.position.lerp(targetCamPos, camSmooth);
           const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
+          camLookCur.copy(lookTarget); camLookInit = true;
           camera.lookAt(lookTarget);
         }
+
+        updateFirstPersonCamera(dt);
       }
 
       let hudClockTimer = 0;
@@ -10769,7 +10779,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 if (mode === 'REELING' && tension > 0.78) {
           camJuice.shake = Math.max(camJuice.shake, (tension - 0.78) * 0.42);
         }
-        const targetFovOffset = mode === 'REELING' ? -4.5 : (mode === 'CASTING' ? 2.5 : 0);
+        const targetFovOffset = (settings.firstPerson && standFocus.stand) ? -14 : (mode === 'REELING' ? -4.5 : (mode === 'CASTING' ? 2.5 : 0));
         camJuice.fovOffset += (targetFovOffset - camJuice.fovOffset) * Math.min(1, dt * 6);
         const baseFov = window.innerWidth < window.innerHeight ? 62 : 52;
         if (Math.abs(camera.fov - (baseFov + camJuice.fovOffset)) > 0.05) {
