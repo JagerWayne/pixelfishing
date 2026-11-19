@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.3.0';
+    window.PF_VERSION = '3.4.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -611,6 +611,18 @@
       display: none;
       width: 100%;
       padding: 9px 12px;
+    }
+    /* the drag window lives in the top HUD (thumb-free area on phones) */
+    #reel-meter-box {
+      max-width: 400px;
+      align-self: center;
+      pointer-events: none;
+      background: rgba(14, 22, 36, 0.94);
+    }
+    /* while a fish is on, toasts drop to the bottom so they never cover the drag window */
+    body[data-fishing="1"] #toast-stack {
+      top: auto;
+      bottom: calc(var(--controls-h) + var(--safe-bottom) + 84px);
     }
 
     .stat-row {
@@ -1440,6 +1452,35 @@
           <div class="pip-overlay-bottom" id="pip-bait-label">BAIT: Bread Crumbs</div>
         </div>
       </div>
+
+      <!-- Fish drag / reel meter: at the top of the screen so it stays visible above the thumbs -->
+      <div class="pixel-box" id="reel-meter-box">
+          <div id="rod-warning-text">ROD OVERLOADED! DRAG TOO HEAVY!</div>
+          <div class="stat-row">
+            <span class="stat-label" id="fish-dir-label">FISH DRAG: CENTER</span>
+            <span class="stat-val" id="reel-dist-label">LINE: 14.0 m</span>
+          </div>
+          <div class="reel-dir-labels">
+            <span>◀ STICK L</span>
+            <span id="counter-pull-hint" style="color:#fde047; font-weight:bold;">STEER STICK OPPOSITE!</span>
+            <span>STICK R ▶</span>
+          </div>
+          <div class="reel-track reel-dir-track">
+            <div id="fish-dir-marker">🐟</div>
+            <div id="rod-dir-marker"></div>
+          </div>
+          <div class="stat-row" style="margin-top:3px;">
+            <span class="stat-label">LINE TENSION</span>
+            <span class="stat-val" id="reel-progress-label">REEL: 0%</span>
+          </div>
+          <div class="reel-track">
+            <div class="reel-safe-zone" id="reel-safe-zone" style="left: 0%; width: 78%;"></div>
+            <div class="reel-cursor" id="reel-cursor" style="left: 30%;"></div>
+          </div>
+          <div class="bar-wrap reel-progress-wrap">
+            <div class="bar-fill" id="reel-progress-bar" style="width: 0%; background: #4ade80;"></div>
+          </div>
+        </div>
     </div>
 
     <!-- Center Dynamic Fishing & Proximity Indicators -->
@@ -1458,33 +1499,6 @@
         </div>
       </div>
 
-      <div class="pixel-box" id="reel-meter-box">
-        <div id="rod-warning-text">ROD OVERLOADED! DRAG TOO HEAVY!</div>
-        <div class="stat-row">
-          <span class="stat-label" id="fish-dir-label">FISH DRAG: CENTER</span>
-          <span class="stat-val" id="reel-dist-label">LINE: 14.0 m</span>
-        </div>
-        <div class="reel-dir-labels">
-          <span>◀ STICK L</span>
-          <span id="counter-pull-hint" style="color:#fde047; font-weight:bold;">STEER STICK OPPOSITE!</span>
-          <span>STICK R ▶</span>
-        </div>
-        <div class="reel-track reel-dir-track">
-          <div id="fish-dir-marker">🐟</div>
-          <div id="rod-dir-marker"></div>
-        </div>
-        <div class="stat-row" style="margin-top:3px;">
-          <span class="stat-label">LINE TENSION</span>
-          <span class="stat-val" id="reel-progress-label">REEL: 0%</span>
-        </div>
-        <div class="reel-track">
-          <div class="reel-safe-zone" id="reel-safe-zone" style="left: 0%; width: 78%;"></div>
-          <div class="reel-cursor" id="reel-cursor" style="left: 30%;"></div>
-        </div>
-        <div class="bar-wrap reel-progress-wrap">
-          <div class="bar-fill" id="reel-progress-bar" style="width: 0%; background: #4ade80;"></div>
-        </div>
-      </div>
     </div>
 
     <!-- Bottom Thumb-Zone Mobile Controls -->
@@ -6506,6 +6520,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const standFocus = { idle: 0, stand: null };
       let pierMoveInput = 0;
       const camLookCur = new THREE.Vector3(0, 1.35, -6);
+      let reelLookW = 0; // 0..1: how much the camera is turned towards the hooked fish
       let camLookInit = false;
       let rodVisProgress = 1.0;
       let chairOpenProgress = 0.0;
@@ -10710,6 +10725,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         // Smooth camera tracking across entire pier (including left boat slip & portrait mobile screens)
         const camSmooth = 1 - Math.exp(-6.5 * dt);
+        reelLookW += ((mode === 'REELING' ? 1 : 0) - reelLookW) * (1 - Math.exp(-5 * dt));
         if (!onBoat) {
           const isPortrait = camera.aspect < 0.85;
           const lateralFollow = isPortrait ? 0.95 : 0.72;
@@ -10725,6 +10741,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             targetCamPos.copy(_standPos);
             lookGoal.copy(_standLook);
           }
+          if (reelLookW > 0.002) lookGoal.lerp(world.fishShadow.position, reelLookW); // look at the fish while it is dragged
           if (!camLookInit) { camLookCur.copy(lookGoal); camLookInit = true; }
           const lookSmooth = 1 - Math.exp(-(standFocus.stand ? 5.5 : 9) * dt);
           camLookCur.lerp(lookGoal, lookSmooth);
@@ -10750,6 +10767,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const targetCamPos = boatPos.clone().add(backOffset);
           camera.position.lerp(targetCamPos, camSmooth);
           const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
+          if (reelLookW > 0.002) lookTarget.lerp(world.fishShadow.position, reelLookW); // look at the fish while it is dragged
           camLookCur.copy(lookTarget); camLookInit = true;
           camera.lookAt(lookTarget);
         }
