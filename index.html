@@ -11910,6 +11910,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               }
             }
 
+            // Two colliders close together can push the angler back and forth into each other; if the result still
+            // overlaps any of them, stay where you were (the previous spot was always clear).
+            const insideAny = (px, pz) => walkColliders.some(c => c.kind === 'box'
+              ? Math.abs(px - c.x) < c.hx + BODY - 1e-3 && Math.abs(pz - c.z) < c.hz + BODY - 1e-3
+              : Math.hypot(px - c.x, pz - c.z) < c.r + BODY - 1e-3);
+            if (insideAny(nextX, nextZ) && !insideAny(prevX, prevZ)) {
+              if (!insideAny(nextX, prevZ)) nextZ = prevZ;
+              else if (!insideAny(prevX, nextZ)) nextX = prevX;
+              else { nextX = prevX; nextZ = prevZ; }
+            }
+
             const [finalMinX, finalMaxX] = getPierXBounds(nextZ);
             playerZ = THREE.MathUtils.clamp(nextZ, -10.59, 5.8);
             playerX = THREE.MathUtils.clamp(nextX, finalMinX, finalMaxX);
