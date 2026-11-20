@@ -409,6 +409,11 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 4.0.1: slower walking
+- The angler walks at about **3 m/s** at full stick instead of 6.5 m/s, with longer, calmer steps, so the new body walks at a brisk pace instead of jogging. Half stick walks slower still.
+- Walking diagonally is no longer about 40% faster than walking straight.
+- Version bumped to **v4.0.1**.
+
 ### 2026-11-20, Version 4.0.0: a human angler
 - **New body:** the toy-like figure is replaced by a stylised adult on a real skeleton (spine, neck, shoulders, elbows, wrists, hips, knees and ankles) with one smooth skinned body, so joints bend like skin instead of hinges. Hands have fingers that curl round the rod, and feet have heels and toes.
 - **Clothes bend with the body:** shirts, sweaters, hoodies, raincoats, jeans, shorts and overalls are skinned to the same skeleton.
