@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.0.0';
+    window.PF_VERSION = '4.0.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -3733,7 +3733,7 @@
           this.still = speed > 0.25 ? 0 : this.still + dt;
 
           // ---- gait: the phase follows the distance walked, so each step matches the ground speed ----
-          const stride = 1.25 + 1.1 * run;
+          const stride = 1.75 + 0.75 * run;   // metres per full gait cycle: long, calm steps at walking pace
           this.phase = (this.phase + (speed * dt / stride) * Math.PI * 2) % (Math.PI * 2);
           const ph = this.phase;
           if (walk > 0.001) {
@@ -7637,6 +7637,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
       let castCharge = 0;
       let castDir = 1;
+      const WALK_SPEED = 3.0;   // m/s at full stick (was 6.5 before v4.0.1)
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
       let bobberPos = new THREE.Vector3();
       let bobberVel = new THREE.Vector3();
@@ -12432,7 +12433,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             const prevX = playerX;
             const prevZ = playerZ;
             // Small invisible border at the farthest end of the pier (Z = -10.59) so the fisherman doesn't step onto the very tip
-            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * 6.5 * dt, -10.59, 5.8);
+            // walking pace: about 3 m/s at full stick (a brisk walk); diagonals are no faster than straight lines
+            { const mag = Math.hypot(moveX, moveZ); if (mag > 1) { moveX /= mag; moveZ /= mag; } }
+            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * WALK_SPEED * dt, -10.59, 5.8);
 
             const getPierXBounds = zVal => {
               if (zVal >= 4.6) return [-9.3, 9.3];   // the beach boulders start at |x| 9.57
@@ -12453,7 +12456,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
 
             const [initMinX, initMaxX] = getPierXBounds(nextZ);
-            let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
+            let nextX = THREE.MathUtils.clamp(playerX + moveX * WALK_SPEED * dt, initMinX, initMaxX);
 
             // Prevent walking across the side railing gap onto the boat stairs before Z = -4.65
             // (only on the pier deck itself; the boardwalk at Z >= 0.45 is wide open so players can reach the shop)
