@@ -45,8 +45,8 @@ Once installed it also works offline.
 1. Walk to the **far tip of the pier** and sit in the fishing chair. You can only cast from the tip of the pier, or from a boat.
 2. **Hold the action button** to charge a cast and **release** to throw. Longer holds throw further. The power bar loops, and a **yellow sweet spot at 72 to 88%** is marked on it (the label reads *★ SWEET!* while you are in it).
 3. When a fish bites, hook it and **reel it in**, keeping the line tension in the safe zone. Pull too hard on a fish your rod can't handle and the line snaps. Every fish fights in its own style (see [The fight](#the-fight)), and landing it is a short slow-motion moment as it leaps out of the water to you.
-4. Keep what you want in your **bucket** or release it. Bring the bucket to the **🐟 Fish Market** on the harbour terrace to sell the catch.
-5. Spend your money on better rods, bait and buckets (Tackle Shop), boats, modules, paint and fuel (Boatyard) and dive gear (Dive Shop). Complete **bounties**, collect **message bottles**, recycle junk and fill the **encyclopedia**.
+4. Keep what you want in your **bucket** or release it. Bring the bucket to the **🐟 Fish Market** on the boardwalk (east of the pier) to sell the catch.
+5. Spend your money on better rods, bait and buckets (Tackle Shop), boats and modules (Boatyard), fuel (the dock pump or the Boatyard) and dive gear (Dive Shop). Complete **bounties**, collect **message bottles**, recycle junk and fill the **encyclopedia**.
 
 Fish are only worth keeping if they fit: your bucket has a weight capacity, and heavier catches need a stronger rod.
 
@@ -73,16 +73,16 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 ## The pier
 
-The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0), the waterfront boardwalk, and behind it the grassy **harbour terrace** with three shops. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Walk off the back of the boardwalk onto the terrace and the camera swings round to look at the shop fronts (the stick keeps its direction while you hold it, and follows the camera once you let go).
+The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) and a **42 m waterfront boardwalk** (twice as long since v4.6.0) with every shop along its sea edge, backs to the sea and fronts facing south (toward the island), like the Tackle Shop. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Stop in front of a shop and the camera zooms in on it.
 
 **Shops (since v4.5.0 each one has its own trade):**
 
 | Shop | Where | What it sells |
 |---|---|---|
-| 🎣 **Tackle Shop** | west end of the boardwalk | rods (and the live bait cam), bait packs, buckets |
-| ⚓ **Boatyard** | terrace, west (a fuel pump and an outboard on a stand outside) | boats, boat modules, boat paint, **fuel** |
-| 🐟 **Fish Market** | terrace, centre, at the end of the stone path (an iced fish bench outside) | **buys your catch** (one by one or *Sell All*), today's market board and Catch of the Day, the Mayor's recycling perk. It is the only place that buys; the bag's per-item *Sell* buttons also work only in front of it. |
-| 🤿 **Dive Shop** | terrace, east (tanks, fins and a diver-down flag outside) | dive gear and spear guns |
+| 🎣 **Tackle Shop** | boardwalk, west of the pier | rods (and the live bait cam), bait packs, buckets |
+| ⚓ **Boatyard** | boardwalk, far west (a fuel pump and an outboard on a stand outside) | boats, boat modules, **fuel** |
+| 🐟 **Fish Market** | boardwalk, east, past the film camera (an iced fish bench outside) | **buys your catch** (one by one or *Sell All*), today's market board and Catch of the Day, the Mayor's recycling perk. It is the only place that buys; the bag's per-item *Sell* buttons also work only in front of it. |
+| 🤿 **Dive Shop** | boardwalk, far east (tanks, fins and a diver-down flag outside) | dive gear and spear guns |
 
 | Object | What it does |
 |---|---|
@@ -91,8 +91,9 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0), t
 | 🎬 **Director's Camera** | Change the camera lens (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
-| ⚓ **Moored boat** (down the stairs on the port side) | Board your boat once you own one. |
-| 🛥️ **Boat Terminal** (mooring platform corner) | Choose which of your boats is moored. |
+| ⚓ **Moored boat** (down the stairs on the port side, beside the low mooring platform, which is 4.5 m long since v4.6.0) | Board your boat once you own one. |
+| 🛥️ **Boat Terminal** (sea end of the mooring platform, inner corner) | Choose which of your boats is moored. |
+| ⛽ **Dock fuel pump** (sea end of the mooring platform, right by the boat) | Fills the moored boat's tank at $0.50 a unit (as much as you can afford). |
 | 🪑 **Benches** (back of the boardwalk) | Stand still in front of one for two seconds and the angler sits down, leans back and now and then crosses his legs. Move to get up. |
 | 🌊 **Railing** | Stand still at the pier rails or the free parts of the boardwalk rail for two seconds and the angler leans his forearms on the rail and gazes out to sea. |
 | 🪑 **Pier tip** | Where you sit and fish from the pier, and where you can start a dive (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
@@ -118,9 +119,9 @@ A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking som
 | Mythril Deepcaster | $9,000 | 220 kg | 5 |
 
 ### Boats
-Boats take you out of the cove. They burn fuel (refill at the Boatyard) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
+Boats take you out of the cove. They burn fuel (refill at the dock pump next to the boat, or at the Boatyard) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
 
-**Your fleet (since v4.4.0).** Every boat you buy is kept. A small **🛥️ Boat Terminal** kiosk stands on the corner of the mooring platform (at the foot of the stairs): walk up to it and press the action button to pick which of your boats is moored there. Each boat keeps **its own fuel tank**, so switching never loses fuel (refuelling at the Boatyard fills the boat that is moored). Buying a new boat adds it to the fleet and moors it. Older saves own every boat up to the one they had, as the shop already showed.
+**Your fleet (since v4.4.0).** Every boat you buy is kept. A small **🛥️ Boat Terminal** kiosk stands on the corner of the mooring platform (at the foot of the stairs): walk up to it and press the action button to pick which of your boats is moored there. Each boat keeps **its own fuel tank**, so switching never loses fuel (the dock pump and the Boatyard both fill the boat that is moored). Buying a new boat adds it to the fleet and moors it. Older saves own every boat up to the one they had, as the shop already showed.
 
 **Reversing:** when the boat goes astern (faster than 0.8 m/s backwards), the chase camera swings round to the bow and looks the way you are moving; in first person the view turns to look back. It swings back once you stop reversing.
 
@@ -198,9 +199,6 @@ The shop's **🤿 Dive** and **🔱 Spear** tabs sell the gear for diving and sp
 | Pneumatic Speargun | $820 | 17 m | 33 m/s | 50 kg | 0.9 s |
 | CO2 Power Harpoon | $2,400 | 25 m | 42 m/s | 120 kg | 0.7 s |
 | Rail Harpoon | $6,200 | 36 m | 55 m/s | 320 kg | 0.5 s |
-
-### Boat paint
-The shop's **Paint** tab recolours the hull of whichever boat you own: Classic (free), Sunset Orange ($150), Emerald ($250), Royal Violet ($400, rank 4), Midnight ($600, rank 8) and Gilded ($1,500, rank 12). A paint you own applies to every boat. Owning three paints earns the *Fresh Coat* achievement.
 
 ## The sea: zones, weather and the moon
 
@@ -289,7 +287,7 @@ You can leave the surface and hunt fish by hand. You need **dive gear** (to go u
 
 ## Career: rank and achievements
 
-Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait, and ranks 4, 8 and 12 unlock boat paints. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **40 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
+Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **39 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
 
 ## The fish market
 
@@ -374,7 +372,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 | Key | Contents |
 |---|---|
-| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, boat paints, the daily streak (`daily`), the owned boats (`ownedBoats`) and each boat's fuel (`boatFuel`) and more (save format version 2; new fields are validated and old saves load with defaults) |
+| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, the daily streak (`daily`), the owned boats (`ownedBoats`) and each boat's fuel (`boatFuel`) and more (save format version 2; new fields are validated and old saves load with defaults) |
 | `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
@@ -476,6 +474,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.6.0: shops on the boardwalk facing south, a dock fuel pump, no more boat paint
+- **Shops face south with their backs to the sea:** the Boatyard, Fish Market and Dive Shop moved from the terrace onto the waterfront boardwalk, which is now 42 m long (it was 21 m), with new pilings, rails, joists and end fascias; the coastal boulders, barrel stacks and the secret seagull moved out to the new ends, and two palms stepped back so they don't block the shop camera. The terrace is scenery again (no more walking up there, and no camera swing).
+- **Dock fuel pump:** the low mooring platform is twice as long toward the sea, with a third pontoon, piling and cleat. A red fuel pump with a lit globe stands at its sea end right by the moored boat (*REFUEL* fills the moored boat at $0.50 a unit), and the Boat Terminal moved to the other sea-end corner.
+- **Boat paint removed:** the Paint tab, the six paints, the hull recolouring code, the `paint` / `ownedPaints` save fields and the *Fresh Coat* achievement are gone (39 achievements now). Old saves simply drop those fields.
+- Version bumped to **v4.6.0**.
 
 ### 2026-11-20, Version 4.5.0: a wider pier, shops on the terrace, daylight far out at sea
 - **Wider pier:** 6.9 m instead of 4.9 m. Rails, pilings, lamps, bracing, bunting, the bollards and rod rack all moved out; the stairs, mooring platform, Boat Terminal and moored boat moved out with the port rail; the bucket and toolbox stand a little further apart. Walking, the rail lean spots, boat collisions and diver collisions follow the new width.
