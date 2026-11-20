@@ -18,8 +18,9 @@ description of the game, its systems and its structure.
 
 - Models keep their footprint and orientation (fronts face +Z, boats point toward -Z) so collisions and interaction
   ranges stay valid.
-- The animated angler rig (body, head, arms, legs, rod pivot, chair) must keep its pivots. Change the look through
-  `AnglerFactory`, not by moving groups.
+- The angler is a skeleton (`AnglerFactory.createRig`: hips, spine, chest, neck, head, clavicles, upper arms, forearms,
+  hands, thighs, shins, feet) with a skinned body built in `AnglerFactory.dress`. Change the look in `dress`, the movement in
+  `AnglerAnimator`; front is -Z. The rod pivot, chair and bobber stay on `world.anglerGroup`.
 - Anything solid gets a collider in the `Colliders` registry (`Colliders.box` / `Colliders.circle` with `COL.WALK`, `COL.BOAT`, `COL.DIVE`) right where its model is built. The walk, boat and dive code all read from it; check with the secret menu's Debug → collision boxes.
 - Static pier props are merged by `ModelKit.mergeStatic`; anything that moves or is rebuilt must be passed in its `keep` list.
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
