@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.7.0';
+    window.PF_VERSION = '3.8.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4411,7 +4411,7 @@
            ------------------------------------------------------------------ */
         static loftHull(o) {
           // o: L, beam, draft, depth (keel->sheer at midship), bowRise, sternRise, sternW, bands:[{y0,y1,color}], planks
-          const NZ = 30, NP = 10;
+          const NZ = 52, NP = 20;   // finer loft: smoother hull and crisp paint bands
           const pos = [], col = [], idx = [];
           const c = new THREE.Color();
           const sheerY = t => o.depth - o.draft + o.depth * (0.45 * (t < 0.4 ? Math.pow((0.4 - t) / 0.4, 1.7) * o.bowRise : 0) + (t > 0.8 ? (t - 0.8) * o.sternRise : 0));
@@ -4427,12 +4427,17 @@
             const t = i / NZ, z = -o.L / 2 + t * o.L;
             const w = halfW(t), ky = keelY(t), sy = sheerY(t);
             const right = [];
-            for (let k = 0; k < NP; k++) {
-              const u = k / (NP - 1);
+            // rows at every paint-band edge (twice, a hair apart), so each stripe is a clean straight line, not a zigzag
+            const us = [];
+            for (let k = 0; k < NP; k++) us.push(k / (NP - 1));
+            o.bands.forEach(bd => [bd.y0, bd.y1].forEach(yb => { if (Math.abs(yb) > 8) return; const ub = (yb - ky) / Math.max(1e-4, sy - ky); us.push(THREE.MathUtils.clamp(ub - 2e-4, 0, 1), THREE.MathUtils.clamp(ub + 2e-4, 0, 1)); }));
+            us.sort((p, q) => p - q);
+            for (let k = 0; k < us.length; k++) {
+              const u = us[k];
               const x = w * (1 - Math.pow(1 - u, 2.1)) * (1 + (o.planks ? Math.sin(u * o.planks * Math.PI * 2) * 0.012 : 0));
               right.push([x, ky + (sy - ky) * u, z]);
             }
-            const left = right.slice(0, NP - 1).reverse().map(p => [-p[0], p[1], p[2]]);
+            const left = right.slice(0, right.length - 1).reverse().map(p => [-p[0], p[1], p[2]]);
             loops.push(right.concat(left));
           }
           const NL = loops[0].length;
@@ -4455,12 +4460,16 @@
           const last = loops[NZ];
           const tp = [], tc = [], ti = [], tn = [];
           const zT = last[0][2];
-          const top = last[NP - 1];
+          const top = last[(last.length - 1) / 2];
           tp.push(0, top[1], zT); c.set(o.bands[o.bands.length - 1].color); tc.push(c.r, c.g, c.b); tn.push(0, 0, 1);
+          // one flat colour for the whole transom (the topside band just under the sheer): a fan of triangles from the centre
+          // cannot show horizontal stripes without streaks
+          const tY = last[(last.length - 1) / 2][1] - 0.3;
+          c.set(o.bands[o.bands.length - 1].color);
+          for (const bnd of o.bands) { if (tY >= bnd.y0 && tY < bnd.y1) { c.set(bnd.color); break; } }
+          tc[0] = c.r; tc[1] = c.g; tc[2] = c.b;
           last.forEach(p => {
             tp.push(p[0], p[1], zT);
-            c.set(o.bands[o.bands.length - 1].color);
-            for (const bnd of o.bands) { if (p[1] >= bnd.y0 && p[1] < bnd.y1) { c.set(bnd.color); break; } }
             tc.push(c.r, c.g, c.b); tn.push(0, 0, 1);
           });
           for (let j = 1; j < NL; j++) ti.push(0, j, j + 1);
@@ -4477,7 +4486,8 @@
           const group = new THREE.Group();
           if (tier === 0) return group;
           const M = (color, rough = 0.6, metal = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra));
-          const box = (w, h, d, mat, x, y, z, parent = group) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); parent.add(m); return m; };
+          const box = (w, h, d, mat, x, y, z, parent = group) => { const m = new THREE.Mesh(ModelKit.roundedBox(w, h, d, ModelKit.bevelFor(w, h, d)), mat); m.position.set(x, y, z); parent.add(m); return m; };
+          const torus = (r, tube, mat, x, y, z, rotY = 0, parent = group) => { const m = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 6, 16), mat); m.position.set(x, y, z); m.rotation.y = rotY; parent.add(m); return m; };
           const cyl = (rt, rb, h, mat, x, y, z, seg = 10, parent = group) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z); parent.add(m); return m; };
           const hullMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.55, metalness: 0.05 });
           const addRails = (hull, mat, radius, lift = 0.0, from = 0.04, to = 0.98) => {
@@ -4526,6 +4536,16 @@
             const lan = cyl(0.07, 0.07, 0.16, M(0xfacc15, 0.4, 0.5, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.5 }), -0.5, 0.52, -1.35, 8);
             outboard(0, 0.52, 2.45, 0x64748b, 0x475569);
             const tiller = cyl(0.025, 0.025, 0.9, trim, 0, 0.85, 2.0, 6); tiller.rotation.x = 1.2;
+            // ---- v3.8 detail pass: steamed ribs inside the hull, oarlocks, a bow painter and a bailer ----
+            for (let i = 0; i < 9; i++) {
+              const t = 0.14 + i * 0.085, z = -2.3 + t * 4.6, hw = hull.halfW(t), top = hull.sheerY(t), bot = hull.keelY(t) + 0.08;
+              const pts = [];
+              for (let k = 0; k <= 8; k++) { const u = k / 8 * 2 - 1; pts.push(new THREE.Vector3(u * hw * 0.93 * (1 - 0.15 * (1 - Math.abs(u))), bot + (top - bot) * Math.pow(Math.abs(u), 1.6), z)); }
+              group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.025, 4, false), dark));
+            }
+            [-1, 1].forEach(sd => [-0.1].forEach(z => { const t = (z + 2.3) / 4.6; const x = sd * hull.halfW(t); cyl(0.02, 0.02, 0.14, M(0x94a3b8, 0.3, 0.8), x, hull.sheerY(t) + 0.12, z, 6); torus(0.05, 0.012, M(0x94a3b8, 0.3, 0.8), x, hull.sheerY(t) + 0.2, z, Math.PI / 2); }));
+            { const painter = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.95, -2.3), new THREE.Vector3(0.15, 0.7, -2.1), new THREE.Vector3(0.3, 0.12, -1.9)]), 12, 0.018, 4, false), M(0xa8845a, 0.95)); group.add(painter); }
+            cyl(0.1, 0.08, 0.12, M(0x0e7490, 0.6), -0.45, 0.1, 0.7, 10);
           }
 
           if (tier === 2) {
@@ -4553,6 +4573,16 @@
             [-1, 1].forEach(s => cyl(0.045, 0.045, 0.1, M(s > 0 ? 0x16a34a : 0xdc2626, 0.4, 0, { emissive: new THREE.Color(s > 0 ? 0x16a34a : 0xdc2626), emissiveIntensity: 0.6 }), s * 0.45, 1.0, -2.2, 8));
             outboard(0, 0.9, 3.15, 0x111827, 0x94a3b8);
             box(0.18, 0.05, 0.1, steel, 0, 0.6, 3.0);
+            // ---- v3.8 detail pass: T-top canopy, grab rails, bow cushions, livewell lid, cleats and a VHF whip ----
+            [[-0.55, -0.95], [0.55, -0.95], [-0.55, -0.05], [0.55, -0.05]].forEach(([x, z]) => cyl(0.025, 0.025, 1.45, steel, x, 1.55, z, 6));
+            box(1.5, 0.06, 1.25, M(0x1e3a8a, 0.8), 0, 2.28, -0.5);
+            box(1.56, 0.04, 1.31, steel, 0, 2.24, -0.5);
+            cyl(0.012, 0.016, 1.6, M(0xf8fafc, 0.4), 0.6, 3.05, -0.9, 5);
+            [-1, 1].forEach(sd => { const gr = cyl(0.02, 0.02, 0.7, steel, sd * 0.47, 1.25, -0.55, 6); gr.rotation.x = Math.PI / 2; });
+            box(1.2, 0.12, 0.9, M(0xe2e8f0, 0.7), 0, 0.2, -1.65);
+            [-0.3, 0.3].forEach(x => box(0.55, 0.1, 0.8, M(0x1d4ed8, 0.75), x, 0.31, -1.65));
+            box(0.6, 0.04, 0.4, M(0xcbd5e1, 0.5), 0.55, 0.14, 1.9);
+            [-1, 1].forEach(sd => [-1.5, 2.2].forEach(z => box(0.06, 0.04, 0.22, steel, sd * hull.halfW((z + 3) / 6) * 0.9, 0.86, z)));
           }
 
           if (tier === 3) {
@@ -4596,6 +4626,21 @@
             const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.07, 8, 16), M(0xf97316, 0.5)); ring.position.set(1.04, 1.5, -1.9); ring.rotation.y = Math.PI / 2; group.add(ring);
             // anchor and bow bollard
             box(0.18, 0.18, 0.3, steel, 0, 1.08, -2.6);
+            // ---- v3.8 detail pass: hull portholes, window frames, wheelhouse door, a life-raft canister, a net on the drum,
+            // a ladder to the wheelhouse roof, floats along the rail and an exhaust cap ----
+            [-1, 1].forEach(sd => [-3.0, -2.2, -1.4].forEach(z => {
+              const t = (z + 4.7) / 9.4, x = sd * hull.halfW(t) * 1.0;
+              const ph = torus(0.11, 0.025, steel, x, 0.45, z, Math.PI / 2);
+              const gl = cyl(0.09, 0.09, 0.02, glassM, x, 0.45, z, 10); gl.rotation.z = Math.PI / 2;
+            }));
+            [-0.6, 0, 0.6].forEach(x => { box(0.5, 0.05, 0.05, white, x, 2.03, -2.93); box(0.5, 0.05, 0.05, white, x, 1.57, -2.93); });
+            box(0.6, 1.1, 0.05, M(0x334155, 0.5, 0.3), 0, 1.35, -0.88);
+            cyl(0.03, 0.03, 0.06, steel, 0.2, 1.35, -0.85, 6).rotation.x = Math.PI / 2;
+            { const raft = cyl(0.25, 0.25, 0.8, white, 0.75, 2.6, -2.2, 12); raft.rotation.x = Math.PI / 2; [0.25, -0.25].forEach(dz => torus(0.255, 0.02, M(0x1e293b, 0.6), 0.75, 2.6, -2.2 + dz)); }
+            { const netM = M(0x15803d, 0.95); const n = cyl(0.5, 0.5, 1.2, netM, 0, 0.95, 1.9, 14); n.rotation.z = Math.PI / 2; for (let k = 0; k < 6; k++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), orange); f.position.set(-0.5 + k * 0.2, 1.47, 1.9); group.add(f); } }
+            for (let k = 0; k < 5; k++) box(0.5, 0.03, 0.04, steel, 0, 0.75 + k * 0.32, -0.86 - 0.0);
+            [-1, 1].forEach(sd => [0.6, 1.4, 2.4].forEach(z => { const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), z === 1.4 ? yellow : orange); f.position.set(sd * hull.halfW((z + 4.7) / 9.4) * 1.0, 1.2, z); group.add(f); }));
+            cyl(0.18, 0.2, 0.25, M(0x111827, 0.7), 0, 3.65, -1.0, 10);
           }
           if (tier === 4) {
             // ---- Expedition yacht: twin outboards, flybridge and an aft helm ----
@@ -4621,6 +4666,23 @@
             const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 6, 14), M(0x111827, 0.6)); wheel.position.set(0, 1.62, -0.72); wheel.rotation.x = -0.8; group.add(wheel);
             const screen = box(1.1, 0.5, 0.03, glassM, 0, 1.8, -0.78); screen.rotation.x = -0.3;
             box(2.4, 0.4, 0.5, white, 0, 0.78, 3.0); box(2.4, 0.08, 0.55, navy, 0, 1.02, 3.0);   // aft bench
+            // ---- v3.8 detail pass: hull portholes, a window band around the cabin, flybridge rails, a radome, bow sun
+            // pads, an anchor on the stem, cushions on the bench and a tender on the cabin roof ----
+            [-1, 1].forEach(sd => [-3.8, -3.1, -2.4, -1.7].forEach(z => {
+              const t = (z + 5.5) / 11, x = sd * hull.halfW(t) * 1.0;
+              torus(0.1, 0.022, steel, x, 0.3, z, Math.PI / 2);
+              const gl = cyl(0.085, 0.085, 0.02, glassM, x, 0.3, z, 10); gl.rotation.z = Math.PI / 2;
+            }));
+            [-1, 1].forEach(sd => box(0.02, 0.1, 3.5, navy, sd * 1.51, 1.95, -2.5));
+            [[-0.85, -3.2], [0.85, -3.2], [-0.85, -2.0], [0.85, -2.0]].forEach(([x, z]) => cyl(0.02, 0.02, 0.45, steel, x, 3.4, z, 6));
+            [-0.85, 0.85].forEach(x => box(0.04, 0.04, 1.25, steel, x, 3.62, -2.6));
+            box(1.74, 0.04, 0.04, steel, 0, 3.62, -2.0);
+            { const dome = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), white); dome.position.set(-0.45, 3.2, -3.0); group.add(dome); }
+            [-0.55, 0.55].forEach(x => { const pad = box(0.95, 0.12, 1.3, M(0xe2e8f0, 0.8), x, 0.62 + 0.2, -4.0); pad.rotation.x = -0.08; });
+            { const anc = box(0.1, 0.4, 0.06, steel, 0, 0.9, -5.35); anc.rotation.x = 0.3; box(0.34, 0.08, 0.06, steel, 0, 0.72, -5.38); }
+            [-0.8, 0, 0.8].forEach(x => box(0.7, 0.1, 0.42, M(0x0ea5e9, 0.8), x, 1.11, 3.0));
+            { const tender = new THREE.Group(); const tb = cyl(0.3, 0.3, 1.8, M(0xf97316, 0.6), 0, 0, 0, 10, tender); tb.rotation.x = Math.PI / 2; tb.scale.set(1.2, 1, 0.55);
+              box(0.5, 0.06, 0.5, M(0x1e293b, 0.6), 0, 0.12, 0.6, tender); tender.position.set(0.85, 2.28, -1.4); group.add(tender); }
             outboard(-0.95, 0.95, 5.55, 0x111827, 0x94a3b8); outboard(0.95, 0.95, 5.55, 0x111827, 0x94a3b8);
             [[-1, 0xdc2626], [1, 0x16a34a]].forEach(([sd, c]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: c })); l.position.set(sd * 1.0, 1.4, -4.2); group.add(l); });
           }
