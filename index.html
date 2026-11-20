@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.4.0';
+    window.PF_VERSION = '3.5.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1356,6 +1356,93 @@
       .cust-panel { flex: 1; min-width: 0; overflow-y: auto; padding-right: 4px; }
       .cust-gender .pixel-btn { padding: 6px 4px; font-size: 12px; }
     }
+
+    /* =========================================================================
+       DIVING & SPEARFISHING
+       ========================================================================= */
+    #dive-hud {
+      position: fixed;
+      right: calc(8px + var(--safe-right));
+      top: calc(var(--hud-top-h) + var(--safe-top) + 10px);
+      z-index: 11;
+      width: min(46vw, 214px);
+      display: none;
+      pointer-events: none;
+    }
+    body[data-diving="1"] #dive-hud { display: block; }
+    .dive-panel {
+      background: rgba(4, 20, 36, 0.88);
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 0 2px #070c14, 0 4px 12px rgba(0, 0, 0, 0.6);
+      padding: 6px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #e0f2fe;
+    }
+    .dive-row { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 2px; white-space: nowrap; }
+    .dive-row span:last-child { color: #fff; text-align: right; }
+    .dive-bar { height: 9px; background: #041322; border: 1px solid #0e3a5c; overflow: hidden; margin: 2px 0 6px; }
+    .dive-bar > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #22d3ee, #38bdf8); transition: width 0.15s linear; }
+    #dive-depth-bar > i { background: linear-gradient(90deg, #4ade80, #facc15, #ef4444); }
+    #dive-air-bar.low > i { background: linear-gradient(90deg, #f97316, #ef4444); animation: pulseWarn 0.35s infinite alternate; }
+    #dive-gun-state.reload { color: #fbbf24; }
+    #dive-gun-state.ready { color: #4ade80; }
+
+    #dive-pad {
+      display: none;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      pointer-events: auto;
+    }
+    body[data-dive-btn="1"] #dive-pad, body[data-diving="1"] #dive-pad { display: flex; }
+    .dive-btn {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      border: 3px solid #7dd3fc;
+      background: radial-gradient(circle at 35% 30%, #0ea5e9, #075985);
+      color: #fff; font-weight: 900; font-size: 20px; font-family: inherit;
+      box-shadow: 0 0 0 3px #070c14, 0 5px 10px rgba(0, 0, 0, 0.5);
+      touch-action: none;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      line-height: 1;
+    }
+    .dive-btn.held, .dive-btn:active { transform: scale(0.92); filter: brightness(1.2); }
+    .dive-btn small { font-size: 9px; letter-spacing: 0.5px; margin-top: 2px; }
+    #btn-dive-toggle { width: auto; min-width: 74px; border-radius: 28px; padding: 0 12px; font-size: 14px; flex-direction: row; gap: 6px; }
+    body[data-diving="1"] #btn-dive-toggle { background: radial-gradient(circle at 35% 30%, #f97316, #9a3412); border-color: #fed7aa; }
+    body:not([data-diving="1"]) #btn-dive-up, body:not([data-diving="1"]) #btn-dive-down { display: none; }
+
+    #dive-vignette {
+      position: fixed; inset: 0; pointer-events: none; z-index: 8; display: none;
+      background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 52%, rgba(0, 20, 38, 0.6) 100%);
+    }
+    #dive-flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9; opacity: 0; transition: opacity 0.25s;
+      background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0) 40%, rgba(239, 68, 68, 0.5) 100%);
+    }
+    #dive-flash.on { opacity: 1; }
+    #dive-reticle {
+      position: fixed; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+      border: 2px solid rgba(186, 230, 253, 0.75); border-radius: 50%; display: none; pointer-events: none; z-index: 9;
+    }
+    #dive-reticle::before, #dive-reticle::after { content: ''; position: absolute; background: rgba(186, 230, 253, 0.8); }
+    #dive-reticle::before { left: 50%; top: 4px; bottom: 4px; width: 2px; margin-left: -1px; }
+    #dive-reticle::after { top: 50%; left: 4px; right: 4px; height: 2px; margin-top: -1px; }
+    #dive-lock {
+      position: fixed; left: 0; top: 0; width: 58px; height: 58px; margin: -29px 0 0 -29px;
+      border: 3px solid #4ade80; border-radius: 8px; display: none; pointer-events: none; z-index: 9;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.7);
+    }
+    #dive-lock.bad { border-color: #fb923c; box-shadow: 0 0 10px rgba(251, 146, 60, 0.7); }
+    #dive-lock span {
+      position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; white-space: nowrap;
+      font-size: 11px; font-weight: 900; color: #fff; background: rgba(4, 20, 36, 0.85); padding: 2px 6px; border: 1px solid #38bdf8;
+    }
+    body[data-diving="1"] #dive-vignette, body[data-diving="1"] #dive-reticle { display: block; }
+    #btn-primary-action.spear { background: radial-gradient(circle at 35% 30%, #22d3ee, #0e7490); border-color: #a5f3fc; }
+    #btn-primary-action.spear.reload { background: radial-gradient(circle at 35% 30%, #94a3b8, #475569); border-color: #cbd5e1; }
+    body[data-diving="1"] .hud-stack { opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -1516,11 +1603,32 @@
 
 
       <div class="touch-zone-right">
+        <div id="dive-pad">
+          <button class="dive-btn" id="btn-dive-up" type="button" aria-label="Swim up (R)">▲<small>UP</small></button>
+          <button class="dive-btn" id="btn-dive-down" type="button" aria-label="Swim down (F)">▼<small>DOWN</small></button>
+          <button class="dive-btn" id="btn-dive-toggle" type="button" aria-label="Dive or surface (X)"><span id="dive-toggle-icon">🤿</span><span id="dive-toggle-label">DIVE</span></button>
+        </div>
         <button id="btn-primary-action" type="button">
           <span id="primary-action-icon" style="font-size: 24px;">🎣</span>
           <span id="primary-action-label">HOLD CAST</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Diving overlay: water tint, aim reticle, auto-aim lock marker, air alarm flash and the dive gauges -->
+  <div id="dive-vignette"></div>
+  <div id="dive-flash"></div>
+  <div id="dive-reticle"></div>
+  <div id="dive-lock"><span id="dive-lock-label"></span></div>
+  <div id="dive-hud">
+    <div class="dive-panel">
+      <div class="dive-row"><span>🌊 DEPTH</span><span id="dive-depth">0.0 m</span></div>
+      <div class="dive-bar" id="dive-depth-bar"><i style="width: 0%;"></i></div>
+      <div class="dive-row"><span>🫧 AIR</span><span id="dive-air-text">0:00</span></div>
+      <div class="dive-bar" id="dive-air-bar"><i style="width: 100%;"></i></div>
+      <div class="dive-row"><span>🎒 BAG</span><span id="dive-bag-text">0 / 0 kg</span></div>
+      <div class="dive-row"><span id="dive-gun-name">🔱 -</span><span id="dive-gun-state" class="ready">READY</span></div>
     </div>
   </div>
 
@@ -1644,6 +1752,8 @@
           <button class="pixel-btn tab-btn" data-shop-tab="baits">Bait (10x)</button>
           <button class="pixel-btn tab-btn" data-shop-tab="buckets">Buckets</button>
           <button class="pixel-btn tab-btn" data-shop-tab="paint">Paint</button>
+          <button class="pixel-btn tab-btn" data-shop-tab="dive">🤿 Dive</button>
+          <button class="pixel-btn tab-btn" data-shop-tab="spear">🔱 Spear</button>
         </div>
 
         <div class="upgrade-grid" id="shop-items-container"></div>
@@ -1979,6 +2089,10 @@
           this.surfGain = null;
           this.rainGain = null;
           this.seagullTimer = 6.0;
+          this.underwater = false;   // diving: muffles the surface and fades in the underwater beds
+          this.uwDepth = 0;          // 0..1 how deep the diver is
+          this.subGain = null;
+          this.hissGain = null;
         }
 
         init() {
@@ -2047,6 +2161,22 @@
           rainFilter.connect(this.rainGain);
           this.rainGain.connect(this.ctx.destination);
           rainSrc.start();
+
+          // underwater beds: a deep pressure rumble and a faint hiss of distant bubbles (silent until you dive)
+          const subSrc = this.ctx.createBufferSource();
+          subSrc.buffer = buffer; subSrc.loop = true; subSrc.playbackRate.value = 0.6;
+          const subFilter = this.ctx.createBiquadFilter();
+          subFilter.type = 'lowpass'; subFilter.frequency.value = 130;
+          this.subGain = this.ctx.createGain(); this.subGain.gain.value = 0;
+          subSrc.connect(subFilter); subFilter.connect(this.subGain); this.subGain.connect(this.ctx.destination);
+          subSrc.start();
+          const hissSrc = this.ctx.createBufferSource();
+          hissSrc.buffer = buffer; hissSrc.loop = true; hissSrc.playbackRate.value = 1.4;
+          const hissFilter = this.ctx.createBiquadFilter();
+          hissFilter.type = 'bandpass'; hissFilter.frequency.value = 1900; hissFilter.Q.value = 1.2;
+          this.hissGain = this.ctx.createGain(); this.hissGain.gain.value = 0;
+          hissSrc.connect(hissFilter); hissFilter.connect(this.hissGain); this.hissGain.connect(this.ctx.destination);
+          hissSrc.start();
         }
 
         updateAmbient(dt, weatherId, nearShore) {
@@ -2055,20 +2185,75 @@
           if (!this.enabled) {
             this.surfGain.gain.setTargetAtTime(0, now, 0.2);
             this.rainGain.gain.setTargetAtTime(0, now, 0.2);
+            if (this.subGain) this.subGain.gain.setTargetAtTime(0, now, 0.2);
+            if (this.hissGain) this.hissGain.gain.setTargetAtTime(0, now, 0.2);
             return;
           }
-          const targetSurf = weatherId === 'STORM' ? 0.036 : 0.02;
-          const targetRain = weatherId === 'STORM' ? 0.045 : (weatherId === 'RAIN' ? 0.028 : 0.0);
+          const uw = this.underwater;
+          const targetSurf = (weatherId === 'STORM' ? 0.036 : 0.02) * (uw ? 0.22 : 1);
+          const targetRain = uw ? 0 : (weatherId === 'STORM' ? 0.045 : (weatherId === 'RAIN' ? 0.028 : 0.0));
           this.surfGain.gain.setTargetAtTime(targetSurf, now, 0.4);
           this.rainGain.gain.setTargetAtTime(targetRain, now, 0.4);
+          if (this.subGain) this.subGain.gain.setTargetAtTime(uw ? 0.05 + 0.07 * this.uwDepth : 0, now, 0.5);
+          if (this.hissGain) this.hissGain.gain.setTargetAtTime(uw ? 0.012 : 0, now, 0.5);
 
-          if (nearShore && weatherId !== 'STORM') {
+          if (nearShore && !uw && weatherId !== 'STORM') {
             this.seagullTimer -= dt;
             if (this.seagullTimer <= 0) {
               this.seagullTimer = 11 + Math.random() * 14;
               this.playSeagull();
             }
           }
+        }
+
+        /* ---- diving & spearfishing sounds ---- */
+        playDiveSplash() {
+          this.vibrate(30);
+          this.playNoise({ duration: 0.45, vol: 0.2, filterFreq: 520, filterType: 'lowpass' });
+          this.playTone({ freq: 220, endFreq: 70, type: 'sine', duration: 0.3, vol: 0.14 });
+          this.playNoise({ duration: 0.5, vol: 0.07, filterFreq: 2600, filterType: 'bandpass' });
+        }
+        playBubble() {
+          const f = 380 + Math.random() * 520;
+          this.playTone({ freq: f, endFreq: f * 1.7, type: 'sine', duration: 0.07, vol: 0.05 });
+        }
+        playBubbleBurst() {
+          for (let i = 0; i < 5; i++) {
+            const f = 300 + Math.random() * 700;
+            this.playTone({ freq: f, endFreq: f * 1.6, type: 'sine', duration: 0.06, vol: 0.05, delay: i * 0.045 });
+          }
+        }
+        playSpearShot() {
+          this.vibrate(35);
+          this.playNoise({ duration: 0.14, vol: 0.16, filterFreq: 1700, filterType: 'bandpass' });
+          this.playTone({ freq: 520, endFreq: 140, type: 'sawtooth', duration: 0.16, vol: 0.1 });
+        }
+        playSpearHit() {
+          this.vibrate([30, 30, 50]);
+          this.playTone({ freq: 160, endFreq: 70, type: 'square', duration: 0.12, vol: 0.14 });
+          this.playNoise({ duration: 0.12, vol: 0.12, filterFreq: 900, filterType: 'lowpass' });
+        }
+        playSpearBounce() {
+          this.playTone({ freq: 900, endFreq: 500, type: 'triangle', duration: 0.1, vol: 0.12 });
+          this.playTone({ freq: 700, endFreq: 380, type: 'triangle', duration: 0.1, vol: 0.09, delay: 0.07 });
+        }
+        playSpearReel() {
+          const now = performance.now();
+          if (this.lastSpearReel && now - this.lastSpearReel < 90) return;
+          this.lastSpearReel = now;
+          this.playTone({ freq: 340, endFreq: 420, type: 'square', duration: 0.04, vol: 0.04 });
+        }
+        playAirWarn(urgent = false) {
+          this.vibrate(urgent ? [60, 40, 60] : 40);
+          this.playTone({ freq: urgent ? 980 : 740, type: 'square', duration: 0.12, vol: 0.09 });
+          this.playTone({ freq: urgent ? 980 : 740, type: 'square', duration: 0.12, vol: 0.09, delay: 0.18 });
+        }
+        playWhaleCall() {
+          this.playTone({ freq: 95, endFreq: 190, type: 'sine', duration: 2.2, vol: 0.075 });
+          this.playTone({ freq: 140, endFreq: 70, type: 'sine', duration: 2.6, vol: 0.05, delay: 1.2 });
+        }
+        playSonarPing() {
+          this.playTone({ freq: 1320, endFreq: 1290, type: 'sine', duration: 0.5, vol: 0.05 });
         }
 
         playSeagull() {
@@ -2329,6 +2514,26 @@
         { tier: 3, name: 'Insulated Fish Box', cost: 450, capacity: 50.0, desc: 'Heavy-duty deck fish box. Holds up to 50.0 kg.' },
         { tier: 4, name: 'Refrigerated Hold', cost: 1500, capacity: 150.0, desc: 'Chilled commercial catch hold. Holds up to 150.0 kg.' },
         { tier: 5, name: 'Deep-Freeze Vault', cost: 4000, capacity: 400.0, desc: 'Gilded cryogenic vault for rift-sized catches. Holds up to 400.0 kg.' }
+      ];
+
+      /* ---- Diving & spearfishing gear ----
+         maxDepth: rated depth (m) · air: seconds of air at the surface (drains faster with depth) · bagKg: catch bag size
+         speed: swim speed (m/s) · light: headlamp level.  Spear guns: range (m), speed (m/s), power = heaviest fish (kg) it can land. */
+      const DIVE_GEAR = [
+        { tier: 0, name: 'No Dive Gear', cost: 0, maxDepth: 0, air: 0, bagKg: 0, speed: 0, light: 0, desc: 'You can only look at the water.' },
+        { tier: 1, name: 'Mask, Snorkel & Fins', cost: 140, maxDepth: 4, air: 28, bagKg: 6, speed: 2.4, light: 0, desc: 'Free-diving kit: one breath, shallow dives in the Cove.' },
+        { tier: 2, name: 'Wetsuit & Single Tank', cost: 520, maxDepth: 16, air: 170, bagKg: 16, speed: 3.0, light: 0, desc: 'Scuba basics. Reef dives with minutes of air.' },
+        { tier: 3, name: 'Twin-Tank Tech Rig', cost: 1650, maxDepth: 32, air: 360, bagKg: 34, speed: 3.5, light: 1, desc: 'Twin tanks and a headlamp for the Open Shelf.' },
+        { tier: 4, name: 'Rebreather & Scooter', cost: 4300, maxDepth: 62, air: 780, bagKg: 60, speed: 5.0, light: 2, desc: 'Silent rebreather with a propeller scooter and a strong lamp.' },
+        { tier: 5, name: 'Atmospheric Exo-Suit', cost: 9800, maxDepth: 130, air: 1600, bagKg: 140, speed: 6.0, light: 3, desc: 'Armoured pressure suit that reaches the Abyssal Trench floor.' }
+      ];
+      const SPEAR_GUNS = [
+        { tier: 0, name: 'No Spear', cost: 0, range: 0, speed: 0, power: 0, reload: 0, desc: 'Bare hands.' },
+        { tier: 1, name: 'Hand Pole Spear', cost: 60, range: 6, speed: 17, power: 8, reload: 1.5, desc: 'Short and slow. Good for small reef fish up to 8 kg.' },
+        { tier: 2, name: 'Band Speargun', cost: 260, range: 11, speed: 25, power: 22, reload: 1.2, desc: 'Rubber-band powered. Lands fish up to 22 kg.' },
+        { tier: 3, name: 'Pneumatic Speargun', cost: 820, range: 17, speed: 33, power: 50, reload: 0.9, desc: 'Compressed air, long range, up to 50 kg.' },
+        { tier: 4, name: 'CO2 Power Harpoon', cost: 2400, range: 25, speed: 42, power: 120, reload: 0.7, desc: 'Heavy harpoon for big game up to 120 kg.' },
+        { tier: 5, name: 'Rail Harpoon', cost: 6200, range: 36, speed: 55, power: 320, reload: 0.5, desc: 'Electromagnetic rail gun. Nothing in the sea is too big.' }
       ];
 
       const ZONES = [
@@ -6547,7 +6752,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let bobberVel = new THREE.Vector3();
       let bobberInWater = false;
       // Session-only cheat toggles (unlocked through the secret seagull menu)
-      const cheats = { fastBites: false, noSnap: false, luck: false, freeBait: false, freeFuel: false };
+      const cheats = { fastBites: false, noSnap: false, luck: false, freeBait: false, freeFuel: false, infAir: false, noDepth: false, autoHit: false, fastReload: false, bigBag: false };
       let cheatTaps = 0;
       const CHEAT_TAPS = 31;
       const CHEAT_GULL = { x: -10.4, z: 0.12, radius: 2.7 };
@@ -6732,6 +6937,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         } else if (e.code === 'KeyL') {
           openLogModal();
         } else if (e.code === 'KeyE') {
+          if (dive.active) return;
           if (isNearPierShop()) openShopModal();
           else if (isNearPierBounty()) openBountyModal();
           else if (isNearPierGallery()) openGalleryModal();
@@ -6784,7 +6990,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
          CAREER (XP, ranks, achievements) AND THE DAILY FISH MARKET
          ========================================================================= */
       const STAT_KEYS = ['catches', 'fish', 'junk', 'legendary', 'nightCatches', 'stormCatches', 'frenzyCatches', 'treasures', 'bossCatches',
-        'earned', 'metersSailed', 'bountiesClaimed', 'maxZone'];
+        'earned', 'metersSailed', 'bountiesClaimed', 'maxZone', 'dives', 'speared', 'maxDive', 'diveSeconds', 'diveChests'];
       const CATALOG_INDEX = {};
       CATCH_CATALOG.forEach(c => { CATALOG_INDEX[c.id] = c; });
       const RANKS = [
@@ -6840,7 +7046,14 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'boss_1', icon: '🦑', name: 'Boss Slayer', desc: 'Land a boss fish.', goal: 1, prog: () => stat('bossCatches'), cash: 1000 },
         { id: 'trophy_10', icon: '🥇', name: 'Trophy Collector', desc: 'Hold silver or gold records for 10 species.', goal: 10, prog: () => medalCount('silver'), cash: 400 },
         { id: 'rank_6', icon: '🎖️', name: 'Seasoned', desc: 'Reach the rank of Trench Hunter.', goal: 6, prog: () => rankIndexFor(state.xp), cash: 250 },
-        { id: 'rank_12', icon: '👑', name: 'Sea Legend', desc: 'Reach the top rank.', goal: 11, prog: () => rankIndexFor(state.xp), cash: 1500 }
+        { id: 'rank_12', icon: '👑', name: 'Sea Legend', desc: 'Reach the top rank.', goal: 11, prog: () => rankIndexFor(state.xp), cash: 1500 },
+        { id: 'dive_1', icon: '🤿', name: 'First Plunge', desc: 'Make your first dive.', goal: 1, prog: () => stat('dives'), cash: 40 },
+        { id: 'dive_25', icon: '🫧', name: 'Regular Diver', desc: 'Make 25 dives.', goal: 25, prog: () => stat('dives'), cash: 300 },
+        { id: 'spear_10', icon: '🔱', name: 'Spearfisher', desc: 'Spear 10 fish.', goal: 10, prog: () => stat('speared'), cash: 80 },
+        { id: 'spear_100', icon: '🦈', name: 'Harpoon Hunter', desc: 'Spear 100 fish.', goal: 100, prog: () => stat('speared'), cash: 700 },
+        { id: 'depth_30', icon: '🌊', name: 'Deep Diver', desc: 'Dive to 30 m.', goal: 30, prog: () => Math.floor(stat('maxDive')), cash: 300 },
+        { id: 'depth_100', icon: '🕳️', name: 'Abyss Walker', desc: 'Dive to 100 m.', goal: 100, prog: () => Math.floor(stat('maxDive')), cash: 1500 },
+        { id: 'seabed_chest', icon: '🧰', name: 'Wreck Raider', desc: 'Open 5 sunken chests.', goal: 5, prog: () => stat('diveChests'), cash: 400 }
       ];
 
       function bumpStat(key, n = 1) {
@@ -6960,6 +7173,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           rankClaimed: 0,
           paint: 'classic',
           ownedPaints: ['classic'],
+          diveTier: 0,
+          spearTier: 0,
           saveVersion: 2
         };
       }
@@ -7215,7 +7430,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           ['Unlock all gear', () => {
             state.rodTier = ROD_TIERS.length; state.boatTier = BOAT_TIERS.length - 1; state.bucketTier = BUCKET_TIERS.length;
             state.hasLiveBaitCam = true; state.modules = BOAT_MODULES.map(m => m.id); state.fuel = getCurrentBoat().maxFuel;
-            rebuildPlayerBoatVisual(); cheatDone('🎣 All gear unlocked');
+            state.diveTier = DIVE_GEAR.length - 1; state.spearTier = SPEAR_GUNS.length - 1;
+            rebuildPlayerBoatVisual(); cheatDone('🎣 All gear unlocked (incl. best dive gear & rail harpoon)');
           }],
           ['Best rod', () => { state.rodTier = ROD_TIERS.length; rebuildPlayerBoatVisual(); cheatDone('Best rod equipped'); }],
           ['Best boat', () => { state.boatTier = BOAT_TIERS.length - 1; state.fuel = getCurrentBoat().maxFuel; rebuildPlayerBoatVisual(); cheatDone('Best boat unlocked'); }],
@@ -7224,6 +7440,18 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           ['99 of every bait', () => { state.baitStock = { 2: 99, 3: 99, 4: 99 }; state.baitCount = state.baitTier > 1 ? 99 : 0; cheatDone('🪱 Bait stocked'); }]] },
         { title: '🐟 Fishing (toggles)', toggles: [
           ['fastBites', 'Instant bites'], ['noSnap', 'Line never snaps'], ['luck', 'Rare fish luck x5'], ['freeBait', 'Infinite bait'], ['freeFuel', 'Infinite fuel']] },
+        { title: '🤿 Diving & Harpoon', items: [
+          ['Best dive gear', () => { state.diveTier = DIVE_GEAR.length - 1; cheatDone('🤿 Atmospheric Exo-Suit equipped'); }],
+          ['Best harpoon', () => { state.spearTier = SPEAR_GUNS.length - 1; if (dive.active) gunBody.material.color.setHex(GUN_COLORS[state.spearTier]); cheatDone('🔱 Rail Harpoon equipped'); }],
+          ['Remove dive gear', () => { if (dive.active) { showToast('Surface first!'); return; } state.diveTier = 0; state.spearTier = 0; cheatDone('Dive gear removed'); }],
+          ['Refill air', () => { if (dive.active) { dive.air = dive.airMax; dive.emergency = false; dive.warned25 = dive.warned10 = false; } cheatDone('🫧 Air refilled'); }],
+          ['Empty catch bag', () => { dive.bag = []; cheatDone('🎒 Dive bag emptied'); }],
+          ['Teleport to seabed', () => { if (!dive.active) { showToast('Start a dive first (X)'); return; } dive.pos.y = Math.max(seabedY(dive.pos.x, dive.pos.z) + 0.8, cheats.noDepth ? -999 : -diveGear().maxDepth); cheatDone('⬇️ Seabed reached'); }],
+          ['Teleport to surface', () => { if (!dive.active) { showToast('Start a dive first (X)'); return; } dive.pos.y = -0.3; cheatDone('⬆️ Surface'); }],
+          ['Spawn rare fish', () => { if (!dive.active) { showToast('Start a dive first (X)'); return; } for (let i = 0; i < 4; i++) { const a = Math.random() * 6.28, z = Math.min(-5, dive.pos.z + Math.sin(a) * 9), x = dive.pos.x + Math.cos(a) * 9; const zn = diveZoneAt(z); spawnDiveFish(pickDiveFishItem(zn.id, ['Epic', 'Legendary', 'Rare']), zn, x, z); } cheatDone('🐟 Rare fish nearby!'); }],
+          ['Respawn all chests', () => { diveOpened.clear(); cheatDone('🧰 All chests will be closed again on your next dive'); }]] },
+        { title: '🤿 Diving (toggles)', toggles: [
+          ['infAir', 'Infinite air'], ['noDepth', 'No depth limit'], ['autoHit', 'Harpoon never misses (any size)'], ['fastReload', 'Instant reload'], ['bigBag', 'Unlimited catch bag']] },
         { title: '🌍 World', items: [
           ['Dawn', () => { state.timeOfDay = 0.27; cheatDone('🌅 Dawn'); }], ['Noon', () => { state.timeOfDay = 0.5; cheatDone('☀️ Noon'); }],
           ['Dusk', () => { state.timeOfDay = 0.74; cheatDone('🌇 Dusk'); }], ['Midnight', () => { state.timeOfDay = 0.0; cheatDone('🌙 Midnight'); }],
@@ -7359,6 +7587,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         out.anglerGender = src.anglerGender === 'female' ? 'female' : 'male';
         out.boatTier = int(src.boatTier, 0, 0, BOAT_TIERS.length - 1);
         out.rodTier = int(src.rodTier, 1, 1, ROD_TIERS.length);
+        out.diveTier = int(src.diveTier, 0, 0, DIVE_GEAR.length - 1);
+        out.spearTier = int(src.spearTier, 0, 0, SPEAR_GUNS.length - 1);
         out.bucketTier = int(src.bucketTier, 1, 1, BUCKET_TIERS.length);
         out.baitTier = int(src.baitTier, 1, 1, BAIT_TIERS.length);
         out.baitCount = int(src.baitCount, 0, 0, 9999);
@@ -7825,6 +8055,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function handleActionPress() {
+        if (mode === 'DIVING') { diveAction(); return; }
         const prevCheatTaps = cheatTaps;
         cheatTaps = 0; // any action press that is not a counted "WALK EDGE" press beside the gull resets the count
         if (mode === 'PIER_IDLE') {
@@ -9036,6 +9267,51 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               container.appendChild(card);
             });
           }
+        } else if (activeShopTab === 'dive' || activeShopTab === 'spear') {
+          // Dive gear and spear guns share one card layout: tiers are bought in order and the best one owned is used.
+          const isDive = activeShopTab === 'dive';
+          const list = (isDive ? DIVE_GEAR : SPEAR_GUNS).filter(g => g.tier > 0);
+          const owned0 = isDive ? state.diveTier : state.spearTier;
+          const intro = document.createElement('div');
+          intro.className = 'shop-card';
+          intro.innerHTML = `<div class="card-stats">${isDive
+            ? 'Dive from the end of the pier or from a stopped boat using the <b>🤿 DIVE</b> button (or press <b>X</b>). Deeper water needs better gear.'
+            : 'In the water press <b>FIRE</b> (or Space). Auto-aim locks onto the fish nearest your crosshair. Heavier fish need a stronger gun.'}</div>`;
+          container.appendChild(intro);
+          list.forEach(g => {
+            const owned = owned0 >= g.tier;
+            const card = document.createElement('div');
+            card.className = `shop-card ${owned0 === g.tier ? 'equipped' : ''}`;
+            const stats = isDive
+              ? `Rated depth: <b>${g.maxDepth} m</b> • Air: <b>${Math.floor(g.air / 60)}:${String(g.air % 60).padStart(2, '0')}</b> • Catch bag: <b>${g.bagKg} kg</b><br/>Swim speed: <b>${g.speed} m/s</b>${g.light ? ' • Headlamp: <b>L' + g.light + '</b>' : ''}`
+              : `Range: <b>${g.range} m</b> • Power: <b>${g.power} kg</b> fish<br/>Reload: <b>${g.reload}s</b> • Spear speed: <b>${g.speed} m/s</b>`;
+            card.innerHTML = `
+              <div>
+                <div class="card-title">
+                  <span>Tier ${g.tier}: ${g.name}</span>
+                  <span style="color: #ffd24c;">$${g.cost}</span>
+                </div>
+                <div class="card-stats">${stats}<br/>${g.desc}</div>
+              </div>`;
+            const btn = document.createElement('button');
+            btn.className = owned ? 'pixel-btn green' : 'pixel-btn gold';
+            if (owned0 === g.tier) { btn.textContent = 'Equipped'; btn.disabled = true; }
+            else if (owned) { btn.textContent = 'Owned'; btn.disabled = true; }
+            else {
+              btn.textContent = `Buy ($${g.cost})`;
+              btn.disabled = state.cash < g.cost || g.tier > owned0 + 1;
+              if (g.tier > owned0 + 1) btn.textContent = `Needs tier ${g.tier - 1} first`;
+              btn.onclick = () => {
+                if (state.cash < g.cost || g.tier > owned0 + 1) return;
+                state.cash = +(state.cash - g.cost).toFixed(2);
+                if (isDive) state.diveTier = g.tier; else state.spearTier = g.tier;
+                sfx.playCoin(); saveGame(); renderShop(); updateHUD();
+                showToast(`${isDive ? '🤿' : '🔱'} Bought ${g.name}!`);
+              };
+            }
+            card.appendChild(btn);
+            container.appendChild(card);
+          });
         }
       }
 
@@ -9631,7 +9907,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         proxEl.style.borderColor = 'var(--accent-gold)';
         proxEl.style.color = '#fef08a';
 
-        if (mode === 'CASTING') {
+        if (mode === 'DIVING') {
+          const gun = spearGun();
+          primaryBtn.classList.add('spear');
+          if (dive.emergency) { iconEl.textContent = '🆘'; labelEl.textContent = 'ASCENDING'; }
+          else if (dive.nearChest) { iconEl.textContent = '🧰'; labelEl.textContent = 'OPEN CHEST'; }
+          else if (gun.tier === 0) { iconEl.textContent = '🚫'; labelEl.textContent = 'NO SPEAR'; }
+          else if (harpoon.state === 'ready') { iconEl.textContent = '🔱'; labelEl.textContent = 'SPEAR!'; }
+          else { primaryBtn.classList.add('reload'); iconEl.textContent = '🔄'; labelEl.textContent = harpoon.state === 'reload' ? 'RELOADING' : 'FIRED'; }
+        } else if (mode === 'CASTING') {
           primaryBtn.classList.add('casting');
           iconEl.textContent = '⚡';
           labelEl.textContent = 'RELEASE!';
@@ -9910,6 +10194,1081 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateViewButton();
         if (notify) showToast(settings.firstPerson ? '👁️ First-person view' : '🎥 Third-person view');
       }
+
+      /* =========================================================================
+         SECTION N: DIVING, THE UNDERWATER WORLD & SPEARFISHING
+         N1 terrain + rules (pure functions) · N2 fish + harpoon logic · N3 visuals · N4 dive loop & UI
+         ========================================================================= */
+
+      /* ---- N1: seabed shape, depth, zones ---- */
+      const SEABED_TABLE = [[0, 2.2], [12, 5.5], [100, 10], [300, 19], [650, 34], [1500, 58], [3000, 88]];
+      function seabedBase(d) {
+        for (let i = 1; i < SEABED_TABLE.length; i++) {
+          if (d <= SEABED_TABLE[i][0]) {
+            const a = SEABED_TABLE[i - 1], b = SEABED_TABLE[i];
+            const t = (d - a[0]) / (b[0] - a[0]);
+            return a[1] + (b[1] - a[1]) * t * t * (3 - 2 * t);
+          }
+        }
+        return SEABED_TABLE[SEABED_TABLE.length - 1][1];
+      }
+      function seabedNoise(x, z) {
+        return Math.sin(x * 0.09 + Math.sin(z * 0.07) * 2.0) * 0.5 + Math.sin(z * 0.13 - x * 0.05) * 0.35 + Math.sin((x + z) * 0.31) * 0.15;
+      }
+      /* height of the sea floor (negative metres below the surface) at a world position */
+      function seabedY(x, z) {
+        const d = Math.max(0, -z - 2.5);
+        const base = seabedBase(d);
+        return -(base + seabedNoise(x, z) * (base * 0.11 + 0.3));
+      }
+      function diveZoneAt(z) { return getZoneForDistance(Math.max(0, Math.round(-z - 12))); }
+      function hash2(a, b) {
+        let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263);
+        h = Math.imul(h ^ (h >>> 13), 1274126177);
+        return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+      }
+      const wrapAngle = a => Math.atan2(Math.sin(a), Math.cos(a));
+      /* air consumption: 1 s of air per second at the surface, +10 % per metre-tenth of depth (pressure) */
+      const diveAirRate = depth => 1 + Math.max(0, depth) / 10;
+      /* light left at a depth: the sea swallows it (used for fog, lamp and sun shafts) */
+      const diveLightAt = depth => Math.exp(-Math.max(0, depth) * 0.052);
+
+      /* ---- N2: the dive state, fish and harpoon ---- */
+      const dive = {
+        active: false, fromBoat: false, startX: 0, startZ: 0,
+        pos: new THREE.Vector3(), yaw: 0, pitch: 0, vy: 0, vf: 0,
+        air: 0, airMax: 0, bag: [], t: 0, surfacing: false, emergency: false,
+        zone: ZONES[0], warned25: false, warned10: false, airBeep: 0, bubbleT: 2, whaleT: 40, sonarT: 12,
+        depthWarnT: 0, lastLockMsg: 0, chestT: 20, hudT: 0
+      };
+      const diveInput = { up: false, down: false };
+      const harpoon = {
+        state: 'ready',            // ready | flying | return
+        pos: new THREE.Vector3(), prev: new THREE.Vector3(), vel: new THREE.Vector3(),
+        travelled: 0, reloadT: 0, hit: null, muzzle: new THREE.Vector3(), power: 0
+      };
+      const diveFish = [];
+      const diveChests = [];
+      const bagWeight = () => dive.bag.reduce((s, e) => s + e.weight, 0);
+      const diveGear = () => DIVE_GEAR[state.diveTier] || DIVE_GEAR[0];
+      const spearGun = () => SPEAR_GUNS[state.spearTier] || SPEAR_GUNS[0];
+      const bagCapacity = () => (cheats.bigBag ? 99999 : diveGear().bagKg);
+      const DIVE_FISH_TARGET = () => (settings.quality === 'low' ? 11 : 17);
+
+      /* which fish live where: the normal catalogue, fish only, with the usual rarity odds (and the luck cheat) */
+      function pickDiveFishItem(zoneId, forceRarity) {
+        const fullMoon = isFullMoonNight();
+        const storm = state.weather === 'STORM';
+        let pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && c.zones.includes(zoneId) && (!c.fullMoonOnly || fullMoon) && (!c.stormOnly || storm));
+        if (forceRarity) { const fr = pool.filter(c => forceRarity.includes(c.rarity)); if (fr.length) pool = fr; }
+        if (!pool.length) pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly);
+        const luck = cheats.luck ? 5 : 1;
+        const wts = pool.map(it => {
+          let w = 10;
+          if (it.rarity === 'Common') w = 14;
+          else if (it.rarity === 'Uncommon') w = 9;
+          else if (it.rarity === 'Rare') w = 5 * luck;
+          else if (it.rarity === 'Epic') w = 2.5 * luck;
+          else if (it.rarity === 'Legendary') w = 1.2 * luck;
+          return w;
+        });
+        let roll = Math.random() * wts.reduce((a, b) => a + b, 0);
+        for (let i = 0; i < pool.length; i++) { roll -= wts[i]; if (roll <= 0) return pool[i]; }
+        return pool[0];
+      }
+      function rollDiveFishStats(item, zone) {
+        const weight = +Math.max(0.1, item.minW + (item.maxW - item.minW) * Math.pow(Math.random(), 1.4)).toFixed(2);
+        const ratio = weight / ((item.minW + item.maxW) * 0.5);
+        const value = Math.max(1, Math.round(item.value * (0.85 + ratio * 0.25)));
+        const len = THREE.MathUtils.clamp(0.38 + Math.cbrt(weight) * 0.45, 0.4, 6);
+        return {
+          item, weight, value, zoneObj: zone, len,
+          radius: Math.max(0.24, len * 0.26),
+          speed: Math.min(3.2, 0.7 + len * 0.38),
+          skit: item.rarity === 'Legendary' || item.rarity === 'Epic' ? 0 : 3 + len * 1.3,
+          curious: item.rarity === 'Epic' || item.rarity === 'Legendary',
+          depthPref: item.rarity === 'Legendary' ? Math.random() * 0.35 : item.rarity === 'Epic' ? Math.random() * 0.5 : item.rarity === 'Rare' ? 0.1 + Math.random() * 0.6 : 0.3 + Math.random() * 0.7
+        };
+      }
+      /* the swim target of a fish: depthPref 0 = hugging the sea floor, 1 = just under the surface */
+      function waypointY(f, x, z) {
+        const floor = seabedY(x, z) + f.radius + 0.5, top = -(f.radius + 1.0);
+        if (floor >= top) return top;
+        return floor + (top - floor) * THREE.MathUtils.clamp(f.depthPref + (Math.random() - 0.5) * 0.35, 0, 1);
+      }
+      function pickWaypoint(f, diver) {
+        let cx = f.pos.x, cz = f.pos.z, r = 6 + Math.random() * 12;
+        if (f.curious && diver && Math.random() < 0.7) { cx = diver.x; cz = diver.z; r = 5 + Math.random() * 4; }
+        const a = Math.random() * Math.PI * 2;
+        const x = THREE.MathUtils.clamp(cx + Math.cos(a) * r, -220, 220);
+        const z = Math.min(-3.2, cz + Math.sin(a) * r);
+        f.tgt.set(x, waypointY(f, x, z), z);
+        f.wait = 3 + Math.random() * 5;
+      }
+      /* one step of fish behaviour: wander, school, flee from the diver or a flying spear, stay between sea floor and surface */
+      function stepDiveFish(f, dt, diver, spearPos) {
+        let mul = 1;
+        const dd = f.pos.distanceTo(diver);
+        if (f.skit > 0 && dd < f.skit && f.fleeT <= 0) { f.fleeT = 1.6 + Math.random(); f.threat.copy(diver); }
+        if (spearPos && f.pos.distanceTo(spearPos) < 3.2 && f.fleeT <= 0) { f.fleeT = 2.2; f.threat.copy(spearPos); }
+        if (f.fleeT > 0) {
+          f.fleeT -= dt; mul = 2.7;
+          f.tgt.set(f.pos.x - (f.threat.x - f.pos.x), f.pos.y, f.pos.z - (f.threat.z - f.pos.z));
+          f.tgt.y = THREE.MathUtils.clamp(f.pos.y + (Math.random() - 0.5) * 2, seabedY(f.tgt.x, f.tgt.z) + f.radius + 0.5, -(f.radius + 1));
+        } else if (f.leader && f.leader.state === 'swim') {
+          const lh = f.leader.h;
+          f.tgt.set(f.leader.pos.x + Math.cos(lh + f.off.x) * f.off.z, f.leader.pos.y + f.off.y, f.leader.pos.z + Math.sin(lh + f.off.x) * f.off.z);
+          mul = f.pos.distanceTo(f.leader.pos) > 3 ? 1.5 : 1.0;
+        } else {
+          f.leader = null;
+          f.wait -= dt;
+          if (f.wait <= 0 || f.pos.distanceTo(f.tgt) < 1.2) pickWaypoint(f, diver);
+        }
+        const dx = f.tgt.x - f.pos.x, dz = f.tgt.z - f.pos.z, dy = f.tgt.y - f.pos.y;
+        const turnRate = f.fleeT > 0 ? 4.2 : 1.5;
+        const dH = wrapAngle(Math.atan2(dz, dx) - f.h);
+        f.h += THREE.MathUtils.clamp(dH, -turnRate * dt, turnRate * dt);
+        const wantP = THREE.MathUtils.clamp(Math.atan2(dy, Math.hypot(dx, dz)), -0.55, 0.55);
+        f.p += (wantP - f.p) * Math.min(1, dt * 2.5);
+        const wantV = f.speed * mul * (Math.abs(dH) > 1.6 ? 0.45 : 1);
+        f.v += (wantV - f.v) * Math.min(1, dt * 2.2);
+        const cp = Math.cos(f.p);
+        f.pos.x += Math.cos(f.h) * cp * f.v * dt;
+        f.pos.y += Math.sin(f.p) * f.v * dt;
+        f.pos.z += Math.sin(f.h) * cp * f.v * dt;
+        const fy = seabedY(f.pos.x, f.pos.z) + f.radius + 0.25;
+        if (f.pos.y < fy) { f.pos.y = fy; f.p = Math.max(f.p, 0.15); }
+        const top = -(f.radius + 0.9);
+        if (f.pos.y > top) { f.pos.y = top; f.p = Math.min(f.p, -0.1); }
+        if (f.pos.z > -3.2) { f.pos.z = -3.2; f.h = Math.atan2(-Math.abs(Math.sin(f.h)) - 0.3, Math.cos(f.h)); }
+      }
+      /* the best fish to lock onto: closest to the crosshair, inside a cone and within reach */
+      function pickLockTarget(camPos, camFwd, fishList, maxDist, coneCos) {
+        let best = null, bestScore = -1;
+        for (const f of fishList) {
+          if (f.state !== 'swim') continue;
+          const dx = f.pos.x - camPos.x, dy = f.pos.y - camPos.y, dz = f.pos.z - camPos.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist > maxDist || dist < 0.8) continue;
+          const dot = (dx * camFwd.x + dy * camFwd.y + dz * camFwd.z) / dist;
+          if (dot < coneCos) continue;
+          const score = dot * 2 - dist / maxDist * 0.6;
+          if (score > bestScore) { bestScore = score; best = f; }
+        }
+        return best;
+      }
+      /* does the segment a->b pass within r of centre c? (spear against a fish) */
+      function segmentHitsSphere(a, b, c, r) {
+        const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+        const len2 = abx * abx + aby * aby + abz * abz;
+        let t = len2 > 1e-9 ? ((c.x - a.x) * abx + (c.y - a.y) * aby + (c.z - a.z) * abz) / len2 : 0;
+        t = Math.max(0, Math.min(1, t));
+        const px = a.x + abx * t - c.x, py = a.y + aby * t - c.y, pz = a.z + abz * t - c.z;
+        return px * px + py * py + pz * pz <= r * r;
+      }
+
+      /* ---- N3: underwater visuals (everything lives under one root group that is hidden unless you are diving) ---- */
+      const diveRoot = new THREE.Group();
+      diveRoot.visible = false;
+      scene.add(diveRoot);
+      if (!camera.parent) scene.add(camera);               // lets the gun model and the lamp ride on the camera
+      world.oceanMat.side = THREE.DoubleSide;              // so the surface can be seen from below
+
+      const DM = {
+        rock: new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.95, flatShading: true }),
+        rockDark: new THREE.MeshStandardMaterial({ color: 0x3f4756, roughness: 0.95, flatShading: true }),
+        kelp: new THREE.MeshStandardMaterial({ color: 0x2f8f4e, roughness: 0.8, flatShading: true }),
+        kelpDeep: new THREE.MeshStandardMaterial({ color: 0x1f6b57, roughness: 0.8, flatShading: true }),
+        grass: new THREE.MeshStandardMaterial({ color: 0x6aa84f, roughness: 0.85, flatShading: true, side: THREE.DoubleSide }),
+        tube: new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7, flatShading: true }),
+        stalk: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8, flatShading: true }),
+        orb: new THREE.MeshBasicMaterial({ color: 0x67e8f9 }),
+        orb2: new THREE.MeshBasicMaterial({ color: 0xf0abfc }),
+        wood: new THREE.MeshStandardMaterial({ color: 0x7c4a21, roughness: 0.85, flatShading: true }),
+        woodOld: new THREE.MeshStandardMaterial({ color: 0x4a3626, roughness: 0.95, flatShading: true }),
+        gold: new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35, metalness: 0.6, emissive: 0x6b4e00, emissiveIntensity: 0.6 }),
+        steel: new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.35, metalness: 0.75 }),
+        whale: new THREE.MeshStandardMaterial({ color: 0x2b3a55, roughness: 0.8, flatShading: true }),
+        coral: [0xf472b6, 0xfb923c, 0xc084fc, 0xf87171, 0xfacc15, 0x2dd4bf].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, flatShading: true }))
+      };
+      const DG = {
+        rock: new THREE.DodecahedronGeometry(1, 0),
+        blob: new THREE.IcosahedronGeometry(1, 0),
+        kelpBlade: new THREE.BoxGeometry(0.16, 1, 0.05),
+        grass: new THREE.ConeGeometry(0.07, 1, 4),
+        branch: new THREE.CylinderGeometry(0.07, 0.12, 1, 5),
+        tube: new THREE.CylinderGeometry(0.16, 0.2, 1, 7, 1, true),
+        stalk: new THREE.CylinderGeometry(0.03, 0.05, 1, 5),
+        orb: new THREE.SphereGeometry(0.16, 8, 6),
+        box: new THREE.BoxGeometry(1, 1, 1)
+      };
+      const mk = (geo, mat, px = 0, py = 0, pz = 0, sx = 1, sy = 1, sz = 1) => {
+        const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); m.scale.set(sx, sy, sz); return m;
+      };
+
+      /* seabed: one grid that follows the diver and is re-shaped by the pure height function (so it never "swims") */
+      const SB_N = 56, SB_SIZE = 140, SB_STEP = SB_SIZE / SB_N;
+      const seabedGeo = new THREE.PlaneGeometry(SB_SIZE, SB_SIZE, SB_N, SB_N);
+      seabedGeo.rotateX(-Math.PI / 2);
+      const seabedBaseXZ = Float32Array.from(seabedGeo.attributes.position.array);
+      seabedGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(seabedGeo.attributes.position.count * 3), 3));
+      const seabedMesh = new THREE.Mesh(seabedGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true }));
+      seabedMesh.frustumCulled = false;
+      diveRoot.add(seabedMesh);
+      let seabedKeyX = 1e9, seabedKeyZ = 1e9;
+      const SB_PALETTE = [[0, 0xdcc88f], [8, 0xbaa677], [20, 0x8f8567], [40, 0x5a6275], [70, 0x363c55], [110, 0x1d2238]].map(([d, h]) => [d, new THREE.Color(h)]);
+      const _sbCol = new THREE.Color(), _sbPatch = new THREE.Color(0x6f9a58);
+      function seabedColor(wx, wz, depth, out) {
+        let i = 1;
+        while (i < SB_PALETTE.length - 1 && depth > SB_PALETTE[i][0]) i++;
+        const a = SB_PALETTE[i - 1], b = SB_PALETTE[i];
+        const t = THREE.MathUtils.clamp((depth - a[0]) / (b[0] - a[0]), 0, 1);
+        out.copy(a[1]).lerp(b[1], t);
+        const patch = Math.sin(wx * 0.045 + 1.3) * Math.sin(wz * 0.057);
+        if (patch > 0.5 && depth < 24) out.lerp(_sbPatch, Math.min(0.7, (patch - 0.5) * 2.2));
+        const n = 0.88 + 0.2 * seabedNoise(wx * 1.7, wz * 1.7);
+        out.multiplyScalar(n);
+      }
+      function updateSeabedMesh(cx, cz, force) {
+        const kx = Math.round(cx / SB_STEP), kz = Math.round(cz / SB_STEP);
+        if (!force && kx === seabedKeyX && kz === seabedKeyZ) return;
+        seabedKeyX = kx; seabedKeyZ = kz;
+        const ox = kx * SB_STEP, oz = kz * SB_STEP;
+        const pos = seabedGeo.attributes.position, col = seabedGeo.attributes.color;
+        for (let i = 0; i < pos.count; i++) {
+          const wx = ox + seabedBaseXZ[i * 3], wz = oz + seabedBaseXZ[i * 3 + 2];
+          const y = seabedY(wx, wz);
+          pos.setY(i, y);
+          seabedColor(wx, wz, -y, _sbCol);
+          col.setXYZ(i, _sbCol.r, _sbCol.g, _sbCol.b);
+        }
+        pos.needsUpdate = true; col.needsUpdate = true;
+        seabedMesh.position.set(ox, 0, oz);
+      }
+
+      /* seabed props: a hashed 7 m grid. Cells enter and leave as you swim; shared geometry keeps it cheap. */
+      const CELL = 7;
+      const propCells = new Map();
+      const swayList = [];
+      const diveOpened = new Set();
+      let propKeyI = 1e9, propKeyJ = 1e9;
+      const propRadius = () => (settings.quality === 'low' ? 3 : 5);
+      function buildProp(kind, h, depth) {
+        const g = new THREE.Group();
+        const r = k => hash2(Math.floor(h * 1e6) + k * 131, k * 977 + 5);
+        if (kind === 'kelp') {
+          const n = 3 + Math.floor(r(1) * 3), H = Math.min(9, 2.5 + r(2) * 3.5 + depth * 0.12);
+          for (let b = 0; b < n; b++) {
+            const blade = mk(DG.kelpBlade, depth > 12 ? DM.kelpDeep : DM.kelp, (r(b + 3) - 0.5) * 0.9, H / 2, (r(b + 9) - 0.5) * 0.9, 1 + r(b + 20), H * (0.7 + r(b + 30) * 0.4), 1);
+            blade.rotation.y = r(b + 40) * 3; g.add(blade);
+          }
+          g.userData.sway = 0.07 + r(5) * 0.06; g.userData.phase = r(6) * 6.28;
+        } else if (kind === 'coral') {
+          const m = DM.coral[Math.floor(r(1) * DM.coral.length)];
+          g.add(mk(DG.blob, m, 0, 0.35, 0, 0.7, 0.55, 0.7));
+          const n = 3 + Math.floor(r(2) * 4);
+          for (let b = 0; b < n; b++) {
+            const br = mk(DG.branch, m, (r(b + 3) - 0.5) * 0.9, 0.6 + r(b + 8) * 0.3, (r(b + 13) - 0.5) * 0.9, 1, 0.8 + r(b + 18) * 0.9, 1);
+            br.rotation.set((r(b + 23) - 0.5) * 0.9, 0, (r(b + 28) - 0.5) * 0.9); g.add(br);
+          }
+        } else if (kind === 'rock') {
+          const s = 0.5 + r(1) * 1.6;
+          const rk = mk(DG.rock, depth > 35 ? DM.rockDark : DM.rock, 0, s * 0.35, 0, s, s * (0.5 + r(2) * 0.4), s * (0.8 + r(3) * 0.4));
+          rk.rotation.set(r(4) * 0.5, r(5) * 6, r(6) * 0.5); g.add(rk);
+          if (r(7) > 0.55) { const s2 = s * 0.5; g.add(mk(DG.rock, DM.rock, s * 0.9, s2 * 0.3, s * 0.3, s2, s2 * 0.7, s2)); }
+        } else if (kind === 'grass') {
+          const n = 6 + Math.floor(r(1) * 6);
+          for (let b = 0; b < n; b++) {
+            const bl = mk(DG.grass, DM.grass, (r(b + 3) - 0.5) * 1.3, 0.35, (r(b + 15) - 0.5) * 1.3, 1, 0.5 + r(b + 27) * 0.9, 1);
+            bl.rotation.set((r(b + 40) - 0.5) * 0.4, 0, (r(b + 50) - 0.5) * 0.4); g.add(bl);
+          }
+          g.userData.sway = 0.1; g.userData.phase = r(6) * 6.28;
+        } else if (kind === 'tube') {
+          const n = 2 + Math.floor(r(1) * 4);
+          for (let b = 0; b < n; b++) g.add(mk(DG.tube, DM.tube, (r(b + 3) - 0.5) * 0.9, 0.5 + r(b + 9) * 0.5, (r(b + 13) - 0.5) * 0.9, 1, 1 + r(b + 19) * 1.5, 1));
+        } else if (kind === 'orb') {
+          const n = 2 + Math.floor(r(1) * 3);
+          for (let b = 0; b < n; b++) {
+            const hgt = 1.2 + r(b + 3) * 1.6, px = (r(b + 8) - 0.5) * 1.6, pz = (r(b + 13) - 0.5) * 1.6;
+            g.add(mk(DG.stalk, DM.stalk, px, hgt / 2, pz, 1, hgt, 1));
+            g.add(mk(DG.orb, r(b + 20) > 0.5 ? DM.orb : DM.orb2, px, hgt + 0.1, pz, 1.2, 1.2, 1.2));
+          }
+          g.userData.pulse = true; g.userData.phase = r(6) * 6.28;
+        }
+        return g;
+      }
+      function buildChest() {
+        const g = new THREE.Group();
+        g.add(mk(DG.box, DM.wood, 0, 0.22, 0, 0.8, 0.44, 0.5));
+        g.add(mk(DG.box, DM.gold, 0, 0.22, 0.2, 0.84, 0.1, 0.12));
+        g.add(mk(DG.box, DM.gold, 0, 0.22, -0.2, 0.84, 0.1, 0.12));
+        const lidPivot = new THREE.Group(); lidPivot.position.set(0, 0.44, 0.25);
+        lidPivot.add(mk(DG.box, DM.wood, 0, 0.1, -0.25, 0.8, 0.2, 0.5));
+        lidPivot.add(mk(DG.box, DM.gold, 0, 0.1, -0.05, 0.84, 0.22, 0.06));
+        g.add(lidPivot);
+        g.add(mk(DG.box, DM.gold, 0, 0.42, -0.26, 0.1, 0.12, 0.05));
+        g.userData.lid = lidPivot; g.userData.chest = true;
+        return g;
+      }
+      function buildWreck() {
+        const g = new THREE.Group();
+        const hull = mk(DG.box, DM.woodOld, 0, 1.0, 0, 9, 2.0, 3.2); hull.rotation.z = 0.18; g.add(hull);
+        const bow = mk(DG.box, DM.woodOld, 5.0, 1.6, 0, 2.6, 1.8, 2.4); bow.rotation.z = 0.5; g.add(bow);
+        for (let i = 0; i < 4; i++) g.add(mk(DG.box, DM.woodOld, -3 + i * 2.2, 2.3, 1.7 * (i % 2 ? 1 : -1), 0.25, 2.2 + (i % 3) * 0.5, 0.25));
+        const mast = mk(DG.box, DM.woodOld, -0.5, 3.8, 0, 0.3, 6.5, 0.3); mast.rotation.z = -0.5; g.add(mast);
+        const boom = mk(DG.box, DM.woodOld, 1.4, 5.2, 0, 3.4, 0.2, 0.2); boom.rotation.z = -0.4; g.add(boom);
+        g.rotation.y = 0.8;
+        return g;
+      }
+      function pickPropKind(depth, zoneId, roll) {
+        if (depth < 14) {
+          if (roll < 0.28) return 'kelp';
+          if (roll < 0.28 + (zoneId === 2 ? 0.34 : 0.14)) return 'coral';
+          if (roll < 0.78) return 'grass';
+          return 'rock';
+        }
+        if (depth < 40) return roll < 0.4 ? 'rock' : roll < 0.62 ? 'coral' : roll < 0.74 ? 'kelp' : 'tube';
+        return roll < 0.5 ? 'rock' : roll < 0.8 ? 'orb' : 'tube';
+      }
+      function makeCell(i, j) {
+        const key = i + ',' + j;
+        const parts = [];
+        const px = (i + 0.15 + hash2(i, j) * 0.7) * CELL, pz = (j + 0.15 + hash2(j, i + 91) * 0.7) * CELL;
+        const place = (obj, x, z, extraY = 0) => {
+          if (z > -4.2) return;
+          const y = seabedY(x, z);
+          obj.position.set(x, y + extraY, z);
+          obj.rotation.y = obj.rotation.y || hash2(i * 3, j * 7) * 6.28;
+          diveRoot.add(obj); parts.push(obj);
+        };
+        const roll = hash2(i * 3 + 11, j * 5 + 17);
+        if (roll < 0.55 && pz < -4.2) {
+          const depth = -seabedY(px, pz);
+          const zoneId = diveZoneAt(pz).id;
+          const kind = pickPropKind(depth, zoneId, roll / 0.55);
+          const p = buildProp(kind, hash2(i, j + 5), depth);
+          p.rotation.y = hash2(i + 9, j) * 6.28;
+          place(p, px, pz, -0.05);
+          if (p.userData.sway || p.userData.pulse) swayList.push(p);
+        }
+        const cx = (i + 0.2 + hash2(i + 71, j - 3) * 0.6) * CELL, cz = (j + 0.2 + hash2(i - 5, j + 71) * 0.6) * CELL;
+        if (cz < -8 && hash2(i + 501, j - 77) < 0.045 && !diveOpened.has(key)) {
+          const c = buildChest(); c.userData.key = key; c.rotation.y = hash2(i, j * 3) * 6.28;
+          place(c, cx, cz);
+          diveChests.push(c);
+        } else if (cz < -20 && -seabedY(cx, cz) > 5 && hash2(i - 33, j + 909) < 0.012) {
+          place(buildWreck(), cx, cz, -0.3);
+          const c = buildChest(); c.userData.key = key + 'w'; c.rotation.y = 1.4;
+          if (!diveOpened.has(key + 'w')) { place(c, cx + 3.5, cz + 2.5); diveChests.push(c); }
+        }
+        propCells.set(key, parts);
+      }
+      function dropCell(key) {
+        const parts = propCells.get(key);
+        if (!parts) return;
+        parts.forEach(o => {
+          diveRoot.remove(o);
+          const si = swayList.indexOf(o); if (si >= 0) swayList.splice(si, 1);
+          const ci = diveChests.indexOf(o); if (ci >= 0) diveChests.splice(ci, 1);
+        });
+        propCells.delete(key);
+      }
+      function updateProps(cx, cz, force) {
+        const ci = Math.floor(cx / CELL), cj = Math.floor(cz / CELL);
+        if (!force && ci === propKeyI && cj === propKeyJ) return;
+        propKeyI = ci; propKeyJ = cj;
+        const R = propRadius();
+        const need = new Set();
+        for (let i = ci - R; i <= ci + R; i++) for (let j = cj - R; j <= cj + R; j++) need.add(i + ',' + j);
+        for (const key of [...propCells.keys()]) if (!need.has(key)) dropCell(key);
+        for (let i = ci - R; i <= ci + R; i++) for (let j = cj - R; j <= cj + R; j++) { const key = i + ',' + j; if (!propCells.has(key)) makeCell(i, j); }
+      }
+      function clearProps() {
+        for (const key of [...propCells.keys()]) dropCell(key);
+        propKeyI = propKeyJ = 1e9; seabedKeyX = seabedKeyZ = 1e9;
+      }
+
+      /* fish models: one template per species, cloned (geometry and materials are shared) and scaled to the fish's length */
+      const fishTemplates = {};
+      function getFishTemplate(item) {
+        if (fishTemplates[item.id]) return fishTemplates[item.id];
+        const m = WorldBuilder.buildFishModel(item, textures);
+        const bb = new THREE.Box3().setFromObject(m), size = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
+        m.position.sub(c);
+        const holder = new THREE.Group(); holder.add(m);
+        return (fishTemplates[item.id] = { obj: holder, k: 1 / Math.max(size.x, 0.01) });
+      }
+      function spawnDiveFish(item, zone, x, z, opts = {}) {
+        const st = rollDiveFishStats(item, zone);
+        const tpl = getFishTemplate(item);
+        const mesh = tpl.obj.clone();
+        mesh.rotation.order = 'YZX';
+        mesh.scale.setScalar(tpl.k * st.len);
+        const f = Object.assign(st, {
+          mesh, state: 'swim', pos: new THREE.Vector3(x, 0, z), tgt: new THREE.Vector3(), threat: new THREE.Vector3(),
+          h: Math.random() * 6.28, p: 0, v: st.speed * 0.6, wait: 0, fleeT: 0, leader: opts.leader || null,
+          off: opts.off || new THREE.Vector3(), wig: Math.random() * 6.28
+        });
+        f.pos.y = waypointY(f, x, z);
+        f.tgt.copy(f.pos);
+        mesh.position.copy(f.pos);
+        diveRoot.add(mesh);
+        diveFish.push(f);
+        return f;
+      }
+      function removeDiveFish(f) {
+        diveRoot.remove(f.mesh);
+        const i = diveFish.indexOf(f); if (i >= 0) diveFish.splice(i, 1);
+        diveFish.forEach(o => { if (o.leader === f) o.leader = null; });
+      }
+      function populateDiveFish(diverPos, near) {
+        if (diveFish.length >= DIVE_FISH_TARGET() + 6) return;
+        const a = Math.random() * 6.28, d = near ? 14 + Math.random() * 14 : 26 + Math.random() * 26;
+        const x = THREE.MathUtils.clamp(diverPos.x + Math.cos(a) * d, -220, 220), z = Math.min(-4.5, diverPos.z + Math.sin(a) * d);
+        const zone = diveZoneAt(z);
+        const item = pickDiveFishItem(zone.id);
+        const lead = spawnDiveFish(item, zone, x, z);
+        if ((item.rarity === 'Common' || item.rarity === 'Uncommon') && Math.random() < 0.4) {
+          const n = 2 + Math.floor(Math.random() * 4);
+          for (let k = 0; k < n; k++) {
+            const off = new THREE.Vector3((Math.random() - 0.5) * 6.28, (Math.random() - 0.5) * 1.6, 1.2 + Math.random() * 2.2);
+            const fx = x + Math.cos(off.x) * off.z, fz = Math.min(-4.5, z + Math.sin(off.x) * off.z);
+            const fol = spawnDiveFish(item, zone, fx, fz, { leader: lead, off });
+            fol.weight = +Math.max(item.minW, lead.weight * (0.7 + Math.random() * 0.4)).toFixed(2);
+            fol.value = Math.max(1, Math.round(lead.value * fol.weight / lead.weight));
+          }
+        }
+      }
+
+      /* the whale that sometimes drifts past in the blue (pure ambience) */
+      const whale = new THREE.Group();
+      (() => {
+        whale.add(mk(DG.blob, DM.whale, 0, 0, 0, 7.5, 2.1, 2.5));
+        whale.add(mk(DG.blob, DM.whale, -6.4, 0.2, 0, 2.8, 1.0, 1.3));
+        const fl = mk(DG.box, DM.whale, -9.2, 0.5, 0, 0.5, 0.15, 3.8); fl.rotation.z = 0.25; whale.add(fl);
+        const fin = mk(DG.box, DM.whale, 1.0, -1.2, 1.9, 2.0, 0.12, 0.9); fin.rotation.set(0.6, 0, 0.3); whale.add(fin);
+        const fin2 = fin.clone(); fin2.position.z = -1.9; fin2.rotation.x = -0.6; whale.add(fin2);
+        whale.visible = false; diveRoot.add(whale);
+      })();
+      const whaleState = { t: 0, dir: new THREE.Vector3(), life: 0 };
+
+      /* marine snow and bubbles: two small point clouds (square pixels suit the look) */
+      const SNOW_N = 150, SNOW_BOX = 28;
+      const snowGeo = new THREE.BufferGeometry();
+      const snowPos = new Float32Array(SNOW_N * 3);
+      for (let i = 0; i < SNOW_N; i++) { snowPos[i * 3] = (Math.random() - 0.5) * SNOW_BOX; snowPos[i * 3 + 1] = (Math.random() - 0.5) * SNOW_BOX * 0.6; snowPos[i * 3 + 2] = (Math.random() - 0.5) * SNOW_BOX; }
+      snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+      const snowPts = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xdff2ff, size: 0.07, transparent: true, opacity: 0.55, depthWrite: false }));
+      snowPts.frustumCulled = false; diveRoot.add(snowPts);
+      const snowOff = new Float32Array(SNOW_N * 3);   // world-space positions, wrapped around the camera
+      for (let i = 0; i < SNOW_N * 3; i++) snowOff[i] = snowPos[i];
+
+      const BUB_N = 70;
+      const bubGeo = new THREE.BufferGeometry();
+      const bubPos = new Float32Array(BUB_N * 3).fill(1e4);
+      const bubVel = new Float32Array(BUB_N), bubLife = new Float32Array(BUB_N);
+      bubGeo.setAttribute('position', new THREE.BufferAttribute(bubPos, 3));
+      const bubPts = new THREE.Points(bubGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.11, transparent: true, opacity: 0.75, depthWrite: false }));
+      bubPts.frustumCulled = false; diveRoot.add(bubPts);
+      let bubCursor = 0;
+      function emitBubbles(x, y, z, n, spread = 0.18) {
+        for (let k = 0; k < n; k++) {
+          const i = bubCursor; bubCursor = (bubCursor + 1) % BUB_N;
+          bubPos[i * 3] = x + (Math.random() - 0.5) * spread; bubPos[i * 3 + 1] = y + Math.random() * 0.1; bubPos[i * 3 + 2] = z + (Math.random() - 0.5) * spread;
+          bubVel[i] = 0.9 + Math.random() * 0.9; bubLife[i] = 3 + Math.random() * 4;
+        }
+        bubGeo.attributes.position.needsUpdate = true;
+      }
+      function updateParticles(dt, cam) {
+        for (let i = 0; i < SNOW_N; i++) {
+          const o = i * 3;
+          snowOff[o + 1] -= 0.12 * dt; snowOff[o] += Math.sin(elapsed * 0.4 + i) * 0.05 * dt;
+          for (let a = 0; a < 3; a++) {
+            const c = a === 0 ? cam.x : a === 1 ? cam.y : cam.z, half = (a === 1 ? SNOW_BOX * 0.3 : SNOW_BOX * 0.5);
+            if (snowOff[o + a] < c - half) snowOff[o + a] += half * 2; else if (snowOff[o + a] > c + half) snowOff[o + a] -= half * 2;
+          }
+          snowPos[o] = snowOff[o]; snowPos[o + 1] = Math.min(-0.3, snowOff[o + 1]); snowPos[o + 2] = snowOff[o + 2];
+        }
+        snowGeo.attributes.position.needsUpdate = true;
+        let any = false;
+        for (let i = 0; i < BUB_N; i++) {
+          if (bubLife[i] <= 0) continue;
+          bubLife[i] -= dt; any = true;
+          bubPos[i * 3 + 1] += bubVel[i] * dt;
+          bubPos[i * 3] += Math.sin(elapsed * 3 + i) * 0.12 * dt;
+          if (bubLife[i] <= 0 || bubPos[i * 3 + 1] > 0) { bubLife[i] = 0; bubPos[i * 3 + 1] = 1e4; }
+        }
+        if (any) bubGeo.attributes.position.needsUpdate = true;
+      }
+
+      /* light shafts from the surface: a few faint additive slabs that follow the diver in shallow water */
+      const shafts = new THREE.Group();
+      const shaftMat = new THREE.MeshBasicMaterial({ color: 0xbfe9ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      for (let i = 0; i < 7; i++) {
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(1.8 + Math.random() * 2.4, 26), shaftMat);
+        s.position.set((Math.random() - 0.5) * 30, -13, (Math.random() - 0.5) * 30);
+        s.rotation.set(0, Math.random() * 3.14, 0.12 + Math.random() * 0.08);
+        s.userData.ph = Math.random() * 6.28; shafts.add(s);
+      }
+      shafts.frustumCulled = false; diveRoot.add(shafts);
+
+      /* the head lamp rides on the camera (created once at start-up, intensity 0, so lights never recompile) */
+      const diveLamp = new THREE.SpotLight(0xdff6ff, 0, 40, 0.5, 0.55, 1.2);
+      diveLamp.position.set(0.15, -0.08, 0);
+      diveLamp.target.position.set(0, 0, -10);
+      camera.add(diveLamp); camera.add(diveLamp.target);
+
+      /* the held gun (first-person model, tinted by tier) and the spear that flies */
+      const GUN_COLORS = [0x94a3b8, 0x92400e, 0x0e7490, 0x15803d, 0xb45309, 0x7c3aed];
+      const gunGroup = new THREE.Group();
+      const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.5), new THREE.MeshStandardMaterial({ color: 0x0e7490, roughness: 0.5, metalness: 0.3 }));
+      const gunBarrel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.9), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.6 }));
+      gunBarrel.position.set(0, 0.03, -0.55);
+      const gunGrip = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.17, 0.08), new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8 }));
+      gunGrip.position.set(0, -0.13, 0.1);
+      const gunSpearTip = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.28, 6), DM.steel);
+      gunSpearTip.rotation.x = -Math.PI / 2; gunSpearTip.position.set(0, 0.03, -1.1);
+      gunGroup.add(gunBody, gunBarrel, gunGrip, gunSpearTip);
+      gunGroup.position.set(0.3, -0.27, -0.55);
+      gunGroup.visible = false;
+      camera.add(gunGroup);
+      let gunKick = 0;
+
+      const spearMesh = new THREE.Group();
+      (() => {
+        const shaftG = new THREE.CylinderGeometry(0.022, 0.022, 1.1, 6); shaftG.rotateX(-Math.PI / 2);
+        const tipG = new THREE.ConeGeometry(0.07, 0.3, 6); tipG.rotateX(-Math.PI / 2); tipG.translate(0, 0, -0.68);
+        const flG = new THREE.BoxGeometry(0.2, 0.01, 0.2); flG.translate(0, 0, 0.5);
+        spearMesh.add(new THREE.Mesh(shaftG, DM.steel), new THREE.Mesh(tipG, DM.steel), new THREE.Mesh(flG, new THREE.MeshStandardMaterial({ color: 0xef4444 })));
+        spearMesh.visible = false; diveRoot.add(spearMesh);
+      })();
+      const tetherGeo = new THREE.BufferGeometry();
+      tetherGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+      const tether = new THREE.Line(tetherGeo, new THREE.LineBasicMaterial({ color: 0xe2e8f0 }));
+      tether.frustumCulled = false; tether.visible = false; diveRoot.add(tether);
+
+      /* ---- N4: the dive itself: start, per-frame simulation, harpoon, HUD, end ---- */
+      const _dvFwd = new THREE.Vector3(), _dvAim = new THREE.Vector3(), _dvTmp = new THREE.Vector3(), _dvTmp2 = new THREE.Vector3(), _dvLook = new THREE.Vector3();
+      const _dvQuat = new THREE.Quaternion(), _dvNeg = new THREE.Vector3(0, 0, -1);
+      const _uwShallow = new THREE.Color(0x2f9fb8), _uwDeep = new THREE.Color(0x030a16), _uwCol = new THREE.Color();
+      const hudCache = {};
+      function diveText(id, text) {
+        if (hudCache[id] === text) return;
+        hudCache[id] = text;
+        const el = document.getElementById(id); if (el) el.textContent = text;
+      }
+      const fmtAir = s => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.floor(Math.max(0, s) % 60)).padStart(2, '0')}`;
+
+      /* register a speared fish exactly like a normal catch (encyclopedia, trophies, bounties, XP) */
+      function registerDiveCatch(f) {
+        const c = { item: f.item, weight: f.weight, value: f.value, zoneObj: f.zoneObj, isBoss: false };
+        const isNewSpecies = !state.discovered.includes(c.item.id);
+        if (isNewSpecies) state.discovered.push(c.item.id);
+        if (!state.speciesStats) state.speciesStats = {};
+        const prev = state.speciesStats[c.item.id] || { count: 0, maxWeight: 0 };
+        const isNewRecord = c.weight > prev.maxWeight;
+        state.speciesStats[c.item.id] = { count: prev.count + 1, maxWeight: Math.max(prev.maxWeight, c.weight) };
+        bumpStat('speared');
+        advanceBountiesOnCatch(c);
+        recordCatchProgress(c, isNewSpecies, isNewRecord);
+        if (isNewSpecies || isNewRecord) rebuildTrophyCabinet();
+        return { isNewSpecies, isNewRecord };
+      }
+
+      function landSpearedFish(f) {
+        removeDiveFish(f);
+        dive.bag.push({ item: f.item, weight: f.weight, value: f.value, zoneObj: f.zoneObj });
+        const { isNewSpecies, isNewRecord } = registerDiveCatch(f);
+        const rare = ['Rare', 'Epic', 'Legendary'].includes(f.item.rarity);
+        if (rare) sfx.playCatchFanfare(false); else sfx.playCoin();
+        emitBubbles(dive.pos.x, dive.pos.y, dive.pos.z, 8, 0.6);
+        showToast(`🔱 ${f.item.name} • ${f.weight.toFixed(2)} kg • $${f.value}${isNewSpecies ? ' • 📖 NEW SPECIES!' : (isNewRecord ? ' • 🏆 new record!' : '')}`);
+        saveGame();
+      }
+
+      function startHarpoonReturn() {
+        harpoon.state = 'return';
+        harpoon.target = null;
+      }
+      function finishHarpoon() {
+        if (harpoon.hit) { landSpearedFish(harpoon.hit); harpoon.hit = null; }
+        harpoon.state = 'reload';
+        harpoon.reloadT = spearGun().reload * (cheats.fastReload ? 0.12 : 1);
+        spearMesh.visible = false; tether.visible = false;
+        gunSpearTip.visible = true;
+        sfx.playSpearReel();
+      }
+      function onSpearHit(f) {
+        const gun = spearGun();
+        if (f.weight > gun.power && !cheats.autoHit) {
+          sfx.playSpearBounce();
+          showToast(`💢 ${f.item.name} (${f.weight.toFixed(1)} kg) is too big for the ${gun.name} (max ${gun.power} kg)!`);
+          f.fleeT = 2.6; f.threat.copy(harpoon.pos);
+          startHarpoonReturn();
+        } else if (bagWeight() + f.weight > bagCapacity() + 0.001) {
+          sfx.playSpearBounce();
+          showToast('🎒 Your catch bag is full! Surface to unload it.');
+          f.fleeT = 2; f.threat.copy(harpoon.pos);
+          startHarpoonReturn();
+        } else {
+          f.state = 'speared'; harpoon.hit = f;
+          sfx.playSpearHit();
+          emitBubbles(f.pos.x, f.pos.y, f.pos.z, 7, 0.5);
+          vfx.spawnSparkles(f.pos.clone(), 6, 0xfef08a);
+          startHarpoonReturn();
+        }
+      }
+      function diveMuzzle(out) { return camera.localToWorld(out.set(0.28, -0.2, -1.1)); }
+      function diveFire() {
+        const gun = spearGun();
+        if (gun.tier === 0) { showToast('🔱 No spear gun! Buy one at the Tackle Shop (Spear tab).'); return; }
+        if (harpoon.state !== 'ready') return;
+        camera.updateMatrixWorld();
+        camera.getWorldDirection(_dvAim);
+        diveMuzzle(harpoon.muzzle);
+        const tgt = dive.lock;
+        if (tgt) {
+          const dist = harpoon.muzzle.distanceTo(tgt.pos), t = dist / gun.speed;
+          const cp = Math.cos(tgt.p);
+          _dvTmp.set(Math.cos(tgt.h) * cp, Math.sin(tgt.p), Math.sin(tgt.h) * cp).multiplyScalar(tgt.v * t * 0.9).add(tgt.pos);
+          _dvAim.copy(_dvTmp).sub(harpoon.muzzle).normalize();
+        }
+        harpoon.pos.copy(harpoon.muzzle); harpoon.prev.copy(harpoon.muzzle);
+        harpoon.vel.copy(_dvAim).multiplyScalar(gun.speed);
+        harpoon.state = 'flying'; harpoon.travelled = 0; harpoon.hit = null; harpoon.target = tgt || null;
+        spearMesh.visible = true; tether.visible = true; gunSpearTip.visible = false;
+        gunKick = 1;
+        sfx.playSpearShot();
+        emitBubbles(harpoon.muzzle.x, harpoon.muzzle.y, harpoon.muzzle.z, 6, 0.3);
+        camJuice.shake = Math.max(camJuice.shake, 0.05);
+      }
+      function updateHarpoon(dt) {
+        const gun = spearGun();
+        diveMuzzle(harpoon.muzzle);
+        if (harpoon.state === 'reload') {
+          harpoon.reloadT -= dt;
+          if (harpoon.reloadT <= 0) { harpoon.state = 'ready'; sfx.playTone({ freq: 620, endFreq: 820, type: 'square', duration: 0.06, vol: 0.05 }); }
+        }
+        if (harpoon.state === 'flying') {
+          const steps = Math.max(1, Math.ceil(gun.speed * dt / 0.6));
+          const h = dt / steps;
+          for (let s = 0; s < steps && harpoon.state === 'flying'; s++) {
+            harpoon.prev.copy(harpoon.pos);
+            const tg = harpoon.target;
+            if (cheats.autoHit && tg && tg.state === 'swim') {
+              _dvTmp.copy(tg.pos).sub(harpoon.pos).normalize().multiplyScalar(gun.speed);
+              harpoon.vel.lerp(_dvTmp, Math.min(1, 9 * h));
+              harpoon.vel.setLength(gun.speed);
+            }
+            harpoon.pos.addScaledVector(harpoon.vel, h);
+            harpoon.travelled += gun.speed * h;
+            for (const f of diveFish) {
+              if (f.state !== 'swim') continue;
+              if (segmentHitsSphere(harpoon.prev, harpoon.pos, f.pos, f.radius * (cheats.autoHit ? 1.8 : 1) + 0.14)) { onSpearHit(f); break; }
+            }
+            if (harpoon.state !== 'flying') break;
+            if (harpoon.pos.y < seabedY(harpoon.pos.x, harpoon.pos.z) + 0.05 || harpoon.pos.y > -0.02 || harpoon.travelled > gun.range) {
+              emitBubbles(harpoon.pos.x, harpoon.pos.y, harpoon.pos.z, 3, 0.2);
+              startHarpoonReturn();
+            }
+          }
+        } else if (harpoon.state === 'return') {
+          _dvTmp.copy(harpoon.muzzle).sub(harpoon.pos);
+          const d = _dvTmp.length();
+          if (d < 1.1) finishHarpoon();
+          else {
+            _dvTmp.multiplyScalar(1 / d);
+            harpoon.vel.copy(_dvTmp).multiplyScalar(-1);   // the tip still points away from you
+            harpoon.pos.addScaledVector(_dvTmp, Math.min(d, 34 * dt));
+            if (harpoon.hit) sfx.playSpearReel();
+          }
+        }
+        if (harpoon.state === 'flying' || harpoon.state === 'return') {
+          _dvLook.copy(harpoon.vel).normalize();
+          if (_dvLook.lengthSq() > 0.5) { _dvQuat.setFromUnitVectors(_dvNeg, _dvLook); spearMesh.quaternion.copy(_dvQuat); }
+          spearMesh.position.copy(harpoon.pos);
+          const f = harpoon.hit;
+          if (f) {
+            f.pos.copy(harpoon.pos).addScaledVector(_dvLook, 0.5 + f.len * 0.3);
+            f.mesh.position.copy(f.pos);
+            f.mesh.rotation.set(0, -Math.atan2(_dvLook.z, _dvLook.x), Math.asin(THREE.MathUtils.clamp(_dvLook.y, -1, 1)), 'YZX');
+            f.mesh.rotation.x = Math.sin(elapsed * 22) * 0.35;
+          }
+          const a = tetherGeo.attributes.position;
+          a.setXYZ(0, harpoon.muzzle.x, harpoon.muzzle.y, harpoon.muzzle.z); a.setXYZ(1, harpoon.pos.x, harpoon.pos.y, harpoon.pos.z);
+          a.needsUpdate = true;
+        }
+      }
+
+      function diveOpenChest(c) {
+        if (c.userData.opened) return;
+        c.userData.opened = true; diveOpened.add(c.userData.key);
+        const depth = Math.max(0, -dive.pos.y);
+        const cash = Math.round((25 + depth * 5) * (0.7 + Math.random() * 0.8) * (1 + dive.zone.id * 0.35));
+        state.cash = +(state.cash + cash).toFixed(2);
+        bumpStat('earned', cash); bumpStat('diveChests'); addXp(12 + dive.zone.id * 4);
+        sfx.playCoin(); sfx.playBubbleBurst();
+        const w = c.getWorldPosition(new THREE.Vector3()); w.y += 0.5;
+        vfx.spawnSparkles(w, 18, 0xfacc15);
+        emitBubbles(w.x, w.y, w.z, 10, 0.5);
+        showToast(`🧰 Sunken chest! +$${cash.toLocaleString()}`);
+        saveGame(); updateHUD(); checkAchievements();
+      }
+
+      /* ---- start / end ---- */
+      function canStartDive() {
+        if (isAnyModalOpen()) return false;
+        if (mode === 'PIER_IDLE') return isAtPierWaterEdge();
+        if (mode === 'BOAT_DRIVING') return Math.abs(boatVel) < 1.5;
+        return false;
+      }
+      function startDive() {
+        if (dive.active || !canStartDive()) return;
+        const gear = diveGear();
+        if (gear.tier === 0) { showToast('🤿 You need dive gear! Buy it at the Tackle Shop (Dive tab).'); return; }
+        releaseAllInputs();
+        dive.active = true; dive.fromBoat = onBoat; dive.t = 0; dive.surfacing = false; dive.emergency = false;
+        dive.bag = []; dive.maxDepth = 0; dive.hudT = 0; dive.lock = null; dive.nearChest = null;
+        dive.airMax = gear.air; dive.air = gear.air; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
+        dive.bubbleT = 2; dive.whaleT = 40 + Math.random() * 60; dive.depthWarnT = 0; dive.leashWarnT = 0;
+        if (onBoat) { dive.startX = boatPos.x; dive.startZ = boatPos.z; dive.pos.set(boatPos.x, 0.25, boatPos.z); dive.yaw = boatYaw; boatVel = 0; }
+        else { dive.startX = playerX; dive.startZ = playerZ; dive.pos.set(THREE.MathUtils.clamp(playerX, -2, 2), 0.25, playerZ - 1.2); dive.yaw = 0; }
+        dive.pitch = -0.1; dive.vy = -2.2; dive.vf = 0;
+        dive.zone = diveZoneAt(dive.pos.z);
+        mode = 'DIVING';
+        document.body.dataset.diving = '1';
+        diveRoot.visible = true; gunGroup.visible = spearGun().tier > 0;
+        gunBody.material.color.setHex(GUN_COLORS[state.spearTier] || GUN_COLORS[0]);
+        gunSpearTip.visible = true;
+        harpoon.state = 'ready'; harpoon.reloadT = 0; harpoon.hit = null;
+        world.anglerGroup.visible = false; world.skyGroup.visible = false;
+        sfx.underwater = true; sfx.uwDepth = 0;
+        sfx.playDiveSplash();
+        vfx.spawnSplash(dive.pos.clone(), 18, 0xe0f2fe, 2.6);
+        updateSeabedMesh(dive.pos.x, dive.pos.z, true);
+        updateProps(dive.pos.x, dive.pos.z, true);
+        const n = DIVE_FISH_TARGET();
+        for (let i = 0; i < n; i++) populateDiveFish(dive.pos, true);
+        bumpStat('dives');
+        document.getElementById('dive-toggle-icon').textContent = '🫧';
+        document.getElementById('dive-toggle-label').textContent = 'SURFACE';
+        showToast(`🤿 Diving in the ${dive.zone.name}! Swim ◀▶ turn, ▲▼ move, buttons for up / down.`);
+        updatePrimaryActionButton(); updateHUD();
+        checkAchievements();
+      }
+      function unloadDiveBag() {
+        let kept = 0, sold = 0, cash = 0;
+        dive.bag.forEach(e => {
+          if (getBucketWeight() + e.weight <= getBucketCapacity() + 0.001) {
+            state.bucket.push({ uid: Date.now() + Math.random(), id: e.item.id, name: e.item.name, category: 'Fish', rarity: e.item.rarity, zoneName: e.zoneObj.name, weight: e.weight, value: e.value, bottleMessageId: null });
+            kept++;
+          } else {
+            state.cash = +(state.cash + e.value).toFixed(2); bumpStat('earned', e.value); cash += e.value; sold++;
+          }
+        });
+        return { kept, sold, cash };
+      }
+      function endDive(reason) {
+        if (!dive.active) return;
+        if (reason === 'air' && !cheats.infAir && dive.bag.length) {
+          dive.bag.sort((a, b) => b.weight - a.weight);
+          const half = bagWeight() / 2;
+          while (dive.bag.length && bagWeight() > half) dive.bag.shift();
+        }
+        const total = dive.bag.length;
+        const res = unloadDiveBag();
+        const secs = Math.round(dive.t);
+        dive.active = false;
+        bumpStat('diveSeconds', secs);
+        state.stats.maxDive = Math.max(state.stats.maxDive || 0, +dive.maxDepth.toFixed(1));
+        diveFish.slice().forEach(removeDiveFish);
+        clearProps();
+        diveRoot.visible = false; gunGroup.visible = false; spearMesh.visible = false; tether.visible = false; whale.visible = false;
+        harpoon.state = 'ready'; harpoon.hit = null;
+        diveLamp.intensity = 0;
+        world.anglerGroup.visible = true; world.skyGroup.visible = true;
+        world.oceanMat.emissive.setHex(0x000000);
+        sunLight.intensity = Math.max(sunLight.intensity, 0);
+        scene.fog.density = getWeatherObj().fogDensity;
+        sfx.underwater = false;
+        mode = dive.fromBoat ? 'BOAT_DRIVING' : 'PIER_IDLE';
+        onBoat = dive.fromBoat;
+        delete document.body.dataset.diving;
+        document.getElementById('dive-flash').classList.remove('on');
+        document.getElementById('dive-lock').style.display = 'none';
+        document.getElementById('dive-toggle-icon').textContent = '🤿';
+        document.getElementById('dive-toggle-label').textContent = 'DIVE';
+        vfx.spawnSplash(new THREE.Vector3(dive.startX, 0, dive.startZ - (dive.fromBoat ? 0 : 1.2)), 16, 0xe0f2fe, 2.4);
+        sfx.playDiveSplash();
+        rebuildPierBucketVisual();
+        saveGame();
+        const parts = [`🤿 Dive over • ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} • deepest ${dive.maxDepth.toFixed(1)} m`];
+        if (total) parts.push(`${total} fish: ${res.kept} to your bucket${res.sold ? `, ${res.sold} sold for $${res.cash.toLocaleString()} (bucket full)` : ''}`);
+        else parts.push('no fish this time');
+        showToast(reason === 'air' ? `🆘 Out of air! Emergency ascent — you dropped part of your catch. ${parts.join(' • ')}` : parts.join(' • '));
+        updatePrimaryActionButton(); updateHUD(); checkAchievements();
+      }
+      function toggleDive() {
+        sfx.init();
+        if (!dive.active) { startDive(); return; }
+        if (dive.emergency) return;
+        if (-dive.pos.y < 0.7) { endDive('surface'); return; }
+        dive.surfacing = !dive.surfacing;
+        showToast(dive.surfacing ? '⬆️ Auto-ascent: heading for the surface (press again to cancel)' : 'Auto-ascent cancelled');
+      }
+
+      /* ---- per-frame ---- */
+      function updateDiveAvailability() {
+        const show = dive.active || (!isAnyModalOpen() && ((mode === 'PIER_IDLE' && isAtPierWaterEdge()) || (mode === 'BOAT_DRIVING' && Math.abs(boatVel) < 1.5)));
+        const v = show ? '1' : '0';
+        if ((document.body.dataset.diveBtn || '0') !== v) document.body.dataset.diveBtn = v;
+      }
+
+      function applyDiveEnvironment(dt, depth) {
+        const light = diveLightAt(depth);
+        const sh = Math.sin((state.timeOfDay - 0.25) * Math.PI * 2);
+        const day = THREE.MathUtils.smoothstep(sh, -0.25, 0.35);
+        const dayish = 0.3 + 0.7 * day;
+        const weather = getWeatherObj();
+        _uwCol.copy(_uwShallow).lerp(_uwDeep, 1 - light);
+        if (dive.zone.id >= 4) _uwCol.lerp(new THREE.Color(0x0b1233), 0.35);
+        _uwCol.multiplyScalar(dayish * (0.6 + 0.4 * weather.skyDim));
+        scene.background.copy(_uwCol);
+        scene.fog.color.copy(_uwCol);
+        scene.fog.density = 0.04 + (1 - light) * 0.034 + (dive.zone.id >= 4 ? 0.008 : 0);
+        const shimmer = 0.9 + 0.1 * Math.sin(elapsed * 2.3 + camera.position.x * 0.2);
+        sunLight.intensity *= light * 0.9 * shimmer;
+        moonLight.intensity *= 0.5 * light;
+        hemiLight.intensity = Math.max(0.16, hemiLight.intensity * (0.35 + 0.65 * light));
+        const gear = diveGear();
+        const lampK = gear.light > 0 ? (1.1 + gear.light * 1.1) * (0.2 + 0.8 * (1 - light)) : 0;
+        diveLamp.intensity += (lampK - diveLamp.intensity) * Math.min(1, dt * 4);
+        diveLamp.distance = 22 + gear.light * 9;
+        world.oceanMat.emissive.setHex(0x3fb6cc).multiplyScalar(0.55 * light * dayish);
+        shaftMat.opacity = depth < 30 ? 0.085 * light * day * (weather.id === 'CLEAR' ? 1 : 0.4) : 0;
+        shafts.position.set(camera.position.x, 0, camera.position.z);
+        shafts.children.forEach(s => { s.rotation.y += dt * 0.05; s.rotation.z = 0.14 + Math.sin(elapsed * 0.4 + s.userData.ph) * 0.05; });
+      }
+
+      function updateDiveSim(rawDt) {
+        const paused = isAnyModalOpen();
+        const dt = paused ? 0 : rawDt;
+        const gear = diveGear(), gun = spearGun();
+        dive.t += dt;
+
+        /* input */
+        let moveX = joyState.x, moveZ = joyState.y;
+        if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
+        if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
+        moveX = THREE.MathUtils.clamp(moveX, -1, 1); moveZ = THREE.MathUtils.clamp(moveZ, -1, 1);
+        const upIn = (diveInput.up || keys['KeyR'] ? 1 : 0) - (diveInput.down || keys['KeyF'] ? 1 : 0);
+        if (dive.emergency) { moveX = moveZ = 0; }
+        else if (dive.surfacing && (upIn < 0 || Math.abs(moveZ) > 0.4)) dive.surfacing = false;
+        dive.yaw -= moveX * 1.9 * dt;
+
+        const speed = gear.speed;
+        let wantVy = upIn * speed * 0.8;
+        if (dive.emergency) wantVy = 4.2;
+        else if (dive.surfacing) wantVy = Math.min(2.8, speed);
+        dive.vf += (-moveZ * speed - dive.vf) * (1 - Math.exp(-2.6 * dt));
+        dive.vy += (wantVy - dive.vy) * (1 - Math.exp(-3.2 * dt));
+        dive.pos.x += -Math.sin(dive.yaw) * dive.vf * dt;
+        dive.pos.z += -Math.cos(dive.yaw) * dive.vf * dt;
+        dive.pos.y += dive.vy * dt;
+
+        /* limits: pier / beach, leash, sea floor, surface, rated depth */
+        if (dive.pos.z > -3.6) { dive.pos.z = -3.6; dive.vf *= 0.5; }
+        const lx = dive.pos.x - dive.startX, lz = dive.pos.z - dive.startZ, lr = Math.hypot(lx, lz);
+        if (lr > 150) {
+          dive.pos.x = dive.startX + lx / lr * 150; dive.pos.z = dive.startZ + lz / lr * 150;
+          if (dive.t - dive.leashWarnT > 6) { dive.leashWarnT = dive.t; showToast('You are too far from your platform — swim back!'); }
+        }
+        const floorY = seabedY(dive.pos.x, dive.pos.z) + 0.6;
+        if (dive.pos.y < floorY) { dive.pos.y = floorY; if (dive.vy < 0) dive.vy = 0; }
+        const maxD = cheats.noDepth ? 999 : gear.maxDepth;
+        if (-dive.pos.y > maxD) {
+          dive.pos.y = -maxD; if (dive.vy < 0) dive.vy = 0;
+          if (dive.t - dive.depthWarnT > 4) { dive.depthWarnT = dive.t; sfx.playAirWarn(false); showToast(`⚠️ Rated depth reached (${gear.maxDepth} m). Better dive gear goes deeper.`); }
+        }
+        if (dive.pos.y > 0.12) { dive.pos.y = 0.12; if (dive.vy > 0) dive.vy = 0; }
+        const depth = Math.max(0, -dive.pos.y);
+        if (depth > dive.maxDepth) dive.maxDepth = depth;
+
+        /* air */
+        if (depth < 0.45) {
+          if (gear.tier === 1 && dive.air < dive.airMax) dive.air = Math.min(dive.airMax, dive.air + dive.airMax * 0.3 * dt);
+        } else if (!cheats.infAir && !dive.emergency) {
+          dive.air -= diveAirRate(depth) * dt;
+        }
+        if (cheats.infAir) dive.air = dive.airMax;
+        const airPct = dive.airMax > 0 ? dive.air / dive.airMax : 1;
+        if (!dive.emergency) {
+          if (airPct < 0.25 && !dive.warned25) { dive.warned25 = true; sfx.playAirWarn(false); showToast('🫧 Air at 25 % — start heading up!'); }
+          if (airPct < 0.1 && !dive.warned10) { dive.warned10 = true; sfx.playAirWarn(true); showToast('🚨 Air nearly gone! Surface NOW (press SURFACE for auto-ascent)'); }
+          if (airPct < 0.1 && dt > 0) { dive.airBeep -= dt; if (dive.airBeep <= 0) { dive.airBeep = 1.1; sfx.playAirWarn(true); } }
+          if (airPct > 0.3) { dive.warned25 = dive.warned10 = false; }
+          if (dive.air <= 0) { dive.emergency = true; dive.surfacing = false; sfx.playAirWarn(true); showToast('🆘 Out of air! Emergency ascent!'); }
+        } else if (depth < 0.5) { endDive('air'); return; }
+        dive.zone = (zz => { if (zz !== dive.zone) { showToast(`🌊 ${zz.name}`); } return zz; })(diveZoneAt(dive.pos.z));
+
+        /* camera */
+        const prevFwdY = Math.sin(dive.pitch);
+        let wantPitch = 0;
+        if (upIn) wantPitch = upIn * 0.5;
+        else if (dive.lock) wantPitch = THREE.MathUtils.clamp(Math.atan2(dive.lock.pos.y - dive.pos.y, Math.hypot(dive.lock.pos.x - dive.pos.x, dive.lock.pos.z - dive.pos.z)), -0.6, 0.6) * 0.8;
+        else if (dive.surfacing || dive.emergency) wantPitch = 0.6;
+        dive.pitch += (wantPitch - dive.pitch) * (1 - Math.exp(-3 * dt));
+        const cp = Math.cos(dive.pitch);
+        const bob = Math.sin(elapsed * 1.7) * 0.03;
+        camera.position.set(dive.pos.x, dive.pos.y + bob, dive.pos.z);
+        camera.up.set(0, 1, 0);
+        _dvFwd.set(-Math.sin(dive.yaw) * cp, Math.sin(dive.pitch), -Math.cos(dive.yaw) * cp);
+        _dvLook.copy(camera.position).addScaledVector(_dvFwd, 10);
+        camera.lookAt(_dvLook);
+        camera.updateMatrixWorld();
+        gunKick = Math.max(0, gunKick - dt * 5);
+        gunGroup.position.set(0.3 + Math.sin(elapsed * 1.3) * 0.008, -0.27 + Math.sin(elapsed * 1.7) * 0.01, -0.55 + gunKick * 0.12);
+        gunGroup.rotation.x = gunKick * 0.12;
+
+        updateSeabedMesh(dive.pos.x, dive.pos.z, false);
+        updateProps(dive.pos.x, dive.pos.z, false);
+        swayList.forEach(p => {
+          if (p.userData.sway) { p.rotation.z = Math.sin(elapsed * 1.1 + p.userData.phase) * p.userData.sway; p.rotation.x = Math.cos(elapsed * 0.9 + p.userData.phase) * p.userData.sway * 0.7; }
+          else if (p.userData.pulse) { const k = 0.85 + 0.15 * Math.sin(elapsed * 2 + p.userData.phase); p.scale.setScalar(k); }
+        });
+
+        /* fish */
+        if (dt > 0) {
+          const spearPos = harpoon.state === 'flying' ? harpoon.pos : null;
+          for (let i = diveFish.length - 1; i >= 0; i--) {
+            const f = diveFish[i];
+            if (f.state !== 'swim') continue;
+            stepDiveFish(f, dt, dive.pos, spearPos);
+            if (f.pos.distanceTo(dive.pos) > 78) { removeDiveFish(f); continue; }
+            f.wig += dt * (3 + f.v * 2.2);
+            f.mesh.position.copy(f.pos);
+            f.mesh.rotation.set(Math.sin(f.wig * 0.5) * 0.04, -f.h + Math.sin(f.wig) * Math.min(0.2, 0.05 + f.v * 0.04), f.p, 'YZX');
+          }
+          dive.spawnT = (dive.spawnT || 0) - dt;
+          if (dive.spawnT <= 0 && diveFish.length < DIVE_FISH_TARGET()) { populateDiveFish(dive.pos, false); dive.spawnT = 0.5; }
+        }
+
+        /* auto-aim lock */
+        harpoon.muzzle && diveMuzzle(harpoon.muzzle);
+        const lockRange = (gun.tier ? gun.range : 0) * (cheats.autoHit ? 1.4 : 1.05);
+        const prevLock = dive.lock;
+        dive.lock = gun.tier && !dive.emergency && harpoon.state !== 'return'
+          ? pickLockTarget(camera.position, _dvFwd, diveFish, lockRange, cheats.autoHit ? 0.9 : 0.965) : null;
+        if (dive.lock && dive.lock !== prevLock) sfx.playSonarPing();
+        const lockEl = document.getElementById('dive-lock');
+        if (dive.lock) {
+          _dvTmp.copy(dive.lock.pos).project(camera);
+          if (_dvTmp.z < 1) {
+            lockEl.style.display = 'block';
+            lockEl.style.left = ((_dvTmp.x * 0.5 + 0.5) * window.innerWidth) + 'px';
+            lockEl.style.top = ((-_dvTmp.y * 0.5 + 0.5) * window.innerHeight) + 'px';
+            const tooBig = dive.lock.weight > gun.power && !cheats.autoHit;
+            lockEl.classList.toggle('bad', tooBig);
+            diveText('dive-lock-label', `${dive.lock.item.name} ${dive.lock.weight.toFixed(1)}kg${tooBig ? ' • TOO BIG' : ''}`);
+          } else lockEl.style.display = 'none';
+        } else lockEl.style.display = 'none';
+
+        /* chests */
+        let nc = null, ncd = 3.4;
+        for (const c of diveChests) {
+          if (c.userData.opened) continue;
+          const d = c.position.distanceTo(dive.pos);
+          if (d < ncd) { ncd = d; nc = c; }
+        }
+        dive.nearChest = nc;
+        diveChests.forEach(c => {
+          const target = c.userData.opened ? -1.1 : 0;
+          c.userData.lid.rotation.x += (target - c.userData.lid.rotation.x) * Math.min(1, dt * 6);
+        });
+
+        /* harpoon, particles, ambient creatures */
+        if (dt > 0) updateHarpoon(dt);
+        updateParticles(dt, camera.position);
+        dive.bubbleT -= dt;
+        if (dive.bubbleT <= 0) { dive.bubbleT = 3.5 + Math.random() * 2; emitBubbles(camera.position.x + _dvFwd.x * 0.4, camera.position.y - 0.15, camera.position.z + _dvFwd.z * 0.4, 5, 0.12); sfx.playBubbleBurst(); }
+        dive.whaleT -= dt;
+        if (dive.whaleT <= 0 && !whale.visible && depth > 3) {
+          dive.whaleT = 80 + Math.random() * 80;
+          const a = Math.random() * 6.28, dist = 48;
+          whaleState.dir.set(-Math.sin(a + 1.57), 0, -Math.cos(a + 1.57));
+          const wy = THREE.MathUtils.clamp(dive.pos.y - 2 + Math.random() * 4, seabedY(dive.pos.x, dive.pos.z) + 6, -6);
+          whale.position.set(dive.pos.x + Math.sin(a) * dist - whaleState.dir.x * 40, wy, Math.min(-8, dive.pos.z + Math.cos(a) * dist - whaleState.dir.z * 40));
+          whale.rotation.y = -Math.atan2(whaleState.dir.z, whaleState.dir.x);
+          whaleState.life = 24; whale.visible = true; sfx.playWhaleCall();
+        }
+        if (whale.visible && dt > 0) {
+          whale.position.addScaledVector(whaleState.dir, 3.6 * dt);
+          whale.position.y += Math.sin(elapsed * 0.5) * 0.3 * dt;
+          whale.rotation.z = Math.sin(elapsed * 0.9) * 0.05;
+          whaleState.life -= dt;
+          if (whaleState.life <= 0) whale.visible = false;
+        }
+
+        applyDiveEnvironment(dt, depth);
+        world.chairGroup.visible = false;
+        world.fishingLine.visible = false; world.bobberGroup.visible = false;
+        sfx.uwDepth = Math.min(1, depth / 60);
+
+        /* HUD (throttled) */
+        dive.hudT -= rawDt;
+        if (dive.hudT <= 0) {
+          dive.hudT = 0.1;
+          diveText('dive-depth', `${depth.toFixed(1)} m / ${cheats.noDepth ? '∞' : gear.maxDepth} m`);
+          const dBar = document.querySelector('#dive-depth-bar > i'); if (dBar) dBar.style.width = Math.min(100, depth / Math.max(1, cheats.noDepth ? 100 : gear.maxDepth) * 100).toFixed(1) + '%';
+          diveText('dive-air-text', cheats.infAir ? '∞' : fmtAir(dive.air));
+          const aBar = document.querySelector('#dive-air-bar > i'); if (aBar) aBar.style.width = Math.max(0, airPct * 100).toFixed(1) + '%';
+          document.getElementById('dive-air-bar').classList.toggle('low', airPct < 0.25);
+          diveText('dive-bag-text', `${bagWeight().toFixed(1)} / ${cheats.bigBag ? '∞' : gear.bagKg} kg`);
+          diveText('dive-gun-name', `🔱 ${gun.tier ? gun.name : 'No spear gun'}`);
+          const gs = document.getElementById('dive-gun-state');
+          const label = gun.tier === 0 ? 'NONE' : harpoon.state === 'ready' ? 'READY' : harpoon.state === 'reload' ? 'RELOADING' : 'FIRED';
+          if (gs.textContent !== label) { gs.textContent = label; gs.className = harpoon.state === 'ready' ? 'ready' : 'reload'; }
+          document.getElementById('dive-flash').classList.toggle('on', (airPct < 0.1 || dive.emergency) && Math.floor(elapsed * 2.5) % 2 === 0);
+        }
+        const btnKey = `${harpoon.state}|${dive.nearChest ? 1 : 0}|${gun.tier}|${dive.emergency ? 1 : 0}`;
+        if (btnKey !== dive.btnKey) { dive.btnKey = btnKey; updatePrimaryActionButton(); }
+      }
+
+      function diveAction() {
+        if (dive.emergency) return;
+        if (dive.nearChest) { diveOpenChest(dive.nearChest); return; }
+        diveFire();
+      }
+
+      function updateDive(dt) {
+        updateDiveAvailability();
+        if (dive.active) updateDiveSim(dt);
+      }
+
+      /* ---- controls ---- */
+      (function wireDiveControls() {
+        const hold = (id, key) => {
+          const b = document.getElementById(id);
+          if (!b) return;
+          const on = e => { e.preventDefault(); e.stopPropagation(); sfx.init(); diveInput[key] = true; b.classList.add('held'); if (dive.surfacing) dive.surfacing = false; };
+          const off = e => { diveInput[key] = false; b.classList.remove('held'); };
+          b.addEventListener('pointerdown', on);
+          b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+        };
+        hold('btn-dive-up', 'up'); hold('btn-dive-down', 'down');
+        const t = document.getElementById('btn-dive-toggle');
+        if (t) {
+          t.addEventListener('pointerdown', e => { e.stopPropagation(); });
+          t.addEventListener('click', e => { e.preventDefault(); toggleDive(); });
+        }
+        window.addEventListener('keydown', e => {
+          if (e.code === 'KeyX' && !e.repeat && !isAnyModalOpen()) toggleDive();
+        });
+        window.addEventListener('blur', () => { diveInput.up = diveInput.down = false; });
+      })();
+
 
       function updateSimulation(dt) {
         elapsed += dt;
@@ -10721,7 +12080,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         const anchorPos = onBoat ? boatPos : world.anglerGroup.position;
         vfx.frenzyVisible = onBoat && state.boatTier > 0 && hasModule('sonar');
-        vfx.update(dt, anchorPos, getWaveHeight, elapsed, zone, weather.rainRate);
+        vfx.update(dt, anchorPos, getWaveHeight, elapsed, zone, dive.active ? 0 : weather.rainRate);
 
         // Smooth camera tracking across entire pier (including left boat slip & portrait mobile screens)
         const camSmooth = 1 - Math.exp(-6.5 * dt);
@@ -10773,6 +12132,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
 
         updateFirstPersonCamera(dt);
+        updateDive(dt);
       }
 
       let hudClockTimer = 0;

@@ -20,20 +20,21 @@ Once installed it also works offline.
 5. [The sea: zones, weather and the moon](#the-sea-zones-weather-and-the-moon)
 6. [Catches and the encyclopedia](#catches-and-the-encyclopedia)
 7. [Bounties, bottles and rewards](#bounties-bottles-and-rewards)
-8. [Career: rank and achievements](#career-rank-and-achievements)
-9. [The fish market](#the-fish-market)
-10. [The Trophy Cabinet](#the-trophy-cabinet)
-11. [Sea events](#sea-events)
-12. [Character customisation](#character-customisation)
-13. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
-14. [Settings](#settings)
-15. [Saving](#saving)
-16. [Installing and offline play](#installing-and-offline-play)
-17. [Technical overview](#technical-overview)
-18. [Running and deploying](#running-and-deploying)
-19. [Testing](#testing)
-20. [Maintaining this file](#maintaining-this-file)
-21. [Changelog](#changelog)
+8. [Diving and spearfishing](#diving-and-spearfishing)
+9. [Career: rank and achievements](#career-rank-and-achievements)
+10. [The fish market](#the-fish-market)
+11. [The Trophy Cabinet](#the-trophy-cabinet)
+12. [Sea events](#sea-events)
+13. [Character customisation](#character-customisation)
+14. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
+15. [Settings](#settings)
+16. [Saving](#saving)
+17. [Installing and offline play](#installing-and-offline-play)
+18. [Technical overview](#technical-overview)
+19. [Running and deploying](#running-and-deploying)
+20. [Testing](#testing)
+21. [Maintaining this file](#maintaining-this-file)
+22. [Changelog](#changelog)
 
 ---
 
@@ -58,6 +59,8 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
 | Open encyclopedia | **☰ Menu → 📖 Log** (a dot on ☰ marks new species) | `L` |
 | Toolbox or bucket (when nearby) | Action button | `T` |
+| Dive / surface | **🤿 DIVE** button (next to the action button) | `X` |
+| Swim up / down while diving | **▲ UP** / **▼ DOWN** buttons | `R` / `F` |
 | Switch **first person / third person** view | **☰ Menu → 🎥 View** tile (shows 👁️ in first person) | `V` |
 | Open the menu (Bag, Log, Career, Trophies, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
@@ -79,7 +82,7 @@ The pier is a small harbour. Walk right up to a stand (about one metre from its 
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
 | ⚓ **Moored boat** (down the stairs on the port side) | Board your boat once you own one. |
-| 🪑 **Pier tip** | Where you sit and fish from the pier (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
+| 🪑 **Pier tip** | Where you sit and fish from the pier, and where you can start a dive (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
 
 Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform. The deck has boards with grain along their length and dark timber underneath, and the lamp posts and every stand are lit at night.
 
@@ -144,6 +147,25 @@ Choose your bait in the **Tackle Toolbox** on the pier. When special bait runs o
 
 The bucket on the pier shows your upgrade, open with the catch inside (the Deep-Freeze Vault is a gilded freezer). In the bag you can **sort** by newest, value, weight or name.
 
+### Dive gear and spear guns
+The shop's **🤿 Dive** and **🔱 Spear** tabs sell the gear for diving and spearfishing (see [Diving and spearfishing](#diving-and-spearfishing)). Tiers are bought in order and the best one you own is used.
+
+| Dive gear | Price | Rated depth | Air at the surface | Catch bag | Swim speed | Lamp |
+|---|---|---|---|---|---|---|
+| Mask, Snorkel & Fins | $140 | 4 m | 28 s | 6 kg | 2.4 m/s | none |
+| Wetsuit & Single Tank | $520 | 16 m | 170 s | 16 kg | 3.0 m/s | none |
+| Twin-Tank Tech Rig | $1,650 | 32 m | 360 s | 34 kg | 3.5 m/s | 1 |
+| Rebreather & Scooter | $4,300 | 62 m | 780 s | 60 kg | 5.0 m/s | 2 |
+| Atmospheric Exo-Suit | $9,800 | 130 m | 1,600 s | 140 kg | 6.0 m/s | 3 |
+
+| Spear gun | Price | Range | Spear speed | Heaviest fish | Reload |
+|---|---|---|---|---|---|
+| Hand Pole Spear | $60 | 6 m | 17 m/s | 8 kg | 1.5 s |
+| Band Speargun | $260 | 11 m | 25 m/s | 22 kg | 1.2 s |
+| Pneumatic Speargun | $820 | 17 m | 33 m/s | 50 kg | 0.9 s |
+| CO2 Power Harpoon | $2,400 | 25 m | 42 m/s | 120 kg | 0.7 s |
+| Rail Harpoon | $6,200 | 36 m | 55 m/s | 320 kg | 0.5 s |
+
 ### Boat paint
 The shop's **Paint** tab recolours the hull of whichever boat you own: Classic (free), Sunset Orange ($150), Emerald ($250), Royal Violet ($400, rank 4), Midnight ($600, rank 8) and Gilded ($1,500, rank 12). A paint you own applies to every boat. Owning three paints earns the *Fresh Coat* achievement.
 
@@ -188,9 +210,22 @@ The encyclopedia (📖 Log) tracks **69 catchable things**:
 - **Message in a bottle:** 36 collectable scrolls are hidden across the four zones. Keep a bottle in your bucket to add its message to the Gallery. Collect all 36 for a **$2,500 Master Archivist** reward.
 - **Eco cleanup:** junk and flora you sell are recycled. Every **100 kg** recycled earns a **$1,000 Mayor's Award**.
 
+## Diving and spearfishing
+
+You can leave the surface and hunt fish by hand. You need **dive gear** (to go under) and a **spear gun** (to catch anything); both are in the Tackle Shop (see [Dive gear and spear guns](#dive-gear-and-spear-guns)).
+
+- **Start a dive** with the **🤿 DIVE** button or `X`, either from the **pier tip** or from a **boat that is almost stopped** (speed under 1.5). The button turns into **🫧 SURFACE** while you are under, and pressing it starts an **auto-ascent** (press again to cancel).
+- **Swim** with the thumbstick (left / right turn, up / down move forward and back) and the **▲ UP** / **▼ DOWN** buttons (`R` and `F` on a keyboard). The camera is first person with the spear gun in view.
+- **Shoot** with the action button (or `Space`). The game **auto-aims**: the fish closest to the crosshair inside a cone and within your gun's range gets a lock marker. A fish that is too heavy for the gun is not landed (*too big for the Band Speargun*), so match the gun to the fish. After a shot the spear is reeled back and the gun reloads.
+- **Fish** are the normal catalogue (fish only, with the usual rarity odds). They wander, school together, and flee from you and from a flying spear, staying between the sea floor and the surface. Speared fish count like any catch: encyclopedia, trophies, bounties, XP, records and the market all apply.
+- **Air** drains at 1 second per second at the surface and faster with depth (pressure). Warnings come at 25% and 10%. At zero you make an **emergency ascent** and lose the heaviest half of your catch bag. The dive also stops you at your gear's **rated depth**, at the sea floor, and 150 m from where you entered the water.
+- **Catch bag:** each gear tier has a bag size in kilograms; when it is full, surface to unload it. When the dive ends the fish go into your bucket, and anything that does not fit is sold on the spot.
+- **Underwater world:** a sea floor that changes with depth and distance from shore (sand, then rock, then dark silt), props such as corals and rocks, **wrecks and sunken chests** (open a chest with the action button for cash), a headlamp that matters in the deep, light shafts near the surface, marine snow, bubbles, a whale that sometimes drifts past, and underwater sound and a pressure rumble. The dive HUD shows depth, air, bag and the nearest lock.
+- Seven new achievements cover it (see Career): *First Plunge*, *Regular Diver*, *Spearfisher*, *Harpoon Hunter*, *Deep Diver* (30 m), *Abyss Walker* (100 m) and *Wreck Raider*.
+
 ## Career: rank and achievements
 
-Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait, and ranks 4, 8 and 12 unlock boat paints. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **33 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
+Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait, and ranks 4, 8 and 12 unlock boat paints. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **40 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
 
 ## The fish market
 
@@ -363,6 +398,15 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 3.5.0: diving and spearfishing
+Made by hand in `index.html` and documented here.
+- **Diving:** a **🤿 DIVE** button (and `X`) takes you underwater from the pier tip or a slow boat. Swim in first person, with air that drains faster with depth, a rated depth per gear tier, a headlamp, a catch bag and an auto-ascent. Running out of air means an emergency ascent and a lost half-bag.
+- **Spearfishing:** a spear gun with auto-aim lock-on fires at schooling, fleeing fish from the normal catalogue; heavier fish than the gun's power are not landed. Speared fish register like normal catches (encyclopedia, trophies, bounties, XP).
+- **Gear:** five dive gear tiers ($140 to $9,800) and five spear guns ($60 to $6,200), in new **🤿 Dive** and **🔱 Spear** shop tabs. Saved as `diveTier` and `spearTier` (validated, old saves default to none).
+- **Underwater world:** a sea floor with depth-based colour, props, wrecks and sunken chests with cash, light shafts, marine snow, bubbles, a passing whale, and new underwater sounds.
+- **Career:** new counters (dives, fish speared, deepest dive, dive time, chests) and **7 new achievements** (40 in total). The secret menu gained dive-gear, harpoon, seabed and rare-fish cheats.
+- Version bumped to **v3.5.0**.
 
 ### 2026-11-20, Version 3.4.0 (manual updates 3.1.0 to 3.5.0): first person, sweet-spot casting, postcards
 These changes were made by hand in `index.html` after v3.0.0 and are documented here. (The in-game version string reads 3.4.0.)
