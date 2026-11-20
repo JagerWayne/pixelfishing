@@ -40,7 +40,7 @@ Once installed it also works offline.
 ## How to play
 
 1. Walk to the **far tip of the pier** and sit in the fishing chair. You can only cast from the tip of the pier, or from a boat.
-2. **Hold the action button** to charge a cast and **release** to throw. Longer holds throw further.
+2. **Hold the action button** to charge a cast and **release** to throw. Longer holds throw further. The power bar loops, and a **yellow sweet spot at 72 to 88%** is marked on it (the label reads *★ SWEET!* while you are in it).
 3. When a fish bites, hook it and **reel it in**, keeping the line tension in the safe zone. Pull too hard on a fish your rod can't handle and the line snaps.
 4. Keep what you want in your **bucket** or release it. Bring the bucket to the **Tackle Shop** to sell the catch.
 5. Spend your money on better rods, boats, bait, buckets and boat modules. Complete **bounties**, collect **message bottles**, recycle junk and fill the **encyclopedia**.
@@ -58,8 +58,11 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
 | Open encyclopedia | **☰ Menu → 📖 Log** (a dot on ☰ marks new species) | `L` |
 | Toolbox or bucket (when nearby) | Action button | `T` |
+| Switch **first person / third person** view | **☰ Menu → 🎥 View** tile (shows 👁️ in first person) | `V` |
 | Open the menu (Bag, Log, Career, Trophies, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
+
+**First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself (Shop, Bounty Board, Gallery, Trophy Cabinet and Camera) and lets go as soon as you move.
 
 The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, and so on. Tapping empty screen does nothing; only the button acts.
 
@@ -72,7 +75,7 @@ The pier is a small harbour. Walk right up to a stand (about one metre from its 
 | 🏪 **Tackle Shop** (west side of the boardwalk) | Buy rods, boats, boat modules, bait, buckets and the live bait cam. Sell your catch. Refuel your boat. |
 | 📋 **Bounty Board** | Take on contracts for cash and bait. |
 | 📜 **Bottle Gallery** | Browse the message-in-a-bottle collection. |
-| 🎬 **Director's Camera** | Change the camera lens and look. |
+| 🎬 **Director's Camera** | Change the camera lens (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
 | ⚓ **Moored boat** (down the stairs on the port side) | Board your boat once you own one. |
@@ -236,7 +239,7 @@ Your look is saved and applied immediately in the game world. While walking, the
 
 ## Secret: the Seagull's menu
 
-There is a hidden cheat menu. Stand close to the **seagull perched behind the tackle shop** (beside the left end of the shop works) and press the action button while it reads **WALK EDGE** **31 times in a row**. Pressing any other key or button resets the count, and so does an action press anywhere else.
+There is a hidden cheat menu. Stand close to the **seagull perched on the west end post of the boardwalk rail**, at the far left of the boardwalk and press the action button while it reads **WALK EDGE** **31 times in a row**. Pressing any other key or button resets the count, and so does an action press anywhere else.
 
 The menu can spawn a treasure chest or boss shadow (on a boat), add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
 
@@ -251,6 +254,7 @@ Open **☰ Menu → Settings**.
 - **Handedness:** *Right* or *Left*; left swaps the thumbstick and action button.
 - **Thumbstick:** *Fixed*, or *Floating*, where the stick appears under your thumb anywhere on its half of the screen and the fixed one stays as a faint hint.
 - **Button size:** *S*, *M* or *L* for the thumbstick and action button.
+- **View:** third person or first person (also the **View** tile in the menu, or `V`).
 - **Fade HUD while fishing:** dims the gauges and shortcuts while your line is out.
 - **Appearance:** opens the customisation screen.
 - **Install app** (when your browser offers it).
@@ -307,7 +311,7 @@ The script inside `index.html` is organised in labelled sections:
 | B | Game data tables: rods, boats, modules, bait, buckets, zones, weather, the catch catalog, bottle messages, bounties |
 | C | Procedural pixel-art texture and icon factory |
 | D | 3D model builders: the lofted fish generator, junk models, boats, pier props, the pier and island, and the **AnglerFactory** (customisable character) |
-| E2 | Particles, ripples, feeding frenzies, weather and jumping fish; sea events (treasure and boss) are in the UI section |
+| E2 | Pooled particles and ripples, feeding frenzies, weather and jumping fish; sea events (treasure and boss) are in the UI section |
 | F | Three.js rendering pipeline and screen shaders |
 | G | Runtime state and multi-touch controls |
 | H | Career (XP, ranks, achievements), the daily market, save state, validation and helper queries |
@@ -359,6 +363,19 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 3.4.0 (manual updates 3.1.0 to 3.5.0): first person, sweet-spot casting, postcards
+These changes were made by hand in `index.html` after v3.0.0 and are documented here. (The in-game version string reads 3.4.0.)
+- **First-person view:** a new View tile in the menu (and the `V` key) puts the camera in the angler's head; the stick turns and walks. The view is saved in the settings.
+- **Stand auto-zoom:** standing still for 0.5 s in front of a stand swings the camera in on it, no key press needed.
+- **Casting sweet spot:** a yellow zone at 72 to 88% on the cast bar; the label shows *★ SWEET!* inside it.
+- **Fishing feedback:** floating *! BITE !* and *LINE SNAPPED!* callouts at the bobber, camera shake on bites and heavy tension, a narrower field of view while reeling, and the camera looks toward the hooked fish. The drag meter now sits at the top of the screen so thumbs never cover it, and toasts drop to the bottom while a fish is on. Boats pitch and bank with speed and turning.
+- **Director's Camera:** the lens list is cut to four (Normal, 8-Bit CRT, Pixelate, Pocket DMG-01); the Game Boy lens was redone with dithering and colour-difference outlines. New **Snap Postcard** button saves a PNG.
+- **Start screen:** simpler card (the collapsible *How to play* is gone); the main button reads *START NEW GAME*, or *CONTINUE* with a save summary and a separate *NEW GAME* button.
+- **Pier tweaks:** the secret seagull moved to the west corner of the boardwalk rail (the other perched seagulls were removed), the rod rack sits between two rail posts, the life ring moved back to sit between two rail posts, the rail posts are 5 cm wider apart, and the boardwalk bunting and its posts sit a little further forward.
+- **Loading:** the local copy of the 3D engine now times out after 1.8 s and falls back to the cdnjs, jsDelivr and unpkg copies in turn, with the progress counter following along.
+- **Performance:** splash particles and ripples now come from reusable pools with shared materials instead of creating and disposing meshes, and several per-frame vector allocations were removed.
+- Catch counts are unchanged (69 catchable things).
 
 ### 2026-11-18, Version 3.0.0: career, trophies, sea events, market and the Mariana Rift
 - **Career:** XP, 12 ranks and 33 achievements with cash rewards (☰ Menu → Career). Old saves are migrated from their species records.
