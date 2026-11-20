@@ -498,6 +498,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 4.9.1: no sitting at the shops
+- The angler no longer unfolds the fishing chair, sits down or pulls out the rod while a shop, the Fish Market or the Recycling stand is open: he just stands there. (The chair is for the pier tip and the boats only.)
+- Version bumped to **v4.9.1**.
+
 ### 2026-11-20, Version 4.9.0: shop catalogues, recycling, a cabin, a new harbour order
 - **Catalogue brochure:** the Tackle Shop, Boatyard and Dive Shop open a page-flip brochure (one item per page: a rendered picture, title, stats, description, price and state; arrows, swipe or keys turn the pages; category chips on top; buying asks to confirm). It replaces the counter and camera sliding of v4.8.0.
 - **Fish Market:** shows your bucket's fish as a list with a *Sell all fish* button (fish only). New **Recycling stand** with three coloured skips (flora, metal, other) takes junk and seaweed, with a *Recycle all* button and the Mayor's award bar. Bucket Sell buttons follow: fish at the Fish Market, junk at Recycling.
