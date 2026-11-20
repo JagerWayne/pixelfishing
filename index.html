@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.6.0';
+    window.PF_VERSION = '4.7.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -607,6 +607,11 @@
       text-align: center;
       animation: bounceAlert 0.28s infinite alternate;
     }
+
+    #station-picker { display: none; gap: 4px; justify-content: center; flex-wrap: wrap; pointer-events: auto; }
+    #station-picker .st-title { width: 100%; text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 1px; color: #bae6fd; text-shadow: 0 1px 2px #000; }
+    #station-picker button { font: inherit; font-size: 11px; font-weight: 900; letter-spacing: 0.2px; padding: 4px 7px; min-height: 30px; border-radius: 4px; background: rgba(14, 22, 36, 0.92); color: #bae6fd; border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
+    #station-picker button.on { background: #0369a1; color: #fff; border-color: #7dd3fc; }
 
     #proximity-banner {
       display: none;
@@ -1651,6 +1656,7 @@
 
     <!-- Center Dynamic Fishing & Proximity Indicators -->
     <div id="center-hud">
+      <div id="station-picker"></div>
       <div id="proximity-banner">⚓ TACKLE SHOP — PRESS ACTION BUTTON TO OPEN</div>
       <div id="bite-banner">! BITE! TAP HOOK NOW !</div>
       <div id="leap-banner">🐟 IT'S JUMPING! TAP TO DIP THE ROD!</div>
@@ -2098,22 +2104,6 @@
         </div>
 
         <div class="upgrade-grid" id="camera-shader-grid"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 6: HARBOR BOUNTY CONTRACT BOARD -->
-  <div class="modal-backdrop" id="modal-bounty">
-    <div class="pixel-box modal-window" style="width: min(96vw, 620px); border-color: #34d399;">
-      <div class="modal-header" style="background: #0f291e; border-bottom-color: #34d399;">
-        <span class="modal-title" style="color: #6ee7b7;">📋 HARBOR BOUNTY & CONTRACT BOARD</span>
-        <button class="pixel-btn red" data-close="modal-bounty">Close</button>
-      </div>
-      <div class="modal-body">
-        <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 10px;">
-          Complete local harbor orders for bonus cash and rare bait packs! Contracts automatically track your catches.
-        </div>
-        <div class="upgrade-grid" id="bounty-list-container"></div>
       </div>
     </div>
   </div>
@@ -4311,6 +4301,10 @@
       const PLATFORM = { zMin: -8.35, zMax: -4.65, xOut: -5.5 - PIER_DX, xIn: -3.97 - PIER_DX, edgeX: -3.9 - PIER_DX, zEnd: -8.8 };
       const BOAT_TERMINAL = { x: -4.1 - PIER_DX, z: -8.55, useX: -4.3 - PIER_DX, useZ: -7.95 };    // kiosk at the platform's inner sea-end corner
       const DOCK_PUMP = { x: -5.72 - PIER_DX, z: -8.5, useX: -5.3 - PIER_DX, useZ: -7.9 };         // fuel pump at the outer corner, by the boat
+      /* Lighthouse jetty (v4.7.0): a wooden jetty on the rocks south-west of the lighthouse, running west from the rock edge
+         (root x/z, deck height y, length, half width). A boat berths along its south side, bow to the west. */
+      const LH_J = { x: 41.6, y: 1.15, z: -147.3, len: 9.5, hw: 0.85, berthX: 32.5, yaw: Math.PI / 2, reach: 11 };
+      function lhBerthPose() { return { x: LH_J.berthX, z: LH_J.z + LH_J.hw + 0.15 + boatHalfWid, yaw: LH_J.yaw }; }
       const BW_HALF = 21;   // the waterfront boardwalk runs from x -21 to +21 (v4.6.0, was 10.5)
       /* Shops on the waterfront boardwalk (v4.6.0): backs on the sea rail, fronts facing south (+Z) like the Tackle Shop.
          Centre x/z, width w and depth d of the building; extra = room for the props beside it. */
@@ -5791,12 +5785,16 @@
           const roof = K.box(g, 1.6, 0.06, 0.34, K.M(0x7f1d1d, 0.85), 0, 1.98, 0.08); roof.rotation.x = 0.35;
           for (let i = 0; i < 6; i++) { const s = K.box(g, 1.58, 0.03, 0.07, K.M(i % 2 ? 0x991b1b : 0x7f1d1d, 0.85), 0, 1.94 + i * 0.012, -0.04 + i * 0.05); s.rotation.x = 0.35; }
           const header = K.box(g, 1.5, 0.3, 0.08, signMat, 0, 2.2, 0.02);
-          // pinned notices
-          const notes = [[-0.38, 1.42, 0.38, 0.5, 'note', 1, 0.05], [0.12, 1.5, 0.38, 0.5, 'note', 2, -0.04], [0.46, 1.32, 0.3, 0.4, 'note', 3, 0.08], [-0.28, 0.98, 0.42, 0.56, 'wanted', 4, -0.03], [0.26, 1.0, 0.34, 0.44, 'note', 5, 0.06]];
-          notes.forEach(([x, y, w, h, kind, seed, rot]) => {
-            const p = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: K.paper(kind, seed), roughness: 0.95, side: THREE.DoubleSide }));
-            p.position.set(x, y, 0.045); p.rotation.z = rot; g.add(p);
-            K.sph(g, 0.022, new THREE.MeshBasicMaterial({ color: kind === 'wanted' ? 0xdc2626 : 0x2563eb }), x, y + h / 2 - 0.05, 0.065, 6, 5);
+          // the real contracts, written on three papers (drawn by drawBountyPaper, tapped to claim; see refreshBountyPapers)
+          const papers = new THREE.Group(); g.add(papers); g.userData.papers = papers;
+          [[-0.45, 0.03], [0, -0.02], [0.45, 0.035]].forEach(([x, rot], i) => {
+            const cv = document.createElement('canvas'); cv.width = 420; cv.height = 630;
+            const tex = new THREE.CanvasTexture(cv); if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
+            const p = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.63), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, side: THREE.DoubleSide }));
+            p.position.set(x, 1.22, 0.05 + i * 0.002); p.rotation.z = rot;
+            p.userData = { bountyIdx: i, canvas: cv, tex, pin: 1, sig: '' };
+            const pin = K.sph(p, 0.022, new THREE.MeshBasicMaterial({ color: 0xdc2626 }), 0, 0.28, 0.02, 6, 5);
+            papers.add(p);
           });
           // lantern hook and lantern
           const arm = K.box(g, 0.3, 0.04, 0.04, K.iron, 0.9, 1.9, 0.02);
@@ -6753,6 +6751,42 @@
             lh.scale.setScalar(1.6);
             scene.add(lh);
 
+            // ---- the lighthouse jetty (see LH_J): deck, pilings, a rail on the sea side, bollards, fenders, ladder, lamp, sign ----
+            {
+              const JK = this.propKit(textures), jg = new THREE.Group(), L = LH_J.len, stone = JK.M(0x78716c, 0.95);
+              for (let i = -2; i <= 2; i++) JK.box(jg, L, 0.1, 0.32, JK.lightWood, -L / 2, -0.05, i * 0.34);                 // planks
+              [-0.62, 0.62].forEach(z => JK.box(jg, L, 0.16, 0.16, JK.darkWood, -L / 2, -0.2, z));                             // stringers
+              for (let x = -0.4; x > -L; x -= 1.6) JK.box(jg, 0.14, 0.14, 1.9, JK.darkWood, x, -0.3, 0);                      // joists
+              [-0.9, -3.3, -5.7, -8.1, -9.4].forEach(x => [-0.8, 0.8].forEach(z => {
+                JK.cyl(jg, 0.14, 0.17, 3.8, JK.darkWood, x, -1.4, z, 8);                                                       // piling down to the seabed
+                JK.box(jg, 0.36, 0.08, 0.36, JK.iron, x, 0.5, z);                                                              // cap
+              }));
+              // rail along the north (open sea) side, two bars; the tip and the south side stay open
+              [-0.9, -3.3, -5.7, -8.1].forEach(x => JK.cyl(jg, 0.05, 0.05, 1.0, JK.darkWood, x, 0.5, -0.8, 6));
+              [0.55, 1.0].forEach(y => JK.box(jg, L - 1.0, 0.06, 0.06, JK.lightWood, -(L - 1.0) / 2 - 0.45, y, -0.8));
+              // bollards and fenders on the berth side
+              [-2.2, -6.8].forEach(x => { JK.cyl(jg, 0.08, 0.11, 0.34, JK.iron, x, 0.17, 0.72, 8); JK.sph(jg, 0.11, JK.iron, x, 0.37, 0.72, 8, 6); });
+              [-1.5, -4.5, -7.5].forEach(x => { const t = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.075, 6, 12), JK.M(0x111827, 0.9)); t.position.set(x, -0.3, 0.9); jg.add(t); });
+              // ladder down to the water at the tip
+              [-0.12, 0.12].forEach(z => JK.box(jg, 0.05, 1.9, 0.05, JK.iron, -9.2, -0.75, 0.78 + z));
+              for (let k = 0; k < 6; k++) JK.box(jg, 0.04, 0.04, 0.3, JK.iron, -9.2, -0.2 - k * 0.3, 0.78);
+              // stone landing and steps at the rock end, with two boulders blending it in
+              JK.box(jg, 1.7, 0.6, 2.2, stone, 0.85, -0.3, 0); JK.box(jg, 0.5, 0.25, 1.4, stone, 1.9, -0.1, 0); JK.box(jg, 0.5, 0.5, 1.2, stone, 2.3, 0.0, 0);
+              [[1.4, -0.5, 1.15, 0x57534e, 1.3], [1.6, -0.6, -1.1, 0x78716c, 1.1]].forEach(([x, y, z, c, r], i) => { const rk = WorldBuilder.buildRock(r, 5 + i, c, 1); rk.position.set(x, y, z); jg.add(rk); });
+              // lamp post (emissive lantern), a hanging ring buoy, a barrel and a crate
+              JK.cyl(jg, 0.05, 0.07, 2.5, JK.iron, -0.9, 1.25, -0.8, 6);
+              JK.box(jg, 0.3, 0.34, 0.3, JK.M(0xfacc15, 0.3, 0.4, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.8 }), -0.9, 2.6, -0.8);
+              JK.box(jg, 0.4, 0.06, 0.4, JK.iron, -0.9, 2.82, -0.8);
+              { const rb = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.07, 6, 14), JK.M(0xdc2626, 0.7)); rb.position.set(-5.0, 0.55, -0.88); jg.add(rb); }
+              JK.cyl(jg, 0.24, 0.21, 0.55, JK.M(0x7c4a1e, 0.85, 0, { map: textures.wood }), -1.7, 0.27, -0.5, 10);
+              JK.box(jg, 0.5, 0.4, 0.5, JK.lightWood, -2.5, 0.2, -0.45);
+              // sign facing the open sea to the south
+              [-0.55, 0.55].forEach(x => JK.cyl(jg, 0.05, 0.05, 1.6, JK.darkWood, 0.9 + x, 1.0, -1.15, 6));
+              JK.box(jg, 1.4, 0.4, 0.06, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('⚓ LIGHTHOUSE PIER', 320, 80) }), 0.9, 1.5, -1.15);
+              jg.position.set(LH_J.x, LH_J.y, LH_J.z);
+              scene.add(jg); ModelKit.mergeStatic(jg, []);
+            }
+
             // ---- Rotating beacon: two long beams that sweep round, plus a flare that is visible from any distance ----
             const beaconPivot = new THREE.Group();
             beaconPivot.position.y = lantern.position.y;
@@ -6817,7 +6851,7 @@
 
           // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The film camera (it turns to
           // face you), the trophy mounts (rebuilt when records change) and the secret seagull stay separate.
-          ModelKit.mergeStatic(pierGroup, [filmCamera, trophyCabinet.userData.fishGroup, cheatGull]);
+          ModelKit.mergeStatic(pierGroup, [filmCamera, trophyCabinet.userData.fishGroup, cheatGull, bountyBoard.userData.papers]);
           scene.add(pierGroup);
 
           const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -6947,6 +6981,9 @@
               Colliders.circle('rocks', LH.x + Math.cos(i * 1.2) * 3.5 * LH.s, LH.z + Math.sin(i * 1.2) * 3.0 * LH.s, rad * LH.s * 1.05, SEA);
             }
             Colliders.circle('lighthouse', LH.x, LH.z, 1.8 * LH.s, SEA);
+            // the jetty deck (above the water: hulls only) and its pilings
+            Colliders.box('lighthouse jetty', LH_J.x - LH_J.len / 2, LH_J.z, LH_J.len / 2 + 0.1, LH_J.hw + 0.1, COL.BOAT);
+            [-0.9, -3.3, -5.7, -8.1, -9.4].forEach(dx => [-0.8, 0.8].forEach(dz => Colliders.circle('pier', LH_J.x + dx, LH_J.z + dz, 0.2, SEA)));
             // buoys float: solid for hulls, and for a diver only near the surface
             buoys.forEach(b => Colliders.circle('buoy', b.position.x, b.position.z, 1.0, SEA, -2.5, 3));
             // Pier and boardwalk pilings plus the two mooring pilings (same list as the pilings built above)
@@ -7358,6 +7395,7 @@
             boatRects,
             shoreZ,
             filmCamera,
+            bountyPapers: bountyBoard.userData.papers,
             skyGroup,
             sunOrb,
             moonGroup,
@@ -8190,10 +8228,89 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         3: { x: 0, y: 1.04, z: -1.95, sit: true, seatH: 0.45, helm: 'wheel', fish: { x: 0, y: 0.53, z: 0.7, sit: false } },                      // trawler: helm chair in the open wheelhouse
         4: { x: 0, y: 0.82, z: 0.3, sit: true, seatH: 0.47, helm: 'wheel', fish: { x: 0, y: 0.55, z: 1.7, sit: false } }                         // yacht: helm seat at the aft helm
       };
-      /* the spot in use right now: the helm while driving, the fishing spot otherwise */
+      /* ---- Fishing stations: where the angler stands, and which way he casts, once the boat is stopped. Small boats let you
+         fish from anywhere on board; the big ones only from where there is working deck. x/y/z are boat-local (the bow points
+         to -Z, port is -X, y is the floor under the feet); yaw is the casting direction relative to the bow (0 bow, +90deg port,
+         -90deg starboard, 180deg stern). A spot with world: true (the lighthouse jetty) uses world coordinates and yaw. ---- */
+      const HP = Math.PI / 2;
+      const mkSt = (id, label, icon, x, y, z, yaw, extra) => Object.assign({ id, label, icon, x, y, z, yaw, sit: false }, extra);
+      const BOAT_STATIONS = {
+        1: [mkSt('bow', 'Bow', '⬆️', 0, -0.05, -1.6, 0), mkSt('port', 'Port', '⬅️', -0.55, -0.05, 0.2, HP), mkSt('starboard', 'Stbd', '➡️', 0.55, -0.05, 0.2, -HP), mkSt('stern', 'Stern', '⬇️', 0, -0.05, 1.7, Math.PI)],
+        2: [mkSt('bow', 'Bow', '⬆️', 0, 0.13, -2.1, 0), mkSt('port', 'Port', '⬅️', -0.7, 0.13, 0.9, HP), mkSt('starboard', 'Stbd', '➡️', 0.7, 0.13, 0.9, -HP), mkSt('stern', 'Stern', '⬇️', 0, 0.13, 2.15, Math.PI)],
+        3: [mkSt('port', 'Port', '⬅️', -1.3, 0.53, 2.7, HP), mkSt('starboard', 'Stbd', '➡️', 1.3, 0.53, 2.7, -HP)],
+        4: [mkSt('stern', 'Stern', '⬇️', 0, 0.55, 4.2, Math.PI), mkSt('port', 'Port', '⬅️', -1.35, 0.55, 1.9, HP), mkSt('starboard', 'Stbd', '➡️', 1.35, 0.55, 1.9, -HP)]
+      };
+      const BOAT_STATION_DEFAULT = { 1: 'bow', 2: 'bow', 3: 'port', 4: 'stern' };
+      const lhDock = { on: false };            // moored at the lighthouse jetty: the angler fishes from the jetty, not the boat
+      const LH_STATIONS = [
+        mkSt('tip', 'Tip', '🎣', LH_J.x - LH_J.len + 1.2, LH_J.y, LH_J.z, Math.PI / 2, { world: true }),
+        mkSt('rail', 'Rail', '⬆️', LH_J.x - LH_J.len / 2 + 1.0, LH_J.y, LH_J.z - 0.28, 0, { world: true })
+      ];
+      let boatStationActive = false;          // true: the angler is at a fishing station instead of the helm
+      const boatStationPick = {};             // last station used per boat (this session only)
+      const stationKey = () => lhDock.on ? 'lh' : state.boatTier;
+      function stationList() { return lhDock.on ? LH_STATIONS : (BOAT_STATIONS[state.boatTier] || []); }
+      function currentStation() {
+        const l = stationList(), want = boatStationPick[stationKey()] || (lhDock.on ? 'tip' : BOAT_STATION_DEFAULT[state.boatTier]);
+        return l.find(x => x.id === want) || l[0] || null;
+      }
+      function castOffLighthouse() { lhDock.on = false; boatStationActive = false; showToast('⚓ Cast off!'); updateStationPicker(true); }
+      function canDockAtLighthouse() {
+        if (!onBoat || mode !== 'BOAT_DRIVING' || lhDock.on || boatStationActive || Math.abs(boatVel) > 3) return false;
+        const b = lhBerthPose();
+        return Math.hypot(boatPos.x - b.x, boatPos.z - b.z) <= LH_J.reach;
+      }
+      function dockLighthouse() {
+        lhDock.on = true; boatStationActive = true; boatVel = 0; boatSide = 0; boatTurnRate = 0;
+        boatStationPick.lh = 'tip';
+        sfx.vibrate(25);
+        showToast('🗼 Moored at the Lighthouse Pier. Fish from the tip or the rail; throttle to cast off.');
+        updateStationPicker(true); updateHUD();
+      }
+      function setStation(id) {
+        if (!onBoat || mode !== 'BOAT_DRIVING') return;
+        if (id === 'castoff') { castOffLighthouse(); sfx.playTick(); return; }
+        if (id === 'helm') boatStationActive = false;
+        else { boatStationActive = true; boatStationPick[stationKey()] = id; }
+        sfx.playTick(); updateStationPicker(true);
+      }
+      /* the spot in use right now: the helm while driving, the chosen fishing station otherwise */
       function currentRideSpot() {
         const r = BOAT_RIDE[state.boatTier] || BOAT_RIDE[1];
-        return mode === 'BOAT_DRIVING' || !r.fish ? r : r.fish;
+        if (mode === 'BOAT_DRIVING' && !boatStationActive && !lhDock.on) return r;
+        return currentStation() || r;
+      }
+      /* world position and facing of a ride spot (boat spots follow the hull) */
+      const _spQ = new THREE.Quaternion(), _spUp = new THREE.Vector3(0, 1, 0);
+      function spotWorld(sp, out) { out.set(sp.x, sp.y, sp.z); if (!sp.world) playerBoatMesh.localToWorld(out); return out; }
+      function spotYaw(sp) { return sp.world ? sp.yaw : boatYaw + (sp.yaw || 0); }
+      function spotQuat(sp, out) {
+        if (sp.world) return out.setFromAxisAngle(_spUp, sp.yaw);
+        return out.copy(playerBoatMesh.quaternion).multiply(_spQ.setFromAxisAngle(_spUp, sp.yaw || 0));
+      }
+      const rideX = { from: null, to: null, t: 1 }, _rwA = new THREE.Vector3(), _rwB = new THREE.Vector3(), _rqA = new THREE.Quaternion(), _rqB = new THREE.Quaternion();
+      let rideYawAbs = 0;                     // the way the angler faces right now (the chase camera looks along it)
+      /* the direction a cast goes: where the angler stands facing */
+      function boatCastYaw() { return spotYaw(currentRideSpot()); }
+      /* the picker above the action button: one chip per station plus the helm */
+      let stationPickerSig = '';
+      function updateStationPicker(force) {
+        const el = document.getElementById('station-picker'); if (!el) return;
+        const show = onBoat && state.boatTier > 0 && mode === 'BOAT_DRIVING' && Math.abs(boatVel) < 1.5 && !isAnyModalOpen() && !dive.active;
+        const list = stationList();
+        const activeId = boatStationActive ? (currentStation() || {}).id : 'helm';
+        const sig = show ? stationKey() + '|' + activeId : 'hide';
+        if (!force && sig === stationPickerSig) return;
+        stationPickerSig = sig;
+        if (!show) { el.style.display = 'none'; return; }
+        el.style.display = 'flex'; el.innerHTML = '';
+        const title = document.createElement('div'); title.className = 'st-title'; title.textContent = 'FISH FROM'; el.appendChild(title);
+        list.concat([lhDock.on ? { id: 'castoff', label: 'Cast off', icon: '⚓' } : { id: 'helm', label: 'Helm', icon: '🧭' }]).forEach((st, i) => {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = `${st.icon} ${st.label}`;
+          b.title = `${i + 1}`; if (st.id === activeId) b.classList.add('on');
+          b.addEventListener('pointerdown', e => { e.stopPropagation(); }); b.addEventListener('click', () => setStation(st.id));
+          el.appendChild(b);
+        });
       }
       let boatSitProgress = 0, boatHandsProgress = 0;
       const rideVec = new THREE.Vector3();
@@ -8419,6 +8536,11 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         if (e.code === 'KeyP') { togglePause(); return; }
         if (inFight() && (e.code === 'KeyB' || e.code === 'KeyT' || e.code === 'KeyL')) {
           showToast('🎣 Finish the fight first! (P pauses)');
+          return;
+        }
+        if (/^Digit[1-5]$/.test(e.code) && onBoat && mode === 'BOAT_DRIVING' && Math.abs(boatVel) < 1.5) {
+          const opts = stationList().concat([{ id: lhDock.on ? 'castoff' : 'helm' }]), o = opts[+e.code.slice(5) - 1];
+          if (o) setStation(o.id);
           return;
         }
         if (e.code === 'KeyB') {
@@ -9306,7 +9428,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
          screen, side = which side the camera swings to (+1 = towards +X) so the player never blocks the view. */
       const STAND_VIEWS = [
         { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
-        { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 3.0, cz: 0.8, halfW: 1.0,  halfH: 1.3, side: 1 },
+        { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
         { id: 'gallery', near: () => isNearPierGallery(),  cx: 4.4,  cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: -1 },
         { id: 'trophy',  near: () => isNearPierTrophies(), cx: 6.55, cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
         { id: 'camera',  near: () => isNearPierCamera(),   cx: 8.2,  cy: 3.1, cz: 0.9, halfW: 1.0,  halfH: 1.1, side: -1 },
@@ -9320,8 +9442,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function standCameraPose(st) {
         const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
         const th = tv * camera.aspect;
-        const dist = THREE.MathUtils.clamp(Math.max(st.halfH / tv, st.halfW / th) * 1.2 + 0.8, 3.4, 12);
-        const yaw = 0.68 * st.side, pitch = 0.24;
+        const dist = THREE.MathUtils.clamp(Math.max(st.halfH / tv, st.halfW / th) * (st.pad || 1.2) + (st.add != null ? st.add : 0.8), st.minDist || 3.4, 12);
+        const yaw = (st.yaw || 0.68) * st.side, pitch = 0.24;
         _standLook.set(st.cx, st.cy, st.cz);
         _standPos.set(
           st.cx + Math.sin(yaw) * Math.cos(pitch) * dist,
@@ -9562,6 +9684,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         steer = THREE.MathUtils.clamp(steer, -1, 1);
         if (Math.abs(throttle) < 0.1) throttle = 0;
         if (Math.abs(steer) < 0.1) steer = 0;
+        if ((boatStationActive || lhDock.on) && (throttle !== 0 || steer !== 0)) {   // back to the helm (and cast off if moored)
+          if (lhDock.on) castOffLighthouse(); else { boatStationActive = false; updateStationPicker(true); }
+        }
         const hd = boat.handling || BOAT_DEFAULT_HANDLING, V = Math.max(1, boat.speed);
         const hasFuel = cheats.freeFuel || state.fuel > 0;
         if (!hasFuel) throttle = 0;                                   // no engine: inertia and the helm only
@@ -9668,6 +9793,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
           onBoat = true;
           mode = 'BOAT_DRIVING';
+          boatStationActive = false; lhDock.on = false; rideX.to = null;
           boatPos.set(MOOR.startX, 0, -9.0);
           boatYaw = 0;
           boatVel = 0;
@@ -9684,6 +9810,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             return;
           }
           onBoat = false;
+          boatStationActive = false;
           mode = 'PIER_IDLE';
           playerX = MOOR.boardX;
           playerZ = -5.6;
@@ -9752,7 +9879,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            openBountyModal();
+            claimFirstReadyBounty();
             return;
           }
           if (isNearPierGallery()) {
@@ -9824,6 +9951,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
         }
 
+        if (mode === 'BOAT_DRIVING' && canDockAtLighthouse()) {
+          isHoldingAction = false;
+          actionPointerId = null;
+          primaryBtn.classList.remove('pressed');
+          dockLighthouse();
+          return;
+        }
+
         if (mode === 'BOAT_DRIVING' && canDockAtPier()) {
           isHoldingAction = false;
           actionPointerId = null;
@@ -9837,6 +9972,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             showToast('Slow the boat down before casting!');
             return;
           }
+          if (onBoat && mode === 'BOAT_DRIVING' && !boatStationActive) { boatStationActive = true; updateStationPicker(true); }
           const bait = getCurrentBait();
           if (!bait.infinite && !cheats.freeBait && (state.baitStock[state.baitTier] || 0) <= 0) {
             state.baitTier = 1;
@@ -9880,13 +10016,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         mode = 'WAITING_BITE';
         bobberInWater = false;
 
-        const origin = world.anglerGroup.position.clone().add(new THREE.Vector3(0, 1.8, -0.8));
+        const castYaw = onBoat ? boatCastYaw() : playerYaw;
+        const forward = new THREE.Vector3(-Math.sin(castYaw), 0, -Math.cos(castYaw));
+        const origin = onBoat
+          ? world.anglerGroup.position.clone().add(new THREE.Vector3(0, 1.8, 0)).addScaledVector(forward, 0.8)
+          : world.anglerGroup.position.clone().add(new THREE.Vector3(0, 1.8, -0.8));
         bobberPos.copy(origin);
 
         const dist = 7 + power * 15;
-        const forward = onBoat
-          ? new THREE.Vector3(-Math.sin(boatYaw), 0, -Math.cos(boatYaw))
-          : new THREE.Vector3(-Math.sin(playerYaw), 0, -Math.cos(playerYaw));
 
         const landingEstimate = origin.clone().addScaledVector(forward, dist * 1.15);
         const inFrenzy = vfx.isPointInFrenzy(landingEstimate);
@@ -10569,59 +10706,108 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         });
       }
 
-      function openBountyModal() {
-        renderBounties();
-        document.getElementById('modal-bounty').classList.add('open');
+      /* ---- Bounty board: the active contracts are written on the papers pinned to the board (see buildBountyBoard).
+         Tap a finished paper (or press the action button beside the board) to claim it. ---- */
+      function wrapLines(ctx, text, maxW) {
+        const out = []; let line = '';
+        String(text).split(' ').forEach(w => {
+          const t = line ? line + ' ' + w : w;
+          if (line && ctx.measureText(t).width > maxW) { out.push(line); line = w; } else line = t;
+        });
+        if (line) out.push(line);
+        return out;
       }
-
-      function renderBounties() {
-        const container = document.getElementById('bounty-list-container');
-        container.innerHTML = '';
-        (state.bounties || []).forEach((b, idx) => {
-          const isDone = b.progress >= b.target;
-          const baitName = BAIT_TIERS[b.rewardBaitTier - 1].name;
-          const card = document.createElement('div');
-          card.className = `shop-card ${isDone ? 'equipped' : ''}`;
-          card.innerHTML = `
-            <div>
-              <div class="card-title">
-                <span>📋 ${b.title}</span>
-                <span style="color:#ffd24c;">+$${b.rewardCash}</span>
-              </div>
-              <div class="card-stats">
-                ${b.desc}<br/>
-                Bonus: <b>+${b.rewardBaitQty}x ${baitName}</b> • Progress: <b>${b.progress}/${b.target}</b>
-              </div>
-            </div>
-          `;
-          const btn = document.createElement('button');
-          btn.className = isDone ? 'pixel-btn green' : 'pixel-btn';
-          btn.disabled = !isDone;
-          btn.textContent = isDone ? 'Claim Reward!' : `In Progress (${b.progress}/${b.target})`;
-          btn.onclick = () => {
-            if (b.progress < b.target) return;
-            state.cash = +(state.cash + b.rewardCash).toFixed(2);
-            bumpStat('earned', b.rewardCash); bumpStat('bountiesClaimed'); addXp(40);
-            state.baitStock[b.rewardBaitTier] = (state.baitStock[b.rewardBaitTier] || 0) + b.rewardBaitQty;
-            if (state.baitTier === b.rewardBaitTier) {
-              state.baitCount = state.baitStock[b.rewardBaitTier];
-            }
-            const usedIds = state.bounties.map(x => x.id);
-            const candidates = BOUNTY_POOL.filter(p => !usedIds.includes(p.id));
-            const nextTpl = candidates[Math.floor(Math.random() * candidates.length)] || BOUNTY_POOL[0];
-            state.bounties[idx] = { ...nextTpl, progress: 0, claimed: false };
-
-            sfx.playCatchFanfare(false);
-            checkAchievements();
-            saveGame();
-            renderBounties();
-            updateHUD();
-            showToast(`🎉 Claimed $${b.rewardCash} + ${b.rewardBaitQty}x ${baitName}!`);
-          };
-          card.appendChild(btn);
-          container.appendChild(card);
+      function drawBountyPaper(cv, b) {
+        const W = cv.width, H = cv.height, x = cv.getContext('2d');
+        const grad = x.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#fdf3d0'); grad.addColorStop(1, '#efdca6');
+        x.fillStyle = grad; x.fillRect(0, 0, W, H);
+        x.strokeStyle = 'rgba(120,80,30,0.6)'; x.lineWidth = 5; x.strokeRect(10, 10, W - 20, H - 20);
+        x.textAlign = 'center'; x.fillStyle = '#5b3a1a';
+        if (!b) { x.font = 'bold 34px "Courier New", monospace'; x.fillText('NO CONTRACT', W / 2, H / 2); return; }
+        const done = b.progress >= b.target;
+        x.font = 'bold 22px "Courier New", monospace'; x.fillStyle = '#92400e'; x.fillText('HARBOR CONTRACT', W / 2, 52);
+        x.fillStyle = '#3b2410'; x.font = 'bold 36px "Courier New", monospace';
+        let y = 104; wrapLines(x, b.title, W - 60).slice(0, 3).forEach(l => { x.fillText(l, W / 2, y); y += 40; });
+        x.fillStyle = 'rgba(91,58,26,0.5)'; x.fillRect(40, y - 18, W - 80, 3); y += 20;
+        x.fillStyle = '#4a3220'; x.font = '27px "Courier New", monospace';
+        wrapLines(x, b.desc, W - 60).slice(0, 5).forEach(l => { x.fillText(l, W / 2, y); y += 33; });
+        const bait = BAIT_TIERS[b.rewardBaitTier - 1];
+        x.fillStyle = '#166534'; x.font = 'bold 58px "Courier New", monospace'; x.fillText('$' + b.rewardCash, W / 2, H - 150);
+        x.fillStyle = '#4a3220'; x.font = 'bold 23px "Courier New", monospace'; x.fillText('+' + b.rewardBaitQty + 'x ' + (bait ? bait.name : 'bait'), W / 2, H - 116);
+        const bw = W - 100, frac = Math.min(1, b.progress / b.target);
+        x.fillStyle = 'rgba(91,58,26,0.25)'; x.fillRect(50, H - 90, bw, 22);
+        x.fillStyle = done ? '#16a34a' : '#d97706'; x.fillRect(50, H - 90, bw * frac, 22);
+        x.strokeStyle = '#5b3a1a'; x.lineWidth = 2; x.strokeRect(50, H - 90, bw, 22);
+        x.fillStyle = '#3b2410'; x.font = 'bold 28px "Courier New", monospace'; x.fillText(b.progress + ' / ' + b.target, W / 2, H - 36);
+        if (done) {
+          x.save(); x.translate(W / 2, H * 0.5); x.rotate(-0.28);
+          x.strokeStyle = '#b91c1c'; x.fillStyle = '#b91c1c'; x.lineWidth = 7; x.globalAlpha = 0.88;
+          x.strokeRect(-150, -48, 300, 96); x.font = 'bold 54px "Courier New", monospace'; x.fillText('READY', 0, 6);
+          x.font = 'bold 26px "Courier New", monospace'; x.fillText('TAP TO CLAIM', 0, 36);
+          x.restore();
+        }
+      }
+      function refreshBountyPapers(force = false) {
+        const grp = world && world.bountyPapers; if (!grp) return;
+        grp.children.forEach(p => {
+          const b = (state.bounties || [])[p.userData.bountyIdx];
+          const sig = b ? [b.id, b.progress, b.target].join('|') : 'none';
+          if (!force && p.userData.sig === sig) return;
+          if (p.userData.sig && p.userData.sig.split('|')[0] !== sig.split('|')[0]) p.userData.pin = 0;   // a new paper gets pinned up
+          p.userData.sig = sig;
+          drawBountyPaper(p.userData.canvas, b); p.userData.tex.needsUpdate = true;
         });
       }
+      function updateBountyPapers(dt) {
+        const grp = world && world.bountyPapers; if (!grp) return;
+        grp.children.forEach(p => {
+          if (p.userData.pin < 1) {
+            p.userData.pin = Math.min(1, p.userData.pin + dt * 3);
+            const t = p.userData.pin, e = 1 + 1.6 * Math.pow(t - 1, 3) + 0.6 * Math.pow(t - 1, 2);
+            p.scale.setScalar(Math.max(0.05, e));
+          }
+        });
+      }
+      function claimBounty(idx) {
+        const b = (state.bounties || [])[idx];
+        if (!b) return false;
+        if (b.progress < b.target) {
+          showToast(`📋 ${b.title}: ${b.progress}/${b.target}. ${b.desc}`);
+          return false;
+        }
+        const baitName = BAIT_TIERS[b.rewardBaitTier - 1].name;
+        state.cash = +(state.cash + b.rewardCash).toFixed(2);
+        bumpStat('earned', b.rewardCash); bumpStat('bountiesClaimed'); addXp(40);
+        state.baitStock[b.rewardBaitTier] = (state.baitStock[b.rewardBaitTier] || 0) + b.rewardBaitQty;
+        if (state.baitTier === b.rewardBaitTier) state.baitCount = state.baitStock[b.rewardBaitTier];
+        const usedIds = state.bounties.map(x => x.id);
+        const candidates = BOUNTY_POOL.filter(p => !usedIds.includes(p.id));
+        const nextTpl = candidates[Math.floor(Math.random() * candidates.length)] || BOUNTY_POOL[0];
+        state.bounties[idx] = { ...nextTpl, progress: 0, claimed: false };
+        sfx.playCatchFanfare(false);
+        checkAchievements();
+        saveGame();
+        refreshBountyPapers();
+        updateHUD();
+        showToast(`🎉 Claimed $${b.rewardCash} + ${b.rewardBaitQty}x ${baitName}!`);
+        return true;
+      }
+      function claimFirstReadyBounty() {
+        const i = (state.bounties || []).findIndex(b => b.progress >= b.target);
+        if (i >= 0) return claimBounty(i);
+        showToast('📋 Nothing ready yet. Finish a contract, then tap its paper (or press this button) to claim it.');
+        return false;
+      }
+      const _bountyRay = new THREE.Raycaster(), _bountyNdc = new THREE.Vector2();
+      window.addEventListener('pointerdown', e => {
+        if (!world || !world.bountyPapers || !isNearPierBounty() || isAnyModalOpen() || gamePause.on) return;
+        if (e.target.closest && e.target.closest('button, .modal-backdrop, #menu-drawer')) return;
+        const r = renderer.domElement.getBoundingClientRect();
+        _bountyNdc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+        _bountyRay.setFromCamera(_bountyNdc, camera);
+        const hit = _bountyRay.intersectObjects(world.bountyPapers.children, false)[0];
+        if (hit) claimBounty(hit.object.userData.bountyIdx);
+      }, true);
 
       function applyVfxShader(shaderId, notify = false) {
         const preset = SHADER_PRESETS.find(p => p.id === shaderId) || SHADER_PRESETS[0];
@@ -11667,12 +11853,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           proxEl.textContent = '⚓ TACKLE SHOP — PRESS BUTTON TO BUY / SELL';
           proxEl.style.display = 'block';
         } else if (isNearPierBounty()) {
+          const readyN = (state.bounties || []).filter(b => b.progress >= b.target).length;
           primaryBtn.classList.add('bounty');
           iconEl.textContent = '📋';
-          labelEl.textContent = 'BOUNTIES';
+          labelEl.textContent = readyN ? 'CLAIM' : 'BOUNTIES';
           proxEl.style.borderColor = '#34d399';
           proxEl.style.color = '#a7f3d0';
-          proxEl.textContent = '📋 BOUNTY BOARD — PRESS BUTTON FOR HARBOR CONTRACTS';
+          proxEl.textContent = readyN ? `📋 ${readyN} CONTRACT${readyN > 1 ? 'S' : ''} READY — TAP A PAPER OR PRESS BUTTON TO CLAIM` : '📋 BOUNTY BOARD — READ THE CONTRACTS ON THE PAPERS';
           proxEl.style.display = 'block';
         } else if (isNearPierGallery()) {
           primaryBtn.classList.add('reeling');
@@ -11753,6 +11940,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           labelEl.textContent = 'DOCK PIER';
           proxEl.textContent = '⚓ NEAR HARBOR PIER — PRESS BUTTON TO DOCK';
           proxEl.style.display = 'block';
+        } else if (canDockAtLighthouse()) {
+          primaryBtn.classList.add('sail');
+          iconEl.textContent = '⚓';
+          labelEl.textContent = 'DOCK JETTY';
+          proxEl.textContent = '🗼 LIGHTHOUSE PIER — PRESS BUTTON TO DOCK AND FISH FROM THE JETTY';
+          proxEl.style.display = 'block';
         } else if (!onBoat && !isAtPierWaterEdge()) {
           iconEl.textContent = '🚶';
           labelEl.textContent = 'WALK EDGE';
@@ -11763,6 +11956,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function updateBountyPill() {
+        refreshBountyPapers();
         const pill = document.getElementById('hud-bounty-pill');
         const active = (state.bounties || []).filter(b => !b.claimed);
         if (active.length === 0 || isAnyModalOpen()) {
@@ -13097,6 +13291,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       function updateSimulation(dt) {
         elapsed += dt;
+        updateBountyPapers(dt);
+        updateStationPicker(false);
         const zone = getCurrentZone();
         const weather = getWeatherObj();
 
@@ -13503,7 +13699,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               updateHUD();
             }
             // out of fuel and far from the pier: the tow starts once the boat has coasted to a stop
-            if (state.fuel <= 0 && !cheats.freeFuel && Math.abs(boatVel) < 0.4 && getDistanceMeters() > 15) {
+            if (state.fuel <= 0 && !cheats.freeFuel && !lhDock.on && Math.abs(boatVel) < 0.4 && getDistanceMeters() > 15) {
               boatVel = 0; boatSide = 0;
               triggerRescueSequence();
             }
@@ -13515,6 +13711,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (dt > 0) { boatYaw += boatTurnRate * dt; boatPos.x += (-Math.sin(boatYaw) * boatVel + Math.cos(boatYaw) * boatSide) * dt; boatPos.z += (-Math.cos(boatYaw) * boatVel - Math.sin(boatYaw) * boatSide) * dt; if (Math.abs(boatVel) > 0.05) resolveBoatCollisions(); }
           }
 
+          if (lhDock.on) {   // moored: ease into the berth and stay put
+            const bp = lhBerthPose(), kk = 1 - Math.exp(-2.2 * dt);
+            boatPos.x += (bp.x - boatPos.x) * kk; boatPos.z += (bp.z - boatPos.z) * kk;
+            boatYaw += Math.atan2(Math.sin(bp.yaw - boatYaw), Math.cos(bp.yaw - boatYaw)) * kk;
+            boatVel = 0; boatSide = 0; boatTurnRate = 0;
+          }
           if (zone.id > (state.stats.maxZone || 1)) state.stats.maxZone = zone.id;
           updateHullMotion(dt, boat, zone);
           boatPos.y = hullMo.heave;
@@ -13523,16 +13725,22 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           playerBoatMesh.rotation.set(hullMo.pitch, boatYaw, hullMo.roll);
 
           // the rider is carried by the hull: he sits or stands at the boat's ride spot and tilts, banks and bobs with it
+          // He moves between the helm and the stations over about 0.4 s; both ends follow the hull while he is on his way.
           const ride = currentRideSpot();
           playerBoatMesh.updateMatrixWorld(true);
-          rideVec.set(ride.x, ride.y, ride.z);
-          playerBoatMesh.localToWorld(rideVec);
-          world.anglerGroup.position.copy(rideVec);
-          world.anglerGroup.quaternion.copy(playerBoatMesh.quaternion);
+          if (rideX.to !== ride) { rideX.from = rideX.to || ride; rideX.to = ride; rideX.t = rideX.from === ride ? 1 : 0; }
+          rideX.t = Math.min(1, rideX.t + dt / 0.4);
+          const re = rideX.t * rideX.t * (3 - 2 * rideX.t);
+          spotWorld(rideX.from, _rwA); spotWorld(rideX.to, _rwB);
+          world.anglerGroup.position.lerpVectors(_rwA, _rwB, re);
+          if (rideX.t < 1) world.anglerGroup.position.y += Math.sin(re * Math.PI) * 0.12;   // a little step
+          spotQuat(rideX.from, _rqA); spotQuat(rideX.to, _rqB);
+          world.anglerGroup.quaternion.copy(_rqA).slerp(_rqB, re);
+          { const ya = spotYaw(rideX.from), yb = spotYaw(rideX.to); rideYawAbs = ya + Math.atan2(Math.sin(yb - ya), Math.cos(yb - ya)) * re; }
         }
 
         // Animated Rod Show / Stow & 4-Segment Dynamic Bending
-        const shouldShowRod = (mode === 'BOAT_DRIVING' || mode === 'RESCUE_SEQUENCE') ? false : (onBoat || isAtPierWaterEdge() || mode !== 'PIER_IDLE');
+        const shouldShowRod = ((mode === 'BOAT_DRIVING' && !boatStationActive) || mode === 'RESCUE_SEQUENCE') ? false : (onBoat || isAtPierWaterEdge() || mode !== 'PIER_IDLE');
         const targetRodVis = shouldShowRod ? 1.0 : 0.0;
         rodVisProgress = THREE.MathUtils.lerp(rodVisProgress, targetRodVis, Math.min(1, dt * 9.5));
         const easedRodVis = rodVisProgress * rodVisProgress * (3 - 2 * rodVisProgress);
@@ -13604,11 +13812,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               sfx.playSplash();
               vfx.spawnSplash(bobberPos, 14, 0xe0f2fe, 2.8);
               world.fishShadow.visible = true;
-              world.fishShadow.position.set(
-                bobberPos.x + (Math.random() - 0.5) * 6,
-                waterY - 0.18,
-                bobberPos.z - 4 - Math.random() * 3
-              );
+              {   // the fish lurks beyond the bobber, along the cast direction, a little to either side
+                const cy = onBoat ? boatCastYaw() : playerYaw, ahead = 4 + Math.random() * 3, side = (Math.random() - 0.5) * 6;
+                world.fishShadow.position.set(
+                  bobberPos.x - Math.sin(cy) * ahead + Math.cos(cy) * side,
+                  waterY - 0.18,
+                  bobberPos.z - Math.cos(cy) * ahead - Math.sin(cy) * side
+                );
+              }
             }
           } else {
             const waterY = getWaveHeight(bobberPos.x, bobberPos.z, elapsed, zone);
@@ -13671,7 +13882,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 );
               }
 
-              const activeYaw = onBoat ? boatYaw : playerYaw;
+              const activeYaw = onBoat ? boatCastYaw() : playerYaw;
               const rightVec = _fightRight.set(Math.cos(activeYaw), 0, -Math.sin(activeYaw));
               const forwardVec = _fightFwd.set(-Math.sin(activeYaw), 0, -Math.cos(activeYaw));
 
@@ -13832,7 +14043,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         // riding a boat: sit on the thwart (rowboat) and hold the wheel or tiller while steering
         const rideSpot = onBoat ? currentRideSpot() : null;
         boatSitProgress = THREE.MathUtils.lerp(boatSitProgress, rideSpot && rideSpot.sit ? 1 : 0, Math.min(1, dt * 6));
-        boatHandsProgress = THREE.MathUtils.lerp(boatHandsProgress, onBoat && mode === 'BOAT_DRIVING' ? 1 : 0, Math.min(1, dt * 6));
+        boatHandsProgress = THREE.MathUtils.lerp(boatHandsProgress, onBoat && mode === 'BOAT_DRIVING' && !boatStationActive ? 1 : 0, Math.min(1, dt * 6));
         const boatSitEase = boatSitProgress * boatSitProgress * (3 - 2 * boatSitProgress);
         const sitEase = Math.max(chairSitEase, boatSitEase);
         const handsEase = boatHandsProgress * boatHandsProgress * (3 - 2 * boatHandsProgress);
@@ -13858,7 +14069,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             const target = onBoat && mode === 'BOAT_DRIVING' && !settings.firstPerson ? 0.28 : 1;
             helm.roof.forEach(m => { m.material.opacity += (target - m.material.opacity) * Math.min(1, dt * 5); m.material.depthWrite = m.material.opacity > 0.95; });
           }
-          if (onBoat && mode === 'BOAT_DRIVING' && rideSpot && helm) {
+          if (onBoat && mode === 'BOAT_DRIVING' && !boatStationActive && rideSpot && helm) {
             const steer = THREE.MathUtils.clamp(boatTurnRate, -1.6, 1.6);
             if (helm.kind === 'wheel') {
               helm.spin.rotation.z = -steer * 1.8;
@@ -13902,7 +14113,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             casting: mode === 'CASTING', castCharge, castRelease,
             reeling: mode === 'REELING', cranking: mode === 'REELING' && isHoldingAction, tension, pull: mode === 'REELING' ? rodPullAngle : 0,
             hands, handBlend,
-            sway: onBoat ? -playerBoatMesh.rotation.z : 0,
+            sway: onBoat && !lhDock.on ? -playerBoatMesh.rotation.z : 0,
             stepTrigger: stepTrigger && elapsed > 1,
             idleAllowed: mode === 'PIER_IDLE' || mode === 'BOAT_DRIVING'
           });
@@ -13956,7 +14167,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           // Going astern it flips round to the bow and looks the way the boat is moving.
           if (mode === 'BOAT_DRIVING' && boatVel < -0.8) boatCamReverse = true;
           else if (boatVel > -0.15 || mode !== 'BOAT_DRIVING') boatCamReverse = false;
-          const camGoalYaw = boatYaw + (boatCamReverse ? Math.PI : 0);
+          const camGoalYaw = (boatStationActive || mode !== 'BOAT_DRIVING' ? rideYawAbs : boatYaw) + (boatCamReverse ? Math.PI : 0);
           const yawErr = Math.atan2(Math.sin(camGoalYaw - boatCamYaw), Math.cos(camGoalYaw - boatCamYaw));
           boatCamYaw += yawErr * (1 - Math.exp(-3.5 * dt));
           const backOffset = _camV3.set(
@@ -13965,9 +14176,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             Math.cos(boatCamYaw) * (9.5 + speedZoom)
           );
 
-          const targetCamPos = _camV1.copy(boatPos).add(backOffset);
+          const camBase = lhDock.on ? world.anglerGroup.position : boatPos;
+          const targetCamPos = _camV1.copy(camBase).add(backOffset);
           camera.position.lerp(targetCamPos, camSmooth);
-          const lookTarget = _camV2.copy(boatPos).add(_camV3.set(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
+          const lookTarget = _camV2.copy(camBase).add(_camV3.set(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
           if (reelLookW > 0.002) lookTarget.lerp(world.fishShadow.position, reelLookW); // look at the fish while it is dragged
           camLookCur.copy(lookTarget); camLookInit = true;
           camera.lookAt(lookTarget);
@@ -14264,7 +14476,7 @@ if (mode === 'REELING' && tension > 0.78) {
         world.fishShadow.visible = false; world.bobberGroup.visible = false;
         landing.mesh = catchMesh(c);
         landing.from.copy(bobberPos);
-        const yaw = onBoat ? boatYaw : playerYaw;
+        const yaw = onBoat ? boatCastYaw() : playerYaw;
         landing.to.copy(world.anglerGroup.position).add(_camV3.set(-Math.sin(yaw) * 0.9, 1.25, -Math.cos(yaw) * 0.9));
         landing.mesh.position.copy(landing.from);
         scene.add(landing.mesh);

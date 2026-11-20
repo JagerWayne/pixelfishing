@@ -86,7 +86,7 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 
 | Object | What it does |
 |---|---|
-| 📋 **Bounty Board** | Take on contracts for cash and bait. |
+| 📋 **Bounty Board** | Your three open contracts are written on papers pinned to the board (title, task, reward, progress). Tap a finished paper (marked READY) or press the action button to claim it. |
 | 📜 **Bottle Gallery** | Browse the message-in-a-bottle collection. |
 | 🎬 **Director's Camera** | Change the camera lens (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
@@ -100,7 +100,9 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 
 Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform. The deck has boards with grain along their length and dark timber underneath, and the lamp posts and every stand are lit at night.
 
-The **lighthouse** out at sea has a rotating beam. Its flare is drawn at a fixed size on screen and is never fogged, so you can see it flash from anywhere on the sea, even 2000 m away, day or night (brighter at night).
+The **lighthouse** out at sea (about 130 m from the pier, in the Coastal Reef) has a rotating beam and, since v4.7.0, a small **jetty** on its south-west rocks: sail alongside it (within about 11 m, slow, at the helm) and the action button says *Dock Jetty*. The boat eases into a berth on the jetty's south side and you step onto the deck. You fish from the **Tip** (casting west) or the **Rail** (casting north) exactly as from a boat; the **Cast off** chip, or any throttle, puts you back at the helm. There is no free walking on the rocks, no fuel is used while moored and no tow is called. The jetty has pilings, a rail, bollards, fenders, a ladder, a lamp, a ring buoy and a sign, and its colliders keep other hulls off it.
+
+The beacon's flare is drawn at a fixed size on screen and is never fogged, so you can see it flash from anywhere on the sea, even 2000 m away, day or night (brighter at night).
 
 ## Progression and equipment
 
@@ -130,7 +132,18 @@ You ride each boat at a proper helm, built for the angler's body and checked in 
 - **Fiberglass Skiff:** stand at a padded **leaning post** behind the console; the wheel is on the console's aft face, facing you, with a throttle and chart plotter beside it.
 - **Deep-Sea Trawler:** sit in a **helm chair inside an open-backed wheelhouse** (which stands clear above the bulwark since v4.3.0), wheel and console in front and the bow through big front windows. In third person the wheelhouse roof turns see-through while you drive.
 - **Expedition Yacht:** sit on a **raised helm seat** behind the helm console, high enough to look over the low cabin and the bow; a radar arch replaces the old flybridge. Since v4.3.0 the hull has a lower freeboard, so the cabin and its windows sit properly above the sheer.
-Your hands stay on the wheel or tiller and the wheel turns as you steer. When you fish from a boat you stand at the stern instead.
+Your hands stay on the wheel or tiller and the wheel turns as you steer.
+
+**Fishing stations (v4.7.0).** Once the boat is nearly stopped a **FISH FROM** row of chips appears above the action button (keys `1` to `5` pick them too). Pick a station and the angler walks there, turns outwards and the camera swings to face the same way; the cast, the hooked fish and the landing all go that direction. Any throttle or steering sends you back to the helm, and a boat that is stopped keeps you at your station between casts. Small boats let you fish from anywhere; big boats only from the working deck:
+
+| Boat | Stations |
+|---|---|
+| Wooden Rowboat | Bow, Port, Starboard, Stern |
+| Fiberglass Skiff | Bow, Port, Starboard, Stern |
+| Deep-Sea Trawler | Port, Starboard (the stern has the trawl gear, the bow the winch) |
+| Expedition Yacht | Stern, Port, Starboard (the bow is a railed foredeck) |
+
+The numbers live in `BOAT_STATIONS` in `index.html` (boat-local position and casting direction per station).
 
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
@@ -267,7 +280,7 @@ The encyclopedia (📖 Log) tracks **69 catchable things**:
 
 ## Bounties, bottles and rewards
 
-- **Bounties:** the board offers three contracts at a time from a pool of 16 (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
+- **Bounties:** the board offers three contracts at a time from a pool of 16 (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. The contracts are **written on the three papers pinned to the board** (there is no menu any more): stand in front of it and the camera zooms in so you can read the title, task, reward and progress bar of each. A finished contract gets a red READY stamp; **tap its paper**, or press the action button (*Claim*), to collect, and a fresh contract is pinned up in its place. Tapping an unfinished paper just tells you its progress. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
 - **Message in a bottle:** 36 collectable scrolls are hidden across the four zones. Keep a bottle in your bucket to add its message to the Gallery. Collect all 36 for a **$2,500 Master Archivist** reward.
 - **Eco cleanup:** junk and flora you sell are recycled. Every **100 kg** recycled earns a **$1,000 Mayor's Award**.
 
@@ -474,6 +487,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.7.0: fishing stations on boats, a lighthouse jetty, bounties on the board
+- **Fishing stations:** with the boat nearly stopped, a *Fish from* row lets you fish from the bow, port, starboard or stern, depending on the hull (rowboat and skiff: all four; trawler: both sides; yacht: stern and both sides). The angler walks to the spot and turns, the chase camera follows, and the cast, the fish's run and the landing go that way. The line now leaves from the rod, not from a fixed point in front of the hull, and the angler no longer snaps between helm and spot.
+- **Lighthouse jetty:** a wooden jetty on the lighthouse rocks with a berth for any boat. Dock from the helm, fish from its tip or rail, cast off with a chip or the throttle. New colliders for the deck and pilings.
+- **Bounty board:** the three open contracts are drawn on large readable papers on the board and are claimed by tapping a finished paper (or the action button). The bounty menu is gone; claiming pays out, pins a new paper and celebrates.
+- Version bumped to **v4.7.0**.
 
 ### 2026-11-20, Version 4.6.0: shops on the boardwalk facing south, a dock fuel pump, no more boat paint
 - **Shops face south with their backs to the sea:** the Boatyard, Fish Market and Dive Shop moved from the terrace onto the waterfront boardwalk, which is now 42 m long (it was 21 m), with new pilings, rails, joists and end fascias; the coastal boulders, barrel stacks and the secret seagull moved out to the new ends, and two palms stepped back so they don't block the shop camera. The terrace is scenery again (no more walking up there, and no camera swing).
