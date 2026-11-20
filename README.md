@@ -498,6 +498,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 4.9.2: smaller shops
+- The Boatyard, Dive Shop and Fish Market are built at 85% size (`s` in `SHORE_SHOPS`; each is built full size and scaled, so props, colliders, prompts, lights and stand zooms follow), which gives the boardwalk more room between the buildings.
+- Version bumped to **v4.9.2**.
+
 ### 2026-11-20, Version 4.9.1: no sitting at the shops
 - The angler no longer unfolds the fishing chair, sits down or pulls out the rod while a shop, the Fish Market or the Recycling stand is open: he just stands there. (The chair is for the pier tip and the boats only.)
 - Version bumped to **v4.9.1**.

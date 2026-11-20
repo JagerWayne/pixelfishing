@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.9.1';
+    window.PF_VERSION = '4.9.2';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4341,9 +4341,9 @@
       /* Shops on the waterfront boardwalk (v4.6.0): backs on the sea rail, fronts facing south (+Z) like the Tackle Shop.
          Centre x/z, width w and depth d of the building; extra = room for the props beside it. */
       const SHORE_SHOPS = {
-        boatyard: { x: -17.55, z: 1.37, w: 4.2, d: 2.4, extra: 1.3, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
-        fish:     { x: 11.4,  z: 1.32, w: 2.9, d: 2.3, extra: 1.2, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR FISH', color: '#38bdf8' },
-        dive:     { x: -12.0, z: 1.32, w: 4.0, d: 2.3, extra: 1.4, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
+        boatyard: { x: -17.4, z: 1.2, w: 3.6, d: 2.05, extra: 1.1, s: 0.85, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
+        fish:     { x: 11.4,  z: 1.15, w: 2.5, d: 1.95, extra: 1.0, s: 0.85, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR FISH', color: '#38bdf8' },
+        dive:     { x: -12.2, z: 1.15, w: 3.4, d: 1.95, extra: 1.2, s: 0.85, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
       };
       const shopFrontZ = sh => sh.z + sh.d / 2 + (sh.front || 0);
       /* Harbour order (v4.9.0), left to right looking from the island: Boatyard, Dive Shop, Tackle Shop, Bounty board,
@@ -6856,10 +6856,11 @@
 
           // Shops on the boardwalk: backs on the sea rail, fronts facing south like the Tackle Shop
           Object.entries(SHORE_SHOPS).forEach(([kind, sh]) => {
-            const house = this.buildShopHouse(kind, sh, textures);
+            const house = this.buildShopHouse(kind, { ...sh, w: sh.w / sh.s, d: sh.d / sh.s }, textures);   // built full size, then scaled down
+            house.scale.setScalar(sh.s);
             house.position.set(sh.x, 1.56, sh.z);
             pierGroup.add(house);
-            const frontPad = kind === 'fish' ? 0.85 : 0.45;   // the fish bench and the awning stick out at the front
+            const frontPad = (kind === 'fish' ? 0.85 : 0.45) * sh.s;   // the fish bench and the awning stick out at the front
             Colliders.box(kind + ' shop', sh.x, sh.z + frontPad / 2, sh.w / 2 + sh.extra / 2, sh.d / 2 + frontPad / 2 + 0.05, COL.WALK);
             sh.front = frontPad;
           });
@@ -9744,7 +9745,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'trophy',  near: () => isNearPierTrophies(), cx: CABIN.trophyX,  cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
         { id: 'camera',  near: () => isNearPierCamera(),   cx: CABIN.camX,     cy: 2.9, cz: CABIN.camZ, halfW: 1.0, halfH: 1.1, side: 1 },
         { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
-        ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55, side: sh.x < 0 ? 1 : -1 }))
+        ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75 * sh.s, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55 * sh.s + 0.1, side: sh.x < 0 ? 1 : -1 }))
       ];
       function currentStandView() {
         for (const st of STAND_VIEWS) if (st.near()) return st;
