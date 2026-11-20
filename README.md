@@ -75,7 +75,11 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) and a **42 m waterfront boardwalk** (twice as long since v4.6.0) with every shop along its sea edge, backs to the sea and fronts facing south (toward the island), like the Tackle Shop. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Stop in front of a shop and the camera zooms in on it.
 
-**Shops (since v4.5.0 each one has its own trade):**
+**Shops (since v4.5.0 each one has its own trade, since v4.8.0 none of them is a menu):** press the action button at a shop (*Browse*, or *Sell Fish* at the Fish Market) and the shopkeeper slides a **display counter** out along the shop front with the real goods on it (rods, baits, buckets, scale-model boats, boat modules, a fuel can, dive kits, spear guns, or the fish from your bucket). The angler steps out of view and the camera sits in front of one item at a time:
+
+- **Browse:** the ‹ and › arrows at the sides of the info card, a swipe left or right, or `A` / `D` / the arrow keys move to the next item; the camera slides along the counter. Small chips at the top switch category (Tackle: Rods, Bait, Buckets; Boatyard: Boats, Modules, Fuel; Dive: Dive gear, Spear guns) and `✕ Leave` (or `Esc`) walks you away.
+- **Read:** each item has a price tag on the counter, and the card shows its title, stats, description, price and state (*Equipped*, *Owned*, *Locked: needs tier 2 first*, *Need $x more*, *Hot today*).
+- **Buy:** tap an item (a neighbour on screen selects it first; the centred item, or the card, asks to buy) and a **confirmation** appears: *Buy X for $Y? Cash $a to $b*, with *Cancel* and *Buy*. Nothing is bought without it, and unaffordable or locked items just tell you why. At the Fish Market the first item is **Sell everything** and every fish in your bucket follows; selling asks the same way.
 
 | Shop | Where | What it sells |
 |---|---|---|
@@ -195,7 +199,7 @@ Choose your bait in the **Tackle Toolbox** on the pier. When special bait runs o
 The bucket on the pier shows your upgrade, open with the catch inside (the Deep-Freeze Vault is a gilded freezer). In the bag you can **sort** by newest, value, weight or name.
 
 ### Dive gear and spear guns
-The shop's **🤿 Dive** and **🔱 Spear** tabs sell the gear for diving and spearfishing (see [Diving and spearfishing](#diving-and-spearfishing)). Tiers are bought in order and the best one you own is used.
+The Dive Shop's **🤿 Dive gear** and **🔱 Spear guns** counters sell the gear for diving and spearfishing (see [Diving and spearfishing](#diving-and-spearfishing)). Tiers are bought in order and the best one you own is used.
 
 | Dive gear | Price | Rated depth | Air at the surface | Catch bag | Swim speed | Lamp |
 |---|---|---|---|---|---|---|
@@ -434,7 +438,7 @@ The script inside `index.html` is organised in labelled sections:
 | H | Career (XP, ranks, achievements), the daily market, save state, validation and helper queries |
 | I | Boarding, docking and the rescue loop |
 | J | Fishing mechanics and the context-sensitive action button |
-| K | UI modals: shop, bucket, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
+| K | UI: shop browser (counter, arrows, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
 | L | HUD and button synchronisation |
 | M | Main animation and physics loop |
 
@@ -487,6 +491,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.8.0: no more shop menus, real goods on a counter
+- **Shop browser:** the Tackle Shop, Boatyard, Dive Shop and Fish Market no longer open a menu. A display counter slides out with the actual goods on it (new low-poly models for 9 rods and the live cam, baits in jars, buckets, scale-model boats, three boat modules, a fuel can, five dive kits, five spear guns, and a crate for *Sell everything*; your own fish go on the counter at the Fish Market). The camera slides from item to item with arrows, swipe or `A` / `D`; category chips switch tabs.
+- **Text and confirm:** a price tag on every item and an info card with title, stats, description, price and state. Tapping the centred item (or the card) opens a Buy / Sell confirmation first; the tap that opens it can't confirm it by accident.
+- **Mobile:** big arrows, tap targets larger than the models, swipe to browse, and the joystick and action button hide while you browse.
+- The old shop modal, its market board panel and its Reset Save button are gone (Reset is still in Settings); the market numbers, Catch of the Day and the recycling perk now show in the *Sell everything* card.
+- Version bumped to **v4.8.0**.
 
 ### 2026-11-20, Version 4.7.0: fishing stations on boats, a lighthouse jetty, bounties on the board
 - **Fishing stations:** with the boat nearly stopped, a *Fish from* row lets you fish from the bow, port, starboard or stern, depending on the hull (rowboat and skiff: all four; trawler: both sides; yacht: stern and both sides). The angler walks to the spot and turns, the chase camera follows, and the cast, the fish's run and the landing go that way. The line now leaves from the rod, not from a fixed point in front of the hull, and the angler no longer snaps between helm and spot.

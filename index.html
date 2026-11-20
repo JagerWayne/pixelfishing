@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.7.0';
+    window.PF_VERSION = '4.8.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -612,6 +612,41 @@
     #station-picker .st-title { width: 100%; text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 1px; color: #bae6fd; text-shadow: 0 1px 2px #000; }
     #station-picker button { font: inherit; font-size: 11px; font-weight: 900; letter-spacing: 0.2px; padding: 4px 7px; min-height: 30px; border-radius: 4px; background: rgba(14, 22, 36, 0.92); color: #bae6fd; border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
     #station-picker button.on { background: #0369a1; color: #fff; border-color: #7dd3fc; }
+
+    /* ---- shop browser ---- */
+    #shop-ui { position: fixed; inset: 0; z-index: 14; pointer-events: none; display: none; }
+    body[data-shopping="1"] #shop-ui { display: block; }
+    body[data-shopping="1"] #mobile-controls, body[data-shopping="1"] .hud-stack, body[data-shopping="1"] #center-hud, body[data-shopping="1"] #joy-zone { display: none !important; }
+    body[data-shopping="1"] #game-canvas { touch-action: none; }
+    #shop-tabs { position: absolute; left: 8px; right: 8px; top: 100px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
+    #shop-tabs button, #shop-tabs .shop-name { font: inherit; font-size: 13px; font-weight: 900; padding: 6px 12px; min-height: 40px; display: inline-flex; align-items: center; border-radius: 6px; background: rgba(14, 22, 36, 0.92); color: #e2e8f0; border: 2px solid #475569; box-shadow: 0 0 0 2px #070c14; pointer-events: auto; cursor: pointer; }
+    #shop-tabs button.on { background: #b45309; border-color: #fbbf24; color: #fff; }
+    #shop-tabs .shop-name { color: #fde68a; border-color: #fbbf24; pointer-events: none; }
+    @media (max-width: 520px) { #shop-tabs .shop-name { display: none; } #shop-tabs button { padding: 6px 10px; font-size: 12px; } }
+    #shop-tabs #shop-leave { background: #7f1d1d; border-color: #f87171; color: #fff; }
+    #shop-bar { position: absolute; left: 8px; right: 8px; bottom: calc(var(--safe-bottom, 0px) + 12px); display: flex; align-items: stretch; gap: 8px; max-width: 680px; margin: 0 auto; }
+    #shop-bar .arrow { pointer-events: auto; flex: 0 0 56px; min-height: 100px; font: inherit; font-size: 44px; font-weight: 900; line-height: 1; border-radius: 8px; background: rgba(14, 22, 36, 0.94); color: #fde68a; border: 2px solid #fbbf24; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
+    #shop-bar .arrow:disabled { opacity: 0.3; cursor: default; }
+    #shop-card { pointer-events: auto; flex: 1; min-width: 0; padding: 8px 11px; border-radius: 8px; background: rgba(14, 22, 36, 0.94); border: 2px solid #64748b; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
+    #shop-card.can { border-color: #4ade80; }
+    .sc-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .sc-title { font-size: 15px; font-weight: 900; color: #fef3c7; }
+    .sc-count { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+    .sc-stats { font-size: 11.5px; color: #bae6fd; margin-top: 2px; line-height: 1.25; }
+    .sc-desc { font-size: 12px; color: #cbd5e1; margin-top: 3px; line-height: 1.3; max-height: 4em; overflow: hidden; }
+    .sc-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 8px; }
+    .sc-price { font-size: 19px; font-weight: 900; }
+    .sc-note { font-size: 11px; font-weight: 900; text-align: right; }
+    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.55); pointer-events: auto; }
+    #shop-confirm.open { display: flex; }
+    #shop-confirm .sc-box { width: min(92vw, 380px); padding: 16px; border-radius: 10px; background: #0f172a; border: 3px solid #fbbf24; box-shadow: 0 0 0 3px #070c14, 0 10px 30px rgba(0, 0, 0, 0.7); text-align: center; }
+    #shop-confirm-title { font-size: 17px; font-weight: 900; color: #fef3c7; line-height: 1.3; }
+    #shop-confirm-sub { font-size: 13px; color: #94a3b8; margin-top: 6px; }
+    .sc-btns { display: flex; gap: 10px; margin-top: 14px; }
+    .sc-btns button { flex: 1; min-height: 52px; font: inherit; font-size: 16px; font-weight: 900; border-radius: 8px; cursor: pointer; border: 2px solid #475569; background: #1e293b; color: #e2e8f0; }
+    #shop-confirm-yes { background: #15803d; border-color: #4ade80; color: #fff; }
+    #shop-confirm-yes.sell { background: #b45309; border-color: #fbbf24; }
+    @media (max-height: 460px) { .sc-desc { display: none; } #shop-bar .arrow { min-height: 70px; } }
 
     #proximity-banner {
       display: none;
@@ -1345,9 +1380,6 @@
     .modal-window:focus { outline: none; }
     .modal-window.dragging { transition: none; }
     /* shop: tabs stay reachable while the list scrolls; cash sits in the header */
-    #shop-cash-head { color: var(--accent-gold); font-weight: 900; font-size: 14px; margin-left: auto; }
-    #modal-shop .tab-row { position: sticky; top: -14px; z-index: 3; background: var(--bg-panel-solid); padding: 8px 0; flex-wrap: nowrap; overflow-x: auto; touch-action: pan-x; }
-    #modal-shop .tab-row .pixel-btn { flex: 0 0 auto; }
     /* catch: Keep / Release always visible */
     #catch-action-btns { position: sticky; bottom: 0; z-index: 2; background: var(--bg-panel-solid); padding: 8px 0 2px; }
     /* start screen: collapsible how-to */
@@ -1795,59 +1827,19 @@
     </div>
   </div>
 
-  <!-- MODAL 1: PIER SHOP & DOCK SERVICES -->
-  <div class="modal-backdrop" id="modal-shop">
-    <div class="pixel-box modal-window">
-      <div class="modal-header">
-        <span class="modal-title" id="shop-title">🎣 TACKLE SHOP</span>
-        <span id="shop-cash-head">$0</span>
-        <button class="pixel-btn red" data-close="modal-shop">Close</button>
-      </div>
-      <div class="modal-body">
-        <div class="pixel-box" style="padding: 10px; margin-bottom: 10px; background: #132036; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center;">
-          <div>
-            <div style="font-size: 14px; font-weight: bold; color: #ffd24c;" id="shop-cash-banner">Cash: $25.00</div>
-            <div style="font-size: 12px; color: #94a3b8;" id="shop-bucket-banner">Bucket Value: $0.00 (0.0 / 6.0 kg)</div>
-          </div>
-          <div id="shop-action-row" style="display: flex; gap: 8px; flex-wrap: wrap; width: 100%;">
-            <button class="pixel-btn green" id="btn-sell-all" style="flex:1;">Sell All Catch</button>
-            <button class="pixel-btn gold" id="btn-refill-fuel" style="flex:1;">Refill Fuel</button>
-          </div>
-        </div>
-
-        <!-- Saving the Environment Mayor Perk Card -->
-        <div class="pixel-box" id="shop-eco-card" style="padding: 9px 12px; margin-bottom: 12px; background: #0f291e; border-color: #4ade80;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
-            <span style="font-size:12px; font-weight:900; color:#4ade80;">♻️ PERK: SAVING THE ENVIRONMENT</span>
-            <span style="font-size:12px; font-weight:bold; color:#fef08a;" id="shop-eco-progress">0.0 / 100.0 kg</span>
-          </div>
-          <div style="font-size: 12px; color:#bbf7d0; margin-bottom:5px;" id="shop-eco-desc">
-            Keep & sell ocean junk/flora! The Mayor awards <b>$1,000</b> for every 100 kg recycled.
-          </div>
-          <div class="bar-wrap" style="height: 10px; margin: 0;">
-            <div class="bar-fill" id="shop-eco-bar" style="width: 0%; background: #4ade80;"></div>
-          </div>
-        </div>
-
-        <div class="pixel-box" id="shop-market" style="padding: 9px 12px; margin-bottom: 12px; background: #1b1830; border-color: #a78bfa; font-size: 12px; line-height: 1.5;"></div>
-
-        <div class="tab-row" id="shop-tab-row">
-          <button class="pixel-btn tab-btn" data-shop-tab="catch" style="display:none;">Catch</button>
-          <button class="pixel-btn tab-btn active" data-shop-tab="rods">Rods</button>
-          <button class="pixel-btn tab-btn" data-shop-tab="boats">Boats</button>
-          <button class="pixel-btn tab-btn" data-shop-tab="modules">Modules</button>
-          <button class="pixel-btn tab-btn" data-shop-tab="baits">Bait (10x)</button>
-          <button class="pixel-btn tab-btn" data-shop-tab="buckets">Buckets</button>
-          <button class="pixel-btn tab-btn" data-shop-tab="dive">🤿 Dive</button>
-          <button class="pixel-btn tab-btn" data-shop-tab="spear">🔱 Spear</button>
-        </div>
-
-        <div class="upgrade-grid" id="shop-items-container"></div>
-
-        <div style="margin-top: 18px; padding-top: 12px; border-top: 2px solid #334155; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-          <span style="font-size: 12px; color: #94a3b8;">Auto-saved on device.</span>
-          <button class="pixel-btn red" id="btn-reset-save" style="font-size: 12px; padding: 6px 10px;">Reset Save</button>
-        </div>
+  <!-- SHOP BROWSER (v4.8.0): no menu, the goods are on a counter in the world; this is only the arrows, tabs, card and confirm -->
+  <div id="shop-ui" aria-live="polite">
+    <div id="shop-tabs"></div>
+    <div id="shop-bar">
+      <button class="arrow" id="shop-prev" type="button" aria-label="Previous item">‹</button>
+      <div id="shop-card"></div>
+      <button class="arrow" id="shop-next" type="button" aria-label="Next item">›</button>
+    </div>
+    <div id="shop-confirm">
+      <div class="sc-box">
+        <div id="shop-confirm-title"></div>
+        <div id="shop-confirm-sub"></div>
+        <div class="sc-btns"><button type="button" id="shop-confirm-no">Cancel</button><button type="button" id="shop-confirm-yes">Buy</button></div>
       </div>
     </div>
   </div>
@@ -6150,6 +6142,163 @@
         }
         /* a lumpy low-poly rock: an icosahedron pushed in and out by noise of its direction (no cracks between faces),
            with darker crevices and lighter tops in its vertex colours */
+        /* ------------------------------------------------------------------
+           SHOP GOODS (v4.8.0): the things on the display counter. Each is a small low-poly model standing on y = 0,
+           fitted to `maxDim` metres. key: rod, cam, bait, bucket, boat, module, dive, spear, fuel, crate, fish.
+           ------------------------------------------------------------------ */
+        static fitShopModel(g, maxDim) {
+          const wrap = new THREE.Group(); wrap.add(g); wrap.updateMatrixWorld(true);
+          const b = new THREE.Box3().setFromObject(wrap), s = b.getSize(new THREE.Vector3());
+          g.scale.multiplyScalar(maxDim / Math.max(s.x, s.y, s.z, 1e-3));
+          wrap.updateMatrixWorld(true); b.setFromObject(wrap);
+          g.position.x -= (b.min.x + b.max.x) / 2; g.position.z -= (b.min.z + b.max.z) / 2; g.position.y -= b.min.y;
+          wrap.userData.h = b.max.y - b.min.y;
+          return wrap;
+        }
+        static buildShopItem(key, d, textures) {
+          const g = new THREE.Group(), K = this.propKit(textures), M = K.M;
+          const glow = (hex, k = 0.8) => M(hex, 0.35, 0.2, { emissive: new THREE.Color(hex), emissiveIntensity: k });
+          const torusY = (parent, r, tube, mat, x, y, z, rx = Math.PI / 2) => { const t = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 6, 14), mat); t.position.set(x, y, z); t.rotation.x = rx; parent.add(t); return t; };
+          let maxDim = 0.9;
+          if (key === 'rod') {
+            const t = d.tier, col = d.color, winch = t >= 7;
+            const r = new THREE.Group(); r.rotation.z = 0.1; g.add(r);
+            const blank = M(col, 0.35, t >= 5 ? 0.6 : 0.1, t === 8 ? { emissive: new THREE.Color(col), emissiveIntensity: 0.4 } : {});
+            const grip = M(t === 1 ? 0xb45309 : t <= 3 ? 0xd6a56a : 0x1f2937, 0.9);
+            K.cyl(r, winch ? 0.05 : 0.03, winch ? 0.055 : 0.034, 0.34, grip, 0, 0.17, 0, 8);
+            K.cyl(r, winch ? 0.04 : 0.011, winch ? 0.05 : 0.026, 1.2, blank, 0, 0.94, 0, 8);
+            // reel: spinning reel (small), roller reel (large drum for the winch rods)
+            const reelM = M(t >= 6 ? 0xe5e7eb : 0x475569, 0.3, 0.8);
+            if (winch) { const drum = K.cyl(r, 0.13, 0.13, 0.16, reelM, 0.1, 0.42, 0, 14); drum.rotation.x = Math.PI / 2; K.cyl(r, 0.04, 0.04, 0.3, M(0xfacc15, 0.4, 0.7), 0.1, 0.42, 0, 8).rotation.x = Math.PI / 2; K.box(r, 0.05, 0.22, 0.05, reelM, 0.2, 0.42, 0.1); }
+            else { K.cyl(r, 0.06, 0.07, 0.07, reelM, 0.06, 0.36, 0, 12); K.box(r, 0.12, 0.03, 0.03, reelM, 0.1, 0.34, 0); K.sph(r, 0.022, M(0xdc2626, 0.5), 0.17, 0.34, 0, 6, 5); }
+            // guides (rollers on the big rods), bamboo nodes on the cane
+            for (let i = 0; i < 5; i++) { const y = 0.6 + i * 0.22, rr = 0.05 - i * 0.006; torusY(r, Math.max(0.018, rr * (winch ? 0.9 : 0.6)), 0.006, K.steel, 0.012, y, 0, 0); }
+            if (t === 1) for (let i = 0; i < 6; i++) torusY(r, 0.017, 0.007, M(0x7c4a1e, 0.9), 0, 0.5 + i * 0.2, 0, Math.PI / 2);
+            K.sph(r, 0.016, K.steel, 0, 1.55, 0, 6, 5);
+            // a stand: a post with a notch, a base plate
+            K.cyl(g, 0.17, 0.2, 0.05, K.darkWood, 0, 0.025, 0, 12);
+            K.box(g, 0.06, 0.7, 0.06, K.darkWood, -0.1, 0.4, -0.05);
+            K.box(g, 0.1, 0.05, 0.1, K.iron, -0.1, 0.72, -0.05);
+            maxDim = 1.45;
+          } else if (key === 'cam') {
+            K.cyl(g, 0.11, 0.11, 0.26, K.steel, 0, 0.25, 0, 14).rotation.z = Math.PI / 2;
+            K.sph(g, 0.075, glow(0x38bdf8, 1.0), 0.14, 0.25, 0, 10, 8);
+            K.sph(g, 0.03, glow(0xef4444, 1.2), -0.08, 0.32, 0.09, 6, 5);
+            torusY(g, 0.07, 0.014, K.iron, -0.14, 0.25, 0, 0);
+            K.cyl(g, 0.005, 0.005, 0.5, M(0xe5e7eb, 0.5), -0.3, 0.45, 0, 4);
+            K.cyl(g, 0.16, 0.18, 0.04, K.darkWood, 0, 0.02, 0, 12);
+            maxDim = 0.6;
+          } else if (key === 'bait') {
+            const tier = d.tier;
+            if (tier === 1) { K.cyl(g, 0.26, 0.2, 0.16, M(0xb45309, 0.9, 0, { map: textures.wood }), 0, 0.08, 0, 14); }
+            else {
+              const lab = [0, 0, 0xf472b6, 0xfb923c, 0x22d3ee][tier];
+              K.cyl(g, 0.18, 0.18, 0.34, M(0xbae6fd, 0.1, 0.1, { transparent: true, opacity: 0.35 }), 0, 0.2, 0, 14);
+              K.cyl(g, 0.19, 0.19, 0.05, K.iron, 0, 0.395, 0, 14);
+              K.box(g, 0.2, 0.12, 0.012, M(lab, 0.6), 0, 0.2, 0.185);
+              K.box(g, 0.24, 0.015, 0.015, M(0x111827, 0.6), 0, 0.2, 0.195);
+            }
+            const bm = this.buildBaitMesh(tier); bm.scale.setScalar(tier === 1 ? 2.4 : 1.7); bm.position.set(0, tier === 1 ? 0.2 : 0.2, 0); g.add(bm);
+            if (tier === 4) K.sph(g, 0.1, glow(0x22d3ee, 0.7), 0, 0.2, 0, 10, 8).material.transparent = true;
+            maxDim = 0.6;
+          } else if (key === 'bucket') {
+            const b = this.buildPierBucketMesh(d.tier, 0, textures); g.add(b);
+            maxDim = d.tier >= 4 ? 1.05 : 0.8;
+          } else if (key === 'boat') {
+            const b = this.buildBoatMesh(d.tier, textures); b.rotation.y = -Math.PI / 2 + 0.5; g.add(b);
+            maxDim = 1.15;
+          } else if (key === 'module') {
+            if (d.id === 'sonar') {
+              K.box(g, 0.5, 0.34, 0.26, K.iron, 0, 0.3, 0);
+              K.box(g, 0.4, 0.24, 0.02, glow(0x16a34a, 0.9), 0, 0.31, 0.14);
+              [0.07, 0.14, 0.2].forEach(rr => torusY(g, rr, 0.005, glow(0xbbf7d0, 1.0), 0, 0.31, 0.152, 0));
+              K.cyl(g, 0.04, 0.12, 0.2, K.steel, 0, 0.03, 0, 10);
+              K.box(g, 0.06, 0.26, 0.06, K.iron, 0, 0.13, 0);
+            } else if (d.id === 'spotlight') {
+              const lamp = K.cyl(g, 0.14, 0.17, 0.3, K.steel, 0, 0.36, 0, 14); lamp.rotation.x = Math.PI / 2 - 0.25;
+              const lens = K.cyl(g, 0.15, 0.15, 0.02, glow(0xfef9c3, 1.3), 0, 0.36, 0, 14); lens.rotation.x = Math.PI / 2 - 0.25; lens.position.set(0, 0.405, 0.15);
+              K.box(g, 0.34, 0.04, 0.04, K.iron, 0, 0.36, -0.02); K.cyl(g, 0.03, 0.04, 0.3, K.iron, 0, 0.17, 0, 8); K.cyl(g, 0.17, 0.2, 0.05, K.darkWood, 0, 0.025, 0, 12);
+              const beam = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.6, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xfef9c3, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }));
+              beam.rotation.x = -Math.PI / 2 - 0.25; beam.position.set(0, 0.5, 0.52); g.add(beam);
+            } else {
+              K.cyl(g, 0.22, 0.22, 0.42, M(0x0ea5e9, 0.3, 0.1, { transparent: true, opacity: 0.55 }), 0, 0.23, 0, 16);
+              K.cyl(g, 0.23, 0.23, 0.04, K.iron, 0, 0.46, 0, 16); K.cyl(g, 0.23, 0.23, 0.04, K.iron, 0, 0.02, 0, 16);
+              [[-0.07, 0.18, 0.08], [0.08, 0.3, -0.05], [0.0, 0.38, 0.1], [-0.1, 0.4, -0.04]].forEach(([x, y, z]) => K.sph(g, 0.03, M(0xe0f2fe, 0.1, 0, { transparent: true, opacity: 0.8 }), x, y, z, 6, 5));
+              const fs = K.sph(g, 0.07, M(0xf97316, 0.4), 0.02, 0.15, 0, 8, 6); fs.scale.set(1.8, 0.8, 0.6);
+              K.cyl(g, 0.025, 0.025, 0.25, K.iron, 0.24, 0.35, 0, 6).rotation.z = 0.9;
+            }
+            maxDim = 0.75;
+          } else if (key === 'dive') {
+            const t = d.tier, suit = M(0x111827, 0.8), yel = M(0xfacc15, 0.5), tank = M(0xfacc15, 0.3, 0.4);
+            if (t === 1) {   // mask, snorkel, fins
+              K.box(g, 0.3, 0.14, 0.06, M(0x111827, 0.7), 0, 0.45, 0); K.box(g, 0.24, 0.1, 0.02, M(0x7dd3fc, 0.1, 0.2, { transparent: true, opacity: 0.6 }), 0, 0.45, 0.04);
+              torusY(g, 0.17, 0.014, M(0x111827, 0.7), 0, 0.45, -0.02, 0);
+              K.cyl(g, 0.014, 0.014, 0.4, yel, 0.22, 0.55, 0, 6); K.sph(g, 0.03, yel, 0.22, 0.76, 0, 6, 5);
+              [-0.12, 0.12].forEach(x => { const f = K.box(g, 0.12, 0.02, 0.46, M(0xf97316, 0.6), x, 0.05, 0.1); f.rotation.x = -0.12; });
+            } else if (t === 2) {   // wetsuit torso + one tank
+              K.cyl(g, 0.17, 0.2, 0.5, suit, 0, 0.5, 0, 12); K.cyl(g, 0.24, 0.17, 0.12, suit, 0, 0.8, 0, 12); K.sph(g, 0.1, M(0xfdba74, 0.7), 0, 0.98, 0, 10, 8);
+              K.cyl(g, 0.09, 0.09, 0.62, tank, 0, 0.55, -0.22, 12); K.sph(g, 0.09, tank, 0, 0.86, -0.22, 10, 6);
+              K.cyl(g, 0.014, 0.014, 0.3, K.iron, 0.05, 0.9, -0.12, 5); K.cyl(g, 0.15, 0.18, 0.05, K.darkWood, 0, 0.025, 0, 12);
+              K.cyl(g, 0.04, 0.05, 0.22, K.darkWood, 0, 0.14, 0, 8);
+            } else if (t === 3) {   // twin tanks + lamp
+              [-0.11, 0.11].forEach(x => { K.cyl(g, 0.1, 0.1, 0.68, tank, x, 0.4, 0, 12); K.sph(g, 0.1, tank, x, 0.74, 0, 10, 6); K.cyl(g, 0.035, 0.035, 0.06, K.iron, x, 0.84, 0, 8); });
+              K.box(g, 0.32, 0.04, 0.05, K.iron, 0, 0.7, 0.1); K.cyl(g, 0.014, 0.014, 0.35, K.iron, 0, 0.6, 0.14, 5);
+              K.cyl(g, 0.07, 0.09, 0.14, K.iron, 0.3, 0.3, 0.1, 10).rotation.x = Math.PI / 2; K.cyl(g, 0.07, 0.07, 0.015, glow(0xfef9c3, 1.2), 0.3, 0.3, 0.18, 10).rotation.x = Math.PI / 2;
+              K.cyl(g, 0.2, 0.22, 0.05, K.darkWood, 0, 0.025, 0, 12);
+            } else if (t === 4) {   // rebreather + scooter
+              K.box(g, 0.34, 0.5, 0.18, M(0x334155, 0.5, 0.5), -0.18, 0.4, 0); K.cyl(g, 0.05, 0.05, 0.4, K.iron, -0.18, 0.7, 0.09, 6);
+              const sc = K.cyl(g, 0.12, 0.1, 0.55, yel, 0.18, 0.25, 0, 14); sc.rotation.z = Math.PI / 2; sc.position.set(0.18, 0.2, 0);
+              torusY(g, 0.14, 0.02, K.iron, 0.46, 0.2, 0, Math.PI / 2).rotation.y = Math.PI / 2;
+              for (let i = 0; i < 3; i++) { const bl = K.box(g, 0.01, 0.2, 0.05, K.steel, 0.5, 0.2, 0); bl.rotation.x = i * 2.1; }
+              K.sph(g, 0.06, glow(0x38bdf8, 1.0), 0.0, 0.3, 0.1, 8, 6); K.cyl(g, 0.2, 0.22, 0.05, K.darkWood, 0, 0.025, 0, 12);
+            } else {   // exo-suit
+              const arm = M(0xf97316, 0.35, 0.7), dark = M(0x1f2937, 0.5, 0.6);
+              K.box(g, 0.42, 0.5, 0.3, arm, 0, 0.66, 0); K.sph(g, 0.17, arm, 0, 1.02, 0, 12, 10);
+              K.sph(g, 0.1, glow(0x67e8f9, 0.9), 0, 1.03, 0.1, 8, 6);
+              [-1, 1].forEach(sd => { K.cyl(g, 0.07, 0.07, 0.5, dark, sd * 0.3, 0.64, 0, 8); K.sph(g, 0.1, arm, sd * 0.3, 0.9, 0, 8, 6); K.cyl(g, 0.09, 0.07, 0.5, arm, sd * 0.12, 0.2, 0, 8); K.box(g, 0.14, 0.06, 0.22, dark, sd * 0.12, 0.03, 0.05); });
+              K.box(g, 0.3, 0.3, 0.14, dark, 0, 0.72, -0.2); K.cyl(g, 0.18, 0.2, 0.04, K.darkWood, 0, 0.0, 0, 12);
+            }
+            maxDim = t >= 5 ? 1.15 : t >= 2 ? 0.95 : 0.8;
+          } else if (key === 'spear') {
+            const t = d.tier, L = [0, 0.8, 1.0, 1.15, 1.3, 1.45][t] || 1;
+            const body = M([0, 0x9ca3af, 0x0369a1, 0x0f766e, 0xdc2626, 0x7c3aed][t], 0.35, 0.5);
+            const r = new THREE.Group(); g.add(r);
+            if (t === 1) { K.cyl(r, 0.02, 0.016, 1.1, K.lightWood, 0, 0.5, 0, 6).rotation.z = Math.PI / 2; K.cyl(r, 0, 0.04, 0.16, K.steel, 0.62, 0.5, 0, 6).rotation.z = -Math.PI / 2; torusY(r, 0.05, 0.012, M(0x7c4a1e, 0.9), -0.3, 0.5, 0, 0).rotation.y = Math.PI / 2; }
+            else {
+              K.cyl(r, 0.045, 0.05, L, body, 0, 0.5, 0, 10).rotation.z = Math.PI / 2;
+              K.box(r, 0.14, 0.26, 0.07, M(0x111827, 0.7), -L / 2 + 0.12, 0.36, 0).rotation.z = -0.3;
+              K.cyl(r, 0.012, 0.012, L + 0.2, K.steel, 0.1, 0.5, 0, 6).rotation.z = Math.PI / 2;
+              K.cyl(r, 0, 0.03, 0.16, K.steel, L / 2 + 0.2, 0.5, 0, 6).rotation.z = -Math.PI / 2;
+              if (t === 2) { [-0.04, 0.04].forEach(z => K.cyl(r, 0.012, 0.012, L * 0.7, M(0xdc2626, 0.7), 0.1, 0.5, z * 2, 5).rotation.z = Math.PI / 2); }
+              if (t === 3) K.cyl(r, 0.08, 0.08, 0.34, M(0x94a3b8, 0.3, 0.7), -0.1, 0.62, 0, 10).rotation.z = Math.PI / 2;
+              if (t === 4) { K.cyl(r, 0.06, 0.06, 0.3, M(0xe5e7eb, 0.3, 0.7), -0.12, 0.6, 0, 10).rotation.z = Math.PI / 2; K.sph(r, 0.03, glow(0xfacc15, 1), -0.12, 0.66, 0.06, 6, 5); }
+              if (t === 5) { [-0.05, 0.05].forEach(z => K.box(r, L * 0.9, 0.02, 0.02, glow(0xc4b5fd, 1.0), 0.05, 0.57, z)); K.box(r, 0.2, 0.12, 0.12, glow(0x8b5cf6, 0.8), -0.2, 0.5, 0); }
+            }
+            K.cyl(g, 0.25, 0.27, 0.05, K.darkWood, 0, 0.025, 0, 12); K.box(g, 0.04, 0.4, 0.04, K.iron, -0.25, 0.25, 0); K.box(g, 0.04, 0.4, 0.04, K.iron, 0.25, 0.25, 0);
+            g.rotation.y = 0.75; maxDim = 1.05;
+          } else if (key === 'fuel') {
+            const red = M(0xdc2626, 0.5, 0.2);
+            K.box(g, 0.4, 0.5, 0.2, red, 0, 0.3, 0); K.box(g, 0.2, 0.07, 0.07, red, -0.07, 0.6, 0);
+            K.cyl(g, 0.04, 0.04, 0.1, K.iron, 0.12, 0.6, 0, 8); K.box(g, 0.2, 0.18, 0.012, M(0xfef08a, 0.7), 0, 0.3, 0.106);
+            K.cyl(g, 0.012, 0.012, 0.35, K.iron, 0.28, 0.2, 0.1, 5).rotation.z = 1.2;
+            [[-0.12, 0.05], [0.12, 0.05]].forEach(([x, y]) => K.box(g, 0.02, 0.5, 0.21, M(0x991b1b, 0.5), x, 0.3, 0));
+            maxDim = 0.75;
+          } else if (key === 'crate') {
+            K.box(g, 0.8, 0.3, 0.55, K.lightWood, 0, 0.15, 0); K.box(g, 0.74, 0.04, 0.5, M(0xe0f2fe, 0.3, 0.1), 0, 0.31, 0);
+            [[-0.22, 0.36, 0.0, 0xf97316], [0.05, 0.37, 0.1, 0x38bdf8], [0.25, 0.36, -0.08, 0xfacc15]].forEach(([x, y, z, c]) => { const f = K.sph(g, 0.1, M(c, 0.35, 0.15), x, y, z, 8, 6); f.scale.set(1.8, 0.65, 0.6); f.rotation.y = z * 4; });
+            [[-0.3, 0.34, 0.18], [0.3, 0.34, 0.2], [0.1, 0.35, -0.2]].forEach(([x, y, z]) => K.box(g, 0.08, 0.08, 0.08, M(0xffffff, 0.2, 0, { transparent: true, opacity: 0.7 }), x, y, z));
+            [0, 1, 2].forEach(i => K.cyl(g, 0.07, 0.07, 0.025, M(0xfacc15, 0.25, 0.8), 0.52, 0.015 + i * 0.027, 0.25, 12));
+            maxDim = 0.95;
+          } else if (key === 'fish') {
+            const m = this.buildSculptedFishMesh(d.item, textures);
+            m.scale.setScalar(THREE.MathUtils.clamp(0.4 + 0.1 * Math.cbrt(d.weight), 0.4, 1.0));
+            m.rotation.y = 0.3; g.add(m);
+            K.box(g, 0.9, 0.05, 0.5, M(0xe0f2fe, 0.2, 0.1), 0, -0.06, 0);
+            maxDim = 0.9;
+          }
+          return this.fitShopModel(g, maxDim);
+        }
+
         static buildRock(radius, seed, baseHex, detail = 1) {
           const g = new THREE.IcosahedronGeometry(radius, detail);
           const pos = g.attributes.position, col = new Float32Array(pos.count * 3), v = new THREE.Vector3(), c = new THREE.Color(), base = new THREE.Color(baseHex);
@@ -9069,7 +9218,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
          SECRET CHEAT MENU (unlocked by pressing WALK EDGE 31 times beside the seagull on the west corner of the boardwalk)
          ========================================================================= */
       const cheatModal = document.getElementById('modal-cheats');
-      const cheatDone = msg => { saveGame(); updateHUD(); if (typeof renderShop === 'function') renderShop(); if (msg) showToast(msg); };
+      const cheatDone = msg => { saveGame(); updateHUD(); if (typeof refreshShopBrowse === 'function') refreshShopBrowse(); if (msg) showToast(msg); };
       const cheatMoney = n => () => { state.cash = +(state.cash + n).toFixed(2); cheatDone(`💰 +$${n.toLocaleString()}`); };
       const cheatTeleport = (x, z, label) => () => {
         if (onBoat || mode !== 'PIER_IDLE') { showToast('Stand on the pier first.'); return; }
@@ -9864,7 +10013,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            openShopModal('tackle');
+            enterShopBrowse('tackle');
             return;
           }
           const shoreKind = shoreShopHere();
@@ -9872,7 +10021,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            openShopModal(shoreKind);
+            enterShopBrowse(shoreKind);
             return;
           }
           if (isNearPierBounty()) {
@@ -10253,7 +10402,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       /* =========================================================================
          SECTION K: UI MODALS (SHOP, BUCKET, TOOLBOX, CATCH REVEAL, LOG, GALLERY, CAMERA, BOUNTY)
          ========================================================================= */
-      let activeShopTab = 'rods';
 
       /* Frame-rate independent random event: on average `perSec` times per second, whatever the frame rate (0 when paused). */
       function chancePerSec(perSec, dt) { return dt > 0 && Math.random() < 1 - Math.exp(-perSec * dt); }
@@ -10470,18 +10618,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         });
       })();
 
-      /* Shop: say how much is missing instead of leaving a dead button */
-      function decorateShop() {
-        document.querySelectorAll('#shop-items-container .pixel-btn[disabled]').forEach(btn => {
-          const m = /\$([\d,]+(?:\.\d+)?)\)?\s*$/.exec(btn.textContent);
-          if (!m) return;
-          const cost = parseFloat(m[1].replace(/,/g, ''));
-          if (cost > state.cash) btn.textContent = `Need $${Math.ceil(cost - state.cash).toLocaleString()} more`;
-        });
-      }
-      const renderShopBase = renderShop;
-      renderShop = function () { renderShopBase(); decorateShop(); };
-
       /* Light tick + buzz on every UI button (never on the action button, joystick or cheat counting) */
       document.addEventListener('pointerdown', e => {
         const b = e.target.closest && e.target.closest('button, .tab-btn');
@@ -10491,17 +10627,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }, { passive: true });
 
       /* Market board in the shop: today's hot and glutted fish and the time to the next prices */
-      function renderMarketBoard() {
-        const host = document.getElementById('shop-market');
-        if (!host) return;
-        const m = marketFor(state.dayCount || 0);
-        const names = ids => ids.map(id => `<b>${CATALOG_INDEX[id].name}</b> x${m.mult[id].toFixed(1)}`).join(' &middot; ');
-        const left = Math.max(0, Math.round((1 - state.timeOfDay) * 210)), mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
-        host.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px; font-weight:900; color:#c4b5fd;"><span>📈 TODAY'S FISH MARKET</span><span style="color:#94a3b8; font-weight:bold;">new prices in ${mm}:${ss}</span></div>
-          <div style="color:#bbf7d0;">🔥 Hot: ${names(m.hot)}</div><div style="color:#fecaca;">📉 Glut: ${names(m.glut)}</div>
-          <div style="color:#fde047;">⭐ Catch of the Day: <b>${catchOfDay().name}</b> pays x3 until midnight</div>`;
-      }
-
       /* Career screen: rank, counters and achievements */
       function openCareerModal() {
         renderCareer();
@@ -10609,47 +10734,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('modal-trophies').classList.add('open');
       }
       document.getElementById('menu-trophies').addEventListener('click', () => openTrophiesModal());
-
-      /* One shop screen, four storefronts: each shop shows only its own counters */
-      const SHOP_KINDS = {
-        tackle:   { title: '🎣 TACKLE SHOP: RODS, BAIT & BUCKETS', tabs: ['rods', 'baits', 'buckets'], sell: false, fuel: false },
-        boatyard: { title: SHORE_SHOPS.boatyard.title, tabs: ['boats', 'modules'], sell: false, fuel: true },
-        dive:     { title: SHORE_SHOPS.dive.title, tabs: ['dive', 'spear'], sell: false, fuel: false },
-        fish:     { title: SHORE_SHOPS.fish.title, tabs: ['catch'], sell: true, fuel: false }
-      };
-      let shopKind = 'tackle';
-      function openShopModal(kind = 'tackle') {
-        shopKind = SHOP_KINDS[kind] ? kind : 'tackle';
-        const sk = SHOP_KINDS[shopKind];
-        if (!sk.tabs.includes(activeShopTab)) activeShopTab = sk.tabs[0];
-        document.getElementById('shop-title').textContent = sk.title;
-        document.querySelectorAll('[data-shop-tab]').forEach(b => {
-          b.style.display = sk.tabs.includes(b.dataset.shopTab) ? '' : 'none';
-          b.classList.toggle('active', b.dataset.shopTab === activeShopTab);
-        });
-        document.getElementById('shop-tab-row').style.display = sk.tabs.length > 1 ? '' : 'none';
-        document.getElementById('btn-sell-all').style.display = sk.sell ? '' : 'none';
-        document.getElementById('btn-refill-fuel').style.display = sk.fuel ? '' : 'none';
-        document.getElementById('shop-action-row').style.display = sk.sell || sk.fuel ? 'flex' : 'none';
-        document.getElementById('shop-bucket-banner').style.display = sk.sell ? '' : 'none';
-        document.getElementById('shop-eco-card').style.display = sk.sell ? '' : 'none';
-        document.getElementById('shop-market').style.display = sk.sell ? '' : 'none';
-        renderShop();
-        document.getElementById('modal-shop').classList.add('open');
-      }
-      function sellBucketEntry(idx) {
-        const [soldItem] = state.bucket.splice(idx, 1);
-        if (!soldItem) return;
-        const got = sellValue(soldItem);
-        state.cash = +(state.cash + got).toFixed(2);
-        bumpStat('earned', got);
-        sfx.playCoin();
-        processEcoCleanupReward([soldItem]);
-        checkAchievements();
-        saveGame();
-        rebuildPierBucketVisual();
-        updateHUD();
-      }
 
       function openToolboxModal() {
         renderToolbox();
@@ -10861,378 +10945,404 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('modal-camera').classList.add('open');
       }
 
-      document.querySelectorAll('[data-shop-tab]').forEach(tabBtn => {
-        tabBtn.addEventListener('click', () => {
-          document.querySelectorAll('[data-shop-tab]').forEach(b => b.classList.remove('active'));
-          tabBtn.classList.add('active');
-          activeShopTab = tabBtn.dataset.shopTab;
-          renderShop();
-        });
-      });
+      /* =========================================================================
+         SHOPS (v4.8.0): no menu. Walk up, press the action button and the shopkeeper slides a display counter out along
+         the shop front with the goods on it. The camera slides from item to item (arrows, swipe, A / D); tap an item
+         (or the card) to buy and confirm. Tabs switch category. The goods are made by shopItems() and
+         WorldBuilder.buildShopItem(); to add something to a shop, add an item there.
+         ========================================================================= */
+      const SHOP_DECK_Y = 1.56, SHOP_COUNTER_Z = 3.3, SHOP_TOP_Y = SHOP_DECK_Y + 0.95;
+      const SHOP_KINDS = {
+        tackle:   { title: '🎣 TACKLE SHOP', x: -7.6, color: 0xb45309, tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['buckets', '🪣 Buckets']] },
+        boatyard: { title: '⚓ BOATYARD', x: SHORE_SHOPS.boatyard.x, color: 0x1d4ed8, tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel']] },
+        dive:     { title: '🤿 DIVE SHOP', x: SHORE_SHOPS.dive.x, color: 0x0f766e, tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns']] },
+        fish:     { title: '🐟 FISH MARKET', x: SHORE_SHOPS.fish.x, color: 0x0369a1, tabs: [['catch', '🐟 Sell catch']] }
+      };
+      const shopBrowse = { active: false, kind: 'tackle', tab: 'rods', idx: 0, items: [], slots: [], group: null, light: null, pending: null, rise: 0 };
+      const shopMoney = v => '$' + (+v).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      const shopNeed = c => `Need ${shopMoney(Math.ceil(c - state.cash))} more`;
 
-      function renderShop() {
-        const totalBucketVal = state.bucket.reduce((s, i) => s + sellValue(i), 0);
-        document.getElementById('shop-cash-banner').textContent = `Cash: $${state.cash.toFixed(2)}`;
-        renderMarketBoard();
-        document.getElementById('shop-cash-head').textContent = `💵 $${state.cash.toFixed(2)}`;
-        document.getElementById('shop-bucket-banner').textContent =
-          `Bucket Value: $${totalBucketVal.toFixed(2)} (${getBucketWeight().toFixed(1)} / ${getBucketCapacity().toFixed(1)} kg)`;
-
-        const ecoKg = state.junkRecycledKg || 0;
-        const ecoMod = ecoKg % 100;
-        document.getElementById('shop-eco-progress').textContent = `${ecoMod.toFixed(1)} / 100.0 kg (${state.mayorRewardsClaimed || 0}x Claimed)`;
-        document.getElementById('shop-eco-bar').style.width = `${Math.min(100, ecoMod)}%`;
-
-        const sellBtn = document.getElementById('btn-sell-all');
-        sellBtn.disabled = state.bucket.length === 0;
-        sellBtn.textContent = `Sell All ($${totalBucketVal})`;
-
+      function sellBucketEntry(idx) {
+        const [soldItem] = state.bucket.splice(idx, 1);
+        if (!soldItem) return;
+        const got = sellValue(soldItem);
+        state.cash = +(state.cash + got).toFixed(2);
+        bumpStat('earned', got);
+        sfx.playCoin();
+        processEcoCleanupReward([soldItem]);
+        checkAchievements();
+        saveGame();
+        rebuildPierBucketVisual();
+        updateHUD();
+      }
+      function sellAllCatch() {
+        if (state.bucket.length === 0) return;
+        const soldCopy = [...state.bucket];
+        const total = soldCopy.reduce((s, i) => s + sellValue(i), 0);
+        state.cash = +(state.cash + total).toFixed(2);
+        bumpStat('earned', total);
+        state.bucket = [];
+        sfx.playCoin();
+        processEcoCleanupReward(soldCopy);
+        checkAchievements();
+        saveGame();
+        rebuildPierBucketVisual();
+        updateHUD();
+        showToast(`Sold ${soldCopy.length} item(s) for $${total.toFixed(2)}!`);
+      }
+      function refuelBoat() {
         const boat = getCurrentBoat();
-        const fuelMissing = Math.max(0, boat.maxFuel - state.fuel);
-        const refillCost = +(fuelMissing * 0.5).toFixed(2);
-        const refillBtn = document.getElementById('btn-refill-fuel');
-        refillBtn.disabled = state.boatTier === 0 || fuelMissing <= 0.1 || state.cash < 0.5;
-        refillBtn.textContent = state.boatTier === 0
-          ? 'No Boat'
-          : fuelMissing <= 0.1
-            ? 'Tank Full'
-            : `Refill ($${refillCost.toFixed(2)})`;
+        if (state.boatTier === 0) return;
+        const missing = Math.max(0, boat.maxFuel - state.fuel);
+        if (missing <= 0.1) return;
+        const unitsToBuy = Math.min(missing, Math.floor(state.cash / 0.5));
+        if (unitsToBuy <= 0) { showToast('Not enough cash to buy fuel!'); return; }
+        const cost = +(unitsToBuy * 0.5).toFixed(2);
+        state.cash = +(state.cash - cost).toFixed(2);
+        state.fuel = +(state.fuel + unitsToBuy).toFixed(1);
+        sfx.playCoin(); saveGame(); updateHUD();
+        showToast(`Refueled +${unitsToBuy.toFixed(1)}u ($${cost.toFixed(2)}).`);
+      }
 
-        const container = document.getElementById('shop-items-container');
-        container.innerHTML = '';
-
-        if (activeShopTab === 'catch') {
-          if (!state.bucket.length) {
-            container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Bring your catch here to sell it.</p>';
-          }
-          const cod = catchOfDay();
-          state.bucket.map((entry, idx) => ({ entry, idx })).sort((a, b) => sellValue(b.entry) - sellValue(a.entry)).forEach(({ entry, idx }) => {
-            const m = marketMult(entry.id);
-            const card = document.createElement('div');
-            card.className = 'shop-card';
-            card.innerHTML = `<div><div class="card-title"><span>${ITEM_ICONS[entry.id] ? `<img src="${ITEM_ICONS[entry.id]}" style="width:22px;height:22px;vertical-align:middle;image-rendering:pixelated;margin-right:4px;" alt="" />` : ''}${entry.name}${entry.id === cod.id ? ' <span class="log-cod">⭐ TODAY</span>' : ''}</span><span style="color:#ffd24c;">$${sellValue(entry)}</span></div>
-              <div class="card-stats">${entry.weight.toFixed(2)} kg${m > 1.1 ? ' • <span style="color:#4ade80;">▲ hot today x' + m.toFixed(1) + '</span>' : m < 0.9 ? ' • <span style="color:#f87171;">▼ glut x' + m.toFixed(1) + '</span>' : ''}</div></div>`;
-            const btn = document.createElement('button');
-            btn.className = 'pixel-btn green';
-            btn.textContent = `Sell $${sellValue(entry)}`;
-            btn.onclick = () => { sellBucketEntry(idx); renderShop(); };
-            card.appendChild(btn);
-            container.appendChild(card);
-          });
-        } else if (activeShopTab === 'rods') {
+      /* The goods. Each item: key + data pick the 3D model; badge / note / can say what tapping does. */
+      function shopItems(kind, tab) {
+        const out = [];
+        const add = o => out.push(Object.assign({ badge: '', note: '', can: false, price: null, priceText: null, verb: 'Buy', stats: '', desc: '' }, o));
+        const pay = c => { state.cash = +(state.cash - c).toFixed(2); sfx.playCoin(); };
+        const afford = c => state.cash >= c;
+        if (tab === 'rods') {
           const hasCam = !!state.hasLiveBaitCam;
-          const camCard = document.createElement('div');
-          camCard.className = `shop-card ${hasCam ? 'equipped' : ''}`;
-          camCard.style.borderColor = hasCam ? 'var(--accent-green)' : '#38bdf8';
-          camCard.innerHTML = `
-            <div>
-              <div class="card-title">
-                <span>📹 ${LIVE_CAM_UPGRADE.name}</span>
-                <span style="color: #38bdf8;">$${LIVE_CAM_UPGRADE.cost}</span>
-              </div>
-              <div class="card-stats">
-                Attachment: <b>Picture-in-Picture Subsea Feed</b><br/>
-                ${LIVE_CAM_UPGRADE.desc}
-              </div>
-            </div>
-          `;
-          const camBtn = document.createElement('button');
-          camBtn.className = hasCam ? 'pixel-btn green' : 'pixel-btn gold';
-          if (hasCam) {
-            camBtn.textContent = 'Installed on Rod';
-            camBtn.disabled = true;
-          } else {
-            camBtn.textContent = `Install Camera ($${LIVE_CAM_UPGRADE.cost})`;
-            camBtn.disabled = state.cash < LIVE_CAM_UPGRADE.cost;
-            camBtn.onclick = () => {
-              if (state.cash >= LIVE_CAM_UPGRADE.cost) {
-                state.cash = +(state.cash - LIVE_CAM_UPGRADE.cost).toFixed(2);
-                state.hasLiveBaitCam = true;
-                sfx.playCoin();
-                saveGame();
-                renderShop();
-                updateHUD();
-                showToast('📹 Installed Rod-Tip Live Bait Cam!');
-              }
-            };
-          }
-          camCard.appendChild(camBtn);
-          container.appendChild(camCard);
-
+          add({ id: 'cam', key: 'cam', data: LIVE_CAM_UPGRADE, title: LIVE_CAM_UPGRADE.name, stats: 'Attachment: Picture-in-Picture subsea feed', desc: LIVE_CAM_UPGRADE.desc, price: LIVE_CAM_UPGRADE.cost,
+            badge: hasCam ? 'INSTALLED' : '', can: !hasCam && afford(LIVE_CAM_UPGRADE.cost), note: hasCam ? 'Clipped to your rod.' : afford(LIVE_CAM_UPGRADE.cost) ? '' : shopNeed(LIVE_CAM_UPGRADE.cost),
+            confirm: `Install ${LIVE_CAM_UPGRADE.name} for ${shopMoney(LIVE_CAM_UPGRADE.cost)}?`, verb: 'Install',
+            act: () => { pay(LIVE_CAM_UPGRADE.cost); state.hasLiveBaitCam = true; saveGame(); updateHUD(); showToast('📹 Installed Rod-Tip Live Bait Cam!'); } });
           ROD_TIERS.forEach(rod => {
-            const owned = state.rodTier >= rod.tier;
-            const card = document.createElement('div');
-            card.className = `shop-card ${state.rodTier === rod.tier ? 'equipped' : ''}`;
-            card.innerHTML = `
-              <div>
-                <div class="card-title">
-                  <span>Tier ${rod.tier}: ${rod.name}</span>
-                  <span style="color: #ffd24c;">${rod.cost === 0 ? 'FREE' : '$' + rod.cost}</span>
-                </div>
-                <div class="card-stats">
-                  Max Weight: <b>${rod.maxWeight} kg</b> • Safe Zone: <b>Zone ${rod.maxZone}</b><br/>
-                  ${rod.desc}
-                </div>
-              </div>
-            `;
-            const btn = document.createElement('button');
-            btn.className = owned ? 'pixel-btn green' : 'pixel-btn gold';
-            if (state.rodTier === rod.tier) {
-              btn.textContent = 'Equipped';
-              btn.disabled = true;
-            } else if (owned) {
-              btn.textContent = 'Owned';
-              btn.disabled = true;
-            } else {
-              btn.textContent = `Buy Upgrade ($${rod.cost})`;
-              btn.disabled = state.cash < rod.cost;
-              btn.onclick = () => {
-                if (state.cash >= rod.cost) {
-                  state.cash = +(state.cash - rod.cost).toFixed(2);
-                  state.rodTier = rod.tier;
-                  sfx.playCoin();
-                  saveGame();
-                  rebuildPlayerBoatVisual();
-                  renderShop();
-                  updateHUD();
-                  showToast(`Equipped ${rod.name}!`);
-                }
-              };
-            }
-            card.appendChild(btn);
-            container.appendChild(card);
+            const owned = state.rodTier >= rod.tier, eq = state.rodTier === rod.tier;
+            add({ id: 'rod' + rod.tier, key: 'rod', data: rod, title: rod.name, stats: `Tier ${rod.tier} • Max weight ${rod.maxWeight} kg • Safe zone ${rod.maxZone}`, desc: rod.desc, price: rod.cost, priceText: rod.cost === 0 ? 'FREE' : null,
+              badge: eq ? 'EQUIPPED' : owned ? 'OWNED' : '', can: !owned && afford(rod.cost), note: eq ? 'In your hands.' : owned ? 'You have a better rod.' : afford(rod.cost) ? '' : shopNeed(rod.cost),
+              confirm: `Buy ${rod.name} for ${shopMoney(rod.cost)}?`,
+              act: () => { pay(rod.cost); state.rodTier = rod.tier; saveGame(); rebuildPlayerBoatVisual(); updateHUD(); showToast(`Equipped ${rod.name}!`); } });
           });
-        } else if (activeShopTab === 'boats') {
-          BOAT_TIERS.forEach(b => {
-            const owned = b.tier === 0 || (state.ownedBoats || []).includes(b.tier);
-            const card = document.createElement('div');
-            card.className = `shop-card ${state.boatTier === b.tier ? 'equipped' : ''}`;
-            card.innerHTML = `
-              <div>
-                <div class="card-title">
-                  <span>Tier ${b.tier}: ${b.name}</span>
-                  <span style="color: #ffd24c;">${b.cost === 0 ? 'FREE' : '$' + b.cost}</span>
-                </div>
-                <div class="card-stats">
-                  Fuel: <b>${b.maxFuel}u</b> • Safe Access: <b>Zone ${b.maxZone}</b><br/>
-                  ${b.desc}
-                </div>
-              </div>
-            `;
-            const btn = document.createElement('button');
-            btn.className = owned ? 'pixel-btn green' : 'pixel-btn gold';
-            if (state.boatTier === b.tier) {
-              btn.textContent = 'Active Vessel';
-              btn.disabled = true;
-            } else if (owned) {
-              btn.textContent = b.tier === 0 ? 'Pier' : 'Owned · switch at the 🛥️ Boat Terminal';
-              btn.disabled = true;
-            } else {
-              btn.textContent = `Buy Boat ($${b.cost})`;
-              btn.disabled = state.cash < b.cost;
-              btn.onclick = () => {
-                if (state.cash >= b.cost) {
-                  state.cash = +(state.cash - b.cost).toFixed(2);
-                  if (state.boatTier > 0) state.boatFuel[state.boatTier] = state.fuel;   // the old boat keeps its tank
-                  if (!state.ownedBoats.includes(b.tier)) { state.ownedBoats.push(b.tier); state.ownedBoats.sort((x, y) => x - y); }
-                  state.boatTier = b.tier;
-                  state.fuel = b.maxFuel;
-                  state.boatFuel[b.tier] = b.maxFuel;
-                  sfx.playCoin();
-                  saveGame();
-                  rebuildPlayerBoatVisual();
-                  renderShop();
-                  updateHUD();
-                  showToast(`Bought ${b.name}! It is moored at the platform; switch boats at the 🛥️ Boat Terminal there.`);
-                }
-              };
-            }
-            card.appendChild(btn);
-            container.appendChild(card);
-          });
-        } else if (activeShopTab === 'modules') {
-          BOAT_MODULES.forEach(mod => {
-            const installed = hasModule(mod.id);
-            const card = document.createElement('div');
-            card.className = `shop-card ${installed ? 'equipped' : ''}`;
-            card.innerHTML = `
-              <div>
-                <div class="card-title">
-                  <span>${mod.icon} ${mod.name}</span>
-                  <span style="color: #ffd24c;">$${mod.cost}</span>
-                </div>
-                <div class="card-stats">${mod.desc}</div>
-              </div>
-            `;
-            const btn = document.createElement('button');
-            btn.className = installed ? 'pixel-btn green' : 'pixel-btn gold';
-            if (installed) {
-              btn.textContent = 'Installed';
-              btn.disabled = true;
-            } else if (state.boatTier === 0) {
-              btn.textContent = 'Requires a Boat';
-              btn.disabled = true;
-            } else {
-              btn.textContent = `Install Module ($${mod.cost})`;
-              btn.disabled = state.cash < mod.cost;
-              btn.onclick = () => {
-                if (state.cash >= mod.cost && !hasModule(mod.id)) {
-                  state.cash = +(state.cash - mod.cost).toFixed(2);
-                  state.modules.push(mod.id);
-                  sfx.playCoin();
-                  saveGame();
-                  rebuildPlayerBoatVisual();
-                  renderShop();
-                  updateHUD();
-                  showToast(`Installed ${mod.name}!`);
-                }
-              };
-            }
-            card.appendChild(btn);
-            container.appendChild(card);
-          });
-        } else if (activeShopTab === 'baits') {
+        } else if (tab === 'baits') {
           BAIT_TIERS.forEach(bt => {
-            const isEquipped = state.baitTier === bt.tier;
-            const stock = bt.infinite ? 0 : (state.baitStock[bt.tier] || 0);
-            const card = document.createElement('div');
-            card.className = `shop-card ${isEquipped ? 'equipped' : ''}`;
-            card.innerHTML = `
-              <div>
-                <div class="card-title">
-                  <span>${bt.name}</span>
-                  <span style="color: #ffd24c;">${bt.cost === 0 ? 'INFINITE' : '$' + bt.cost + ' / 10x'}</span>
-                </div>
-                <div class="card-stats">
-                  Weight Mult: <b>${bt.weightMin}x – ${bt.weightMax}x</b><br/>
-                  ${bt.desc}
-                </div>
-              </div>
-            `;
-            const btn = document.createElement('button');
-            btn.className = 'pixel-btn gold';
+            const stock = bt.infinite ? 0 : (state.baitStock[bt.tier] || 0), eq = state.baitTier === bt.tier;
             if (bt.infinite) {
-              btn.textContent = isEquipped ? 'Equipped (∞)' : 'Equip Bread Crumbs';
-              btn.disabled = isEquipped;
-              btn.onclick = () => {
-                state.baitTier = 1;
-                state.baitCount = 0;
-                saveGame();
-                renderShop();
-                updateHUD();
-              };
+              add({ id: 'bait' + bt.tier, key: 'bait', data: bt, title: bt.name, stats: `Weight x${bt.weightMin} to x${bt.weightMax} • infinite`, desc: bt.desc, priceText: 'FREE', verb: 'Equip',
+                badge: eq ? 'EQUIPPED' : '', can: !eq, note: eq ? 'Ready on your hook.' : '', confirm: `Equip ${bt.name}?`,
+                act: () => { state.baitTier = 1; state.baitCount = 0; saveGame(); updateHUD(); showToast(`Equipped ${bt.name}.`); } });
             } else {
-              const countTxt = stock > 0 ? ` (${stock} owned)` : '';
-              btn.textContent = `Buy 10x Pack ($${bt.cost})${countTxt}`;
-              btn.disabled = state.cash < bt.cost;
-              btn.onclick = () => {
-                if (state.cash >= bt.cost) {
-                  state.cash = +(state.cash - bt.cost).toFixed(2);
-                  state.baitStock[bt.tier] = (state.baitStock[bt.tier] || 0) + 10;
-                  state.baitTier = bt.tier;
-                  state.baitCount = state.baitStock[bt.tier];
-                  sfx.playCoin();
-                  saveGame();
-                  renderShop();
-                  updateHUD();
-                  showToast(`Bought 10x ${bt.name}!`);
-                }
-              };
+              add({ id: 'bait' + bt.tier, key: 'bait', data: bt, title: bt.name + ' (10x pack)', stats: `Weight x${bt.weightMin} to x${bt.weightMax} • you have ${stock}`, desc: bt.desc, price: bt.cost,
+                can: afford(bt.cost), note: afford(bt.cost) ? (stock ? `${stock} in stock` : '') : shopNeed(bt.cost), confirm: `Buy 10x ${bt.name} for ${shopMoney(bt.cost)}?`,
+                act: () => { pay(bt.cost); state.baitStock[bt.tier] = stock + 10; state.baitTier = bt.tier; state.baitCount = state.baitStock[bt.tier]; saveGame(); updateHUD(); showToast(`Bought 10x ${bt.name}!`); } });
             }
-            card.appendChild(btn);
-            container.appendChild(card);
           });
-        } else if (activeShopTab === 'buckets') {
+        } else if (tab === 'buckets') {
           BUCKET_TIERS.forEach(bk => {
-            const owned = state.bucketTier >= bk.tier;
-            const card = document.createElement('div');
-            card.className = `shop-card ${state.bucketTier === bk.tier ? 'equipped' : ''}`;
-            card.innerHTML = `
-              <div>
-                <div class="card-title">
-                  <span>Tier ${bk.tier}: ${bk.name}</span>
-                  <span style="color: #ffd24c;">${bk.cost === 0 ? 'FREE' : '$' + bk.cost}</span>
-                </div>
-                <div class="card-stats">
-                  Max Capacity: <b>${bk.capacity} kg</b><br/>
-                  ${bk.desc}
-                </div>
-              </div>
-            `;
-            const btn = document.createElement('button');
-            btn.className = owned ? 'pixel-btn green' : 'pixel-btn gold';
-            if (state.bucketTier === bk.tier) {
-              btn.textContent = 'Equipped';
-              btn.disabled = true;
-            } else if (owned) {
-              btn.textContent = 'Owned';
-              btn.disabled = true;
-            } else {
-              btn.textContent = `Upgrade Bucket ($${bk.cost})`;
-              btn.disabled = state.cash < bk.cost;
-              btn.onclick = () => {
-                if (state.cash >= bk.cost) {
-                  state.cash = +(state.cash - bk.cost).toFixed(2);
-                  state.bucketTier = bk.tier;
-                  sfx.playCoin();
-                  saveGame();
-                  rebuildPierBucketVisual();
-                  renderShop();
-                  updateHUD();
-                  showToast(`Upgraded to ${bk.name}!`);
-                }
-              };
-            }
-            card.appendChild(btn);
-            container.appendChild(card);
+            const owned = state.bucketTier >= bk.tier, eq = state.bucketTier === bk.tier;
+            add({ id: 'bucket' + bk.tier, key: 'bucket', data: bk, title: bk.name, stats: `Tier ${bk.tier} • Holds ${bk.capacity} kg`, desc: bk.desc, price: bk.cost, priceText: bk.cost === 0 ? 'FREE' : null,
+              badge: eq ? 'EQUIPPED' : owned ? 'OWNED' : '', can: !owned && afford(bk.cost), note: eq ? 'On the pier.' : owned ? 'You have a bigger one.' : afford(bk.cost) ? '' : shopNeed(bk.cost),
+              confirm: `Buy ${bk.name} for ${shopMoney(bk.cost)}?`,
+              act: () => { pay(bk.cost); state.bucketTier = bk.tier; saveGame(); rebuildPierBucketVisual(); updateHUD(); showToast(`Upgraded to ${bk.name}!`); } });
           });
-        } else if (activeShopTab === 'dive' || activeShopTab === 'spear') {
-          // Dive gear and spear guns share one card layout: tiers are bought in order and the best one owned is used.
-          const isDive = activeShopTab === 'dive';
-          const list = (isDive ? DIVE_GEAR : SPEAR_GUNS).filter(g => g.tier > 0);
-          const owned0 = isDive ? state.diveTier : state.spearTier;
-          const intro = document.createElement('div');
-          intro.className = 'shop-card';
-          intro.innerHTML = `<div class="card-stats">${isDive
-            ? 'Dive from the end of the pier or from a stopped boat using the <b>🤿 DIVE</b> button (or press <b>X</b>). Deeper water needs better gear.'
-            : 'In the water press <b>FIRE</b> (or Space). Auto-aim locks onto the fish nearest your crosshair. Heavier fish need a stronger gun.'}</div>`;
-          container.appendChild(intro);
+        } else if (tab === 'boats') {
+          BOAT_TIERS.filter(b => b.tier > 0).forEach(b => {
+            const owned = (state.ownedBoats || []).includes(b.tier), active = state.boatTier === b.tier;
+            add({ id: 'boat' + b.tier, key: 'boat', data: b, title: b.name, stats: `Tier ${b.tier} • Fuel ${b.maxFuel}u • Safe access: zone ${b.maxZone} • ${b.speed} m/s`, desc: b.desc, price: b.cost,
+              badge: active ? 'ACTIVE' : owned ? 'OWNED' : '', can: !owned && afford(b.cost), note: active ? 'Moored at the platform.' : owned ? 'Switch at the 🛥️ Boat Terminal.' : afford(b.cost) ? '' : shopNeed(b.cost),
+              confirm: `Buy the ${b.name} for ${shopMoney(b.cost)}?`,
+              act: () => {
+                pay(b.cost);
+                if (state.boatTier > 0) state.boatFuel[state.boatTier] = state.fuel;   // the old boat keeps its tank
+                if (!state.ownedBoats.includes(b.tier)) { state.ownedBoats.push(b.tier); state.ownedBoats.sort((x, y) => x - y); }
+                state.boatTier = b.tier; state.fuel = b.maxFuel; state.boatFuel[b.tier] = b.maxFuel;
+                saveGame(); rebuildPlayerBoatVisual(); updateHUD();
+                showToast(`Bought ${b.name}! It is moored at the platform; switch boats at the 🛥️ Boat Terminal there.`);
+              } });
+          });
+        } else if (tab === 'modules') {
+          BOAT_MODULES.forEach(mod => {
+            const installed = hasModule(mod.id), noBoat = state.boatTier === 0;
+            add({ id: 'mod' + mod.id, key: 'module', data: mod, title: `${mod.icon} ${mod.name}`, stats: 'Boat module', desc: mod.desc, price: mod.cost, verb: 'Install',
+              badge: installed ? 'INSTALLED' : noBoat ? 'NEEDS A BOAT' : '', can: !installed && !noBoat && afford(mod.cost), note: installed ? 'Fitted to your boats.' : noBoat ? 'Buy a boat first.' : afford(mod.cost) ? '' : shopNeed(mod.cost),
+              confirm: `Install ${mod.name} for ${shopMoney(mod.cost)}?`,
+              act: () => { pay(mod.cost); state.modules.push(mod.id); saveGame(); rebuildPlayerBoatVisual(); updateHUD(); showToast(`Installed ${mod.name}!`); } });
+          });
+        } else if (tab === 'fuel') {
+          const boat = getCurrentBoat(), missing = Math.max(0, boat.maxFuel - state.fuel);
+          const units = Math.min(missing, Math.floor(state.cash / 0.5)), cost = +(units * 0.5).toFixed(2), full = +(missing * 0.5).toFixed(2);
+          const none = state.boatTier === 0, topped = !none && missing <= 0.1;
+          add({ id: 'fuel', key: 'fuel', data: {}, title: none ? 'Marine fuel' : `Refuel the ${boat.name}`, stats: none ? '$0.50 per unit' : `Tank ${state.fuel.toFixed(0)} / ${boat.maxFuel} u • $0.50 per unit`,
+            desc: 'Fill the tank of the boat that is moored. The dock pump at the end of the mooring platform sells the same fuel.', price: none || topped ? null : (units > 0 ? cost : full), verb: 'Refuel',
+            badge: topped ? 'TANK FULL' : none ? 'NO BOAT' : '', can: !none && !topped && units > 0, note: none ? 'Buy a boat first.' : topped ? 'Nothing to add.' : units <= 0 ? 'Not enough cash.' : units < missing ? 'All you can afford.' : '',
+            confirm: `Add ${units.toFixed(0)} units of fuel for ${shopMoney(cost)}?`, act: refuelBoat });
+        } else if (tab === 'dive' || tab === 'spear') {
+          const isDive = tab === 'dive', list = (isDive ? DIVE_GEAR : SPEAR_GUNS).filter(g => g.tier > 0), have = isDive ? state.diveTier : state.spearTier;
           list.forEach(g => {
-            const owned = owned0 >= g.tier;
-            const card = document.createElement('div');
-            card.className = `shop-card ${owned0 === g.tier ? 'equipped' : ''}`;
+            const owned = have >= g.tier, eq = have === g.tier, locked = g.tier > have + 1;
             const stats = isDive
-              ? `Rated depth: <b>${g.maxDepth} m</b> • Air: <b>${Math.floor(g.air / 60)}:${String(g.air % 60).padStart(2, '0')}</b> • Catch bag: <b>${g.bagKg} kg</b><br/>Swim speed: <b>${g.speed} m/s</b>${g.light ? ' • Headlamp: <b>L' + g.light + '</b>' : ''}`
-              : `Range: <b>${g.range} m</b> • Power: <b>${g.power} kg</b> fish<br/>Reload: <b>${g.reload}s</b> • Spear speed: <b>${g.speed} m/s</b>`;
-            card.innerHTML = `
-              <div>
-                <div class="card-title">
-                  <span>Tier ${g.tier}: ${g.name}</span>
-                  <span style="color: #ffd24c;">$${g.cost}</span>
-                </div>
-                <div class="card-stats">${stats}<br/>${g.desc}</div>
-              </div>`;
-            const btn = document.createElement('button');
-            btn.className = owned ? 'pixel-btn green' : 'pixel-btn gold';
-            if (owned0 === g.tier) { btn.textContent = 'Equipped'; btn.disabled = true; }
-            else if (owned) { btn.textContent = 'Owned'; btn.disabled = true; }
-            else {
-              btn.textContent = `Buy ($${g.cost})`;
-              btn.disabled = state.cash < g.cost || g.tier > owned0 + 1;
-              if (g.tier > owned0 + 1) btn.textContent = `Needs tier ${g.tier - 1} first`;
-              btn.onclick = () => {
-                if (state.cash < g.cost || g.tier > owned0 + 1) return;
-                state.cash = +(state.cash - g.cost).toFixed(2);
-                if (isDive) state.diveTier = g.tier; else state.spearTier = g.tier;
-                sfx.playCoin(); saveGame(); renderShop(); updateHUD();
-                showToast(`${isDive ? '🤿' : '🔱'} Bought ${g.name}!`);
-              };
-            }
-            card.appendChild(btn);
-            container.appendChild(card);
+              ? `Tier ${g.tier} • Depth ${g.maxDepth} m • Air ${Math.floor(g.air / 60)}:${String(g.air % 60).padStart(2, '0')} • Bag ${g.bagKg} kg • Swim ${g.speed} m/s${g.light ? ' • Lamp L' + g.light : ''}`
+              : `Tier ${g.tier} • Range ${g.range} m • Power ${g.power} kg • Reload ${g.reload}s • Speed ${g.speed} m/s`;
+            add({ id: tab + g.tier, key: isDive ? 'dive' : 'spear', data: g, title: g.name, stats, desc: g.desc, price: g.cost,
+              badge: eq ? 'EQUIPPED' : owned ? 'OWNED' : locked ? 'LOCKED' : '', can: !owned && !locked && afford(g.cost), note: eq ? 'The best you own.' : owned ? 'You have better.' : locked ? `Needs tier ${g.tier - 1} first.` : afford(g.cost) ? '' : shopNeed(g.cost),
+              confirm: `Buy ${g.name} for ${shopMoney(g.cost)}?`,
+              act: () => { pay(g.cost); if (isDive) state.diveTier = g.tier; else state.spearTier = g.tier; saveGame(); updateHUD(); showToast(`${isDive ? '🤿' : '🔱'} Bought ${g.name}!`); } });
+          });
+        } else if (tab === 'catch') {
+          const total = state.bucket.reduce((s, i) => s + sellValue(i), 0), cod = catchOfDay(), mk = marketFor(state.dayCount || 0);
+          const ecoMod = (state.junkRecycledKg || 0) % 100;
+          const names = ids => ids.map(id => `${CATALOG_INDEX[id].name} x${mk.mult[id].toFixed(1)}`).join(', ');
+          add({ id: 'sellall', key: 'crate', data: {}, title: 'Sell everything', stats: `${state.bucket.length} catch${state.bucket.length === 1 ? '' : 'es'} • ${getBucketWeight().toFixed(1)} / ${getBucketCapacity().toFixed(1)} kg`,
+            desc: `Today: hot ${names(mk.hot)}. Glut ${names(mk.glut)}. Catch of the Day ${cod.name} pays x3. Recycling junk: ${ecoMod.toFixed(1)} / 100 kg to the Mayor's $1,000.`,
+            price: total, priceText: '+' + shopMoney(total), verb: 'Sell', can: state.bucket.length > 0, note: state.bucket.length ? '' : 'Your bucket is empty.',
+            confirm: `Sell all ${state.bucket.length} catches for ${shopMoney(total)}?`, act: sellAllCatch });
+          state.bucket.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(entry => {
+            const m = marketMult(entry.id), v = sellValue(entry);
+            add({ id: 'fish' + state.bucket.indexOf(entry), key: 'fish', data: { item: CATALOG_INDEX[entry.id] || entry, weight: entry.weight, entry }, title: entry.name + (entry.id === cod.id ? ' ⭐' : ''),
+              stats: `${entry.weight.toFixed(2)} kg${m > 1.1 ? ` • hot today x${m.toFixed(1)}` : m < 0.9 ? ` • glut x${m.toFixed(1)}` : ''}`, desc: `${entry.rarity || ''} ${entry.category || 'catch'}. ${entry.id === cod.id ? 'Catch of the Day: pays triple!' : 'Tap to sell this one.'}`,
+              price: v, priceText: '+' + shopMoney(v), verb: 'Sell', can: true, confirm: `Sell ${entry.name} (${entry.weight.toFixed(2)} kg) for ${shopMoney(v)}?`,
+              act: () => { const i = state.bucket.indexOf(entry); if (i >= 0) { sellBucketEntry(i); showToast(`Sold ${entry.name} for ${shopMoney(v)}`); } } });
           });
         }
+        return out;
       }
+
+      /* ---- the display counter ---- */
+      function shopTagDraw(cv, it, selected) {
+        const W = cv.width, H = cv.height, x = cv.getContext('2d');
+        x.fillStyle = selected ? '#fff7d6' : '#fdf3d0'; x.fillRect(0, 0, W, H);
+        x.strokeStyle = selected ? '#d97706' : 'rgba(120,80,30,0.7)'; x.lineWidth = selected ? 8 : 5; x.strokeRect(4, 4, W - 8, H - 8);
+        x.textAlign = 'center'; x.fillStyle = '#3b2410'; x.font = 'bold 27px "Courier New", monospace';
+        const lines = wrapLines(x, it.title.replace(/[^\x20-\x7e]/g, '').trim() || it.title, W - 36).slice(0, 2);
+        lines.forEach((l, i) => x.fillText(l, W / 2, 38 + i * 30));
+        const price = it.priceText || (it.price != null ? shopMoney(it.price) : '');
+        x.font = 'bold 36px "Courier New", monospace';
+        x.fillStyle = it.badge && !it.can ? '#166534' : it.can ? '#166534' : '#b91c1c';
+        if (it.badge && !it.can) { x.font = 'bold 30px "Courier New", monospace'; x.fillText(it.badge, W / 2, H - 26); }
+        else x.fillText(price, W / 2, H - 26);
+      }
+      function shopDisposeGroup(grp) {
+        if (!grp) return;
+        grp.traverse(o => {
+          if (o.geometry) o.geometry.dispose();
+          if (o.userData && o.userData.tagTex) o.userData.tagTex.dispose();
+          if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.userData && m.userData.own) m.dispose(); });
+        });
+        if (grp.parent) grp.parent.remove(grp);
+      }
+      function shopSlotsFor(n, cx) {
+        const per = n <= 10 ? Math.max(1, n) : 8, sp = 1.05, rows = Math.ceil(n / per), slots = [];
+        const half = ((per - 1) / 2) * sp + 0.9, ccx = THREE.MathUtils.clamp(cx, -20.3 + half, 20.3 - half);
+        for (let i = 0; i < n; i++) {
+          const row = Math.floor(i / per), col = i % per, inRow = Math.min(per, n - row * per);
+          slots.push({ x: ccx + (col - (inRow - 1) / 2) * sp, z: SHOP_COUNTER_Z - row * 1.0, y: SHOP_TOP_Y + row * 0.4, row, sp });
+        }
+        return { slots, cx: ccx, per, rows };
+      }
+      function buildShowcase() {
+        shopDisposeGroup(shopBrowse.group);
+        const sk = SHOP_KINDS[shopBrowse.kind], items = shopBrowse.items, lay = shopSlotsFor(items.length, sk.x);
+        const K = WorldBuilder.propKit(textures), grp = new THREE.Group(), cloth = K.M(sk.color, 0.85);
+        shopBrowse.slots = lay.slots;
+        // counter bodies, one per row, each a step higher towards the back
+        for (let r = 0; r < lay.rows; r++) {
+          const inRow = Math.min(lay.per, items.length - r * lay.per), len = (inRow - 1) * 1.05 + 1.5, z = SHOP_COUNTER_Z - r * 1.0, h = 0.95 + r * 0.4;
+          K.box(grp, len, h, 0.95, K.wood, lay.cx, SHOP_DECK_Y + h / 2, z);
+          K.box(grp, len + 0.14, 0.07, 1.08, K.darkWood, lay.cx, SHOP_DECK_Y + h + 0.035, z);
+          K.box(grp, len - 0.1, 0.012, 0.8, cloth, lay.cx, SHOP_DECK_Y + h + 0.077, z - 0.02);
+          K.box(grp, len, 0.05, 0.05, K.brass, lay.cx, SHOP_DECK_Y + 0.12, z + 0.49);
+        }
+        const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+        items.forEach((it, i) => {
+          const s = lay.slots[i];
+          const model = WorldBuilder.buildShopItem(it.key, it.data, textures);
+          model.position.set(s.x, s.y + 0.1, s.z - 0.04); s.model = model; s.size = Math.max(model.userData.h || 0.8, 0.85); s.h = model.userData.h || 0.8;
+          grp.add(model);
+          const ped = K.cyl(grp, 0.4, 0.44, 0.1, K.darkWood, s.x, s.y + 0.05, s.z - 0.04, 20); ped.material = ped.material.clone(); ped.material.userData.own = true;
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.018, 6, 28), new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0 }));
+          ring.rotation.x = Math.PI / 2; ring.position.set(s.x, s.y + 0.11, s.z - 0.04); grp.add(ring); s.ring = ring;
+          const cv = document.createElement('canvas'); cv.width = 320; cv.height = 140;
+          const tex = new THREE.CanvasTexture(cv); if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
+          const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.35), new THREE.MeshBasicMaterial({ map: tex }));
+          tag.position.set(s.x, s.y + 0.13, s.z + 0.34); tag.rotation.x = -0.95; tag.userData = { tagTex: tex, cv, slot: i, hit: true }; grp.add(tag); s.tag = tag;
+          const hit = new THREE.Mesh(new THREE.BoxGeometry(s.sp * 0.98, Math.max(1.5, s.h + 0.5), 1.0), hitMat);
+          hit.position.set(s.x, s.y + Math.max(1.5, s.h + 0.5) / 2, s.z); hit.userData = { slot: i, hit: true }; grp.add(hit); s.hit = hit;
+          shopTagDraw(cv, it, false); tex.needsUpdate = true;
+        });
+        grp.userData.hitMat = hitMat;
+        scene.add(grp); shopBrowse.group = grp; shopBrowse.rise = 0;
+        grp.position.y = -1.6;
+      }
+      function shopRefreshTags() {
+        shopBrowse.items.forEach((it, i) => { const s = shopBrowse.slots[i]; if (!s || !s.tag) return; shopTagDraw(s.tag.userData.cv, it, i === shopBrowse.idx); s.tag.userData.tagTex.needsUpdate = true; });
+      }
+
+      /* ---- camera, per-frame animation ---- */
+      const _shPos = new THREE.Vector3(), _shLook = new THREE.Vector3();
+      function shopCameraPose() {
+        const s = shopBrowse.slots[shopBrowse.idx]; if (!s) return;
+        const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2), th = tv * camera.aspect;
+        const half = Math.max(s.size, 1.25) * 0.62;
+        const dist = Math.max(2.0, Math.max(half / (tv * 0.62), half / th) + 0.7);
+        const lookY = s.y + 0.1 + s.h * 0.5;                     // the item sits mid-screen, between the tabs and the card
+        _shLook.set(s.x, lookY, s.z);
+        _shPos.set(s.x + 0.12, lookY + dist * 0.16, s.z + dist);
+      }
+      function updateShopBrowse(dt) {
+        if (!shopBrowse.active || !shopBrowse.group) return;
+        shopBrowse.rise = Math.min(1, shopBrowse.rise + dt * 2.6);
+        const e = 1 - Math.pow(1 - shopBrowse.rise, 3);
+        shopBrowse.group.position.y = -1.6 * (1 - e);
+        shopBrowse.slots.forEach((s, i) => {
+          const sel = i === shopBrowse.idx;
+          if (s.model) { if (sel) s.model.rotation.y += dt * 0.7; else { const r0 = Math.atan2(Math.sin(s.model.rotation.y), Math.cos(s.model.rotation.y)); s.model.rotation.y = r0 * (1 - Math.min(1, dt * 5)); } s.model.position.y = s.y + 0.1 + (sel ? 0.04 + Math.sin(elapsed * 2.4) * 0.015 : 0); }
+          if (s.ring) s.ring.material.opacity += ((sel ? 0.9 : 0) - s.ring.material.opacity) * Math.min(1, dt * 8);
+        });
+        const s = shopBrowse.slots[shopBrowse.idx];
+        if (s) {
+          if (!shopBrowse.light) { shopBrowse.light = new THREE.PointLight(0xffe2b0, 0, 7, 1.6); scene.add(shopBrowse.light); }
+          shopBrowse.light.position.set(s.x, s.y + 2.2, s.z + 1.6); shopBrowse.light.intensity = 1.1 + 0.9 * (isNightTime() ? 1 : 0.2);
+        }
+      }
+
+      /* ---- screen UI ---- */
+      function shopUiRender() {
+        const it = shopBrowse.items[shopBrowse.idx], sk = SHOP_KINDS[shopBrowse.kind];
+        const tabs = document.getElementById('shop-tabs'); tabs.innerHTML = '';
+        const nm = document.createElement('span'); nm.className = 'shop-name'; nm.textContent = sk.title; tabs.appendChild(nm);
+        if (sk.tabs.length > 1) sk.tabs.forEach(([id, label]) => {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (id === shopBrowse.tab) b.classList.add('on');
+          b.addEventListener('click', () => setShopTab(id)); tabs.appendChild(b);
+        });
+        const lv = document.createElement('button'); lv.type = 'button'; lv.id = 'shop-leave'; lv.textContent = '✕ Leave'; lv.addEventListener('click', () => leaveShopBrowse()); tabs.appendChild(lv);
+        const hudBar = document.querySelector('.hud-bar-main');
+        tabs.style.top = ((hudBar ? hudBar.getBoundingClientRect().bottom : 90) + 8) + 'px';
+        shopCardRender();
+      }
+      function shopCardRender() {
+        const it = shopBrowse.items[shopBrowse.idx], n = shopBrowse.items.length, card = document.getElementById('shop-card');
+        document.getElementById('shop-prev').disabled = shopBrowse.idx <= 0;
+        document.getElementById('shop-next').disabled = shopBrowse.idx >= n - 1;
+        if (!it) { card.innerHTML = '<div class="sc-title">Nothing here</div>'; return; }
+        const price = it.priceText || (it.price != null ? shopMoney(it.price) : '');
+        const hint = it.can ? `TAP THE ${it.key === 'fish' || it.key === 'crate' ? 'ITEM' : 'ITEM'} TO ${it.verb.toUpperCase()}` : '';
+        card.innerHTML = `<div class="sc-top"><span class="sc-title">${it.title}</span><span class="sc-count">${shopBrowse.idx + 1} / ${n}</span></div>
+          <div class="sc-stats">${it.stats}</div><div class="sc-desc">${it.desc}</div>
+          <div class="sc-foot"><span class="sc-price" style="color:${it.priceText && it.priceText[0] === '+' ? '#4ade80' : '#ffd24c'}">${price}</span>
+          <span class="sc-note" style="color:${it.can ? '#4ade80' : it.badge ? '#a7f3d0' : '#fca5a5'}">${it.badge ? '✔ ' + it.badge + (it.note ? ' • ' + it.note : '') : it.note || hint}</span></div>${it.can && it.note ? '' : ''}`;
+        card.classList.toggle('can', !!it.can);
+      }
+      function shopFlushRefresh() {
+        shopRefreshTags(); shopCardRender();
+      }
+
+      /* ---- state changes ---- */
+      function shopSelect(i) {
+        const n = shopBrowse.items.length; if (!n) return;
+        shopBrowse.idx = THREE.MathUtils.clamp(i, 0, n - 1);
+        sfx.playTick(); shopFlushRefresh();
+      }
+      function setShopTab(tab) {
+        if (shopBrowse.tab === tab && shopBrowse.group) return;
+        shopBrowse.tab = tab; shopBrowse.idx = 0; shopBrowse.items = shopItems(shopBrowse.kind, tab);
+        closeShopConfirm(); buildShowcase(); shopUiRender(); sfx.playTick();
+      }
+      function enterShopBrowse(kind) {
+        if (!SHOP_KINDS[kind] || shopBrowse.active) return;
+        const sk = SHOP_KINDS[kind];
+        shopBrowse.active = true; shopBrowse.kind = kind; shopBrowse.tab = sk.tabs[0][0]; shopBrowse.idx = 0;
+        shopBrowse.items = shopItems(kind, shopBrowse.tab);
+        mode = 'SHOP_BROWSE'; releaseAllInputs();
+        world.anglerGroup.visible = false;
+        document.body.dataset.shopping = '1';
+        buildShowcase(); shopUiRender(); sfx.playTick();
+      }
+      function leaveShopBrowse() {
+        if (!shopBrowse.active) return;
+        closeShopConfirm();
+        shopBrowse.active = false;
+        shopDisposeGroup(shopBrowse.group); shopBrowse.group = null; shopBrowse.slots = []; shopBrowse.items = [];
+        if (shopBrowse.light) shopBrowse.light.intensity = 0;
+        delete document.body.dataset.shopping;
+        world.anglerGroup.visible = true;
+        if (mode === 'SHOP_BROWSE') mode = 'PIER_IDLE';
+        updateHUD(); updatePrimaryActionButton();
+      }
+      /* after anything changed (a purchase, a cheat): recompute the goods, rebuild the counter only if the row changed */
+      function refreshShopBrowse() {
+        if (!shopBrowse.active) return;
+        const old = shopBrowse.items.map(i => i.id).join('|');
+        shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab);
+        shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1));
+        if (shopBrowse.items.map(i => i.id).join('|') !== old) { buildShowcase(); shopBrowse.group.position.y = 0; shopBrowse.rise = 1; }
+        shopFlushRefresh();
+      }
+      /* tapping the centred item (or the card): confirm first */
+      function shopActivate() {
+        const it = shopBrowse.items[shopBrowse.idx]; if (!it) return;
+        if (!it.can) { showToast(it.note || it.badge || 'Not available.'); return; }
+        const after = it.price != null && it.verb !== 'Sell' ? state.cash - it.price : state.cash + (it.price || 0);
+        document.getElementById('shop-confirm-title').textContent = it.confirm;
+        document.getElementById('shop-confirm-sub').textContent = it.price != null ? `Cash ${shopMoney(state.cash)} → ${shopMoney(after)}` : '';
+        const yes = document.getElementById('shop-confirm-yes'); yes.textContent = it.verb === 'Sell' ? 'Sell' : it.verb;
+        yes.classList.toggle('sell', it.verb === 'Sell');
+        shopBrowse.pending = it; shopBrowse.armedAt = performance.now() + 450;   // ignore the touch's own follow-up click
+        document.getElementById('shop-confirm').classList.add('open');
+      }
+      function closeShopConfirm() { shopBrowse.pending = null; const c = document.getElementById('shop-confirm'); if (c) c.classList.remove('open'); }
+      function shopConfirmYes() {
+        if (performance.now() < (shopBrowse.armedAt || 0)) return;
+        const it = shopBrowse.pending; closeShopConfirm();
+        if (!it || !it.can) return;
+        it.act();
+        refreshShopBrowse();
+      }
+      document.getElementById('shop-prev').addEventListener('click', () => shopSelect(shopBrowse.idx - 1));
+      document.getElementById('shop-next').addEventListener('click', () => shopSelect(shopBrowse.idx + 1));
+      document.getElementById('shop-card').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
+      document.getElementById('shop-confirm-no').addEventListener('click', () => { if (performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
+      document.getElementById('shop-confirm-yes').addEventListener('click', shopConfirmYes);
+      document.getElementById('shop-confirm').addEventListener('click', e => { if (e.target.id === 'shop-confirm' && performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
+
+      /* taps and swipes on the 3D view: tap an item to select it, tap the selected one to buy; swipe to browse */
+      const _shopRay = new THREE.Raycaster(), _shopNdc = new THREE.Vector2();
+      let shopPtr = null;
+      function shopTapAt(cx, cy) {
+        const r = renderer.domElement.getBoundingClientRect();
+        _shopNdc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+        _shopRay.setFromCamera(_shopNdc, camera);
+        const hits = _shopRay.intersectObjects(shopBrowse.group.children, true).filter(h => h.object.userData && h.object.userData.hit);
+        if (!hits.length) return;
+        const slot = hits[0].object.userData.slot;
+        if (slot === shopBrowse.idx) shopActivate(); else shopSelect(slot);
+      }
+      window.addEventListener('pointerdown', e => {
+        if (!shopBrowse.active || !shopBrowse.group || shopBrowse.pending || gamePause.on) return;
+        if (e.target.closest && e.target.closest('#pause-overlay, #start-overlay, #rescue-overlay, #shop-ui button, #shop-card, #shop-confirm, #menu-drawer, .modal-backdrop, .sleek-menu-btn')) return;
+        shopPtr = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
+      }, true);
+      window.addEventListener('pointerup', e => {
+        if (!shopPtr || e.pointerId !== shopPtr.id) return;
+        const p = shopPtr; shopPtr = null;
+        if (!shopBrowse.active || shopBrowse.pending) return;
+        const dx = e.clientX - p.x, dy = e.clientY - p.y;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) shopSelect(shopBrowse.idx + (dx < 0 ? 1 : -1));
+        else if (Math.hypot(dx, dy) < 14 && performance.now() - p.t < 700) shopTapAt(e.clientX, e.clientY);
+      }, true);
+      window.addEventListener('pointercancel', () => { shopPtr = null; }, true);
+      window.addEventListener('keydown', e => {
+        if (!shopBrowse.active) return;
+        if (shopBrowse.pending) {
+          if (e.code === 'Escape') { closeShopConfirm(); e.stopImmediatePropagation(); }
+          else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); shopConfirmYes(); e.stopImmediatePropagation(); }
+          return;
+        }
+        if (e.code === 'Escape') { leaveShopBrowse(); e.stopImmediatePropagation(); }
+        else if (e.code === 'ArrowLeft' || e.code === 'KeyA') { shopSelect(shopBrowse.idx - 1); e.stopImmediatePropagation(); }
+        else if (e.code === 'ArrowRight' || e.code === 'KeyD') { shopSelect(shopBrowse.idx + 1); e.stopImmediatePropagation(); }
+        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); shopActivate(); e.stopImmediatePropagation(); }
+        else if (/^Digit[1-4]$/.test(e.code)) { const t = SHOP_KINDS[shopBrowse.kind].tabs[+e.code.slice(5) - 1]; if (t) setShopTab(t[0]); e.stopImmediatePropagation(); }
+      }, true);
+      window.addEventListener('resize', () => { if (shopBrowse.active) shopUiRender(); });
 
       function processEcoCleanupReward(soldItems) {
         const junkItems = soldItems.filter(i => i.category === 'Junk' || i.category === 'Flora');
@@ -11256,45 +11366,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
       }
 
-      document.getElementById('btn-sell-all').addEventListener('click', () => {
-        if (state.bucket.length === 0) return;
-        const soldCopy = [...state.bucket];
-        const total = soldCopy.reduce((s, i) => s + sellValue(i), 0);
-        const count = soldCopy.length;
-        state.cash = +(state.cash + total).toFixed(2);
-        bumpStat('earned', total);
-        state.bucket = [];
-        sfx.playCoin();
-        processEcoCleanupReward(soldCopy);
-        checkAchievements();
-        saveGame();
-        rebuildPierBucketVisual();
-        renderShop();
-        updateHUD();
-        showToast(`Sold ${count} item(s) for $${total.toFixed(2)}!`);
-      });
-
-      document.getElementById('btn-refill-fuel').addEventListener('click', () => {
-        const boat = getCurrentBoat();
-        if (state.boatTier === 0) return;
-        const missing = Math.max(0, boat.maxFuel - state.fuel);
-        if (missing <= 0.1) return;
-        const maxAffordableUnits = Math.floor(state.cash / 0.5);
-        const unitsToBuy = Math.min(missing, maxAffordableUnits);
-        if (unitsToBuy <= 0) {
-          showToast('Not enough cash to buy fuel!');
-          return;
-        }
-        const cost = +(unitsToBuy * 0.5).toFixed(2);
-        state.cash = +(state.cash - cost).toFixed(2);
-        state.fuel = +(state.fuel + unitsToBuy).toFixed(1);
-        sfx.playCoin();
-        saveGame();
-        renderShop();
-        updateHUD();
-        showToast(`Refueled +${unitsToBuy.toFixed(1)}u ($${cost.toFixed(2)}).`);
-      });
-
       function performSaveReset() {
         const preservedGender = state.anglerGender || 'male';
         state = defaultSaveState();
@@ -11308,11 +11379,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         applyAnglerGender(state.anglerGender, false);
         applyVfxShader('none', false);
         rebuildPlayerBoatVisual();
-        renderShop();
+        leaveShopBrowse();
         updateHUD();
         showToast('Save data reset to starter gear!');
         document.getElementById('modal-settings').classList.remove('open');
-        document.getElementById('modal-shop').classList.remove('open');
       }
 
       // Two-tap confirmation so a stray tap can never wipe progress.
@@ -11359,7 +11429,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         showToast('New game ready. Pick your angler and start!');
       });
       refreshStartScreen();
-      wireTwoTap(document.getElementById('btn-reset-save'), 'Reset Save', performSaveReset);
       wireTwoTap(document.getElementById('set-reset'), 'Reset', performSaveReset);
 
       function openBucketModal() {
@@ -11849,7 +11918,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         } else if (isNearPierShop()) {
           primaryBtn.classList.add('shop');
           iconEl.textContent = '🏪';
-          labelEl.textContent = 'OPEN SHOP';
+          labelEl.textContent = 'BROWSE';
           proxEl.textContent = '⚓ TACKLE SHOP — PRESS BUTTON TO BUY / SELL';
           proxEl.style.display = 'block';
         } else if (isNearPierBounty()) {
@@ -11903,7 +11972,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const sh = SHORE_SHOPS[shoreShopHere()];
           primaryBtn.classList.add('shop');
           iconEl.textContent = sh.icon;
-          labelEl.textContent = sh.name === 'FISH MARKET' ? 'SELL FISH' : 'OPEN SHOP';
+          labelEl.textContent = sh.name === 'FISH MARKET' ? 'SELL FISH' : 'BROWSE';
           proxEl.style.borderColor = sh.color;
           proxEl.style.color = '#e0f2fe';
           proxEl.textContent = `${sh.title} — PRESS BUTTON`;
@@ -12104,7 +12173,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function updateFirstPersonCamera(dt) {
         const fp = !!settings.firstPerson;
         if (world.headGroup.visible === fp) world.headGroup.visible = !fp;
-        if (!fp) { fpBlend = 0; return; }
+        if (!fp || shopBrowse.active) { if (!fp) fpBlend = 0; return; }
         world.anglerGroup.updateMatrixWorld(true);
         _fpFwd.set(0, 0, -1).applyQuaternion(world.anglerGroup.quaternion);
         _fpFwd.y = 0;
@@ -13292,6 +13361,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function updateSimulation(dt) {
         elapsed += dt;
         updateBountyPapers(dt);
+        updateShopBrowse(dt);
         updateStationPicker(false);
         const zone = getCurrentZone();
         const weather = getWeatherObj();
@@ -14155,11 +14225,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             targetCamPos.copy(_standPos);
             lookGoal.copy(_standLook);
           }
+          if (shopBrowse.active) { shopCameraPose(); targetCamPos.copy(_shPos); lookGoal.copy(_shLook); }
           if (reelLookW > 0.002) lookGoal.lerp(world.fishShadow.position, reelLookW); // look at the fish while it is dragged
           if (!camLookInit) { camLookCur.copy(lookGoal); camLookInit = true; }
-          const lookSmooth = 1 - Math.exp(-(standFocus.stand ? 5.5 : 9) * dt);
+          const lookSmooth = 1 - Math.exp(-(shopBrowse.active ? 4.5 : standFocus.stand ? 5.5 : 9) * dt);
           camLookCur.lerp(lookGoal, lookSmooth);
-          camera.position.lerp(targetCamPos, standFocus.stand ? 1 - Math.exp(-5.0 * dt) : camSmooth);
+          camera.position.lerp(targetCamPos, shopBrowse.active ? 1 - Math.exp(-4.2 * dt) : standFocus.stand ? 1 - Math.exp(-5.0 * dt) : camSmooth);
           camera.lookAt(camLookCur);
         } else {
           const speedZoom = Math.min(1.6, Math.abs(boatVel) * 0.05);
