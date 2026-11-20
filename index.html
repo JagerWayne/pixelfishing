@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.8.0';
+    window.PF_VERSION = '3.9.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -3779,7 +3779,7 @@
           group.add(inner);
 
           // ---------- body ----------
-          const NS = 34, NR = 18;
+          const NS = 48, NR = 24;   // v3.9: smoother body and cleaner pattern edges
           const pos = [], col = [], uvs = [], idx = [];
           const tmp = new THREE.Color();
           for (let i = 0; i <= NS; i++) {
@@ -3821,6 +3821,24 @@
           }
           const body = new THREE.Mesh(bodyGeo, bodyMat);
           inner.add(body);
+          // v3.9: a gill-cover arc and a lateral line, laid just above the skin on both sides
+          {
+            const onSkin = (t, cy, side, lift = 1.025) => {
+              const h = hAt(t), w = wAt(t), cz = Math.sqrt(Math.max(0, 1 - cy * cy)) * side;
+              return new THREE.Vector3(xAt(t), bendAt(t) + cy * h * (cy < 0 ? spec.belly : 1) * lift, cz * w * lift);
+            };
+            const gillMat = new THREE.MeshBasicMaterial({ color: back.clone().multiplyScalar(0.45) });
+            const lineMat = new THREE.MeshBasicMaterial({ color: back.clone().lerp(belly, 0.55) });
+            const tube = H * 0.025 + 0.004;
+            [-1, 1].forEach(side => {
+              const gill = [];
+              for (let k = 0; k <= 8; k++) { const cy = -0.55 + k / 8 * 1.1; gill.push(onSkin(0.78 - 0.03 * (1 - Math.abs(cy)), cy, side)); }
+              inner.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(gill), 12, tube, 4, false), gillMat));
+              const lat = [];
+              for (let k = 0; k <= 12; k++) { const t = 0.12 + k / 12 * 0.62; lat.push(onSkin(t, 0.12 + 0.12 * Math.sin(t * Math.PI), side)); }
+              inner.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lat), 20, tube * 0.6, 3, false), lineMat));
+            });
+          }
           // tail cap
           {
             const capPos = [], capIdx = [];
@@ -3847,6 +3865,9 @@
             for (let k = 0; k < p.count; k++) {
               const f = Math.min(1, axisFn(p.getX(k), p.getY(k)) / maxD);
               tmp.copy(finBase).lerp(finTip, f);
+              // fin rays: thin darker lines fanning out from the root
+              const ray = 0.86 + 0.14 * Math.abs(Math.cos(Math.atan2(p.getY(k), p.getX(k)) * 9));
+              tmp.multiplyScalar(f > 0.08 ? ray : 1);
               cs.push(tmp.r, tmp.g, tmp.b);
             }
             g.setAttribute('color', new THREE.Float32BufferAttribute(cs, 3));
@@ -10967,7 +10988,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         coral: [0xf472b6, 0xfb923c, 0xc084fc, 0xf87171, 0xfacc15, 0x2dd4bf].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, flatShading: true }))
       };
       const DG = {
-        rock: new THREE.DodecahedronGeometry(1, 0),
+        rock: WorldBuilder.buildRock(1, 3.7, 0xffffff, 1).geometry,
         blob: new THREE.IcosahedronGeometry(1, 0),
         kelpBlade: new THREE.BoxGeometry(0.16, 1, 0.05),
         grass: new THREE.ConeGeometry(0.07, 1, 4),
@@ -11125,13 +11146,30 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         g.userData.lid = lidPivot; g.userData.chest = true;
         return g;
       }
+      /* a sunken wooden ship lying on its side: keel, ribs, the planks that are left, deck beams, a stem post and a broken
+         mast. Same footprint as before (about 10 x 3.4 m along local X), so its seabed colliders still fit. */
       function buildWreck() {
         const g = new THREE.Group();
-        const hull = mk(DG.box, DM.woodOld, 0, 1.0, 0, 9, 2.0, 3.2); hull.rotation.z = 0.18; g.add(hull);
-        const bow = mk(DG.box, DM.woodOld, 5.0, 1.6, 0, 2.6, 1.8, 2.4); bow.rotation.z = 0.5; g.add(bow);
-        for (let i = 0; i < 4; i++) g.add(mk(DG.box, DM.woodOld, -3 + i * 2.2, 2.3, 1.7 * (i % 2 ? 1 : -1), 0.25, 2.2 + (i % 3) * 0.5, 0.25));
-        const mast = mk(DG.box, DM.woodOld, -0.5, 3.8, 0, 0.3, 6.5, 0.3); mast.rotation.z = -0.5; g.add(mast);
-        const boom = mk(DG.box, DM.woodOld, 1.4, 5.2, 0, 3.4, 0.2, 0.2); boom.rotation.z = -0.4; g.add(boom);
+        const hullG = new THREE.Group();
+        hullG.add(mk(DG.box, DM.woodOld, 0.5, 0.25, 0, 10.2, 0.32, 0.36));                     // keel
+        for (let i = 0; i < 9; i++) {                                                          // ribs
+          const x = -4.0 + i * 1.05, sc = 1 - Math.pow(Math.max(0, (x - 2.5) / 3.5), 2) * 0.55;
+          const rib = new THREE.Mesh(new THREE.TorusGeometry(1.55 * sc, 0.1, 4, 10, Math.PI * (i % 3 === 1 ? 0.75 : 1)), DM.woodOld);
+          rib.rotation.set(0, Math.PI / 2, Math.PI); rib.position.set(x, 1.75 * sc + 0.2, 0); rib.scale.set(1, 1.15, 1);
+          hullG.add(rib);
+        }
+        // planks that survived along the lower side, some broken short
+        for (let k = 0; k < 6; k++) {
+          const a = Math.PI * (0.58 + k * 0.08), len = [9.0, 8.2, 6.5, 7.6, 4.8, 3.2][k];
+          const pl = mk(DG.box, DM.woodOld, -0.2 + (9 - len) * 0.3, 1.95 + Math.cos(a) * 1.6, Math.sin(a) * 1.6 * -1, len, 0.1, 0.36);
+          pl.rotation.x = a - Math.PI / 2; hullG.add(pl);
+        }
+        for (let i = 0; i < 4; i++) hullG.add(mk(DG.box, DM.woodOld, -3 + i * 2.2, 2.6, 0, 0.22, 0.22, 3.0));   // deck beams
+        const stem = mk(DG.box, DM.woodOld, 5.5, 1.7, 0, 0.3, 3.0, 0.3); stem.rotation.z = -0.45; hullG.add(stem);
+        hullG.rotation.x = 0.35;                                                               // lying on its side
+        g.add(hullG);
+        const mast = mk(DG.box, DM.woodOld, -0.5, 3.4, 0.6, 0.3, 5.0, 0.3); mast.rotation.z = -0.9; mast.rotation.x = 0.3; g.add(mast);
+        const yard = mk(DG.box, DM.woodOld, 1.6, 4.4, 0.9, 2.8, 0.18, 0.18); yard.rotation.z = -0.5; g.add(yard);
         g.rotation.y = 0.8;
         return g;
       }

@@ -359,7 +359,7 @@ The script inside `index.html` is organised in labelled sections:
 
 Notes on the models:
 
-- **Fish** are generated from a per-species spec (length, height, width, fin layout, markings and features) and lofted into a smooth body with vertex-colour countershading and a pixel scale texture. They are normalised to fit the catch preview.
+- **Fish** are generated from a per-species spec (length, height, width, fin layout, markings and features) and lofted into a smooth body with vertex-colour countershading, a pixel scale texture, fin rays, a gill arc and a lateral line. They are normalised to fit the catch preview.
 - **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom, extra rows at every paint-band edge for crisp stripes) with four detailed vessels on top. Paint shifts the hue of the hull's vertex colours.
 - **The character** is built from a skin body plus layered clothing shells, driven by a `look` object. It dresses the same animated rig the game already used (body, head, arms, legs), so walking, sitting, casting and reeling are unaffected. The customise screen uses a second rig with its own small renderer.
 - Models keep their footprints and orientation (fronts face +Z, boats point toward -Z), so collisions and interaction ranges do not change when art is updated.
@@ -402,6 +402,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 3.9.0: better fish and underwater props
+- **Fish:** smoother bodies (about twice the polygons) with cleaner pattern edges, fin rays fanning out from the root of every fin, a gill-cover arc and a lateral line on both sides. All 69 catch models still build and fit the catch preview.
+- **Seabed rocks** are lumpy, shaded low-poly rocks instead of twelve-sided shapes.
+- **Shipwrecks** are a ribbed wooden hull lying on its side: keel, ribs, broken planks, deck beams, a stem post and a fallen mast with its yard. They keep the same footprint, so the wreck colliders from v3.5.1 still fit.
+- Version bumped to **v3.9.0**.
 
 ### 2026-11-20, Version 3.8.0: better boats
 - **Smoother hulls:** the lofted hull has almost twice as many sections, and every paint band gets its own edge rows, so the stripes, boot-top and waterline are clean straight lines instead of zigzags. The transom is one flat colour (no more streaks).
