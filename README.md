@@ -111,6 +111,10 @@ A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking som
 ### Boats
 Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
 
+**Your fleet (since v4.4.0).** Every boat you buy is kept. A small **🛥️ Boat Terminal** kiosk stands on the corner of the mooring platform (at the foot of the stairs): walk up to it and press the action button to pick which of your boats is moored there. Each boat keeps **its own fuel tank**, so switching never loses fuel (refuelling at the shop fills the boat that is moored). Buying a new boat adds it to the fleet and moors it. Older saves own every boat up to the one they had, as the shop already showed.
+
+**Reversing:** when the boat goes astern (faster than 0.8 m/s backwards), the chase camera swings round to the bow and looks the way you are moving; in first person the view turns to look back. It swings back once you stop reversing.
+
 You ride each boat at a proper helm, built for the angler's body and checked in first and third person:
 - **Wooden Rowboat:** sit on the stern bench, facing forward, right hand on a tiller arm that swings as you steer.
 - **Fiberglass Skiff:** stand at a padded **leaning post** behind the console; the wheel is on the console's aft face, facing you, with a throttle and chart plotter beside it.
@@ -361,7 +365,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 | Key | Contents |
 |---|---|
-| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, boat paints, the daily streak (`daily`) and more (save format version 2; new fields are validated and old saves load with defaults) |
+| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, boat paints, the daily streak (`daily`), the owned boats (`ownedBoats`) and each boat's fuel (`boatFuel`) and more (save format version 2; new fields are validated and old saves load with defaults) |
 | `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
@@ -463,6 +467,11 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.4.0: boat fleet terminal and a reversing camera
+- **Fleet:** every boat you buy is kept; a new **Boat Terminal** kiosk on the mooring platform lets you choose which one is moored. Each boat has its own fuel tank. New save fields `ownedBoats` and `boatFuel` (validated; older saves own every boat up to their current one).
+- **Reversing camera:** going astern swings the chase camera round to look the way the boat is moving (first person turns to look back).
+- Version bumped to **v4.4.0**.
 
 ### 2026-11-20, Version 4.3.0: game feel, fight styles, daily catch, real boat handling, fixed boats
 - **Landing moment:** a freeze frame, slow motion and the catch leaping out of the water to you, with a rarity splash, camera kick, a rising sting and its name, weight and value floating up, before the catch card.

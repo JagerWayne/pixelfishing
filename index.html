@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.3.0';
+    window.PF_VERSION = '4.4.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1973,6 +1973,21 @@
   </div>
 
   <!-- MODAL 2B: PIER TACKLE TOOLBOX (BAIT SELECTOR) -->
+  <div class="modal-backdrop" id="modal-boats">
+    <div class="pixel-box modal-window" style="width: min(96vw, 520px); border-color: #38bdf8;">
+      <div class="modal-header" style="background: #082f49; border-bottom-color: #38bdf8;">
+        <span class="modal-title" style="color: #bae6fd;">🛥️ BOAT TERMINAL — CHOOSE YOUR BOAT</span>
+        <button class="pixel-btn red" data-close="modal-boats">Close</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 10px;">
+          Every boat you own is kept at the harbor with its own fuel tank. Pick the one to moor at the platform; buy new boats at the Tackle Shop.
+        </div>
+        <div class="upgrade-grid" id="boat-terminal-list"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="modal-toolbox">
     <div class="pixel-box modal-window" style="width: min(96vw, 520px); border-color: #f97316;">
       <div class="modal-header" style="background: #2c1608; border-bottom-color: #f97316;">
@@ -4285,6 +4300,8 @@
          Layers: WALK (the angler on the pier), BOAT (hulls), DIVE (the diver, fish and spear). The models register their
          own colliders where they are built, and the walk, boat and dive code all read from here. */
       const COL = { WALK: 1, BOAT: 2, DIVE: 4 };
+      const BOAT_TERMINAL = { x: -4.06, z: -6.86, useX: -4.15, useZ: -6.35 };   // kiosk on the mooring platform's corner
+
       const Colliders = {
         list: [],
         box(name, x, z, hx, hz, layers, y0 = -400, y1 = 400) { const c = { kind: 'box', name, x, z, hx, hz, y0, y1, layers }; this.list.push(c); return c; },
@@ -6933,6 +6950,34 @@
           addPool(6.55, 1.56, 0.8 + 1.0, 1.9, LIGHT_TUNING.trophy.pool, 0.8);
           // Film camera (8.2, 0.9): its own lamp post
           buildHarborLamp(9.55, 1.56, 1.9, realLights);
+          // Boat terminal: a small kiosk on the mooring platform's corner (screen faces the platform, +Z)
+          {
+            const T = BOAT_TERMINAL, kiosk = new THREE.Group();
+            const steelM = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.4 });
+            const trimM = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, metalness: 0.3, roughness: 0.4 });
+            const base = new THREE.Mesh(ModelKit.roundedBox(0.42, 0.08, 0.32, 0.02), steelM); base.position.y = 0.04;
+            const post = new THREE.Mesh(ModelKit.roundedBox(0.2, 0.86, 0.16, 0.03), steelM); post.position.y = 0.5;
+            const head = new THREE.Group(); head.position.set(0, 1.0, 0.02); head.rotation.x = -0.55;
+            const housing = new THREE.Mesh(ModelKit.roundedBox(0.5, 0.38, 0.08, 0.025), steelM);
+            const sc = document.createElement('canvas'); sc.width = 128; sc.height = 96;
+            const g = sc.getContext('2d');
+            g.fillStyle = '#04223a'; g.fillRect(0, 0, 128, 96);
+            g.fillStyle = '#38bdf8'; g.font = 'bold 18px "Courier New", monospace'; g.textAlign = 'center'; g.fillText('BOATS', 64, 24);
+            g.fillStyle = '#e0f2fe'; g.beginPath(); g.moveTo(26, 58); g.lineTo(102, 58); g.lineTo(90, 72); g.lineTo(38, 72); g.closePath(); g.fill();
+            g.fillRect(56, 44, 20, 14); g.fillStyle = '#0ea5e9'; g.fillRect(60, 47, 12, 6);
+            g.strokeStyle = '#38bdf8'; g.lineWidth = 2; g.beginPath(); for (let x = 8; x <= 120; x += 4) g.lineTo(x, 80 + Math.sin(x * 0.2) * 3); g.stroke();
+            const tex = new THREE.CanvasTexture(sc); if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+            const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.3), new THREE.MeshBasicMaterial({ map: tex }));
+            screen.position.z = 0.042;
+            const brim = new THREE.Mesh(ModelKit.roundedBox(0.54, 0.04, 0.16, 0.015), trimM); brim.position.set(0, 0.2, 0.05);
+            head.add(housing, screen, brim);
+            const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 })); beacon.position.y = 1.3;
+            kiosk.add(base, post, head, beacon);
+            kiosk.position.set(T.x, 0.71, T.z);
+            kiosk.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+            scene.add(kiosk);
+            Colliders.box('boat terminal', T.x, T.z, 0.24, 0.18, COL.WALK);
+          }
           // Mooring platform: lantern on the piling
           {
             const glass = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), bulbMat(LIGHT_TUNING.bulbs[1])); glass.position.set(-5.95, 2.3, -4.6); scene.add(glass);
@@ -7954,7 +7999,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let boatYaw = 0;
       let boatVel = 0;
       let lastBumpAt = -10;
-      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0, boatSaveT = 0;
+      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0, boatSaveT = 0, boatCamReverse = false, fpBack = 0;
       let boatPowered = false; // true while the engine is driving the boat (burns fuel)
       /* Where the angler rides on each boat (boat-local metres; the bow points to -Z) and how he holds on while steering.
          y is the height of his feet (or of his seat when `sit`). hands: arm raise (radians) for the left / right arm. */
@@ -8487,6 +8532,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           diveTier: 0,
           spearTier: 0,
           daily: { day: 0, streak: 0, best: 0, codDay: 0, codCount: 0 },
+          ownedBoats: [],
+          boatFuel: {},
           saveVersion: 2
         };
       }
@@ -8745,12 +8792,13 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { title: '🎣 Gear', items: [
           ['Unlock all gear', () => {
             state.rodTier = ROD_TIERS.length; state.boatTier = BOAT_TIERS.length - 1; state.bucketTier = BUCKET_TIERS.length;
+            state.ownedBoats = BOAT_TIERS.filter(b => b.tier > 0).map(b => b.tier); BOAT_TIERS.forEach(b => { if (b.tier) state.boatFuel[b.tier] = b.maxFuel; });
             state.hasLiveBaitCam = true; state.modules = BOAT_MODULES.map(m => m.id); state.fuel = getCurrentBoat().maxFuel;
             state.diveTier = DIVE_GEAR.length - 1; state.spearTier = SPEAR_GUNS.length - 1;
             rebuildPlayerBoatVisual(); cheatDone('🎣 All gear unlocked (incl. best dive gear & rail harpoon)');
           }],
           ['Best rod', () => { state.rodTier = ROD_TIERS.length; rebuildPlayerBoatVisual(); cheatDone('Best rod equipped'); }],
-          ['Best boat', () => { state.boatTier = BOAT_TIERS.length - 1; state.fuel = getCurrentBoat().maxFuel; rebuildPlayerBoatVisual(); cheatDone('Best boat unlocked'); }],
+          ['Best boat', () => { state.boatTier = BOAT_TIERS.length - 1; state.ownedBoats = BOAT_TIERS.filter(b => b.tier > 0).map(b => b.tier); state.fuel = getCurrentBoat().maxFuel; BOAT_TIERS.forEach(b => { if (b.tier) state.boatFuel[b.tier] = b.maxFuel; }); rebuildPlayerBoatVisual(); cheatDone('Every boat unlocked'); }],
           ['Biggest bucket', () => { state.bucketTier = BUCKET_TIERS.length; rebuildPierBucketVisual(); cheatDone('Biggest bucket unlocked'); }],
           ['Refill fuel', () => { state.fuel = getCurrentBoat().maxFuel; cheatDone('⛽ Fuel refilled'); }],
           ['99 of every bait', () => { state.baitStock = { 2: 99, 3: 99, 4: 99 }; state.baitCount = state.baitTier > 1 ? 99 : 0; cheatDone('🪱 Bait stocked'); }]] },
@@ -8913,6 +8961,16 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         out.hasLiveBaitCam = !!src.hasLiveBaitCam;
         out.galleryRewardClaimed = !!src.galleryRewardClaimed;
         out.fuel = num(src.fuel, 0, 0, BOAT_TIERS[out.boatTier].maxFuel);
+        // the fleet: every boat bought (older saves owned every tier up to the one they sailed, as the shop showed)
+        out.ownedBoats = Array.isArray(src.ownedBoats)
+          ? [...new Set(src.ownedBoats.map(Number).filter(t => Number.isInteger(t) && t >= 1 && t < BOAT_TIERS.length))].sort((a, b) => a - b)
+          : BOAT_TIERS.filter(b => b.tier >= 1 && b.tier <= out.boatTier).map(b => b.tier);
+        if (out.boatTier > 0 && !out.ownedBoats.includes(out.boatTier)) { out.ownedBoats.push(out.boatTier); out.ownedBoats.sort((a, b) => a - b); }
+        out.boatFuel = {};
+        out.ownedBoats.forEach(t => {
+          const f = src.boatFuel && typeof src.boatFuel === 'object' ? src.boatFuel[t] : undefined;
+          out.boatFuel[t] = t === out.boatTier ? out.fuel : num(f, BOAT_TIERS[t].maxFuel, 0, BOAT_TIERS[t].maxFuel);
+        });
         out.dayCount = int(src.dayCount, 0, 0, 1e6);
         out.timeOfDay = num(src.timeOfDay, def.timeOfDay, 0, 1);
         out.weather = WEATHER_TYPES.some(w => w.id === src.weather) ? src.weather : 'CLEAR';
@@ -9112,7 +9170,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearPierCamera() { return nearSpot(8.2, 0.9, 1.45); }
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(1.55, -7.6, 1.25); }
-      function isNearMooredBoat() { return nearSpot(-5.2, -5.6, 1.4); }
+      function isNearMooredBoat() { return nearSpot(-5.2, -5.6, 1.4) && !isNearBoatTerminal(); }
+      function isNearBoatTerminal() { return nearSpot(BOAT_TERMINAL.useX, BOAT_TERMINAL.useZ, 0.72); }
 
       function isAtPierWaterEdge() {
         // Only the far tip of the pier is a fishing spot; the sides are railed off.
@@ -9158,6 +9217,53 @@ pierBucketMesh = replaceSceneMesh(scene, pierBucketMesh, WorldBuilder.buildPierB
           }
           col.needsUpdate = true;
         });
+      }
+
+      /* ---- Boat terminal: pick which owned boat is moored at the platform ---- */
+      const BOAT_ICONS = { 1: '🛶', 2: '🚤', 3: '🚢', 4: '🛥️' };
+      function openBoatTerminal() {
+        renderBoatTerminal();
+        document.getElementById('modal-boats').classList.add('open');
+        sfx.playSonarPing && sfx.playSonarPing();
+      }
+      function renderBoatTerminal() {
+        const host = document.getElementById('boat-terminal-list');
+        host.innerHTML = '';
+        BOAT_TIERS.filter(b => b.tier > 0).forEach(b => {
+          const owned = state.ownedBoats.includes(b.tier), active = state.boatTier === b.tier;
+          const fuel = active ? state.fuel : (state.boatFuel[b.tier] ?? b.maxFuel);
+          const pct = Math.round(100 * fuel / b.maxFuel);
+          const card = document.createElement('div');
+          card.className = `shop-card ${active ? 'equipped' : ''}`;
+          if (!owned) card.style.opacity = '0.5';
+          card.innerHTML = `
+            <div>
+              <div class="card-title"><span>${BOAT_ICONS[b.tier]} ${b.name}</span><span style="color:${owned ? '#4ade80' : '#94a3b8'};">${active ? 'MOORED' : owned ? 'OWNED' : '$' + b.cost.toLocaleString()}</span></div>
+              <div class="card-stats">Top speed: <b>${b.speed} m/s</b> • Reaches: <b>Zone ${b.maxZone}</b><br/>${owned
+                ? `Fuel: <b>${fuel.toFixed(0)} / ${b.maxFuel}</b> <span style="display:inline-block; width:70px; height:7px; background:#0f172a; border:1px solid #475569; vertical-align:middle;"><span style="display:block; height:100%; width:${pct}%; background:${pct > 30 ? '#4ade80' : '#f87171'};"></span></span>`
+                : 'Not owned yet: buy it at the Tackle Shop.'}</div>
+            </div>`;
+          const btn = document.createElement('button');
+          btn.className = active ? 'pixel-btn green' : 'pixel-btn gold';
+          btn.textContent = active ? 'In use' : owned ? 'Use this boat' : 'Locked';
+          btn.disabled = active || !owned;
+          if (owned && !active) btn.onclick = () => selectBoat(b.tier);
+          card.appendChild(btn);
+          host.appendChild(card);
+        });
+      }
+      function selectBoat(tier) {
+        if (onBoat || !state.ownedBoats.includes(tier) || state.boatTier === tier) return;
+        if (state.boatTier > 0) state.boatFuel[state.boatTier] = state.fuel;
+        state.boatTier = tier;
+        state.fuel = Math.min(BOAT_TIERS[tier].maxFuel, state.boatFuel[tier] ?? BOAT_TIERS[tier].maxFuel);
+        rebuildPlayerBoatVisual();
+        saveGame();
+        updateHUD();
+        renderBoatTerminal();
+        sfx.playCoin();
+        vfx.spawnSplash(new THREE.Vector3(-7.6, 0.1, -5.6), 18, 0xe0f2fe, 3);
+        showToast(`${BOAT_ICONS[tier]} ${BOAT_TIERS[tier].name} is now moored at the platform.`);
       }
 
       function rebuildPlayerBoatVisual() {
@@ -9509,6 +9615,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
             openBucketModal();
+            return;
+          }
+          if (isNearBoatTerminal()) {
+            isHoldingAction = false;
+            actionPointerId = null;
+            primaryBtn.classList.remove('pressed');
+            openBoatTerminal();
             return;
           }
           if (isNearMooredBoat()) {
@@ -10475,7 +10588,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           });
         } else if (activeShopTab === 'boats') {
           BOAT_TIERS.forEach(b => {
-            const owned = state.boatTier >= b.tier;
+            const owned = b.tier === 0 || (state.ownedBoats || []).includes(b.tier);
             const card = document.createElement('div');
             card.className = `shop-card ${state.boatTier === b.tier ? 'equipped' : ''}`;
             card.innerHTML = `
@@ -10496,7 +10609,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               btn.textContent = 'Active Vessel';
               btn.disabled = true;
             } else if (owned) {
-              btn.textContent = 'Owned';
+              btn.textContent = b.tier === 0 ? 'Pier' : 'Owned · switch at the 🛥️ Boat Terminal';
               btn.disabled = true;
             } else {
               btn.textContent = `Buy Boat ($${b.cost})`;
@@ -10504,14 +10617,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               btn.onclick = () => {
                 if (state.cash >= b.cost) {
                   state.cash = +(state.cash - b.cost).toFixed(2);
+                  if (state.boatTier > 0) state.boatFuel[state.boatTier] = state.fuel;   // the old boat keeps its tank
+                  if (!state.ownedBoats.includes(b.tier)) { state.ownedBoats.push(b.tier); state.ownedBoats.sort((x, y) => x - y); }
                   state.boatTier = b.tier;
                   state.fuel = b.maxFuel;
+                  state.boatFuel[b.tier] = b.maxFuel;
                   sfx.playCoin();
                   saveGame();
                   rebuildPlayerBoatVisual();
                   renderShop();
                   updateHUD();
-                  showToast(`Bought ${b.name}! Walk to the port side pier to sail.`);
+                  showToast(`Bought ${b.name}! It is moored at the platform; switch boats at the 🛥️ Boat Terminal there.`);
                 }
               };
             }
@@ -11417,6 +11533,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           labelEl.textContent = 'OPEN BUCKET';
           proxEl.textContent = `🪣 ${BUCKET_TIERS[state.bucketTier - 1].name.toUpperCase()} — PRESS [T] OR BUTTON TO INSPECT`;
           proxEl.style.display = 'block';
+        } else if (isNearBoatTerminal()) {
+          primaryBtn.classList.add('shop');
+          iconEl.textContent = '🛥️';
+          labelEl.textContent = 'BOATS';
+          proxEl.style.borderColor = '#38bdf8';
+          proxEl.style.color = '#bae6fd';
+          proxEl.textContent = `🛥️ BOAT TERMINAL — ${(state.ownedBoats || []).length} BOAT${(state.ownedBoats || []).length === 1 ? '' : 'S'} OWNED — PRESS BUTTON TO CHOOSE`;
+          proxEl.style.display = 'block';
         } else if (isNearMooredBoat()) {
           primaryBtn.classList.add('sail');
           iconEl.textContent = '⛵';
@@ -11581,7 +11705,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       /* First person: the camera sits in the player's head (head model hidden so it never blocks the view),
          looks where the player faces, follows the line while fishing, and looks at a stand once you idle in front of it. */
-      const _fpHead = new THREE.Vector3(), _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3();
+      const _fpHead = new THREE.Vector3(), _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3(), _fpUp = new THREE.Vector3(0, 1, 0);
       let fpBlend = 0, fpEyeY = null;
       function updateFirstPersonCamera(dt) {
         const fp = !!settings.firstPerson;
@@ -11601,6 +11725,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const eyeLocalY = fpEyeY;
         camera.position.copy(world.anglerGroup.position).addScaledVector(_fpFwd, 0.14);
         camera.position.y += eyeLocalY + 0.03;
+        // going astern on a boat: turn the view round to look where the boat is going
+        fpBack += ((onBoat && boatCamReverse ? 1 : 0) - fpBack) * (1 - Math.exp(-4 * dt));
+        if (fpBack > 0.001) _fpFwd.applyAxisAngle(_fpUp, Math.PI * fpBack * fpBack * (3 - 2 * fpBack));
 
         if (standFocus.stand && !onBoat) {
           _fpGoal.set(standFocus.stand.cx, standFocus.stand.cy, standFocus.stand.cz);
@@ -13114,6 +13241,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             targetYaw = Math.atan2(-(1.55 - playerX), -(-7.6 - playerZ));
           } else if (isNearPierBucket()) {
             targetYaw = Math.atan2(-(-1.55 - playerX), -(-7.6 - playerZ));
+          } else if (isNearBoatTerminal()) {
+            targetYaw = Math.atan2(-(BOAT_TERMINAL.x - playerX), -(BOAT_TERMINAL.z - playerZ));
           } else if (isNearMooredBoat()) {
             targetYaw = Math.atan2(-(-7.6 - playerX), -(-5.6 - playerZ));
           } else if (isAtPierWaterEdge()) {
@@ -13617,8 +13746,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           camera.lookAt(camLookCur);
         } else {
           const speedZoom = Math.min(1.6, Math.abs(boatVel) * 0.05);
-          // Chase camera: it swings round behind the boat with a short lag so turns feel smooth
-          const yawErr = Math.atan2(Math.sin(boatYaw - boatCamYaw), Math.cos(boatYaw - boatCamYaw));
+          // Chase camera: it swings round behind the boat with a short lag so turns feel smooth.
+          // Going astern it flips round to the bow and looks the way the boat is moving.
+          if (mode === 'BOAT_DRIVING' && boatVel < -0.8) boatCamReverse = true;
+          else if (boatVel > -0.15 || mode !== 'BOAT_DRIVING') boatCamReverse = false;
+          const camGoalYaw = boatYaw + (boatCamReverse ? Math.PI : 0);
+          const yawErr = Math.atan2(Math.sin(camGoalYaw - boatCamYaw), Math.cos(camGoalYaw - boatCamYaw));
           boatCamYaw += yawErr * (1 - Math.exp(-3.5 * dt));
           const backOffset = _camV3.set(
             Math.sin(boatCamYaw) * (9.5 + speedZoom),
