@@ -5452,6 +5452,9 @@
             });
 
             // mooring bollards at the pier tip with rope coils
+            [-2.2, 2.2].forEach(x => Colliders.circle('bollard', x, -9.6, 0.22, COL.WALK));
+            Colliders.box('rod rack', -2.3, -9.05, 0.12, 0.4, COL.WALK);
+            [-2.45, 2.45].forEach(x => Colliders.circle('bunting pole', x, 0.3, 0.1, COL.WALK));
             [-2.2, 2.2].forEach(x => {
               K.cyl(pierGroup, 0.12, 0.16, 0.34, K.iron, x, deckY + 0.17, -9.6, 10);
               K.cyl(pierGroup, 0.19, 0.12, 0.08, K.iron, x, deckY + 0.38, -9.6, 10);
@@ -5515,7 +5518,7 @@
               });
               const cr = K.box(st, 0.46, 0.34, 0.4, K.lightWood, 0.12, 0.7, -0.05); cr.rotation.y = 0.4 + seed;
               st.position.set(x, deckY, z); st.rotation.y = seed; pierGroup.add(st);
-              Colliders.circle('barrels', x + 0.18, z - 0.07, 0.52, COL.WALK);
+              Colliders.circle('barrels', x + 0.15, z - 0.05, 0.66, COL.WALK);
             };
             barrelStack(9.15, 2.75, 0.3); barrelStack(-9.25, 3.5, -0.5);
 
@@ -5811,6 +5814,7 @@
           };
           const ironMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.32, flatShading: true });
           const buildHarborLamp = (lx, ly, lz, withLight = true) => {
+            Colliders.circle('lamp post', lx, lz, 0.22, COL.WALK);
             const lamp = new THREE.Group();
             lamp.position.set(lx, ly, lz);
             const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.26, 0.24, 8), ironMat);
@@ -11843,7 +11847,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             const getPierXBounds = zVal => {
               if (zVal >= 4.6) return [-9.3, 9.3];   // the beach boulders start at |x| 9.57
               if (zVal >= 0.45) return [-9.8, 9.8];
-              if (zVal <= -4.45 && zVal >= -6.75) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
+              if (zVal <= -4.65 && zVal >= -6.55) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
               return [-2.05, 2.05];
             };
 
@@ -11855,25 +11859,25 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             // BEFORE narrowing X to the pier width, otherwise a step past the platform edge snaps the player
             // sideways onto the pier.
             if (playerX < -2.05 && playerZ < 0.4) {
-              nextZ = THREE.MathUtils.clamp(nextZ, -6.75, -4.45);
+              nextZ = THREE.MathUtils.clamp(nextZ, -6.55, -4.65);   // stay on the treads, clear of the stringers
             }
 
             const [initMinX, initMaxX] = getPierXBounds(nextZ);
             let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
 
-            // Prevent walking across the side railing gap onto the boat stairs before Z = -4.45
+            // Prevent walking across the side railing gap onto the boat stairs before Z = -4.65
             // (only on the pier deck itself; the boardwalk at Z >= 0.45 is wide open so players can reach the shop)
-            if (nextX < -2.05 && nextZ > -4.45 && nextZ < 0.45) {
+            if (nextX < -2.05 && nextZ > -4.65 && nextZ < 0.45) {
               if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -4.45;
+              else nextZ = -4.65;
             }
-            if (nextX < -2.05 && nextZ < -6.75) {
+            if (nextX < -2.05 && nextZ < -6.55) {
               if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -6.75;
+              else nextZ = -6.55;
             }
-            if (nextX < -2.05 && nextZ < -6.85) {
+            if (nextX < -2.05 && nextZ < -6.55) {
               if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -6.85;
+              else nextZ = -6.55;
             }
 
             // Solid collision against the boardwalk sea-edge railings (Z = 0.12, |X| > 2.05)
@@ -11894,7 +11898,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 if (cameFromSide && !cameFromEnd) resolveX = true;
                 else if (cameFromEnd && !cameFromSide) resolveX = false;
                 else resolveX = (hx - Math.abs(dx)) < (hz - Math.abs(dz));
-                if (resolveX) nextX = c.x + (Math.sign(dx) || Math.sign(prevX - c.x) || 1) * hx;
+                // never push sideways through the pier rail: if leaving by X would cross the walkable edge, leave by Z
+                const outX = c.x + (Math.sign(dx) || Math.sign(prevX - c.x) || 1) * hx;
+                const [bMinX, bMaxX] = getPierXBounds(nextZ);
+                if (resolveX && (outX < bMinX - 1e-3 || outX > bMaxX + 1e-3)) resolveX = false;
+                if (resolveX) nextX = outX;
                 else nextZ = c.z + (Math.sign(dz) || Math.sign(prevZ - c.z) || 1) * hz;
               } else {
                 const dx = nextX - c.x, dz = nextZ - c.z, d = Math.hypot(dx, dz), m = c.r + BODY;
