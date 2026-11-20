@@ -425,6 +425,26 @@
     }
     .fuel-alert { border-color: #ef4444 !important; animation: pulseWarn 0.8s infinite alternate; }
 
+    /* Compass tape: the heading you are looking at; North is out to sea (-Z), the island is to the South */
+    #hud-compass {
+      pointer-events: none;
+      position: relative;
+      width: 200px;
+      height: 30px;
+      overflow: hidden;
+      background: rgba(10, 18, 32, 0.82);
+      border: 2px solid #475569;
+      box-shadow: 0 0 0 2px #070c14;
+      border-radius: 4px;
+      align-self: flex-start;
+    }
+    #hud-compass .cmp-mark { position: absolute; top: 2px; transform: translateX(-50%); font-size: 12px; font-weight: 900; color: #cbd5e1; white-space: nowrap; }
+    #hud-compass .cmp-mark.card { color: #f8fafc; font-size: 13px; }
+    #hud-compass .cmp-mark.north { color: #f87171; }
+    #hud-compass .cmp-tick { position: absolute; bottom: 2px; width: 2px; height: 6px; background: #64748b; transform: translateX(-50%); }
+    #hud-compass .cmp-needle { position: absolute; left: 50%; top: 17px; bottom: 0; width: 2px; background: #facc15; transform: translateX(-50%); opacity: 0.85; }
+    #hud-compass .cmp-deg { position: absolute; right: 3px; bottom: 1px; font-size: 12px; color: #fde68a; font-weight: bold; background: rgba(10, 18, 32, 0.95); padding: 0 2px; z-index: 2; }
+
     /* Sea event pill (treasure / boss) */
     #hud-event-pill {
       pointer-events: none;
@@ -1515,6 +1535,7 @@
       </div>
 
       <div class="hud-stack">
+        <div id="hud-compass" aria-hidden="true"><div class="cmp-needle"></div><span class="cmp-deg" id="hud-compass-deg">0°</span></div>
         <div class="hud-zone-pill">
           <span id="hud-zone">1. Shallow Cove</span>
           <span style="color:#94a3b8;">•</span>
@@ -3778,7 +3799,7 @@
             r.L.thigh.rotation.z += 0.045 * sh; r.R.thigh.rotation.z += 0.045 * sh;
             // stretch: arms up overhead, lean back, then relax
             this.stretchTimer -= dt;
-            if (this.stretchT < 0 && this.stretchTimer <= 0 && this.still > 6) { this.stretchT = 0; this.stretchTimer = 22 + Math.random() * 20; }
+            if (this.stretchT < 0 && this.stretchTimer <= 0 && this.still > 6 && !(st.rest && st.rest.w > 0.1)) { this.stretchT = 0; this.stretchTimer = 22 + Math.random() * 20; }
           }
           if (this.stretchT >= 0) {
             this.stretchT += dt;
@@ -3801,7 +3822,7 @@
             this.look.ty = glance ? 0 : (Math.random() - 0.5) * 1.3;
             this.look.tp = glance ? -0.12 : (Math.random() - 0.5) * 0.3;
           }
-          const lookW = idle * (this.handW > 0.5 ? 0.25 : 1);
+          const lookW = idle * (this.handW > 0.5 ? 0.25 : 1) * (st.rest && st.rest.w > 0.1 ? 0.3 : 1);
           this.look.yaw = damp(this.look.yaw, this.look.ty * lookW + (st.pull || 0) * -0.3, 3);
           this.look.pitch = damp(this.look.pitch, this.look.tp * lookW, 3);
           r.neck.rotation.y += this.look.yaw * 0.35; r.head.rotation.y += this.look.yaw * 0.65;
@@ -3821,6 +3842,29 @@
               S.foot.rotation.x = THREE.MathUtils.lerp(S.foot.rotation.x, -0.05, sit);
             });
             r.spine.rotation.x += 0.06 * sit;
+          }
+
+          // ---- rest poses: leaning back on a bench (legs cross now and then), or leaning on the railing gazing at the sea ----
+          const rest = st.rest;
+          if (rest && rest.w > 0.001) {
+            const w = rest.w;
+            if (rest.kind === 'bench') {
+              r.spine.rotation.x += 0.14 * w; r.neck.rotation.x -= 0.1 * w;
+              this.crossT = (this.crossT == null ? 6 : this.crossT) - dt;
+              if (this.crossT <= 0) { this.crossT = 7 + Math.random() * 8; this.crossGoal = this.crossGoal ? 0 : 1; }
+              this.cross = damp(this.cross || 0, (this.crossGoal || 0) * w, 1.4);
+              const c = this.cross;
+              r.R.thigh.rotation.x += 0.2 * c; r.R.thigh.rotation.z -= 0.3 * c; r.R.shin.rotation.x += 0.45 * c; r.R.foot.rotation.x -= 0.2 * c;
+              r.L.thigh.rotation.z -= 0.05 * c;
+            } else if (rest.kind === 'rail') {
+              r.hips.position.z += 0.13 * w;
+              r.spine.rotation.x -= 0.3 * w; r.chest.rotation.x -= 0.14 * w;
+              r.neck.rotation.x += 0.2 * w; r.head.rotation.x -= (0.1 + 0.12 * Math.max(0, Math.sin(t * 0.21))) * w;
+              r.head.rotation.y += 0.35 * Math.sin(t * 0.23) * w;
+              // the right foot crosses behind the left, toe down
+              r.R.thigh.rotation.x -= 0.06 * w; r.R.thigh.rotation.z -= 0.13 * w; r.R.shin.rotation.x -= 0.28 * w; r.R.foot.rotation.x -= 0.35 * w;
+              r.L.thigh.rotation.x += 0.05 * w;
+            }
           }
 
           // ---- boat sway: the body leans against the roll ----
@@ -4998,6 +5042,19 @@
               group.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, radius, 6, false), mat));
             });
           };
+          // Helm wheel: a tilted pivot facing aft (toward the driver) with a spinning rim, spokes and hub.
+          // userData.helm.spin turns with steering; the hands are put on its rim every frame.
+          const makeWheel = (x, y, z, r, tilt) => {
+            const piv = new THREE.Group(); piv.position.set(x, y, z); piv.rotation.x = tilt; group.add(piv);
+            const spin = new THREE.Group(); piv.add(spin);
+            const rimM = M(0x111827, 0.5), hubM = M(0xcbd5e1, 0.3, 0.8);
+            spin.add(new THREE.Mesh(new THREE.TorusGeometry(r, 0.018, 6, 22), rimM));
+            for (let k = 0; k < 3; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(r * 2, 0.018, 0.012), hubM); sp.rotation.z = k * Math.PI / 3; spin.add(sp); }
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 10), hubM); hub.rotation.x = Math.PI / 2; spin.add(hub);
+            const col = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.03, 0.18, 8), M(0x334155, 0.5, 0.3)); col.rotation.x = Math.PI / 2; col.position.z = -0.1; piv.add(col);
+            group.userData.helm = { kind: 'wheel', spin, r };
+            return piv;
+          };
           const outboard = (x, y, z, cowl, leg) => {
             const o = new THREE.Group();
             const cow = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.5, 0.58), M(cowl, 0.4, 0.2)); cow.position.y = 0.55;
@@ -5031,7 +5088,15 @@
             const rope = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 6, 14), M(0xa8845a, 0.95)); rope.rotation.x = Math.PI / 2; rope.position.set(0.4, 0.07, -1.6); group.add(rope);
             const lan = cyl(0.07, 0.07, 0.16, M(0xfacc15, 0.4, 0.5, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.5 }), -0.5, 0.52, -1.35, 8);
             outboard(0, 0.52, 2.45, 0x64748b, 0x475569);
-            const tiller = cyl(0.025, 0.025, 0.9, trim, 0, 0.85, 2.0, 6); tiller.rotation.x = 1.2;
+            {
+              const piv = new THREE.Group(); piv.position.set(0, 0.9, 2.3); group.add(piv);
+              const dir = new THREE.Vector3(0.36, -0.12, -0.92).normalize(), len = 0.72;
+              const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.028, len, 6), trim);
+              arm.position.copy(dir).multiplyScalar(len / 2); arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir); piv.add(arm);
+              const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.13, 8), M(0x111827, 0.7));
+              grip.position.copy(dir).multiplyScalar(len + 0.04); grip.quaternion.copy(arm.quaternion); piv.add(grip);
+              group.userData.helm = { kind: 'tiller', pivot: piv, grip: dir.clone().multiplyScalar(len + 0.02) };
+            }
             // ---- v3.8 detail pass: steamed ribs inside the hull, oarlocks, a bow painter and a bailer ----
             for (let i = 0; i < 9; i++) {
               const t = 0.14 + i * 0.085, z = -2.3 + t * 4.6, hw = hull.halfW(t), top = hull.sheerY(t), bot = hull.keelY(t) + 0.08;
@@ -5059,12 +5124,17 @@
             const conTop = box(0.9, 0.06, 0.84, blue, 0, 1.17, -0.55);
             const screen = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.5, 0.03), glass); screen.position.set(0, 1.5, -0.9); screen.rotation.x = -0.3; group.add(screen);
             [-0.43, 0.43].forEach(x => box(0.03, 0.5, 0.03, steel, x, 1.5, -0.9).rotation.x = -0.3);
-            const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 6, 14), M(0x111827, 0.6)); wheel.position.set(0, 1.0, -0.88); wheel.rotation.x = -0.6; group.add(wheel);
-            box(0.4, 0.1, 0.02, M(0x0f172a, 0.3, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.35 }), 0, 0.95, -0.93);
+            makeWheel(0, 1.04, -0.06, 0.15, -0.5);                                   // wheel on the aft face, toward the driver
+            box(0.34, 0.12, 0.03, M(0x0f172a, 0.3, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.35 }), -0.2, 1.08, -0.14);   // chart plotter
+            { const th = box(0.04, 0.18, 0.04, steel, 0.32, 1.22, -0.12); th.rotation.x = -0.4; cyl(0.03, 0.03, 0.05, M(0x111827, 0.6), 0.32, 1.31, -0.08, 8); }   // throttle
+            // leaning post: frame, padded bolster and a footrest
+            [-0.3, 0.3].forEach(x => box(0.05, 0.85, 0.05, steel, x, 0.55, 0.66));
+            box(0.75, 0.24, 0.18, M(0x1d4ed8, 0.75), 0, 1.02, 0.66);
+            box(0.66, 0.04, 0.05, steel, 0, 0.3, 0.6);
             // bow rail & cleat, cooler seat, rod holders, light
             const bowPts = [-1, 1].map(s => new THREE.Vector3(s * 0.62, 0.9, -2.0)); box(1.24, 0.05, 0.05, steel, 0, 0.98, -2.1);
             [-0.62, 0.62].forEach(x => cyl(0.025, 0.025, 0.45, steel, x, 0.78, -2.1, 6));
-            box(0.9, 0.42, 0.5, blue, 0, 0.3, 0.9); box(0.92, 0.05, 0.52, white, 0, 0.55, 0.9);
+            box(0.9, 0.42, 0.5, blue, 0, 0.3, 1.55); box(0.92, 0.05, 0.52, white, 0, 0.55, 1.55);
             [-1, 1].forEach(s => [-0.2, 1.0].forEach(z => { const h = cyl(0.05, 0.05, 0.3, steel, s * hull.halfW((z + 3) / 6) * 0.98, 0.95, z, 8); h.rotation.z = -s * 0.4; }));
             [-1, 1].forEach(s => cyl(0.045, 0.045, 0.1, M(s > 0 ? 0x16a34a : 0xdc2626, 0.4, 0, { emissive: new THREE.Color(s > 0 ? 0x16a34a : 0xdc2626), emissiveIntensity: 0.6 }), s * 0.45, 1.0, -2.2, 8));
             outboard(0, 0.9, 3.15, 0x111827, 0x94a3b8);
@@ -5093,17 +5163,31 @@
             box(2.5, 0.06, 6.6, M(0x78716c, 0.9), 0, 0.5, 0.8);
             box(2.3, 0.5, 1.6, M(0x1e3a8a, 0.5), 0, 0.75, -2.0); // forecastle
             // wheelhouse + windows + roof + radar
-            const wh = box(2.0, 1.5, 2.0, white, 0, 1.55, -1.9);
+            // open-backed wheelhouse: front wall with window openings, two side walls and a floor (the back is open)
+            box(2.0, 0.98, 0.06, white, 0, 1.29, -2.87);
+            box(2.0, 0.06, 0.06, white, 0, 2.27, -2.87);
+            [-0.97, -0.3, 0.3, 0.97].forEach(x => box(0.06, 0.47, 0.06, white, x, 2.015, -2.87));
+            [-1, 1].forEach(sd => box(0.06, 1.5, 2.0, white, sd * 0.97, 1.55, -1.9));
+            box(1.9, 0.05, 1.9, M(0x78716c, 0.9), 0, 1.02, -1.9);
+            // helm console, wheel and a helm chair
+            box(1.5, 0.8, 0.36, darkM, 0, 1.42, -2.62);
+            box(1.5, 0.05, 0.4, M(0x111827, 0.5), 0, 1.84, -2.6);
+            box(0.5, 0.16, 0.03, M(0x0b1220, 0.2, 0.3, { emissive: new THREE.Color(0x22c55e), emissiveIntensity: 0.4 }), 0.42, 1.7, -2.44);
+            makeWheel(0, 1.72, -2.36, 0.17, -0.45);
+            cyl(0.05, 0.08, 0.4, steel, 0, 1.22, -1.92, 10);
+            box(0.52, 0.1, 0.5, M(0x1e3a8a, 0.7), 0, 1.43, -1.94);
+            box(0.52, 0.55, 0.08, M(0x1e3a8a, 0.7), 0, 1.76, -1.68);
+            [-1, 1].forEach(sd => box(0.06, 0.05, 0.36, steel, sd * 0.27, 1.6, -1.9));
             box(2.2, 0.12, 2.2, red, 0, 2.35, -1.9);
-            [-0.6, 0, 0.6].forEach(x => box(0.45, 0.45, 0.04, glassM, x, 1.8, -2.92));
+            { const glassT = M(0x9bd8f5, 0.05, 0.2, { transparent: true, opacity: 0.22, depthWrite: false }); [-0.635, 0, 0.635].forEach(x => box(0.6, 0.47, 0.02, glassT, x, 2.015, -2.88)); }
             [-1, 1].forEach(s => [-2.3, -1.6].forEach(z => box(0.04, 0.4, 0.4, glassM, s * 1.01, 1.8, z)));
             const radarBase = cyl(0.05, 0.05, 0.3, steel, 0.5, 2.55, -1.9, 6);
             box(0.9, 0.06, 0.12, steel, 0.5, 2.75, -1.9);
             // funnel, mast with crow's nest and rigging
             const funnel = cyl(0.32, 0.38, 1.0, red, 0, 2.95, -1.0, 12);
             cyl(0.33, 0.33, 0.18, M(0x111827, 0.7), 0, 3.5, -1.0, 12);
-            cyl(0.06, 0.08, 4.2, steel, 0, 3.4, -2.6, 8);
-            cyl(0.22, 0.22, 0.28, yellow, 0, 4.6, -2.6, 8);
+            cyl(0.06, 0.08, 4.2, steel, 0.75, 3.4, -3.3, 8);
+            cyl(0.22, 0.22, 0.28, yellow, 0.75, 4.6, -3.3, 8);
             [-1, 1].forEach(s => { const stay = cyl(0.012, 0.012, 4.4, darkM, s * 0.8, 2.9, -1.5, 4); stay.rotation.z = s * 0.3; stay.rotation.x = 0.25; });
             // nav lights
             [[-1, 0xdc2626], [1, 0x16a34a]].forEach(([s, c]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: c })); l.position.set(s * 1.05, 2.1, -2.7); group.add(l); });
@@ -5121,7 +5205,7 @@
             [[1.1, -0.9], [1.2, -0.3]].forEach(([x, z]) => cyl(0.26, 0.26, 0.6, M(0x1d4ed8, 0.6), x, 0.83, z, 12));
             const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.07, 8, 16), M(0xf97316, 0.5)); ring.position.set(1.04, 1.5, -1.9); ring.rotation.y = Math.PI / 2; group.add(ring);
             // anchor and bow bollard
-            box(0.18, 0.18, 0.3, steel, 0, 1.08, -2.6);
+            box(0.18, 0.18, 0.3, steel, 0, 1.08, -3.8);
             // ---- v3.8 detail pass: hull portholes, window frames, wheelhouse door, a life-raft canister, a net on the drum,
             // a ladder to the wheelhouse roof, floats along the rail and an exhaust cap ----
             [-1, 1].forEach(sd => [-3.0, -2.2, -1.4].forEach(z => {
@@ -5129,14 +5213,13 @@
               const ph = torus(0.11, 0.025, steel, x, 0.45, z, Math.PI / 2);
               const gl = cyl(0.09, 0.09, 0.02, glassM, x, 0.45, z, 10); gl.rotation.z = Math.PI / 2;
             }));
-            [-0.6, 0, 0.6].forEach(x => { box(0.5, 0.05, 0.05, white, x, 2.03, -2.93); box(0.5, 0.05, 0.05, white, x, 1.57, -2.93); });
-            box(0.6, 1.1, 0.05, M(0x334155, 0.5, 0.3), 0, 1.35, -0.88);
-            cyl(0.03, 0.03, 0.06, steel, 0.2, 1.35, -0.85, 6).rotation.x = Math.PI / 2;
             { const raft = cyl(0.25, 0.25, 0.8, white, 0.75, 2.6, -2.2, 12); raft.rotation.x = Math.PI / 2; [0.25, -0.25].forEach(dz => torus(0.255, 0.02, M(0x1e293b, 0.6), 0.75, 2.6, -2.2 + dz)); }
             { const netM = M(0x15803d, 0.95); const n = cyl(0.5, 0.5, 1.2, netM, 0, 0.95, 1.9, 14); n.rotation.z = Math.PI / 2; for (let k = 0; k < 6; k++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), orange); f.position.set(-0.5 + k * 0.2, 1.47, 1.9); group.add(f); } }
-            for (let k = 0; k < 5; k++) box(0.5, 0.03, 0.04, steel, 0, 0.75 + k * 0.32, -0.86 - 0.0);
+            for (let k = 0; k < 5; k++) box(0.04, 0.03, 0.4, steel, 1.02, 0.95 + k * 0.3, -1.3);   // ladder to the roof on the starboard wall
             [-1, 1].forEach(sd => [0.6, 1.4, 2.4].forEach(z => { const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), z === 1.4 ? yellow : orange); f.position.set(sd * hull.halfW((z + 4.7) / 9.4) * 1.0, 1.2, z); group.add(f); }));
             cyl(0.18, 0.2, 0.25, M(0x111827, 0.7), 0, 3.65, -1.0, 10);
+            group.userData.helm.roof = group.children.filter(m => m.isMesh && m.position.y >= 2.3 && m.position.y < 2.9 && m.position.z < -0.7 && m.position.z > -3.1);
+            group.userData.helm.roof.forEach(m => { m.material = m.material.clone(); m.material.transparent = true; });
           }
           if (tier === 4) {
             // ---- Expedition yacht: twin outboards, flybridge and an aft helm ----
@@ -5147,20 +5230,26 @@
             const glassM = M(0x0b1220, 0.12, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.3 });
             addRails(hull, steel, 0.05, 0.12, 0.08, 0.97);
             box(3.2, 0.06, 8.6, teak, 0, 0.52, 0.25);                       // teak aft deck
-            box(3.0, 1.5, 3.6, white, 0, 1.3, -2.5);                        // main cabin
-            box(3.1, 0.1, 3.7, navy, 0, 2.1, -2.5);
-            [-0.9, 0, 0.9].forEach(x => box(0.7, 0.5, 0.04, glassM, x, 1.6, -4.32));
-            [-1, 1].forEach(sd => [-3.4, -2.5, -1.6].forEach(z => box(0.04, 0.45, 0.6, glassM, sd * 1.51, 1.6, z)));
-            box(1.7, 0.9, 1.4, white, 0, 2.65, -2.6);                       // flybridge pilot house
-            box(1.8, 0.08, 1.5, navy, 0, 3.15, -2.6);
-            box(1.5, 0.4, 0.04, glassM, 0, 2.8, -3.32);
-            cyl(0.05, 0.05, 0.5, steel, 0, 3.45, -2.6, 6);                  // radar and mast
-            box(1.0, 0.06, 0.14, steel, 0, 3.75, -2.6);
-            cyl(0.04, 0.06, 2.0, steel, 0, 4.2, -3.0, 6);
-            box(1.1, 0.95, 0.55, white, 0, 1.0, -0.45);                     // aft helm console
-            box(1.14, 0.06, 0.6, navy, 0, 1.5, -0.45);
-            const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 6, 14), M(0x111827, 0.6)); wheel.position.set(0, 1.62, -0.72); wheel.rotation.x = -0.8; group.add(wheel);
-            const screen = box(1.1, 0.5, 0.03, glassM, 0, 1.8, -0.78); screen.rotation.x = -0.3;
+            box(3.0, 1.0, 3.6, white, 0, 1.05, -2.5);                       // low main cabin (the helm sees over it)
+            box(3.1, 0.1, 3.7, navy, 0, 1.6, -2.5);
+            [-0.9, 0, 0.9].forEach(x => box(0.7, 0.42, 0.04, glassM, x, 1.15, -4.32));
+            [-1, 1].forEach(sd => [-3.4, -2.5, -1.6].forEach(z => box(0.04, 0.38, 0.6, glassM, sd * 1.51, 1.15, z)));
+            [-1, 1].forEach(sd => box(0.08, 1.4, 0.08, steel, sd * 1.25, 1.95, -0.95));   // radar arch over the cabin's aft end
+            box(2.6, 0.1, 0.12, steel, 0, 2.65, -0.95);
+            cyl(0.05, 0.05, 0.3, steel, 0, 2.85, -0.95, 6);
+            box(1.0, 0.06, 0.14, steel, 0, 3.02, -0.95);
+            cyl(0.04, 0.06, 1.6, steel, 0.9, 3.4, -0.95, 6);
+            // raised helm platform: console with the wheel on its aft face, a seat with a backrest, a step
+            box(2.0, 0.3, 1.7, teak, 0, 0.67, -0.05);
+            box(1.1, 0.8, 0.5, white, 0, 1.22, -0.45);
+            box(1.14, 0.06, 0.55, navy, 0, 1.64, -0.45);
+            makeWheel(0, 1.52, -0.17, 0.16, -0.5);
+            box(0.34, 0.12, 0.03, M(0x0b1220, 0.2, 0.3, { emissive: new THREE.Color(0x0ea5e9), emissiveIntensity: 0.35 }), -0.32, 1.56, -0.19);
+            box(0.92, 0.37, 0.5, white, 0, 1.005, 0.32);
+            box(0.94, 0.08, 0.52, navy, 0, 1.23, 0.32);
+            box(0.94, 0.55, 0.1, white, 0, 1.55, 0.58); box(0.86, 0.45, 0.04, navy, 0, 1.57, 0.52);
+            box(0.8, 0.12, 0.3, teak, 0, 0.58, 0.95);
+            { const glassT = M(0x9bd8f5, 0.05, 0.2, { transparent: true, opacity: 0.22, depthWrite: false }); const screen = box(1.1, 0.4, 0.03, glassT, 0, 1.86, -0.72); screen.rotation.x = -0.3; }
             box(2.4, 0.4, 0.5, white, 0, 0.78, 3.0); box(2.4, 0.08, 0.55, navy, 0, 1.02, 3.0);   // aft bench
             // ---- v3.8 detail pass: hull portholes, a window band around the cabin, flybridge rails, a radome, bow sun
             // pads, an anchor on the stem, cushions on the bench and a tender on the cabin roof ----
@@ -5169,16 +5258,13 @@
               torus(0.1, 0.022, steel, x, 0.3, z, Math.PI / 2);
               const gl = cyl(0.085, 0.085, 0.02, glassM, x, 0.3, z, 10); gl.rotation.z = Math.PI / 2;
             }));
-            [-1, 1].forEach(sd => box(0.02, 0.1, 3.5, navy, sd * 1.51, 1.95, -2.5));
-            [[-0.85, -3.2], [0.85, -3.2], [-0.85, -2.0], [0.85, -2.0]].forEach(([x, z]) => cyl(0.02, 0.02, 0.45, steel, x, 3.4, z, 6));
-            [-0.85, 0.85].forEach(x => box(0.04, 0.04, 1.25, steel, x, 3.62, -2.6));
-            box(1.74, 0.04, 0.04, steel, 0, 3.62, -2.0);
-            { const dome = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), white); dome.position.set(-0.45, 3.2, -3.0); group.add(dome); }
+            [-1, 1].forEach(sd => box(0.02, 0.1, 3.5, navy, sd * 1.51, 1.45, -2.5));
+            { const dome = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), white); dome.position.set(-0.45, 1.65, -3.2); group.add(dome); }
             [-0.55, 0.55].forEach(x => { const pad = box(0.95, 0.12, 1.3, M(0xe2e8f0, 0.8), x, 0.62 + 0.2, -4.0); pad.rotation.x = -0.08; });
             { const anc = box(0.1, 0.4, 0.06, steel, 0, 0.9, -5.35); anc.rotation.x = 0.3; box(0.34, 0.08, 0.06, steel, 0, 0.72, -5.38); }
             [-0.8, 0, 0.8].forEach(x => box(0.7, 0.1, 0.42, M(0x0ea5e9, 0.8), x, 1.11, 3.0));
             { const tender = new THREE.Group(); const tb = cyl(0.3, 0.3, 1.8, M(0xf97316, 0.6), 0, 0, 0, 10, tender); tb.rotation.x = Math.PI / 2; tb.scale.set(1.2, 1, 0.55);
-              box(0.5, 0.06, 0.5, M(0x1e293b, 0.6), 0, 0.12, 0.6, tender); tender.position.set(0.85, 2.28, -1.4); group.add(tender); }
+              box(0.5, 0.06, 0.5, M(0x1e293b, 0.6), 0, 0.12, 0.6, tender); tender.position.set(1.0, 1.84, -3.1); group.add(tender); }
             outboard(-0.95, 0.95, 5.55, 0x111827, 0x94a3b8); outboard(0.95, 0.95, 5.55, 0x111827, 0x94a3b8);
             [[-1, 0xdc2626], [1, 0x16a34a]].forEach(([sd, c]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: c })); l.position.set(sd * 1.0, 1.4, -4.2); group.add(l); });
           }
@@ -7468,6 +7554,40 @@ const mainCanvas = document.getElementById('game-canvas');
       const world = WorldBuilder.buildWorld(scene, textures);
       const walkColliders = Colliders.of(COL.WALK);
       const anglerAnim = new AnglerAnimator(world.anglerRig);
+      /* Compass: a tape of headings for the way the camera looks. North is straight out to sea (-Z), so the island
+         and the pier lie to the South. 120 degrees are visible across the tape. */
+      const compass = (() => {
+        const el = document.getElementById('hud-compass');
+        const degEl = document.getElementById('hud-compass-deg');
+        const marks = [];
+        const NAMES = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SW', 270: 'W', 315: 'NW' };
+        for (let d = 0; d < 360; d += 15) {
+          const node = document.createElement(NAMES[d] != null ? 'span' : 'div');
+          if (NAMES[d] != null) { node.className = 'cmp-mark' + (d % 90 === 0 ? ' card' : '') + (d === 0 ? ' north' : ''); node.textContent = NAMES[d]; }
+          else node.className = 'cmp-tick';
+          el.appendChild(node); marks.push({ d, node });
+        }
+        const dir = new THREE.Vector3();
+        let last = null;
+        return {
+          update() {
+            camera.getWorldDirection(dir);
+            if (Math.hypot(dir.x, dir.z) < 1e-3) return;
+            const heading = (THREE.MathUtils.radToDeg(Math.atan2(dir.x, -dir.z)) + 360) % 360;
+            const h = Math.round(heading) % 360;
+            if (h === last) return;
+            last = h;
+            const w = el.clientWidth || 200, ppd = w / 120;
+            marks.forEach(m => {
+              let delta = ((m.d - heading + 540) % 360) - 180;
+              const vis = Math.abs(delta) <= 62;
+              m.node.style.display = vis ? '' : 'none';
+              if (vis) m.node.style.left = `${w / 2 + delta * ppd}px`;
+            });
+            degEl.textContent = `${h}°`;
+          }
+        };
+      })();
       /* Debug view (secret menu): every collider as a wireframe. Green = walking, orange = boats, cyan = diving
          (including the seabed rocks, coral, wrecks and chests around you when it is switched on). */
       let colliderView = null;
@@ -7624,19 +7744,47 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let boatPowered = false; // true while the engine is driving the boat (burns fuel)
       /* Where the angler rides on each boat (boat-local metres; the bow points to -Z) and how he holds on while steering.
          y is the height of his feet (or of his seat when `sit`). hands: arm raise (radians) for the left / right arm. */
-      // Where the angler rides each boat (boat-local): y is the floor under the feet, seatH the hip height when seated,
-      // hands the wheel / tiller / rail targets while driving (null = hand rests).
+      // Where the angler rides each boat (boat-local). y is the floor under the feet; sit / seatH (hip height above the
+      // floor) for seated helms; helm says what the hands hold while driving ('tiller' or 'wheel', found on the boat's
+      // userData.helm). fish is the standing spot used while fishing from the boat.
       const BOAT_RIDE = {
-        1: { x: 0, y: 0.05, z: 1.35, sit: true,  seatH: 0.52, hands: { L: [-0.16, 0.6, 1.0], R: [0.02, 0.7, 1.58] } },   // rowboat: thwart, right hand on the tiller
-        2: { x: 0, y: 0.13, z: 0.18, sit: false, hands: { L: [-0.3, 1.24, -0.2], R: [0.3, 1.24, -0.2] } },              // skiff: behind the console
-        3: { x: 0, y: 0.53, z: -0.5, sit: false, hands: { L: [-0.24, 1.5, -0.86], R: [0.24, 1.5, -0.86] } },            // trawler: at the wheelhouse door
-        4: { x: 0, y: 0.55, z: 0.28, sit: false, hands: { L: [-0.3, 1.57, -0.2], R: [0.3, 1.57, -0.2] } }               // yacht: behind the aft helm
+        1: { x: 0, y: 0.05, z: 1.47, sit: true, seatH: 0.58, helm: 'tiller', fish: { x: 0, y: 0.05, z: 1.47, sit: true, seatH: 0.58 } },        // rowboat: stern thwart, hand on the tiller
+        2: { x: 0, y: 0.13, z: 0.25, sit: false, post: true, helm: 'wheel', fish: { x: 0, y: 0.13, z: 1.1, sit: false } },                       // skiff: leaning post behind the console
+        3: { x: 0, y: 1.04, z: -1.95, sit: true, seatH: 0.45, helm: 'wheel', fish: { x: 0, y: 0.53, z: 0.7, sit: false } },                      // trawler: helm chair in the open wheelhouse
+        4: { x: 0, y: 0.82, z: 0.3, sit: true, seatH: 0.47, helm: 'wheel', fish: { x: 0, y: 0.55, z: 1.7, sit: false } }                         // yacht: helm seat at the aft helm
       };
+      /* the spot in use right now: the helm while driving, the fishing spot otherwise */
+      function currentRideSpot() {
+        const r = BOAT_RIDE[state.boatTier] || BOAT_RIDE[1];
+        return mode === 'BOAT_DRIVING' || !r.fish ? r : r.fish;
+      }
       let boatSitProgress = 0, boatHandsProgress = 0;
       const rideVec = new THREE.Vector3();
 
       let castCharge = 0;
       let castDir = 1;
+      /* ---- rest spots: bench seats and railing stretches (see findRestSpot) ---- */
+      const restState = { idle: 0, spot: null, last: null, w: 0 };
+      const BENCH_SEATS = [-4.6, 4.6].flatMap(cx => [cx - 0.4, cx + 0.4]).map(x => ({ kind: 'bench', x, z: 5.27, yaw: 0, seatH: 0.53 }));
+      function findRestSpot(px, pz) {
+        // bench: in front of one of the two benches at the back of the boardwalk
+        let best = null, bd = 0.62;
+        BENCH_SEATS.forEach(s => { const d = Math.hypot(px - s.x, (pz - 4.8) * 1.6); if (pz > 4.3 && d < bd) { bd = d; best = s; } });
+        if (best) return best;
+        // pier sides: along the walking limit, away from the stairs, bucket, toolbox, bollards, rod rack and lamp posts
+        if (Math.abs(px) > 1.9 && pz < -0.3 && pz > -10.9) {
+          const side = px > 0 ? 1 : -1;
+          const blocked = [[-7.6, 0.95], [-9.6, 0.55], [-2.2, 0.35], [-8.0, 0.35]].some(([z, r]) => Math.abs(pz - z) < r)
+            || (side < 0 && ((pz < -4.4 && pz > -6.8) || (pz < -8.5 && pz > -9.65)));
+          if (!blocked) return { kind: 'rail', x: side * 2.17, z: pz, yaw: -side * Math.PI / 2, railX: side * 2.45, railZ: null, side };
+        }
+        // boardwalk sea-edge rail, between the stands
+        if (pz < 0.62 && Math.abs(px) > 2.6 && Math.abs(px) < 10.1) {
+          const busy = [[-9.55, -5.5], [-5.4, -3.0], [2.9, 5.9], [5.65, 7.45], [7.0, 9.4]].some(([a, b]) => px > a && px < b);
+          if (!busy) return { kind: 'rail', x: px, z: 0.33, yaw: 0, railX: null, railZ: 0.12, side: 0 };
+        }
+        return null;
+      }
       const WALK_SPEED = 3.0;   // m/s at full stick (was 6.5 before v4.0.1)
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
       let bobberPos = new THREE.Vector3();
@@ -7670,6 +7818,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
       const keys = {};
       let isHoldingAction = false;
+      let actionKey = null;   // which keyboard key is holding the action button (Space, E or Enter)
       let actionPointerId = null;
 
       const joyState = {
@@ -7827,19 +7976,11 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           toggleFirstPerson(true);
         } else if (e.code === 'KeyL') {
           openLogModal();
-        } else if (e.code === 'KeyE') {
-          if (dive.active) return;
-          if (isNearPierShop()) openShopModal();
-          else if (isNearPierBounty()) openBountyModal();
-          else if (isNearPierGallery()) openGalleryModal();
-          else if (isNearPierTrophies()) openTrophiesModal();
-          else if (isNearPierCamera()) openCameraModal();
-          else if (isNearPierToolbox()) openToolboxModal();
-          else if (isNearPierBucket()) openBucketModal();
-          else handleBoardOrDockToggle();
-        } else if (e.code === 'Space') {
+        } else if (e.code === 'Space' || e.code === 'KeyE' || e.code === 'Enter') {
+          // Space, E and Enter all are the on-screen action button: the same context action, hold to cast
           e.preventDefault();
           if (!isHoldingAction) {
+            actionKey = e.code;
             isHoldingAction = true;
             primaryBtn.classList.add('pressed');
             handleActionPress();
@@ -7849,7 +7990,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
       window.addEventListener('keyup', e => {
         keys[e.code] = false;
-        if (e.code === 'Space' && isHoldingAction) {
+        if ((e.code === 'Space' || e.code === 'KeyE' || e.code === 'Enter') && isHoldingAction && e.code === actionKey) {
           isHoldingAction = false;
           primaryBtn.classList.remove('pressed');
           handleActionRelease();
@@ -8686,7 +8827,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearPierGallery() { return nearStandFront(4.4, 1.6, 1.75, 1.0); }
       function isNearPierTrophies() { return nearStandFront(6.55, 0.8, 1.45, 1.0); }
       function isNearPierCamera() { return nearSpot(8.2, 0.9, 1.45); }
-      function isNearPierBucket() { return nearSpot(-1.55, -7.6, 1.25); }
+      function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(1.55, -7.6, 1.25); }
       function isNearMooredBoat() { return nearSpot(-5.2, -5.6, 1.4); }
 
@@ -8703,6 +8844,14 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 pierBucketMesh = replaceSceneMesh(scene, pierBucketMesh, WorldBuilder.buildPierBucketMesh(state.bucketTier, state.bucket.length, textures));
         pierBucketMesh.position.set(-1.55, 1.56, -7.6);
         pierBucketMesh.rotation.y = 0.28;
+        // the bucket's walk collider grows with the model: measured from the upgrade that is on the pier now
+        pierBucketMesh.updateMatrixWorld(true);
+        const bb = new THREE.Box3().setFromObject(pierBucketMesh);
+        if (isFinite(bb.min.x) && world.bucketCollider) {
+          const c = world.bucketCollider;
+          c.x = (bb.min.x + bb.max.x) / 2; c.z = (bb.min.z + bb.max.z) / 2;
+          c.hx = Math.max(0.3, (bb.max.x - bb.min.x) / 2); c.hz = Math.max(0.3, (bb.max.z - bb.min.z) / 2);
+        }
       }
 
       let boatSpotlight = null;
@@ -12480,7 +12629,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Solid objects on the pier: every WALK collider from the registry. Boxes resolve along the side the player came
             // from (so you slide along them instead of being snapped across); circles push straight out.
-            world.bucketCollider.hx = 0.55 + Math.min(state.bucketTier, 4) * 0.14;
             const BODY = 0.15;   // extra room for the angler's body on top of each collider
             for (const c of walkColliders) {
               if (c.kind === 'box') {
@@ -12532,6 +12680,20 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
           world.anglerGroup.position.set(playerX, playerY, playerZ);
           const walkSpeed = Math.hypot(walkDX, walkDZ);
+          // Rest spots: stand still for 2 s next to a bench seat or the railing and the angler sits down or leans on the rail.
+          // Only the visual model moves toward the seat / rail; the walking position (and so every collision) stays put.
+          {
+            const still = mode === 'PIER_IDLE' && !isAnyModalOpen() && walkSpeed < 0.002 && pierMoveInput < 0.15 && !isAtPierWaterEdge() && playerY > 1.5;
+            if (!still) { restState.idle = 0; restState.spot = null; }
+            else { restState.idle += dt; if (!restState.spot && restState.idle >= 2) restState.spot = findRestSpot(playerX, playerZ); }
+            if (restState.spot) restState.last = restState.spot;
+            restState.w += ((restState.spot ? 1 : 0) - restState.w) * (1 - Math.exp(-(restState.spot ? 4 : 7) * dt));
+            const sp = restState.last;
+            if (sp && restState.w > 0.001) {
+              world.anglerGroup.position.x += (sp.x - playerX) * restState.w;
+              world.anglerGroup.position.z += (sp.z - playerZ) * restState.w;
+            }
+          }
           // Stand auto-zoom: stand still in front of a stand for STAND_IDLE_DELAY seconds, no key press needed.
           // While a menu is open the current view is kept; any movement input releases it at once.
           if (!isAnyModalOpen()) {
@@ -12546,7 +12708,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
           }
           let targetYaw = playerYaw;
-          if (settings.firstPerson) {
+          if (restState.spot) {
+            targetYaw = restState.spot.yaw;   // face the sea from the bench or over the rail
+          } else if (settings.firstPerson) {
             targetYaw = playerYaw; // facing is controlled by the stick, not by the walking direction
           } else if (walkSpeed > 0.001) {
             targetYaw = Math.atan2(-walkDX, -walkDZ);
@@ -12637,7 +12801,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           );
 
           // the rider is carried by the hull: he sits or stands at the boat's ride spot and tilts, banks and bobs with it
-          const ride = BOAT_RIDE[state.boatTier] || BOAT_RIDE[1];
+          const ride = currentRideSpot();
           playerBoatMesh.updateMatrixWorld(true);
           rideVec.set(ride.x, ride.y, ride.z);
           playerBoatMesh.localToWorld(rideVec);
@@ -12934,13 +13098,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const sitT = THREE.MathUtils.clamp((chairOpenProgress - 0.35) / 0.65, 0, 1);
         const chairSitEase = sitT * sitT * (3 - 2 * sitT);
         // riding a boat: sit on the thwart (rowboat) and hold the wheel or tiller while steering
-        const rideSpot = onBoat ? (BOAT_RIDE[state.boatTier] || BOAT_RIDE[1]) : null;
+        const rideSpot = onBoat ? currentRideSpot() : null;
         boatSitProgress = THREE.MathUtils.lerp(boatSitProgress, rideSpot && rideSpot.sit ? 1 : 0, Math.min(1, dt * 6));
         boatHandsProgress = THREE.MathUtils.lerp(boatHandsProgress, onBoat && mode === 'BOAT_DRIVING' ? 1 : 0, Math.min(1, dt * 6));
         const boatSitEase = boatSitProgress * boatSitProgress * (3 - 2 * boatSitProgress);
         const sitEase = Math.max(chairSitEase, boatSitEase);
         const handsEase = boatHandsProgress * boatHandsProgress * (3 - 2 * boatHandsProgress);
-        const handsL = rideSpot ? rideSpot.hands[0] * handsEase : 0, handsR = rideSpot ? rideSpot.hands[1] * handsEase : 0;
 
         // v4: the animator poses the whole skeleton; the rod rides in the angler's hands
         {
@@ -12949,16 +13112,32 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const stepTrigger = anglerPrevOnBoat !== onBoat;
           anglerPrevMode = mode; anglerPrevOnBoat = onBoat;
           const chairScale = 0.85 + 0.15 * (chairOpenProgress * chairOpenProgress * (3 - 2 * chairOpenProgress));
-          const seatH = (onBoat && rideSpot && rideSpot.sit ? rideSpot.seatH : 0.44 * chairScale + 0.07) / hs;
+          const restW = !onBoat && mode === 'PIER_IDLE' ? restState.w : 0, restSp = restState.last;
+          const onBench = restW > 0.001 && restSp && restSp.kind === 'bench';
+          const seatH = (onBoat && rideSpot && rideSpot.sit ? rideSpot.seatH : onBench ? restSp.seatH : 0.44 * chairScale + 0.07) / hs;
           // rod base in front of the right hip, following the hips (sitting lowers it)
           const hipNow = THREE.MathUtils.lerp(rig.dims.hipY, seatH, sitEase);
           world.rodPivot.position.set(0.1 * hs, (hipNow + 0.12) * hs, -0.3 * hs + sitEase * 0.04);
           if (anglerAnim.whip > 0) world.rodPivot.rotation.x -= Math.sin((1 - anglerAnim.whip) * Math.PI) * 0.9;
           world.anglerGroup.updateMatrixWorld(true);
           let hands = null, handBlend = 0;
-          if (onBoat && mode === 'BOAT_DRIVING' && rideSpot && rideSpot.hands) {
-            hands = {};
-            ['L', 'R'].forEach(k => { const h = rideSpot.hands[k]; hands[k] = h ? playerBoatMesh.localToWorld(new THREE.Vector3(h[0], h[1], h[2])) : null; });
+          const helm = playerBoatMesh.userData && playerBoatMesh.userData.helm;
+          if (helm && helm.roof) { // the trawler's wheelhouse roof turns see-through while you drive in third person
+            const target = onBoat && mode === 'BOAT_DRIVING' && !settings.firstPerson ? 0.28 : 1;
+            helm.roof.forEach(m => { m.material.opacity += (target - m.material.opacity) * Math.min(1, dt * 5); m.material.depthWrite = m.material.opacity > 0.95; });
+          }
+          if (onBoat && mode === 'BOAT_DRIVING' && rideSpot && helm) {
+            const steer = THREE.MathUtils.clamp(boatTurnRate, -1.6, 1.6);
+            if (helm.kind === 'wheel') {
+              helm.spin.rotation.z = -steer * 1.8;
+              helm.spin.updateMatrixWorld(true);
+              const at = a => helm.spin.localToWorld(new THREE.Vector3(Math.cos(a) * helm.r, Math.sin(a) * helm.r, 0.02));
+              hands = { L: at(Math.PI * 0.85), R: at(Math.PI * 0.15) };
+            } else {
+              helm.pivot.rotation.y = steer * 0.45;
+              helm.pivot.updateMatrixWorld(true);
+              hands = { R: helm.pivot.localToWorld(helm.grip.clone()), L: world.anglerGroup.localToWorld(new THREE.Vector3(-0.14, seatH * hs + 0.1, -0.34)) };
+            }
             handBlend = handsEase;
           } else if (world.rodPivot.visible && rodVisProgress > 0.3) {
             const seg0 = world.rodSegments[0];
@@ -12971,11 +13150,23 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 : seg0.localToWorld(new THREE.Vector3(0, -0.11, 0))
             };
             handBlend = Math.min(1, rodVisProgress);
+          } else if (restW > 0.001 && restSp) {
+            const ag = world.anglerGroup;
+            if (restSp.kind === 'bench') {   // hands rest on the thighs
+              hands = { L: ag.localToWorld(new THREE.Vector3(-0.13, seatH * hs + 0.1, -0.32)), R: ag.localToWorld(new THREE.Vector3(0.13, seatH * hs + 0.1, -0.32)) };
+            } else {                         // forearms on the top rail
+              const y = ag.position.y + 0.99;
+              hands = restSp.railX != null
+                ? { L: new THREE.Vector3(restSp.railX, y, restSp.z - restSp.side * 0.2), R: new THREE.Vector3(restSp.railX, y, restSp.z + restSp.side * 0.2) }
+                : { L: new THREE.Vector3(ag.position.x - 0.2, y, restSp.railZ + 0.02), R: new THREE.Vector3(ag.position.x + 0.2, y, restSp.railZ + 0.02) };
+            }
+            handBlend = restW;
           }
           anglerAnim.update({
             dt, elapsed,
             speed: isWalkingPier ? Math.hypot(walkDX, walkDZ) / Math.max(1e-3, dt) : 0,
-            sit: sitEase, seatH,
+            sit: Math.max(sitEase, onBench ? restW : 0), seatH,
+            rest: restW > 0.001 && restSp ? { kind: restSp.kind, w: restW } : null,
             casting: mode === 'CASTING', castCharge, castRelease,
             reeling: mode === 'REELING', cranking: mode === 'REELING' && isHoldingAction, tension, pull: mode === 'REELING' ? rodPullAngle : 0,
             hands, handBlend,
@@ -13091,6 +13282,7 @@ if (mode === 'REELING' && tension > 0.78) {
           camJuice.shake *= Math.pow(0.04, dt);
         }
 
+        compass.update();
         if (postUniforms.uMode.value === 0) {
           renderer.setRenderTarget(null);
           renderer.render(scene, camera);
