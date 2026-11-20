@@ -360,7 +360,7 @@ The script inside `index.html` is organised in labelled sections:
 Notes on the models:
 
 - **Fish** are generated from a per-species spec (length, height, width, fin layout, markings and features) and lofted into a smooth body with vertex-colour countershading and a pixel scale texture. They are normalised to fit the catch preview.
-- **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom) with four detailed vessels on top. Paint shifts the hue of the hull's vertex colours.
+- **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom, extra rows at every paint-band edge for crisp stripes) with four detailed vessels on top. Paint shifts the hue of the hull's vertex colours.
 - **The character** is built from a skin body plus layered clothing shells, driven by a `look` object. It dresses the same animated rig the game already used (body, head, arms, legs), so walking, sitting, casting and reeling are unaffected. The customise screen uses a second rig with its own small renderer.
 - Models keep their footprints and orientation (fronts face +Z, boats point toward -Z), so collisions and interaction ranges do not change when art is updated.
 - **Model kit:** `ModelKit.roundedBox` gives every box-built prop bevelled edges (textures stay undistorted), and `ModelKit.mergeStatic` bakes the static pier into one mesh per material look, which roughly halves the draw calls. The film camera, the trophy mounts and the secret seagull stay separate because they move or are rebuilt.
@@ -402,6 +402,15 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 3.8.0: better boats
+- **Smoother hulls:** the lofted hull has almost twice as many sections, and every paint band gets its own edge rows, so the stripes, boot-top and waterline are clean straight lines instead of zigzags. The transom is one flat colour (no more streaks).
+- **Rowboat:** steamed ribs inside the hull, oarlocks, a bow painter rope and a bailer.
+- **Skiff:** a T-top canopy with a VHF aerial, grab rails, bow cushions, a livewell lid and cleats.
+- **Trawler:** hull portholes, framed wheelhouse windows, a wheelhouse door and ladder, a life-raft canister, a green net with floats on the drum, floats along the rail and an exhaust cap.
+- **Expedition Yacht:** hull portholes, a window band, flybridge rails, a radome, bow sun pads, an anchor, bench cushions and an orange tender on the cabin roof.
+- Every boat keeps its size, its ride spot and its paint options; the hull collision capsule is still measured from the model.
+- Version bumped to **v3.8.0**.
 
 ### 2026-11-20, Version 3.7.0: better island, lighthouse and buoys
 - **Island:** the cone-shaped hills are replaced by one rolling heightfield with lighter and darker grass, dry patches and rocky slopes, plus bushes and rocks scattered over it.
