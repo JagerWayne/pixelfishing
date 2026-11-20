@@ -54,8 +54,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 |---|---|---|
 | Walk | Thumbstick | `W` `A` `S` `D` or arrow keys |
 | Sail the boat | Thumbstick: **up** sails ahead, **left / right** turn, **down** brakes then reverses; the camera follows the boat, and turns are smoother the faster you go | `W` `S` throttle and reverse, `A` `D` or arrow keys turn |
-| Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space` |
-| Interact with the nearest pier object | Action button | `E` |
+| Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space`, `E` or `Enter` (all three are the action button: they do exactly what the button shows) |
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
 | Open encyclopedia | **☰ Menu → 📖 Log** (a dot on ☰ marks new species) | `L` |
 | Toolbox or bucket (when nearby) | Action button | `T` |
@@ -82,6 +81,8 @@ The pier is a small harbour. Walk right up to a stand (about one metre from its 
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
 | ⚓ **Moored boat** (down the stairs on the port side) | Board your boat once you own one. |
+| 🪑 **Benches** (back of the boardwalk) | Stand still in front of one for two seconds and the angler sits down, leans back and now and then crosses his legs. Move to get up. |
+| 🌊 **Railing** | Stand still at the pier rails or the free parts of the boardwalk rail for two seconds and the angler leans his forearms on the rail and gazes out to sea. |
 | 🪑 **Pier tip** | Where you sit and fish from the pier, and where you can start a dive (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
 
 Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform. The deck has boards with grain along their length and dark timber underneath, and the lamp posts and every stand are lit at night.
@@ -107,7 +108,12 @@ A rod has a **maximum weight** and a **deepest zone** it can handle. Hooking som
 ### Boats
 Boats take you out of the cove. They burn fuel (refill at the shop) and limit which zones you can reach. Fuel is only burned while the engine drives the boat. When the tank runs dry the boat keeps its way and **coasts to a stop by inertia** (it glides roughly 30 to 40 m from top speed); the stick does nothing until you refuel. If it stops far from shore, the coast guard then tows you back for a **$100 emergency fee**; within 15 m of the pier you can just dock.
 
-You ride each boat properly: on the **Wooden Rowboat** you sit on the stern thwart with a hand on the tiller, on the **Fiberglass Skiff** you stand behind the console with both hands on the wheel, and on the **Deep-Sea Trawler** you stand at the wheelhouse door; on the **Expedition Yacht** you stand behind the aft helm console. The rider moves, tilts and banks with the hull, hands go to the wheel while you steer, and the fishing rod is stowed until you cast.
+You ride each boat at a proper helm, built for the angler's body and checked in first and third person:
+- **Wooden Rowboat:** sit on the stern bench, facing forward, right hand on a tiller arm that swings as you steer.
+- **Fiberglass Skiff:** stand at a padded **leaning post** behind the console; the wheel is on the console's aft face, facing you, with a throttle and chart plotter beside it.
+- **Deep-Sea Trawler:** sit in a **helm chair inside an open-backed wheelhouse**, wheel and console in front and the bow through big front windows. In third person the wheelhouse roof turns see-through while you drive.
+- **Expedition Yacht:** sit on a **raised helm seat** behind the helm console, high enough to look over the (now lower) cabin and the bow; a radar arch replaces the old flybridge.
+Your hands stay on the wheel or tiller and the wheel turns as you steer. When you fish from a boat you stand at the stern instead.
 
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
@@ -408,6 +414,15 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.1.0: benches, leaning on the rail, proper boat helms, compass
+- **Sit on the benches:** stand still in front of a boardwalk bench for two seconds and the angler sits down, leans back, rests his hands on his thighs and now and then crosses his legs. Moving gets him up.
+- **Lean on the railing:** stand still at the pier rails (or the free parts of the boardwalk rail) for two seconds and he leans his forearms on the top rail, crosses one foot behind the other and gazes out to sea.
+- **Boat helms rebuilt for the human angler:** a tiller arm on the rowboat, a console wheel facing you and a leaning post on the skiff, a helm chair in an open-backed wheelhouse on the trawler (its roof turns see-through in third person while you drive), and a raised helm seat behind a lower cabin on the yacht. Hands stay on the wheel or tiller and the wheels turn with steering. First-person views look out over each bow.
+- **Compass:** a heading tape under the top bar. North is straight out to sea, so the island and the pier are to the **South**.
+- **Keyboard = action button:** `Space`, `E` and `Enter` all do exactly what the action button shows (hold to cast). `E` no longer boards your boat from anywhere on the pier.
+- **Bucket hitbox:** the bucket's collision box is measured from the bucket model on the pier, so it grows with every upgrade.
+- Version bumped to **v4.1.0**.
 
 ### 2026-11-20, Version 4.0.1: slower walking
 - The angler walks at about **3 m/s** at full stick instead of 6.5 m/s, with longer, calmer steps, so the new body walks at a brisk pace instead of jogging. Half stick walks slower still.
