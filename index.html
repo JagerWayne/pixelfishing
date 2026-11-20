@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.8.0';
+    window.PF_VERSION = '4.9.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -613,40 +613,63 @@
     #station-picker button { font: inherit; font-size: 11px; font-weight: 900; letter-spacing: 0.2px; padding: 4px 7px; min-height: 30px; border-radius: 4px; background: rgba(14, 22, 36, 0.92); color: #bae6fd; border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
     #station-picker button.on { background: #0369a1; color: #fff; border-color: #7dd3fc; }
 
-    /* ---- shop browser ---- */
+    /* ---- shop catalogue and bucket list ---- */
     #shop-ui { position: fixed; inset: 0; z-index: 14; pointer-events: none; display: none; }
     body[data-shopping="1"] #shop-ui { display: block; }
     body[data-shopping="1"] #mobile-controls, body[data-shopping="1"] .hud-stack, body[data-shopping="1"] #center-hud, body[data-shopping="1"] #joy-zone { display: none !important; }
-    body[data-shopping="1"] #game-canvas { touch-action: none; }
-    #shop-tabs { position: absolute; left: 8px; right: 8px; top: 100px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
-    #shop-tabs button, #shop-tabs .shop-name { font: inherit; font-size: 13px; font-weight: 900; padding: 6px 12px; min-height: 40px; display: inline-flex; align-items: center; border-radius: 6px; background: rgba(14, 22, 36, 0.92); color: #e2e8f0; border: 2px solid #475569; box-shadow: 0 0 0 2px #070c14; pointer-events: auto; cursor: pointer; }
-    #shop-tabs button.on { background: #b45309; border-color: #fbbf24; color: #fff; }
-    #shop-tabs .shop-name { color: #fde68a; border-color: #fbbf24; pointer-events: none; }
-    @media (max-width: 520px) { #shop-tabs .shop-name { display: none; } #shop-tabs button { padding: 6px 10px; font-size: 12px; } }
-    #shop-tabs #shop-leave { background: #7f1d1d; border-color: #f87171; color: #fff; }
-    #shop-bar { position: absolute; left: 8px; right: 8px; bottom: calc(var(--safe-bottom, 0px) + 12px); display: flex; align-items: stretch; gap: 8px; max-width: 680px; margin: 0 auto; }
-    #shop-bar .arrow { pointer-events: auto; flex: 0 0 56px; min-height: 100px; font: inherit; font-size: 44px; font-weight: 900; line-height: 1; border-radius: 8px; background: rgba(14, 22, 36, 0.94); color: #fde68a; border: 2px solid #fbbf24; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
-    #shop-bar .arrow:disabled { opacity: 0.3; cursor: default; }
-    #shop-card { pointer-events: auto; flex: 1; min-width: 0; padding: 8px 11px; border-radius: 8px; background: rgba(14, 22, 36, 0.94); border: 2px solid #64748b; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
-    #shop-card.can { border-color: #4ade80; }
-    .sc-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-    .sc-title { font-size: 15px; font-weight: 900; color: #fef3c7; }
-    .sc-count { font-size: 11px; color: #94a3b8; white-space: nowrap; }
-    .sc-stats { font-size: 11.5px; color: #bae6fd; margin-top: 2px; line-height: 1.25; }
-    .sc-desc { font-size: 12px; color: #cbd5e1; margin-top: 3px; line-height: 1.3; max-height: 4em; overflow: hidden; }
-    .sc-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; gap: 8px; }
-    .sc-price { font-size: 19px; font-weight: 900; }
-    .sc-note { font-size: 11px; font-weight: 900; text-align: right; }
-    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.55); pointer-events: auto; }
+    #shop-sheet { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 720px; max-height: 64vh; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px calc(var(--safe-bottom, 0px) + 10px);
+      background: linear-gradient(#f7ebc6, #ecd9a0); border-top: 4px solid #8a5a2b; border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55); color: #3b2410; pointer-events: auto; font-family: "Courier New", monospace; }
+    #shop-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #shop-name { font-size: 14px; font-weight: 900; color: #7c2d12; letter-spacing: 0.5px; margin-right: auto; }
+    #shop-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
+    #shop-tabs button { font: inherit; font-size: 12px; font-weight: 900; padding: 5px 10px; min-height: 36px; border-radius: 6px; background: #f2e2b0; color: #5b3a1a; border: 2px solid #b08a50; cursor: pointer; }
+    #shop-tabs button.on { background: #b45309; color: #fff; border-color: #7c2d12; }
+    #shop-leave { font: inherit; font-size: 18px; font-weight: 900; width: 40px; min-height: 36px; border-radius: 6px; background: #b91c1c; color: #fff; border: 2px solid #7f1d1d; cursor: pointer; }
+    #shop-book { display: flex; align-items: stretch; gap: 6px; min-height: 0; flex: 1 1 auto; overflow: hidden; }
+    #shop-book .arrow { flex: 0 0 48px; font: inherit; font-size: 40px; font-weight: 900; line-height: 1; border-radius: 10px; background: #f2e2b0; color: #7c2d12; border: 2px solid #b08a50; cursor: pointer; }
+    #shop-book .arrow:disabled { opacity: 0.3; cursor: default; }
+    #shop-spread { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden; transform-origin: center; }
+    #shop-spread.flip-r { animation: pageInR 0.34s ease-out; }
+    #shop-spread.flip-l { animation: pageInL 0.34s ease-out; }
+    @keyframes pageInR { from { transform: perspective(800px) rotateY(-60deg) translateX(34px); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes pageInL { from { transform: perspective(800px) rotateY(60deg) translateX(-34px); opacity: 0; } to { transform: none; opacity: 1; } }
+    #shop-pic { position: relative; flex: 0 0 auto; width: min(44vw, 27vh); aspect-ratio: 1; padding: 0; border: 3px solid #8a5a2b; border-radius: 10px; background: #f4e6bf; box-shadow: 3px 3px 0 rgba(60, 36, 16, 0.35); cursor: pointer; overflow: hidden; }
+    #shop-pic img { width: 100%; height: 100%; display: block; image-rendering: auto; }
+    #shop-badge { position: absolute; left: 6px; top: 6px; padding: 2px 7px; font-size: 11px; font-weight: 900; background: #166534; color: #fff; border-radius: 4px; }
+    #shop-info { width: 100%; text-align: center; overflow: auto; min-height: 0; }
+    #shop-title { font-size: 16px; font-weight: 900; color: #3b2410; line-height: 1.2; }
+    #shop-stats { font-size: 11.5px; color: #92400e; margin-top: 2px; line-height: 1.25; }
+    #shop-desc { font-size: 12.5px; color: #4a3220; margin-top: 4px; line-height: 1.3; }
+    #shop-book-foot { display: flex; align-items: center; gap: 10px; }
+    #shop-count { font-size: 11px; color: #7c5a30; white-space: nowrap; }
+    #shop-price { font-size: 20px; font-weight: 900; color: #166534; margin-right: auto; }
+    #shop-buy, #shop-sellall { font: inherit; font-size: 16px; font-weight: 900; min-height: 52px; padding: 6px 16px; border-radius: 10px; background: #15803d; color: #fff; border: 3px solid #14532d; cursor: pointer; box-shadow: 0 3px 0 #14532d; }
+    #shop-buy { flex: 1 1 auto; }
+    #shop-buy.sell, #shop-sellall { background: #b45309; border-color: #7c2d12; box-shadow: 0 3px 0 #7c2d12; }
+    #shop-buy:disabled, #shop-sellall:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; box-shadow: none; cursor: default; font-size: 13px; }
+    #shop-sheet[data-mode="book"] #shop-listwrap, #shop-sheet[data-mode="list"] #shop-book, #shop-sheet[data-mode="list"] #shop-book-foot { display: none; }
+    #shop-listwrap { display: flex; flex-direction: column; gap: 6px; min-height: 0; flex: 1 1 auto; }
+    #shop-summary { font-size: 12px; line-height: 1.4; color: #4a3220; background: #f7efd2; border: 2px solid #c9a867; border-radius: 8px; padding: 6px 9px; }
+    #shop-summary .eco { height: 9px; margin-top: 5px; border: 2px solid #3f6212; background: #ecfccb; border-radius: 5px; overflow: hidden; }
+    #shop-summary .eco i { display: block; height: 100%; background: #16a34a; }
+    #shop-rows { flex: 1 1 auto; min-height: 90px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; -webkit-overflow-scrolling: touch; }
+    .sl-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 5px 9px; font: inherit; text-align: left; border-radius: 8px; background: #fbf3d8; border: 2px solid #c9a867; color: #3b2410; cursor: pointer; }
+    .sl-row img { width: 34px; height: 34px; image-rendering: pixelated; }
+    .sl-n { flex: 1; font-size: 13px; font-weight: 900; line-height: 1.2; } .sl-n small { display: block; font-size: 11px; font-weight: 700; color: #92400e; }
+    .sl-p { font-size: 15px; font-weight: 900; color: #166534; }
+    .sl-head { font-size: 12px; font-weight: 900; padding: 3px 4px; border-bottom: 3px solid; display: flex; align-items: center; gap: 6px; margin-top: 4px; } .sl-head span { width: 12px; height: 12px; border-radius: 3px; }
+    .sl-empty { font-size: 13px; color: #7c5a30; text-align: center; padding: 18px 8px; }
+    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.55); pointer-events: auto; z-index: 2; }
     #shop-confirm.open { display: flex; }
-    #shop-confirm .sc-box { width: min(92vw, 380px); padding: 16px; border-radius: 10px; background: #0f172a; border: 3px solid #fbbf24; box-shadow: 0 0 0 3px #070c14, 0 10px 30px rgba(0, 0, 0, 0.7); text-align: center; }
+    #shop-confirm .sc-box { width: min(92vw, 380px); padding: 16px; border-radius: 10px; background: #0f172a; border: 3px solid #fbbf24; box-shadow: 0 0 0 3px #070c14, 0 10px 30px rgba(0, 0, 0, 0.7); text-align: center; font-family: inherit; }
     #shop-confirm-title { font-size: 17px; font-weight: 900; color: #fef3c7; line-height: 1.3; }
     #shop-confirm-sub { font-size: 13px; color: #94a3b8; margin-top: 6px; }
     .sc-btns { display: flex; gap: 10px; margin-top: 14px; }
     .sc-btns button { flex: 1; min-height: 52px; font: inherit; font-size: 16px; font-weight: 900; border-radius: 8px; cursor: pointer; border: 2px solid #475569; background: #1e293b; color: #e2e8f0; }
     #shop-confirm-yes { background: #15803d; border-color: #4ade80; color: #fff; }
     #shop-confirm-yes.sell { background: #b45309; border-color: #fbbf24; }
-    @media (max-height: 460px) { .sc-desc { display: none; } #shop-bar .arrow { min-height: 70px; } }
+    @media (max-height: 520px) { #shop-sheet { max-height: 78vh; } #shop-book { } #shop-spread { flex-direction: row; align-items: center; gap: 10px; } #shop-pic { width: min(30vh, 40vw); } #shop-info { text-align: left; max-height: 100%; } }
+    @media (max-width: 520px) { #shop-sheet[data-mode="book"] #shop-name { display: none; } #shop-head { justify-content: space-between; } }
 
     #proximity-banner {
       display: none;
@@ -1827,13 +1850,30 @@
     </div>
   </div>
 
-  <!-- SHOP BROWSER (v4.8.0): no menu, the goods are on a counter in the world; this is only the arrows, tabs, card and confirm -->
-  <div id="shop-ui" aria-live="polite">
-    <div id="shop-tabs"></div>
-    <div id="shop-bar">
-      <button class="arrow" id="shop-prev" type="button" aria-label="Previous item">‹</button>
-      <div id="shop-card"></div>
-      <button class="arrow" id="shop-next" type="button" aria-label="Next item">›</button>
+  <!-- SHOP CATALOGUE (v4.9.0): a paper brochure for the shops that sell things, a bucket list for the Fish Market and Recycling -->
+  <div id="shop-ui">
+    <div id="shop-sheet" data-mode="book">
+      <div id="shop-head">
+        <span id="shop-name"></span>
+        <div id="shop-tabs"></div>
+        <button id="shop-leave" type="button" aria-label="Close">✕</button>
+      </div>
+      <div id="shop-book">
+        <button class="arrow" id="shop-prev" type="button" aria-label="Previous page">‹</button>
+        <div id="shop-spread">
+          <button id="shop-pic" type="button" aria-label="Buy this item"><img id="shop-pic-img" alt=""><span id="shop-badge"></span></button>
+          <div id="shop-info">
+            <div id="shop-title"></div><div id="shop-stats"></div><div id="shop-desc"></div>
+          </div>
+        </div>
+        <button class="arrow" id="shop-next" type="button" aria-label="Next page">›</button>
+      </div>
+      <div id="shop-book-foot"><span id="shop-count"></span><span id="shop-price"></span><button id="shop-buy" type="button"></button></div>
+      <div id="shop-listwrap">
+        <div id="shop-summary"></div>
+        <div id="shop-rows"></div>
+        <button id="shop-sellall" type="button"></button>
+      </div>
     </div>
     <div id="shop-confirm">
       <div class="sc-box">
@@ -4301,11 +4341,15 @@
       /* Shops on the waterfront boardwalk (v4.6.0): backs on the sea rail, fronts facing south (+Z) like the Tackle Shop.
          Centre x/z, width w and depth d of the building; extra = room for the props beside it. */
       const SHORE_SHOPS = {
-        boatyard: { x: -13.0, z: 1.37, w: 3.6, d: 2.4, extra: 1.5, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
-        fish:     { x: 12.3,  z: 1.32, w: 3.4, d: 2.3, extra: 1.4, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR CATCH', color: '#38bdf8' },
-        dive:     { x: 17.6,  z: 1.32, w: 3.2, d: 2.3, extra: 1.8, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
+        boatyard: { x: -17.55, z: 1.37, w: 4.2, d: 2.4, extra: 1.3, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
+        fish:     { x: 11.4,  z: 1.32, w: 2.9, d: 2.3, extra: 1.2, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR FISH', color: '#38bdf8' },
+        dive:     { x: -12.0, z: 1.32, w: 4.0, d: 2.3, extra: 1.4, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
       };
       const shopFrontZ = sh => sh.z + sh.d / 2 + (sh.front || 0);
+      /* Harbour order (v4.9.0), left to right looking from the island: Boatyard, Dive Shop, Tackle Shop, Bounty board,
+         [pier], Recycling, Fish Market, Cabin (with the bottle gallery, trophy case and film camera inside). */
+      const RECYCLE = { x: 6.8, w: 4.5, d: 1.3, frontZ: 1.3 };
+      const CABIN = { x: 16.9, w: 6.4, d: 3.6, doorW: 2.0, windowX: 0.55, galleryX: 15.25, trophyX: 19.06, camX: 15.0, camZ: 2.9 };
 
       const Colliders = {
         list: [],
@@ -6022,6 +6066,102 @@
           return g;
         }
 
+        /* ------------------------------------------------------------------
+           RECYCLING STAND (v4.9.0): three coloured skips (flora, metal, other) under a post sign. Origin on the
+           boardwalk rail at the stand's centre; the front faces +Z like every stand.
+           ------------------------------------------------------------------ */
+        static buildRecycleStand(textures) {
+          const g = new THREE.Group(), K = this.propKit(textures);
+          const label = (name, css) => {
+            const c = document.createElement('canvas'); c.width = 256; c.height = 96; const x = c.getContext('2d');
+            x.fillStyle = '#f8fafc'; x.fillRect(0, 0, 256, 96); x.strokeStyle = css; x.lineWidth = 8; x.strokeRect(4, 4, 248, 88);
+            x.fillStyle = css; x.font = 'bold 54px "Courier New", monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(name, 128, 52);
+            const t = new THREE.CanvasTexture(c); if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding; return t;
+          };
+          [['FLORA', 0x16a34a, '#15803d'], ['METAL', 0x2563eb, '#1d4ed8'], ['OTHER', 0xeab308, '#a16207']].forEach(([name, col, css], i) => {
+            const x = (i - 1) * 1.5, body = K.M(col, 0.55, 0.15), dark = K.M(0x111827, 0.6);
+            K.box(g, 1.4, 0.06, 0.9, body, x, 0.16, 0.75);
+            K.box(g, 1.4, 0.82, 0.06, body, x, 0.57, 1.17);
+            K.box(g, 1.4, 0.82, 0.06, body, x, 0.57, 0.33);
+            [-0.67, 0.67].forEach(sx => K.box(g, 0.06, 0.82, 0.9, body, x + sx, 0.57, 0.75));
+            K.box(g, 1.48, 0.06, 0.06, dark, x, 0.99, 1.18); K.box(g, 1.48, 0.06, 0.06, dark, x, 0.99, 0.32);
+            [-0.69, 0.69].forEach(sx => K.box(g, 0.06, 0.06, 0.92, dark, x + sx, 0.99, 0.75));
+            [-0.5, 0.5].forEach(sx => K.box(g, 0.14, 0.12, 0.96, dark, x + sx, 0.06, 0.75));
+            const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.375), new THREE.MeshBasicMaterial({ map: label(name, css) })); plate.position.set(x, 0.6, 1.205); g.add(plate);
+            // a heap in each skip
+            if (i === 0) [[-0.35, 0, 0x15803d], [0.05, 0.1, 0x22c55e], [0.4, -0.05, 0x166534], [-0.1, -0.15, 0x4ade80]].forEach(([dx, dz, c]) => { const s = K.sph(g, 0.22, K.M(c, 0.8), x + dx, 0.98, 0.75 + dz, 7, 5); s.scale.y = 0.55; });
+            else if (i === 1) [[-0.4, 0.05], [-0.05, -0.1], [0.3, 0.1]].forEach(([dx, dz], k) => { K.cyl(g, 0.09, 0.09, 0.2, K.M(0xcbd5e1, 0.35, 0.7), x + dx, 1.0, 0.75 + dz, 10).rotation.z = k * 0.6; });
+            else [[-0.4, 0.0, 0x7c4a1e], [0.0, 0.1, 0x57534e], [0.38, -0.05, 0x16a34a]].forEach(([dx, dz, c]) => K.box(g, 0.3, 0.2, 0.22, K.M(c, 0.8), x + dx, 0.98, 0.75 + dz).rotation.y = dx * 2);
+          });
+          // post sign with a lamp
+          [-2.25, 2.25].forEach(sx => K.cyl(g, 0.07, 0.08, 2.5, K.darkWood, sx, 1.25, 0.2, 8));
+          K.box(g, 4.7, 0.62, 0.08, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('♻️ RECYCLING', 512, 96) }), 0, 2.55, 0.22);
+          K.box(g, 4.84, 0.76, 0.05, K.darkWood, 0, 2.55, 0.17);
+          K.box(g, 4.9, 0.06, 0.3, K.M(0x14532d, 0.8), 0, 2.98, 0.22);
+          g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          return g;
+        }
+
+        /* ------------------------------------------------------------------
+           CABIN (v4.9.0): a walk-in room on the boardwalk. Local origin: centre of the back wall on the rail (z 0),
+           x from -W/2 to W/2, z from 0 to D. The front wall and the roof are separate groups (userData.front / .roof) that
+           fade out while the player is inside, so the chase camera can see in. The gallery and trophy case stand on the
+           back wall, the film camera by the door.
+           ------------------------------------------------------------------ */
+        static buildCabin(textures) {
+          const g = new THREE.Group(), K = this.propKit(textures), C = CABIN;
+          const W = C.w, D = C.d, H = 2.7, T = 0.14, hw = W / 2;
+          const wallM = () => K.M(0xb08a5a, 0.85, 0, { map: textures.wood }), trimM = () => K.M(0x4a2c16, 0.9), roofM = () => K.M(0x7f1d1d, 0.75);
+          const front = new THREE.Group(), roof = new THREE.Group(); g.add(front, roof);
+          g.userData.front = front; g.userData.roof = roof;
+          // floor, a step at the door
+          K.box(g, W, 0.1, D + 0.2, K.lightWood, 0, 0.05, D / 2 - 0.05);
+          K.box(g, C.doorW + 0.6, 0.08, 0.5, K.darkWood, 0, 0.04, D + 0.3);
+          // back wall with a window between the stands
+          const gx = C.windowX, ww = 1.2;
+          const seg = (x1, x2, y1, y2, parent, z, mat) => K.box(parent, x2 - x1, y2 - y1, T, mat(), (x1 + x2) / 2, (y1 + y2) / 2, z);
+          seg(-hw, gx - ww / 2, 0, H, g, -0.02, wallM); seg(gx + ww / 2, hw, 0, H, g, -0.02, wallM);
+          seg(gx - ww / 2, gx + ww / 2, 0.1, 1.0, g, -0.02, wallM); seg(gx - ww / 2, gx + ww / 2, 2.0, H, g, -0.02, wallM);
+          const pane = new THREE.Mesh(new THREE.PlaneGeometry(ww, 1.0), new THREE.MeshBasicMaterial({ color: 0x9bdcf2, transparent: true, opacity: 0.45 })); pane.position.set(gx, 1.5, 0.06); g.add(pane);
+          [[gx, 1.0, ww + 0.1, 0.07], [gx, 2.0, ww + 0.1, 0.07]].forEach(([x, y, w, h]) => K.box(g, w, h, 0.1, trimM(), x, y, 0.02));
+          [gx - ww / 2, gx + ww / 2, gx].forEach(x => K.box(g, 0.06, 1.0, 0.1, trimM(), x, 1.5, 0.02));
+          // side walls
+          [-1, 1].forEach(sd => K.box(g, T, H, D + 0.1, wallM(), sd * (hw - T / 2), H / 2, D / 2));
+          // corner posts
+          [-1, 1].forEach(sx => [0, D].forEach(z => K.box(g, 0.18, H + 0.05, 0.18, trimM(), sx * (hw - 0.05), H / 2, z)));
+          // front wall (fades): two pieces and a lintel round the door, a sign over it
+          const dz = D + 0.05, dw = C.doorW / 2;
+          K.box(front, hw - dw, H, T, wallM(), -(hw + dw) / 2, H / 2, dz); K.box(front, hw - dw, H, T, wallM(), (hw + dw) / 2, H / 2, dz);
+          K.box(front, C.doorW, H - 2.15, T, wallM(), 0, 2.15 + (H - 2.15) / 2, dz);
+          [-dw, dw].forEach(x => K.box(front, 0.12, 2.2, 0.2, trimM(), x, 1.1, dz)); K.box(front, C.doorW + 0.24, 0.12, 0.2, trimM(), 0, 2.2, dz);
+          K.box(front, 1.5, 0.34, 0.06, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🏠 CABIN', 256, 64) }), 0, 2.45, dz + 0.1);
+          [[-1, 1], [1, 1]].forEach(([sd]) => { const wn = K.box(front, 0.9, 0.7, 0.05, K.M(0x9bdcf2, 0.2, 0.1, { transparent: true, opacity: 0.55 }), sd * (hw + dw) / 2, 1.5, dz + 0.04); K.box(front, 1.0, 0.8, 0.04, trimM(), sd * (hw + dw) / 2, 1.5, dz + 0.01); });
+          // gabled roof (ridge along X) with eaves
+          {
+            const shape = new THREE.Shape(), half = D / 2 + 0.45, rh = 1.05;
+            shape.moveTo(-half, 0); shape.lineTo(half, 0); shape.lineTo(0, rh); shape.closePath();
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: W + 0.5, bevelEnabled: false });
+            geo.translate(0, 0, -(W + 0.5) / 2);
+            const r = new THREE.Mesh(geo, roofM()); r.rotation.y = Math.PI / 2; r.position.set(0, H, D / 2 - 0.05); roof.add(r);
+            K.box(roof, W + 0.6, 0.08, 0.14, trimM(), 0, H + 0.02, D / 2 - 0.05 + half - 0.02); K.box(roof, W + 0.6, 0.08, 0.14, trimM(), 0, H + 0.02, D / 2 - 0.05 - half + 0.02);
+            K.box(roof, 0.5, 0.7, 0.5, K.M(0x78716c, 0.95), hw - 1.0, H + 0.9, 0.6);   // chimney
+          }
+          // inside: rug, bunk bed on the right, a hanging lamp, a lifebuoy
+          K.box(g, 2.4, 0.02, 1.5, K.M(0xb91c1c, 0.95), 0.1, 0.11, 2.0); K.box(g, 2.0, 0.025, 1.1, K.M(0xfde68a, 0.95), 0.1, 0.115, 2.0);
+          {
+            const bx = hw - 0.62, bz = 2.55;
+            [[-0.42, -0.85], [0.42, -0.85], [-0.42, 0.85], [0.42, 0.85]].forEach(([x, z]) => K.box(g, 0.07, 1.5, 0.07, K.darkWood, bx + x, 0.85, bz + z));
+            [0.42, 1.12].forEach((y, k) => { K.box(g, 0.9, 0.12, 1.75, K.darkWood, bx, y, bz); K.box(g, 0.84, 0.1, 1.6, K.M(k ? 0x1d4ed8 : 0x0f766e, 0.9), bx, y + 0.1, bz); K.box(g, 0.6, 0.1, 0.34, K.M(0xf8fafc, 0.9), bx, y + 0.2, bz + 0.62); });
+            K.box(g, 0.05, 0.9, 0.4, K.darkWood, bx - 0.45, 0.8, bz + 0.98);
+          }
+          K.cyl(g, 0.012, 0.012, 0.7, K.iron, 0.0, 2.35, 1.8, 4);
+          K.cyl(g, 0.16, 0.2, 0.28, K.M(0xfacc15, 0.3, 0.3, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.9 }), 0.0, 1.95, 1.8, 8);
+          const lb = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.07, 6, 14), K.M(0xf97316, 0.6)); lb.position.set(-hw + 0.1, 1.6, 2.4); lb.rotation.y = Math.PI / 2; g.add(lb);
+          [front, roof].forEach(grp => grp.traverse(o => { if (o.isMesh) { o.material.transparent = true; } }));
+          g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          return g;
+        }
+
         static buildTackleShop(textures) {
           const g = new THREE.Group();
           const K = this.propKit(textures);
@@ -6444,6 +6584,8 @@
           abutment.position.set(0, 0.30, 4.6);
           scene.add(abutment);
 
+          // Island scenery that the third-person camera could get stuck behind (palms, cottages, bushes): hidden unless first person
+          const islandScenery = new THREE.Group(); scene.add(islandScenery);
           // Rolling island hills behind the harbour terrace: one heightfield with grass, darker hollows and rocky slopes in its
           // vertex colours. It always sits on or above the beach plane underneath, so nothing pokes through.
           {
@@ -6474,12 +6616,12 @@
             const hills = new THREE.Mesh(hg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, flatShading: true }));
             hills.position.z = 14.5 + D / 2;
             scene.add(hills);
-            // a scatter of rocks and bushes on the slopes
+            // a scatter of rocks and bushes on the slopes (bushes join the island scenery group, hidden in third person)
             for (let i = 0; i < 26; i++) {
               const x = (this.noise2(i * 3.1, 1) - 0.5) * 200, z = 26 + this.noise2(i * 1.7, 5) * 40;
               if (Math.abs(x) < 30 && z < 30) continue;
               const y = hY(x, z);
-              if (i % 3) { const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9 + (i % 4) * 0.35, 0), new THREE.MeshStandardMaterial({ color: i % 2 ? 0x2f6f2a : 0x3d7f33, roughness: 0.9, flatShading: true })); b.position.set(x, y + 0.4, z); b.scale.y = 0.75; scene.add(b); }
+              if (i % 3) { const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9 + (i % 4) * 0.35, 0), new THREE.MeshStandardMaterial({ color: i % 2 ? 0x2f6f2a : 0x3d7f33, roughness: 0.9, flatShading: true })); b.position.set(x, y + 0.4, z); b.scale.y = 0.75; islandScenery.add(b); }
               else { const r = this.buildRock(1.1 + (i % 5) * 0.3, i, 0x8a8f96, 0); r.position.set(x, y + 0.2, z); scene.add(r); }
             }
           }
@@ -6511,7 +6653,7 @@
             ].forEach(([tx, tz, h, lean], i) => {
               const palm = this.buildPalm(h, lean, i * 1.3, mats);
               palm.position.set(tx, 1.5, tz);
-              scene.add(palm);
+              islandScenery.add(palm);
             });
           }
 
@@ -6519,7 +6661,7 @@
           [[-17.5, 11.6, 3.4, 2.8, 0xf8fafc, 0xb91c1c, 0, 0.12], [-6.5, 11.9, 3.0, 2.6, 0xfef3c7, 0x1e3a8a, 1, -0.05],
            [7.0, 11.9, 3.2, 2.6, 0xe0f2fe, 0xb45309, 2, 0.06], [17.5, 11.4, 3.6, 3.0, 0xfde68a, 0x1e3a8a, 3, -0.1]].forEach(([x, z, w, d, wall, roof, seed, rot]) => {
             const ct = this.buildCottage(w, d, wall, roof, seed);
-            ct.position.set(x, 1.5, z); ct.rotation.y = rot; scene.add(ct);
+            ct.position.set(x, 1.5, z); ct.rotation.y = rot; islandScenery.add(ct);
           });
           // a stone path from the pier ramp across the terrace
           for (let i = 0; i < 9; i++) {
@@ -6685,20 +6827,26 @@
 
           // 3D Bottle Gallery Display Stand with Back to the Sea, Facing South (+Z)
           const galleryStand = this.buildBottleGalleryStand(textures);
-          galleryStand.position.set(4.4, 1.56, 0.8);
+          galleryStand.position.set(CABIN.galleryX, 1.56, 0.8);
           galleryStand.rotation.y = 0;
           pierGroup.add(galleryStand);
 
           // Trophy cabinet in the gap between the gallery and the film camera (fronts face +Z)
           const trophyCabinet = this.buildTrophyCabinet(textures);
-          trophyCabinet.position.set(6.55, 1.56, 0.8);
+          trophyCabinet.position.set(CABIN.trophyX, 1.56, 0.8);
           pierGroup.add(trophyCabinet);
 
           // 3D Fourth-Wall Film Camera with Back to the Sea, Facing South (+Z)
           const filmCamera = this.buildFourthWallCamera();
-          filmCamera.position.set(8.2, 1.56, 0.9);
+          filmCamera.position.set(CABIN.camX, 1.56, CABIN.camZ);
           filmCamera.rotation.y = Math.PI + 0.18;
           pierGroup.add(filmCamera);
+
+          // Recycling stand (three skips) and the walk-in cabin
+          const recycleStand = this.buildRecycleStand(textures);
+          recycleStand.position.set(RECYCLE.x, 1.56, 0); pierGroup.add(recycleStand);
+          const cabin = this.buildCabin(textures);
+          cabin.position.set(CABIN.x, 1.56, 0); pierGroup.add(cabin);
 
           // 3D Tackle Toolbox on the Starboard Front Pier Opposite the Catch Bucket
           const tackleToolbox = this.buildTackleToolbox();
@@ -6720,9 +6868,18 @@
           const W = COL.WALK;
           Colliders.box('tackle shop', -7.525, 1.275, 1.825, 1.275, W);
           Colliders.box('bounty board', -4.2, 0.825, 1.0, 0.825, W);
-          Colliders.box('bottle gallery', 4.4, 0.875, 1.3, 0.875, W);
-          Colliders.box('trophy cabinet', 6.55, 0.725, 0.7, 0.725, W);
-          Colliders.circle('film camera', 8.2, 0.9, 0.85, W);
+          Colliders.box('bottle gallery', CABIN.galleryX, 0.875, 1.3, 0.875, W);
+          Colliders.box('trophy cabinet', CABIN.trophyX, 0.725, 0.7, 0.725, W);
+          Colliders.circle('film camera', CABIN.camX, CABIN.camZ, 0.6, W);
+          Colliders.box('recycling', RECYCLE.x, 0.65, RECYCLE.w / 2, 0.65, W);
+          {   // the cabin: side walls, the front wall with its door gap, the bunk bed
+            const hw = CABIN.w / 2, dz = CABIN.d + 0.05, dw = CABIN.doorW / 2;
+            Colliders.box('cabin wall W', CABIN.x - hw + 0.07, (CABIN.d + 0.2) / 2, 0.11, (CABIN.d + 0.3) / 2, W);
+            Colliders.box('cabin wall E', CABIN.x + hw - 0.07, (CABIN.d + 0.2) / 2, 0.11, (CABIN.d + 0.3) / 2, W);
+            Colliders.box('cabin front W', CABIN.x - (hw + dw) / 2, dz, (hw - dw) / 2, 0.12, W);
+            Colliders.box('cabin front E', CABIN.x + (hw + dw) / 2, dz, (hw - dw) / 2, 0.12, W);
+            Colliders.box('cabin bed', CABIN.x + hw - 0.62, 2.55, 0.5, 0.95, W);
+          }
           Colliders.box('toolbox', PIER_TOOLBOX_X, -7.6, 0.55, 0.45, W);
           const bucketCollider = Colliders.box('bucket', PIER_BUCKET_X, -7.6, 0.69, 0.65, W);
 
@@ -6827,7 +6984,7 @@
               st.position.set(x, deckY, z); st.rotation.y = seed; pierGroup.add(st);
               Colliders.circle('barrels', x + 0.15, z - 0.05, 0.66, COL.WALK);
             };
-            barrelStack(BW_HALF - 0.85, 3.6, 0.3); barrelStack(-(BW_HALF - 0.75), 3.5, -0.5);
+            barrelStack(BW_HALF - 0.85, 5.2, 0.3); barrelStack(-(BW_HALF - 0.75), 3.5, -0.5);
 
             // seagull builder: only the one hiding behind the tackle shop is placed (the secret-menu gull)
             const buildGull = yaw => {
@@ -7000,7 +7157,7 @@
 
           // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The film camera (it turns to
           // face you), the trophy mounts (rebuilt when records change) and the secret seagull stay separate.
-          ModelKit.mergeStatic(pierGroup, [filmCamera, trophyCabinet.userData.fishGroup, cheatGull, bountyBoard.userData.papers]);
+          ModelKit.mergeStatic(pierGroup, [filmCamera, trophyCabinet.userData.fishGroup, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
           scene.add(pierGroup);
 
           const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -7279,14 +7436,16 @@
             if (realLights) addLight(-4.2, 1.56 + 2.35, 0.8 + 0.9, LIGHT_TUNING.bounty.color, 7.5, LIGHT_TUNING.bounty.k);
             addPool(-4.2, 1.56, 0.8 + 1.0, 2.1, LIGHT_TUNING.bounty.pool, 0.9);
           }
-          // Bottle gallery (4.4, 0.8): cool teal light to show off the glass (its string lights already hang under the sign)
-          if (realLights) addLight(4.4, 1.56 + 2.0, 0.8 + 0.9, LIGHT_TUNING.gallery.color, 8.5, LIGHT_TUNING.gallery.k);
-          addPool(4.4, 1.56, 0.8 + 1.2, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
-          // Trophy cabinet (6.55, 0.8): a soft light over the case
-          if (realLights) addLight(6.55, 1.56 + 2.4, 0.8 + 0.9, LIGHT_TUNING.trophy.color, 8, LIGHT_TUNING.trophy.k);
-          addPool(6.55, 1.56, 0.8 + 1.0, 1.9, LIGHT_TUNING.trophy.pool, 0.8);
-          // Film camera (8.2, 0.9): its own lamp post
-          buildHarborLamp(9.55, 1.56, 1.9, realLights);
+          // Cabin: a warm lamp in the middle, a teal light on the bottle gallery, a soft one over the trophy case
+          if (realLights) addLight(CABIN.x, 1.56 + 2.1, 1.8, LIGHT_TUNING.shop.color, 9, LIGHT_TUNING.shop.k);
+          if (realLights) addLight(CABIN.galleryX, 1.56 + 2.0, 0.8 + 0.9, LIGHT_TUNING.gallery.color, 6.5, LIGHT_TUNING.gallery.k);
+          addPool(CABIN.galleryX, 1.56, 0.8 + 1.2, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
+          if (realLights) addLight(CABIN.trophyX, 1.56 + 2.2, 0.8 + 0.9, LIGHT_TUNING.trophy.color, 6, LIGHT_TUNING.trophy.k);
+          addPool(CABIN.trophyX, 1.56, 0.8 + 1.0, 1.9, LIGHT_TUNING.trophy.pool, 0.8);
+          addPool(CABIN.x, 1.56, 2.0, 2.6, LIGHT_TUNING.shop.pool, 0.8);
+          // Recycling stand: a lamp post by the skips
+          buildHarborLamp(RECYCLE.x - RECYCLE.w / 2 - 0.4, 1.56, 1.7, realLights);
+          addPool(RECYCLE.x, 1.56, 1.8, 2.8, LIGHT_TUNING.shop.pool, 0.8);
           // Boat terminal: a small kiosk on the mooring platform's corner (screen faces the platform, +Z)
           {
             const T = BOAT_TERMINAL, kiosk = new THREE.Group();
@@ -7545,6 +7704,8 @@
             shoreZ,
             filmCamera,
             bountyPapers: bountyBoard.userData.papers,
+            cabin,
+            islandScenery,
             skyGroup,
             sunOrb,
             moonGroup,
@@ -8483,7 +8644,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         }
         // boardwalk sea-edge rail, between the stands
         if (pz < 0.62 && Math.abs(px) > PIER_HW + 0.15 && Math.abs(px) < BW_HALF - 0.6) {
-          const busy = [[-9.55, -5.5], [-5.4, -3.0], [2.9, 5.9], [5.65, 7.45], [7.0, 9.9]].some(([a, b]) => px > a && px < b)
+          const busy = [[-9.55, -5.5], [-5.4, -3.0], [RECYCLE.x - RECYCLE.w / 2 - 0.2, RECYCLE.x + RECYCLE.w / 2 + 0.2], [CABIN.x - CABIN.w / 2 - 0.2, CABIN.x + CABIN.w / 2 + 0.2]].some(([a, b]) => px > a && px < b)
             || Object.values(SHORE_SHOPS).some(sh => Math.abs(px - sh.x) < sh.w / 2 + sh.extra / 2 + 0.4);
           if (!busy) return { kind: 'rail', x: px, z: 0.33, yaw: 0, railX: null, railZ: 0.12, side: 0 };
         }
@@ -9280,7 +9441,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { title: '🧭 Teleport (on the pier)', items: [
           ['Pier tip', cheatTeleport(0, -10.59, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
           ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(MOOR.boardX, -5.6, 'Mooring platform')],
-          ['Fish market', cheatTeleport(SHORE_SHOPS.fish.x, 6.5, 'Fish market')], ['Boatyard', cheatTeleport(SHORE_SHOPS.boatyard.x, 6.5, 'Boatyard')], ['Dive shop', cheatTeleport(SHORE_SHOPS.dive.x, 6.5, 'Dive shop')]] },
+          ['Fish market', cheatTeleport(SHORE_SHOPS.fish.x, 6.5, 'Fish market')], ['Boatyard', cheatTeleport(SHORE_SHOPS.boatyard.x, 6.5, 'Boatyard')], ['Dive shop', cheatTeleport(SHORE_SHOPS.dive.x, 6.5, 'Dive shop')],
+          ['Recycling', cheatTeleport(RECYCLE.x, 4.2, 'Recycling')], ['Cabin', cheatTeleport(CABIN.x, 2.4, 'Cabin')]] },
         { title: '🌊 Sea events (on a boat)', items: [
           ['Spawn treasure chest', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('treasure'); }],
           ['Spawn boss shadow', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('boss'); }]] },
@@ -9578,9 +9740,10 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const STAND_VIEWS = [
         { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
         { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
-        { id: 'gallery', near: () => isNearPierGallery(),  cx: 4.4,  cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: -1 },
-        { id: 'trophy',  near: () => isNearPierTrophies(), cx: 6.55, cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
-        { id: 'camera',  near: () => isNearPierCamera(),   cx: 8.2,  cy: 3.1, cz: 0.9, halfW: 1.0,  halfH: 1.1, side: -1 },
+        { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
+        { id: 'trophy',  near: () => isNearPierTrophies(), cx: CABIN.trophyX,  cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
+        { id: 'camera',  near: () => isNearPierCamera(),   cx: CABIN.camX,     cy: 2.9, cz: CABIN.camZ, halfW: 1.0, halfH: 1.1, side: 1 },
+        { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
         ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55, side: sh.x < 0 ? 1 : -1 }))
       ];
       function currentStandView() {
@@ -9606,9 +9769,10 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function nearShoreShop(sh) { const fz = shopFrontZ(sh); return !onBoat && mode === 'PIER_IDLE' && Math.abs(playerX - sh.x) <= sh.w / 2 + 0.35 && playerZ >= fz - 0.1 && playerZ <= fz + 1.35; }
       function shoreShopHere() { for (const k in SHORE_SHOPS) if (nearShoreShop(SHORE_SHOPS[k])) return k; return null; }
       function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
-      function isNearPierGallery() { return nearStandFront(4.4, 1.6, 1.75, 1.0); }
-      function isNearPierTrophies() { return nearStandFront(6.55, 0.8, 1.45, 1.0); }
-      function isNearPierCamera() { return nearSpot(8.2, 0.9, 1.45); }
+      function isNearPierGallery() { return nearStandFront(CABIN.galleryX, 1.6, 1.75, 1.0); }
+      function isNearRecycle() { return nearStandFront(RECYCLE.x, RECYCLE.w / 2 + 0.2, RECYCLE.frontZ, 1.0); }
+      function isNearPierTrophies() { return nearStandFront(CABIN.trophyX, 0.8, 1.45, 1.0); }
+      function isNearPierCamera() { return nearSpot(CABIN.camX, CABIN.camZ, 1.3); }
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(PIER_TOOLBOX_X, -7.6, 1.25); }
       function isNearMooredBoat() { return nearSpot(MOOR.boardX, -5.6, 1.4) && !isNearBoatTerminal(); }
@@ -10022,6 +10186,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
             enterShopBrowse(shoreKind);
+            return;
+          }
+          if (isNearRecycle()) {
+            isHoldingAction = false;
+            actionPointerId = null;
+            primaryBtn.classList.remove('pressed');
+            enterShopBrowse('recycle');
             return;
           }
           if (isNearPierBounty()) {
@@ -10852,6 +11023,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
         });
       }
+      /* the cabin's front wall and roof fade out while you are inside, so the chase camera can see in */
+      const cabinFade = { t: 1, mats: null };
+      function updateCabinFade(dt) {
+        const c = world && world.cabin; if (!c) return;
+        if (!cabinFade.mats) { cabinFade.mats = []; [c.userData.front, c.userData.roof].forEach(grp => grp.traverse(o => { if (o.isMesh && o.material) cabinFade.mats.push(o.material); })); }
+        const inside = !onBoat && Math.abs(playerX - CABIN.x) < CABIN.w / 2 + 0.2 && playerZ > -0.2 && playerZ < CABIN.d + 1.3;
+        const target = inside ? 0.1 : 1, prev = cabinFade.t;
+        cabinFade.t += (target - cabinFade.t) * Math.min(1, dt * 6);
+        if (Math.abs(cabinFade.t - target) < 0.01) cabinFade.t = target;
+        if (cabinFade.t !== prev || dt === 0) { const t = cabinFade.t; cabinFade.mats.forEach(m => { m.opacity = t; m.depthWrite = t > 0.9; }); [c.userData.front, c.userData.roof].forEach(grp => { grp.visible = t > 0.02; }); }
+      }
       function claimBounty(idx) {
         const b = (state.bounties || [])[idx];
         if (!b) return false;
@@ -10946,21 +11128,27 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       /* =========================================================================
-         SHOPS (v4.8.0): no menu. Walk up, press the action button and the shopkeeper slides a display counter out along
-         the shop front with the goods on it. The camera slides from item to item (arrows, swipe, A / D); tap an item
-         (or the card) to buy and confirm. Tabs switch category. The goods are made by shopItems() and
-         WorldBuilder.buildShopItem(); to add something to a shop, add an item there.
+         SHOPS (v4.9.0): no menus. The Tackle Shop, Boatyard and Dive Shop hand you a paper CATALOGUE: a page-flip brochure
+         with one item per page (picture, title, stats, description, price, state), arrows or a swipe to turn pages, category
+         chips on top, tap to buy and then confirm. The Fish Market and the Recycling stand show your bucket as a list with a
+         sell-all button. The goods come from shopItems(); their pictures are WorldBuilder.buildShopItem() models rendered
+         once to small images. To add a good, add it to shopItems() and give buildShopItem() a model.
          ========================================================================= */
-      const SHOP_DECK_Y = 1.56, SHOP_COUNTER_Z = 3.3, SHOP_TOP_Y = SHOP_DECK_Y + 0.95;
       const SHOP_KINDS = {
-        tackle:   { title: '🎣 TACKLE SHOP', x: -7.6, color: 0xb45309, tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['buckets', '🪣 Buckets']] },
-        boatyard: { title: '⚓ BOATYARD', x: SHORE_SHOPS.boatyard.x, color: 0x1d4ed8, tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel']] },
-        dive:     { title: '🤿 DIVE SHOP', x: SHORE_SHOPS.dive.x, color: 0x0f766e, tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns']] },
-        fish:     { title: '🐟 FISH MARKET', x: SHORE_SHOPS.fish.x, color: 0x0369a1, tabs: [['catch', '🐟 Sell catch']] }
+        tackle:   { title: '🎣 TACKLE SHOP', stand: 'shop', tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['buckets', '🪣 Buckets']] },
+        boatyard: { title: '⚓ BOATYARD', stand: 'boatyard', tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel']] },
+        dive:     { title: '🤿 DIVE SHOP', stand: 'dive', tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns']] },
+        fish:     { title: '🐟 FISH MARKET', stand: 'fish', list: 'fish' },
+        recycle:  { title: '♻️ RECYCLING', stand: 'recycle', list: 'junk' }
       };
-      const shopBrowse = { active: false, kind: 'tackle', tab: 'rods', idx: 0, items: [], slots: [], group: null, light: null, pending: null, rise: 0 };
+      const shopBrowse = { active: false, kind: 'tackle', tab: 'rods', idx: 0, items: [], pending: null, armedAt: 0, viewOff: false, dir: 0 };
       const shopMoney = v => '$' + (+v).toLocaleString(undefined, { maximumFractionDigits: 2 });
       const shopNeed = c => `Need ${shopMoney(Math.ceil(c - state.cash))} more`;
+      /* which skip a piece of junk goes in */
+      const SKIP_OF = e => e.category === 'Flora' ? 'flora' : ['jk_can', 'jk_anchor', 'jk_box'].includes(e.id) ? 'metal' : 'other';
+      const SKIPS = { flora: ['FLORA', '🌿', '#16a34a'], metal: ['METAL', '🥫', '#2563eb'], other: ['OTHER', '👢', '#eab308'] };
+      const isFishEntry = e => e.category === 'Fish';
+      const isJunkEntry = e => e.category === 'Junk' || e.category === 'Flora';
 
       function sellBucketEntry(idx) {
         const [soldItem] = state.bucket.splice(idx, 1);
@@ -10975,20 +11163,21 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         rebuildPierBucketVisual();
         updateHUD();
       }
-      function sellAllCatch() {
-        if (state.bucket.length === 0) return;
-        const soldCopy = [...state.bucket];
-        const total = soldCopy.reduce((s, i) => s + sellValue(i), 0);
+      /* sell every entry that matches (all the fish, or all the junk) */
+      function sellBucketWhere(pred, verb) {
+        const sold = state.bucket.filter(pred);
+        if (!sold.length) return;
+        const total = sold.reduce((s, i) => s + sellValue(i), 0);
+        state.bucket = state.bucket.filter(e => !pred(e));
         state.cash = +(state.cash + total).toFixed(2);
         bumpStat('earned', total);
-        state.bucket = [];
         sfx.playCoin();
-        processEcoCleanupReward(soldCopy);
+        processEcoCleanupReward(sold);
         checkAchievements();
         saveGame();
         rebuildPierBucketVisual();
         updateHUD();
-        showToast(`Sold ${soldCopy.length} item(s) for $${total.toFixed(2)}!`);
+        showToast(`${verb} ${sold.length} item(s) for $${total.toFixed(2)}!`);
       }
       function refuelBoat() {
         const boat = getCurrentBoat();
@@ -11087,208 +11276,189 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               confirm: `Buy ${g.name} for ${shopMoney(g.cost)}?`,
               act: () => { pay(g.cost); if (isDive) state.diveTier = g.tier; else state.spearTier = g.tier; saveGame(); updateHUD(); showToast(`${isDive ? '🤿' : '🔱'} Bought ${g.name}!`); } });
           });
-        } else if (tab === 'catch') {
-          const total = state.bucket.reduce((s, i) => s + sellValue(i), 0), cod = catchOfDay(), mk = marketFor(state.dayCount || 0);
-          const ecoMod = (state.junkRecycledKg || 0) % 100;
-          const names = ids => ids.map(id => `${CATALOG_INDEX[id].name} x${mk.mult[id].toFixed(1)}`).join(', ');
-          add({ id: 'sellall', key: 'crate', data: {}, title: 'Sell everything', stats: `${state.bucket.length} catch${state.bucket.length === 1 ? '' : 'es'} • ${getBucketWeight().toFixed(1)} / ${getBucketCapacity().toFixed(1)} kg`,
-            desc: `Today: hot ${names(mk.hot)}. Glut ${names(mk.glut)}. Catch of the Day ${cod.name} pays x3. Recycling junk: ${ecoMod.toFixed(1)} / 100 kg to the Mayor's $1,000.`,
-            price: total, priceText: '+' + shopMoney(total), verb: 'Sell', can: state.bucket.length > 0, note: state.bucket.length ? '' : 'Your bucket is empty.',
-            confirm: `Sell all ${state.bucket.length} catches for ${shopMoney(total)}?`, act: sellAllCatch });
-          state.bucket.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(entry => {
-            const m = marketMult(entry.id), v = sellValue(entry);
-            add({ id: 'fish' + state.bucket.indexOf(entry), key: 'fish', data: { item: CATALOG_INDEX[entry.id] || entry, weight: entry.weight, entry }, title: entry.name + (entry.id === cod.id ? ' ⭐' : ''),
-              stats: `${entry.weight.toFixed(2)} kg${m > 1.1 ? ` • hot today x${m.toFixed(1)}` : m < 0.9 ? ` • glut x${m.toFixed(1)}` : ''}`, desc: `${entry.rarity || ''} ${entry.category || 'catch'}. ${entry.id === cod.id ? 'Catch of the Day: pays triple!' : 'Tap to sell this one.'}`,
-              price: v, priceText: '+' + shopMoney(v), verb: 'Sell', can: true, confirm: `Sell ${entry.name} (${entry.weight.toFixed(2)} kg) for ${shopMoney(v)}?`,
-              act: () => { const i = state.bucket.indexOf(entry); if (i >= 0) { sellBucketEntry(i); showToast(`Sold ${entry.name} for ${shopMoney(v)}`); } } });
-          });
         }
         return out;
       }
 
-      /* ---- the display counter ---- */
-      function shopTagDraw(cv, it, selected) {
-        const W = cv.width, H = cv.height, x = cv.getContext('2d');
-        x.fillStyle = selected ? '#fff7d6' : '#fdf3d0'; x.fillRect(0, 0, W, H);
-        x.strokeStyle = selected ? '#d97706' : 'rgba(120,80,30,0.7)'; x.lineWidth = selected ? 8 : 5; x.strokeRect(4, 4, W - 8, H - 8);
-        x.textAlign = 'center'; x.fillStyle = '#3b2410'; x.font = 'bold 27px "Courier New", monospace';
-        const lines = wrapLines(x, it.title.replace(/[^\x20-\x7e]/g, '').trim() || it.title, W - 36).slice(0, 2);
-        lines.forEach((l, i) => x.fillText(l, W / 2, 38 + i * 30));
-        const price = it.priceText || (it.price != null ? shopMoney(it.price) : '');
-        x.font = 'bold 36px "Courier New", monospace';
-        x.fillStyle = it.badge && !it.can ? '#166534' : it.can ? '#166534' : '#b91c1c';
-        if (it.badge && !it.can) { x.font = 'bold 30px "Courier New", monospace'; x.fillText(it.badge, W / 2, H - 26); }
-        else x.fillText(price, W / 2, H - 26);
-      }
-      function shopDisposeGroup(grp) {
-        if (!grp) return;
-        grp.traverse(o => {
-          if (o.geometry) o.geometry.dispose();
-          if (o.userData && o.userData.tagTex) o.userData.tagTex.dispose();
-          if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.userData && m.userData.own) m.dispose(); });
-        });
-        if (grp.parent) grp.parent.remove(grp);
-      }
-      function shopSlotsFor(n, cx) {
-        const per = n <= 10 ? Math.max(1, n) : 8, sp = 1.05, rows = Math.ceil(n / per), slots = [];
-        const half = ((per - 1) / 2) * sp + 0.9, ccx = THREE.MathUtils.clamp(cx, -20.3 + half, 20.3 - half);
-        for (let i = 0; i < n; i++) {
-          const row = Math.floor(i / per), col = i % per, inRow = Math.min(per, n - row * per);
-          slots.push({ x: ccx + (col - (inRow - 1) / 2) * sp, z: SHOP_COUNTER_Z - row * 1.0, y: SHOP_TOP_Y + row * 0.4, row, sp });
-        }
-        return { slots, cx: ccx, per, rows };
-      }
-      function buildShowcase() {
-        shopDisposeGroup(shopBrowse.group);
-        const sk = SHOP_KINDS[shopBrowse.kind], items = shopBrowse.items, lay = shopSlotsFor(items.length, sk.x);
-        const K = WorldBuilder.propKit(textures), grp = new THREE.Group(), cloth = K.M(sk.color, 0.85);
-        shopBrowse.slots = lay.slots;
-        // counter bodies, one per row, each a step higher towards the back
-        for (let r = 0; r < lay.rows; r++) {
-          const inRow = Math.min(lay.per, items.length - r * lay.per), len = (inRow - 1) * 1.05 + 1.5, z = SHOP_COUNTER_Z - r * 1.0, h = 0.95 + r * 0.4;
-          K.box(grp, len, h, 0.95, K.wood, lay.cx, SHOP_DECK_Y + h / 2, z);
-          K.box(grp, len + 0.14, 0.07, 1.08, K.darkWood, lay.cx, SHOP_DECK_Y + h + 0.035, z);
-          K.box(grp, len - 0.1, 0.012, 0.8, cloth, lay.cx, SHOP_DECK_Y + h + 0.077, z - 0.02);
-          K.box(grp, len, 0.05, 0.05, K.brass, lay.cx, SHOP_DECK_Y + 0.12, z + 0.49);
-        }
-        const hitMat = new THREE.MeshBasicMaterial({ visible: false });
-        items.forEach((it, i) => {
-          const s = lay.slots[i];
+
+      /* ---- pictures: each good's 3D model rendered once to a small image (own offscreen renderer, cached) ---- */
+      const shopPic = { renderer: null, scene: null, cam: null, cache: {} };
+      function shopPictureFor(it) {
+        const ck = it.key + ':' + (it.key === 'fish' ? it.data.item.id : it.id);
+        if (shopPic.cache[ck] !== undefined) return shopPic.cache[ck];
+        let url = '';
+        try {
+          if (!shopPic.renderer) {
+            const cv = document.createElement('canvas'); cv.width = cv.height = 320;
+            shopPic.renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false, preserveDrawingBuffer: true });
+            shopPic.renderer.setPixelRatio(1); shopPic.renderer.setSize(320, 320, false);
+            shopPic.scene = new THREE.Scene(); shopPic.scene.background = new THREE.Color(0xf4e6bf);
+            shopPic.scene.add(new THREE.HemisphereLight(0xffffff, 0xa89b80, 1.2));
+            const dl = new THREE.DirectionalLight(0xffffff, 1.5); dl.position.set(2.5, 4, 3.5); shopPic.scene.add(dl);
+            const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.66, 0.05, 28), new THREE.MeshStandardMaterial({ color: 0xd6c08e, roughness: 0.9 })); plate.position.y = -0.03; shopPic.scene.add(plate);
+            shopPic.cam = new THREE.PerspectiveCamera(30, 1, 0.05, 40);
+          }
           const model = WorldBuilder.buildShopItem(it.key, it.data, textures);
-          model.position.set(s.x, s.y + 0.1, s.z - 0.04); s.model = model; s.size = Math.max(model.userData.h || 0.8, 0.85); s.h = model.userData.h || 0.8;
-          grp.add(model);
-          const ped = K.cyl(grp, 0.4, 0.44, 0.1, K.darkWood, s.x, s.y + 0.05, s.z - 0.04, 20); ped.material = ped.material.clone(); ped.material.userData.own = true;
-          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.018, 6, 28), new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0 }));
-          ring.rotation.x = Math.PI / 2; ring.position.set(s.x, s.y + 0.11, s.z - 0.04); grp.add(ring); s.ring = ring;
-          const cv = document.createElement('canvas'); cv.width = 320; cv.height = 140;
-          const tex = new THREE.CanvasTexture(cv); if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding; tex.anisotropy = 4;
-          const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.35), new THREE.MeshBasicMaterial({ map: tex }));
-          tag.position.set(s.x, s.y + 0.13, s.z + 0.34); tag.rotation.x = -0.95; tag.userData = { tagTex: tex, cv, slot: i, hit: true }; grp.add(tag); s.tag = tag;
-          const hit = new THREE.Mesh(new THREE.BoxGeometry(s.sp * 0.98, Math.max(1.5, s.h + 0.5), 1.0), hitMat);
-          hit.position.set(s.x, s.y + Math.max(1.5, s.h + 0.5) / 2, s.z); hit.userData = { slot: i, hit: true }; grp.add(hit); s.hit = hit;
-          shopTagDraw(cv, it, false); tex.needsUpdate = true;
-        });
-        grp.userData.hitMat = hitMat;
-        scene.add(grp); shopBrowse.group = grp; shopBrowse.rise = 0;
-        grp.position.y = -1.6;
-      }
-      function shopRefreshTags() {
-        shopBrowse.items.forEach((it, i) => { const s = shopBrowse.slots[i]; if (!s || !s.tag) return; shopTagDraw(s.tag.userData.cv, it, i === shopBrowse.idx); s.tag.userData.tagTex.needsUpdate = true; });
+          model.rotation.y = -0.5; shopPic.scene.add(model); model.updateMatrixWorld(true);
+          const bb = new THREE.Box3().setFromObject(model), sz = bb.getSize(new THREE.Vector3()), mid = bb.getCenter(new THREE.Vector3());
+          const span = Math.max(sz.x, sz.y * 1.05, sz.z, 0.5), dist = span / (2 * Math.tan(THREE.MathUtils.degToRad(15))) * 1.18 + sz.z * 0.5;
+          shopPic.cam.position.set(mid.x + dist * 0.2, mid.y + dist * 0.28, mid.z + dist * 0.95); shopPic.cam.lookAt(mid.x, mid.y - sz.y * 0.04, mid.z);
+          shopPic.renderer.render(shopPic.scene, shopPic.cam);
+          url = shopPic.renderer.domElement.toDataURL('image/png');
+          shopPic.scene.remove(model);
+          model.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose && m.dispose()); });
+        } catch (err) { url = ''; }
+        shopPic.cache[ck] = url;
+        return url;
       }
 
-      /* ---- camera, per-frame animation ---- */
+      /* ---- the stand zoom stays on the shop; the picture is pushed up so the sheet does not cover it ---- */
       const _shPos = new THREE.Vector3(), _shLook = new THREE.Vector3();
       function shopCameraPose() {
-        const s = shopBrowse.slots[shopBrowse.idx]; if (!s) return;
-        const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2), th = tv * camera.aspect;
-        const half = Math.max(s.size, 1.25) * 0.62;
-        const dist = Math.max(2.0, Math.max(half / (tv * 0.62), half / th) + 0.7);
-        const lookY = s.y + 0.1 + s.h * 0.5;                     // the item sits mid-screen, between the tabs and the card
-        _shLook.set(s.x, lookY, s.z);
-        _shPos.set(s.x + 0.12, lookY + dist * 0.16, s.z + dist);
+        const st = STAND_VIEWS.find(v => v.id === SHOP_KINDS[shopBrowse.kind].stand); if (!st) return;
+        standCameraPose(st); _shPos.copy(_standPos); _shLook.copy(_standLook);
       }
       function updateShopBrowse(dt) {
-        if (!shopBrowse.active || !shopBrowse.group) return;
-        shopBrowse.rise = Math.min(1, shopBrowse.rise + dt * 2.6);
-        const e = 1 - Math.pow(1 - shopBrowse.rise, 3);
-        shopBrowse.group.position.y = -1.6 * (1 - e);
-        shopBrowse.slots.forEach((s, i) => {
-          const sel = i === shopBrowse.idx;
-          if (s.model) { if (sel) s.model.rotation.y += dt * 0.7; else { const r0 = Math.atan2(Math.sin(s.model.rotation.y), Math.cos(s.model.rotation.y)); s.model.rotation.y = r0 * (1 - Math.min(1, dt * 5)); } s.model.position.y = s.y + 0.1 + (sel ? 0.04 + Math.sin(elapsed * 2.4) * 0.015 : 0); }
-          if (s.ring) s.ring.material.opacity += ((sel ? 0.9 : 0) - s.ring.material.opacity) * Math.min(1, dt * 8);
-        });
-        const s = shopBrowse.slots[shopBrowse.idx];
-        if (s) {
-          if (!shopBrowse.light) { shopBrowse.light = new THREE.PointLight(0xffe2b0, 0, 7, 1.6); scene.add(shopBrowse.light); }
-          shopBrowse.light.position.set(s.x, s.y + 2.2, s.z + 1.6); shopBrowse.light.intensity = 1.1 + 0.9 * (isNightTime() ? 1 : 0.2);
-        }
+        if (shopBrowse.active) {
+          const w = window.innerWidth, h = window.innerHeight, off = h > 520 ? 0.2 : 0.08;
+          camera.setViewOffset(w, h, 0, Math.round(h * off), w, h); shopBrowse.viewOff = true;
+        } else if (shopBrowse.viewOff) { camera.clearViewOffset(); shopBrowse.viewOff = false; }
       }
 
-      /* ---- screen UI ---- */
-      function shopUiRender() {
-        const it = shopBrowse.items[shopBrowse.idx], sk = SHOP_KINDS[shopBrowse.kind];
-        const tabs = document.getElementById('shop-tabs'); tabs.innerHTML = '';
-        const nm = document.createElement('span'); nm.className = 'shop-name'; nm.textContent = sk.title; tabs.appendChild(nm);
-        if (sk.tabs.length > 1) sk.tabs.forEach(([id, label]) => {
+      /* ---- the sheet ---- */
+      const shopEl = id => document.getElementById(id);
+      function shopSheetRender() {
+        const sk = SHOP_KINDS[shopBrowse.kind], sheet = shopEl('shop-sheet');
+        sheet.dataset.mode = sk.list ? 'list' : 'book';
+        shopEl('shop-name').textContent = sk.title;
+        const tabs = shopEl('shop-tabs'); tabs.innerHTML = '';
+        (sk.tabs || []).forEach(([id, label]) => {
           const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (id === shopBrowse.tab) b.classList.add('on');
           b.addEventListener('click', () => setShopTab(id)); tabs.appendChild(b);
         });
-        const lv = document.createElement('button'); lv.type = 'button'; lv.id = 'shop-leave'; lv.textContent = '✕ Leave'; lv.addEventListener('click', () => leaveShopBrowse()); tabs.appendChild(lv);
-        const hudBar = document.querySelector('.hud-bar-main');
-        tabs.style.top = ((hudBar ? hudBar.getBoundingClientRect().bottom : 90) + 8) + 'px';
-        shopCardRender();
+        tabs.style.display = (sk.tabs || []).length > 1 ? 'flex' : 'none';
+        if (sk.list) shopListRender(); else shopPageRender();
       }
-      function shopCardRender() {
-        const it = shopBrowse.items[shopBrowse.idx], n = shopBrowse.items.length, card = document.getElementById('shop-card');
-        document.getElementById('shop-prev').disabled = shopBrowse.idx <= 0;
-        document.getElementById('shop-next').disabled = shopBrowse.idx >= n - 1;
-        if (!it) { card.innerHTML = '<div class="sc-title">Nothing here</div>'; return; }
+      function shopPageRender() {
+        const it = shopBrowse.items[shopBrowse.idx], n = shopBrowse.items.length, buy = shopEl('shop-buy');
+        shopEl('shop-prev').disabled = shopBrowse.idx <= 0; shopEl('shop-next').disabled = shopBrowse.idx >= n - 1;
+        shopEl('shop-count').textContent = n ? `Page ${shopBrowse.idx + 1} of ${n}` : '';
+        if (!it) { shopEl('shop-title').textContent = 'Nothing on this page'; buy.disabled = true; buy.textContent = '-'; return; }
+        const url = shopPictureFor(it);
+        const img = shopEl('shop-pic-img'); img.src = url; img.style.visibility = url ? 'visible' : 'hidden';
+        { const good = /EQUIPPED|OWNED|INSTALLED|ACTIVE/.test(it.badge); shopEl('shop-badge').textContent = it.badge ? (good ? '✔ ' : '🔒 ') + it.badge : ''; shopEl('shop-badge').style.background = good ? '#166534' : '#7f1d1d'; }
+        shopEl('shop-badge').style.display = it.badge ? '' : 'none';
+        shopEl('shop-title').textContent = it.title;
+        shopEl('shop-stats').textContent = it.stats;
+        shopEl('shop-desc').textContent = it.desc;
         const price = it.priceText || (it.price != null ? shopMoney(it.price) : '');
-        const hint = it.can ? `TAP THE ${it.key === 'fish' || it.key === 'crate' ? 'ITEM' : 'ITEM'} TO ${it.verb.toUpperCase()}` : '';
-        card.innerHTML = `<div class="sc-top"><span class="sc-title">${it.title}</span><span class="sc-count">${shopBrowse.idx + 1} / ${n}</span></div>
-          <div class="sc-stats">${it.stats}</div><div class="sc-desc">${it.desc}</div>
-          <div class="sc-foot"><span class="sc-price" style="color:${it.priceText && it.priceText[0] === '+' ? '#4ade80' : '#ffd24c'}">${price}</span>
-          <span class="sc-note" style="color:${it.can ? '#4ade80' : it.badge ? '#a7f3d0' : '#fca5a5'}">${it.badge ? '✔ ' + it.badge + (it.note ? ' • ' + it.note : '') : it.note || hint}</span></div>${it.can && it.note ? '' : ''}`;
-        card.classList.toggle('can', !!it.can);
+        shopEl('shop-price').textContent = price;
+        buy.disabled = !it.can; buy.classList.toggle('sell', it.verb === 'Sell');
+        buy.textContent = it.can ? `${it.verb}${price && it.priceText !== 'FREE' ? ' for ' + price : ''}` : (it.note || it.badge || 'Not available');
+        const spread = shopEl('shop-spread');
+        if (shopBrowse.dir) { spread.classList.remove('flip-r', 'flip-l'); void spread.offsetWidth; spread.classList.add(shopBrowse.dir > 0 ? 'flip-r' : 'flip-l'); shopBrowse.dir = 0; }
+        // warm the next page's picture while the player reads
+        const nx = shopBrowse.items[shopBrowse.idx + 1]; if (nx) setTimeout(() => { if (shopBrowse.active) shopPictureFor(nx); }, 60);
       }
-      function shopFlushRefresh() {
-        shopRefreshTags(); shopCardRender();
+      /* the bucket list for the Fish Market (fish) and Recycling (junk, by skip) */
+      function shopListRows() {
+        const sk = SHOP_KINDS[shopBrowse.kind], pred = sk.list === 'fish' ? isFishEntry : isJunkEntry;
+        const rows = state.bucket.filter(pred);
+        return { rows, total: rows.reduce((s, e) => s + sellValue(e), 0), kg: rows.reduce((s, e) => s + e.weight, 0), pred };
+      }
+      function shopListRender() {
+        const sk = SHOP_KINDS[shopBrowse.kind], L = shopListRows(), host = shopEl('shop-rows'), cod = catchOfDay();
+        const fish = sk.list === 'fish';
+        let head;
+        if (fish) {
+          const mk = marketFor(state.dayCount || 0), nm = ids => ids.map(id => `${CATALOG_INDEX[id].name} x${mk.mult[id].toFixed(1)}`).join(', ');
+          head = `<b>${L.rows.length} fish</b> • ${L.kg.toFixed(1)} kg in your ${BUCKET_TIERS[state.bucketTier - 1].name} • worth <b>${shopMoney(L.total)}</b><br>🔥 Hot: ${nm(mk.hot)}<br>📉 Glut: ${nm(mk.glut)}<br>⭐ Catch of the Day: <b>${cod.name}</b> pays x3`;
+        } else {
+          const eco = (state.junkRecycledKg || 0) % 100;
+          head = `<b>${L.rows.length} piece${L.rows.length === 1 ? '' : 's'}</b> of junk and seaweed • ${L.kg.toFixed(1)} kg • worth <b>${shopMoney(L.total)}</b><br>🏛️ The Mayor pays $1,000 for every 100 kg recycled: ${eco.toFixed(1)} / 100 kg<div class="eco"><i style="width:${Math.min(100, eco)}%"></i></div>`;
+        }
+        shopEl('shop-summary').innerHTML = head;
+        host.innerHTML = '';
+        const addRow = entry => {
+          const m = marketMult(entry.id), v = sellValue(entry), r = document.createElement('button'); r.type = 'button'; r.className = 'sl-row';
+          r.innerHTML = `<img src="${ITEM_ICONS[entry.id] || ''}" alt=""><span class="sl-n">${entry.name}${entry.id === cod.id ? ' ⭐' : ''}<small>${entry.weight.toFixed(2)} kg${m > 1.1 ? ' • ▲ hot' : m < 0.9 && isFishEntry(entry) ? ' • ▼ glut' : ''}</small></span><span class="sl-p">+${shopMoney(v)}</span>`;
+          r.addEventListener('click', () => shopAskSell(entry, fish)); host.appendChild(r);
+        };
+        if (!L.rows.length) host.innerHTML = `<p class="sl-empty">${fish ? 'No fish in your bucket. Cast a line, then come back to sell your catch.' : 'No junk or seaweed in your bucket. Fish some up and bring it here.'}</p>`;
+        else if (fish) L.rows.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(addRow);
+        else ['flora', 'metal', 'other'].forEach(k => {
+          const g = L.rows.filter(e => SKIP_OF(e) === k); if (!g.length) return;
+          const h = document.createElement('div'); h.className = 'sl-head'; h.style.borderColor = SKIPS[k][2]; h.innerHTML = `<span style="background:${SKIPS[k][2]}"></span>${SKIPS[k][1]} ${SKIPS[k][0]} skip (${g.length})`; host.appendChild(h);
+          g.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(addRow);
+        });
+        const all = shopEl('shop-sellall'); all.disabled = !L.rows.length;
+        all.textContent = L.rows.length ? `${fish ? 'Sell all fish' : 'Recycle all'} for ${shopMoney(L.total)}` : (fish ? 'No fish to sell' : 'Nothing to recycle');
+      }
+      function shopAskSell(entry, fish) {
+        const v = sellValue(entry);
+        shopAsk({ confirm: `${fish ? 'Sell' : 'Recycle'} ${entry.name} (${entry.weight.toFixed(2)} kg) for ${shopMoney(v)}?`, price: v, verb: 'Sell', can: true,
+          act: () => { const i = state.bucket.indexOf(entry); if (i >= 0) { sellBucketEntry(i); showToast(`${fish ? 'Sold' : 'Recycled'} ${entry.name} for ${shopMoney(v)}`); } } });
+      }
+      function shopAskAll() {
+        const sk = SHOP_KINDS[shopBrowse.kind], fish = sk.list === 'fish', L = shopListRows();
+        if (!L.rows.length) return;
+        shopAsk({ confirm: `${fish ? 'Sell all' : 'Recycle all'} ${L.rows.length} ${fish ? 'fish' : 'pieces'} for ${shopMoney(L.total)}?`, price: L.total, verb: 'Sell', can: true,
+          act: () => sellBucketWhere(L.pred, fish ? 'Sold' : 'Recycled') });
       }
 
       /* ---- state changes ---- */
-      function shopSelect(i) {
+      function shopSelect(i, dir) {
         const n = shopBrowse.items.length; if (!n) return;
-        shopBrowse.idx = THREE.MathUtils.clamp(i, 0, n - 1);
-        sfx.playTick(); shopFlushRefresh();
+        const j = THREE.MathUtils.clamp(i, 0, n - 1); if (j === shopBrowse.idx) return;
+        shopBrowse.dir = dir || (j > shopBrowse.idx ? 1 : -1); shopBrowse.idx = j;
+        sfx.playTick(); shopPageRender();
       }
       function setShopTab(tab) {
-        if (shopBrowse.tab === tab && shopBrowse.group) return;
+        if (shopBrowse.tab === tab) return;
         shopBrowse.tab = tab; shopBrowse.idx = 0; shopBrowse.items = shopItems(shopBrowse.kind, tab);
-        closeShopConfirm(); buildShowcase(); shopUiRender(); sfx.playTick();
+        closeShopConfirm(); shopBrowse.dir = 1; shopSheetRender(); sfx.playTick();
       }
       function enterShopBrowse(kind) {
         if (!SHOP_KINDS[kind] || shopBrowse.active) return;
         const sk = SHOP_KINDS[kind];
-        shopBrowse.active = true; shopBrowse.kind = kind; shopBrowse.tab = sk.tabs[0][0]; shopBrowse.idx = 0;
-        shopBrowse.items = shopItems(kind, shopBrowse.tab);
+        shopBrowse.active = true; shopBrowse.kind = kind; shopBrowse.tab = sk.tabs ? sk.tabs[0][0] : ''; shopBrowse.idx = 0; shopBrowse.dir = 0;
+        shopBrowse.items = sk.tabs ? shopItems(kind, shopBrowse.tab) : [];
         mode = 'SHOP_BROWSE'; releaseAllInputs();
-        world.anglerGroup.visible = false;
         document.body.dataset.shopping = '1';
-        buildShowcase(); shopUiRender(); sfx.playTick();
+        shopSheetRender(); sfx.playTick();
       }
       function leaveShopBrowse() {
         if (!shopBrowse.active) return;
         closeShopConfirm();
-        shopBrowse.active = false;
-        shopDisposeGroup(shopBrowse.group); shopBrowse.group = null; shopBrowse.slots = []; shopBrowse.items = [];
-        if (shopBrowse.light) shopBrowse.light.intensity = 0;
+        shopBrowse.active = false; shopBrowse.items = [];
         delete document.body.dataset.shopping;
-        world.anglerGroup.visible = true;
         if (mode === 'SHOP_BROWSE') mode = 'PIER_IDLE';
+        updateShopBrowse(0);
         updateHUD(); updatePrimaryActionButton();
       }
-      /* after anything changed (a purchase, a cheat): recompute the goods, rebuild the counter only if the row changed */
+      /* after anything changed (a purchase, a sale, a cheat): recompute the goods and redraw the page or the list */
       function refreshShopBrowse() {
         if (!shopBrowse.active) return;
-        const old = shopBrowse.items.map(i => i.id).join('|');
-        shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab);
-        shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1));
-        if (shopBrowse.items.map(i => i.id).join('|') !== old) { buildShowcase(); shopBrowse.group.position.y = 0; shopBrowse.rise = 1; }
-        shopFlushRefresh();
+        const sk = SHOP_KINDS[shopBrowse.kind];
+        if (sk.tabs) { shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab); shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1)); }
+        if (sk.list) shopListRender(); else shopPageRender();
       }
-      /* tapping the centred item (or the card): confirm first */
+      /* tapping the picture or the button: confirm first */
       function shopActivate() {
         const it = shopBrowse.items[shopBrowse.idx]; if (!it) return;
         if (!it.can) { showToast(it.note || it.badge || 'Not available.'); return; }
+        shopAsk(it);
+      }
+      function shopAsk(it) {
         const after = it.price != null && it.verb !== 'Sell' ? state.cash - it.price : state.cash + (it.price || 0);
-        document.getElementById('shop-confirm-title').textContent = it.confirm;
-        document.getElementById('shop-confirm-sub').textContent = it.price != null ? `Cash ${shopMoney(state.cash)} → ${shopMoney(after)}` : '';
-        const yes = document.getElementById('shop-confirm-yes'); yes.textContent = it.verb === 'Sell' ? 'Sell' : it.verb;
+        shopEl('shop-confirm-title').textContent = it.confirm;
+        shopEl('shop-confirm-sub').textContent = it.price != null ? `Cash ${shopMoney(state.cash)} → ${shopMoney(after)}` : '';
+        const yes = shopEl('shop-confirm-yes'); yes.textContent = it.verb === 'Sell' ? 'Yes' : it.verb;
         yes.classList.toggle('sell', it.verb === 'Sell');
         shopBrowse.pending = it; shopBrowse.armedAt = performance.now() + 450;   // ignore the touch's own follow-up click
-        document.getElementById('shop-confirm').classList.add('open');
+        shopEl('shop-confirm').classList.add('open');
       }
-      function closeShopConfirm() { shopBrowse.pending = null; const c = document.getElementById('shop-confirm'); if (c) c.classList.remove('open'); }
+      function closeShopConfirm() { shopBrowse.pending = null; const c = shopEl('shop-confirm'); if (c) c.classList.remove('open'); }
       function shopConfirmYes() {
         if (performance.now() < (shopBrowse.armedAt || 0)) return;
         const it = shopBrowse.pending; closeShopConfirm();
@@ -11296,39 +11466,25 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         it.act();
         refreshShopBrowse();
       }
-      document.getElementById('shop-prev').addEventListener('click', () => shopSelect(shopBrowse.idx - 1));
-      document.getElementById('shop-next').addEventListener('click', () => shopSelect(shopBrowse.idx + 1));
-      document.getElementById('shop-card').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
-      document.getElementById('shop-confirm-no').addEventListener('click', () => { if (performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
-      document.getElementById('shop-confirm-yes').addEventListener('click', shopConfirmYes);
-      document.getElementById('shop-confirm').addEventListener('click', e => { if (e.target.id === 'shop-confirm' && performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
-
-      /* taps and swipes on the 3D view: tap an item to select it, tap the selected one to buy; swipe to browse */
-      const _shopRay = new THREE.Raycaster(), _shopNdc = new THREE.Vector2();
-      let shopPtr = null;
-      function shopTapAt(cx, cy) {
-        const r = renderer.domElement.getBoundingClientRect();
-        _shopNdc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
-        _shopRay.setFromCamera(_shopNdc, camera);
-        const hits = _shopRay.intersectObjects(shopBrowse.group.children, true).filter(h => h.object.userData && h.object.userData.hit);
-        if (!hits.length) return;
-        const slot = hits[0].object.userData.slot;
-        if (slot === shopBrowse.idx) shopActivate(); else shopSelect(slot);
+      shopEl('shop-prev').addEventListener('click', () => shopSelect(shopBrowse.idx - 1, -1));
+      shopEl('shop-next').addEventListener('click', () => shopSelect(shopBrowse.idx + 1, 1));
+      shopEl('shop-pic').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
+      shopEl('shop-buy').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
+      shopEl('shop-sellall').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopAskAll(); });
+      shopEl('shop-leave').addEventListener('click', () => leaveShopBrowse());
+      shopEl('shop-confirm-no').addEventListener('click', () => { if (performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
+      shopEl('shop-confirm-yes').addEventListener('click', shopConfirmYes);
+      shopEl('shop-confirm').addEventListener('click', e => { if (e.target.id === 'shop-confirm' && performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
+      // swipe the page to turn it
+      {
+        let sw = null; const pg = shopEl('shop-book');
+        pg.addEventListener('pointerdown', e => { sw = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
+        pg.addEventListener('pointerup', e => {
+          if (!sw || e.pointerId !== sw.id) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
+          if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) shopSelect(shopBrowse.idx + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
+        });
+        pg.addEventListener('pointercancel', () => { sw = null; });
       }
-      window.addEventListener('pointerdown', e => {
-        if (!shopBrowse.active || !shopBrowse.group || shopBrowse.pending || gamePause.on) return;
-        if (e.target.closest && e.target.closest('#pause-overlay, #start-overlay, #rescue-overlay, #shop-ui button, #shop-card, #shop-confirm, #menu-drawer, .modal-backdrop, .sleek-menu-btn')) return;
-        shopPtr = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
-      }, true);
-      window.addEventListener('pointerup', e => {
-        if (!shopPtr || e.pointerId !== shopPtr.id) return;
-        const p = shopPtr; shopPtr = null;
-        if (!shopBrowse.active || shopBrowse.pending) return;
-        const dx = e.clientX - p.x, dy = e.clientY - p.y;
-        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) shopSelect(shopBrowse.idx + (dx < 0 ? 1 : -1));
-        else if (Math.hypot(dx, dy) < 14 && performance.now() - p.t < 700) shopTapAt(e.clientX, e.clientY);
-      }, true);
-      window.addEventListener('pointercancel', () => { shopPtr = null; }, true);
       window.addEventListener('keydown', e => {
         if (!shopBrowse.active) return;
         if (shopBrowse.pending) {
@@ -11336,13 +11492,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); shopConfirmYes(); e.stopImmediatePropagation(); }
           return;
         }
+        const book = !SHOP_KINDS[shopBrowse.kind].list;
         if (e.code === 'Escape') { leaveShopBrowse(); e.stopImmediatePropagation(); }
-        else if (e.code === 'ArrowLeft' || e.code === 'KeyA') { shopSelect(shopBrowse.idx - 1); e.stopImmediatePropagation(); }
-        else if (e.code === 'ArrowRight' || e.code === 'KeyD') { shopSelect(shopBrowse.idx + 1); e.stopImmediatePropagation(); }
-        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); shopActivate(); e.stopImmediatePropagation(); }
-        else if (/^Digit[1-4]$/.test(e.code)) { const t = SHOP_KINDS[shopBrowse.kind].tabs[+e.code.slice(5) - 1]; if (t) setShopTab(t[0]); e.stopImmediatePropagation(); }
+        else if (book && (e.code === 'ArrowLeft' || e.code === 'KeyA')) { shopSelect(shopBrowse.idx - 1, -1); e.stopImmediatePropagation(); }
+        else if (book && (e.code === 'ArrowRight' || e.code === 'KeyD')) { shopSelect(shopBrowse.idx + 1, 1); e.stopImmediatePropagation(); }
+        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); if (book) shopActivate(); else shopAskAll(); e.stopImmediatePropagation(); }
+        else if (/^Digit[1-4]$/.test(e.code)) { const t = (SHOP_KINDS[shopBrowse.kind].tabs || [])[+e.code.slice(5) - 1]; if (t) setShopTab(t[0]); e.stopImmediatePropagation(); }
       }, true);
-      window.addEventListener('resize', () => { if (shopBrowse.active) shopUiRender(); });
+
 
       function processEcoCleanupReward(soldItems) {
         const junkItems = soldItems.filter(i => i.category === 'Junk' || i.category === 'Flora');
@@ -11443,7 +11600,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (state.bucket.length === 0) {
           container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Cast a line to catch fish!</p>';
         } else {
-          const atShop = nearShoreShop(SHORE_SHOPS.fish);
+          const atFish = nearShoreShop(SHORE_SHOPS.fish), atRecycle = isNearRecycle();
           const sortBar = document.createElement('div');
           sortBar.className = 'chip-row';
           sortBar.innerHTML = '<span style="font-size: 12px; color:#94a3b8; align-self:center;">Sort:</span>';
@@ -11479,7 +11636,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             btnGroup.style.display = 'flex';
             btnGroup.style.gap = '6px';
 
-            if (atShop) {
+            if (isFishEntry(entry) ? atFish : isJunkEntry(entry) && atRecycle) {
               const sellBtn = document.createElement('button');
               sellBtn.className = 'pixel-btn green';
               sellBtn.textContent = `Sell $${sellValue(entry)}`;
@@ -11967,6 +12124,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           iconEl.textContent = '🪣';
           labelEl.textContent = 'OPEN BUCKET';
           proxEl.textContent = `🪣 ${BUCKET_TIERS[state.bucketTier - 1].name.toUpperCase()} — PRESS [T] OR BUTTON TO INSPECT`;
+          proxEl.style.display = 'block';
+        } else if (isNearRecycle()) {
+          primaryBtn.classList.add('shop');
+          iconEl.textContent = '♻️';
+          labelEl.textContent = 'RECYCLE';
+          proxEl.style.borderColor = '#22c55e';
+          proxEl.style.color = '#bbf7d0';
+          proxEl.textContent = '♻️ RECYCLING — SELL YOUR JUNK AND SEAWEED';
           proxEl.style.display = 'block';
         } else if (shoreShopHere()) {
           const sh = SHORE_SHOPS[shoreShopHere()];
@@ -13362,6 +13527,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         elapsed += dt;
         updateBountyPapers(dt);
         updateShopBrowse(dt);
+        updateCabinFade(dt);
+        if (world.islandScenery) world.islandScenery.visible = !!settings.firstPerson;
         updateStationPicker(false);
         const zone = getCurrentZone();
         const weather = getWeatherObj();
@@ -13699,11 +13866,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           } else if (isNearPierBounty()) {
             targetYaw = Math.atan2(-(-4.2 - playerX), -(0.8 - playerZ));
           } else if (isNearPierGallery()) {
-            targetYaw = Math.atan2(-(4.4 - playerX), -(0.8 - playerZ));
+            targetYaw = Math.atan2(-(CABIN.galleryX - playerX), -(0.8 - playerZ));
           } else if (isNearPierTrophies()) {
-            targetYaw = Math.atan2(-(6.55 - playerX), -(0.8 - playerZ));
+            targetYaw = Math.atan2(-(CABIN.trophyX - playerX), -(0.8 - playerZ));
           } else if (isNearPierCamera()) {
-            targetYaw = Math.atan2(-(8.2 - playerX), -(0.9 - playerZ));
+            targetYaw = Math.atan2(-(CABIN.camX - playerX), -(CABIN.camZ - playerZ));
+          } else if (isNearRecycle()) {
+            targetYaw = Math.atan2(-(RECYCLE.x - playerX), -(0.8 - playerZ));
           } else if (isNearPierToolbox()) {
             targetYaw = Math.atan2(-(PIER_TOOLBOX_X - playerX), -(-7.6 - playerZ));
           } else if (isNearPierBucket()) {
