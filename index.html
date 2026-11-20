@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.9.0';
+    window.PF_VERSION = '4.9.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -13979,7 +13979,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
 
         // Animated Rod Show / Stow & 4-Segment Dynamic Bending
-        const shouldShowRod = ((mode === 'BOAT_DRIVING' && !boatStationActive) || mode === 'RESCUE_SEQUENCE') ? false : (onBoat || isAtPierWaterEdge() || mode !== 'PIER_IDLE');
+        const shouldShowRod = ((mode === 'BOAT_DRIVING' && !boatStationActive) || mode === 'RESCUE_SEQUENCE') ? false : (onBoat || isAtPierWaterEdge() || (mode !== 'PIER_IDLE' && mode !== 'SHOP_BROWSE'));
         const targetRodVis = shouldShowRod ? 1.0 : 0.0;
         rodVisProgress = THREE.MathUtils.lerp(rodVisProgress, targetRodVis, Math.min(1, dt * 9.5));
         const easedRodVis = rodVisProgress * rodVisProgress * (3 - 2 * rodVisProgress);
@@ -14259,11 +14259,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         // Articulated Angler Animations & Folding Pier Chair Unfold / Sit Sequence
         const isWalkingPier = !onBoat && mode === 'PIER_IDLE' && Math.hypot(walkDX, walkDZ) > 0.001;
-        const atEdgeForChair = !onBoat && (isAtPierWaterEdge() || mode !== 'PIER_IDLE') && !isWalkingPier;
+        const atEdgeForChair = !onBoat && (isAtPierWaterEdge() || (mode !== 'PIER_IDLE' && mode !== 'SHOP_BROWSE')) && !isWalkingPier;
         const targetChairOpen = atEdgeForChair ? 1.0 : 0.0;
         chairOpenProgress = THREE.MathUtils.lerp(chairOpenProgress, targetChairOpen, Math.min(1, dt * 7.5));
 
-        const showChair = !onBoat && (isAtPierWaterEdge() || mode !== 'PIER_IDLE' || chairOpenProgress > 0.03);
+        const showChair = !onBoat && (isAtPierWaterEdge() || (mode !== 'PIER_IDLE' && mode !== 'SHOP_BROWSE') || chairOpenProgress > 0.03);
         world.chairGroup.visible = showChair;
         if (showChair) {
           const t = chairOpenProgress;
@@ -14354,7 +14354,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             hands, handBlend,
             sway: onBoat && !lhDock.on ? -playerBoatMesh.rotation.z : 0,
             stepTrigger: stepTrigger && elapsed > 1,
-            idleAllowed: mode === 'PIER_IDLE' || mode === 'BOAT_DRIVING'
+            idleAllowed: mode === 'PIER_IDLE' || mode === 'SHOP_BROWSE' || mode === 'BOAT_DRIVING'
           });
         }
 
