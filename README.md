@@ -498,6 +498,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 4.9.3: a clear path to the secret seagull
+- The west barrel stack moved back from the walkway and the Boatyard and Dive Shop shifted a little east, so the angler can walk up to the seagull on the end post of the boardwalk rail again (it had been walled in since the layout change).
+- Version bumped to **v4.9.3**.
+
 ### 2026-11-20, Version 4.9.2: smaller shops
 - The Boatyard, Dive Shop and Fish Market are built at 85% size (`s` in `SHORE_SHOPS`; each is built full size and scaled, so props, colliders, prompts, lights and stand zooms follow), which gives the boardwalk more room between the buildings.
 - Version bumped to **v4.9.2**.

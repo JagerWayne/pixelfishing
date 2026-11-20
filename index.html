@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.9.2';
+    window.PF_VERSION = '4.9.3';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4341,9 +4341,9 @@
       /* Shops on the waterfront boardwalk (v4.6.0): backs on the sea rail, fronts facing south (+Z) like the Tackle Shop.
          Centre x/z, width w and depth d of the building; extra = room for the props beside it. */
       const SHORE_SHOPS = {
-        boatyard: { x: -17.4, z: 1.2, w: 3.6, d: 2.05, extra: 1.1, s: 0.85, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
+        boatyard: { x: -16.9, z: 1.2, w: 3.6, d: 2.05, extra: 1.1, s: 0.85, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
         fish:     { x: 11.4,  z: 1.15, w: 2.5, d: 1.95, extra: 1.0, s: 0.85, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR FISH', color: '#38bdf8' },
-        dive:     { x: -12.2, z: 1.15, w: 3.4, d: 1.95, extra: 1.2, s: 0.85, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
+        dive:     { x: -11.9, z: 1.15, w: 3.4, d: 1.95, extra: 1.2, s: 0.85, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
       };
       const shopFrontZ = sh => sh.z + sh.d / 2 + (sh.front || 0);
       /* Harbour order (v4.9.0), left to right looking from the island: Boatyard, Dive Shop, Tackle Shop, Bounty board,
@@ -6985,7 +6985,7 @@
               st.position.set(x, deckY, z); st.rotation.y = seed; pierGroup.add(st);
               Colliders.circle('barrels', x + 0.15, z - 0.05, 0.66, COL.WALK);
             };
-            barrelStack(BW_HALF - 0.85, 5.2, 0.3); barrelStack(-(BW_HALF - 0.75), 3.5, -0.5);
+            barrelStack(BW_HALF - 0.85, 5.2, 0.3); barrelStack(-(BW_HALF - 0.75), 5.2, -0.5);
 
             // seagull builder: only the one hiding behind the tackle shop is placed (the secret-menu gull)
             const buildGull = yaw => {
