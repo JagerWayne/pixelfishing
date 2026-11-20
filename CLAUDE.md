@@ -29,6 +29,7 @@ description of the game, its systems and its structure.
 - The harbour order (Boatyard, Dive, Tackle, Bounty, pier, Recycling, Fish Market, Cabin) is set by `SHORE_SHOPS`, `RECYCLE` and `CABIN`; the gallery, trophy case and film camera stand inside the cabin (`CABIN.galleryX` and so on). The cabin's front wall and roof are kept out of `mergeStatic` because they fade.
 - Boat handling numbers live in `BOAT_TIERS[n].handling`; hull motion is `updateHullMotion`.
 - Where the angler stands on a boat is `BOAT_STATIONS[tier]` (and `LH_STATIONS` for the lighthouse jetty, `LH_J`); the casting direction always comes from the station (`boatCastYaw()`), never from `boatYaw` alone. The bounty board's papers are `world.bountyPapers`, redrawn by `refreshBountyPapers`; claim through `claimBounty(idx)`.
+- Bounties are chosen by `pickBounties` from what `bountyEligible(b, bountyReach(state))` allows (pier or boat zone, rod weight); a new contract type needs a case in `bountyEligible` and `bountyLevel`.
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
 - Deployment is GitHub Pages from `main`.
 
