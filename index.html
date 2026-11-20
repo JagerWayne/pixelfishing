@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.9.0';
+    window.PF_VERSION = '3.10.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -3131,6 +3131,15 @@
           const put = (parent, geo, m, x = 0, y = 0, z = 0) => { const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); parent.add(mesh); return mesh; };
           const sph = (parent, r, m, x, y, z, sx = 1, sy = 1, sz = 1, seg = 20) => { const mesh = put(parent, new THREE.SphereGeometry(r, seg, Math.max(8, seg - 6)), m, x, y, z); mesh.scale.set(sx, sy, sz); return mesh; };
           const lathe = (parent, pts, m, seg = 32, sz = 1) => { const mesh = put(parent, new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg), m); mesh.scale.z = sz; return mesh; };
+          // rounded sole shaped like the foot: a bevelled slab tapered toward the heel, plus a heel block
+          const sole = (parent, w, len, y, z, m) => {
+            const g = ModelKit.roundedBox(w, 0.03, len, 0.013).clone();
+            const p = g.attributes.position;
+            for (let k = 0; k < p.count; k++) { const t = (p.getZ(k) / len) + 0.5; p.setX(k, p.getX(k) * (0.78 + 0.3 * (1 - t) * (1 - t) * 0 + 0.22 * Math.sin(Math.min(1, 1 - t) * Math.PI * 0.9))); }
+            g.computeVertexNormals();
+            put(parent, g, m, 0, y, z);
+            put(parent, ModelKit.roundedBox(w * 0.78, 0.035, len * 0.26, 0.012), m, 0, y - 0.012, z + len * 0.36);
+          };
           // tapered cylinder from point a (radius r1) to point b (radius r2)
           const limb = (parent, a, b, r1, r2, m, open = false) => {
             const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b);
@@ -3406,21 +3415,23 @@
               sph(leg, 0.075, skinMat, 0, footY, -0.05, 0.9, 0.55, 1.55, 16);
               for (let t = 0; t < 5; t++) sph(leg, 0.014, skinMat, -0.036 + t * 0.018, footY - 0.005, -0.13, 1, 1, 1, 8);
               if (shoe === 'sandals') {
-                put(leg, new THREE.BoxGeometry(0.15, 0.022, 0.27), shoeMat, 0, -0.41, -0.05);
-                put(leg, new THREE.BoxGeometry(0.15, 0.018, 0.03), shoeMat, 0, -0.372, -0.06).rotation.x = 0.0;
-                put(leg, new THREE.BoxGeometry(0.15, 0.018, 0.03), shoeMat, 0, -0.34, 0.02);
+                sole(leg, 0.14, 0.27, -0.41, -0.05, shoeMat);
+                put(leg, ModelKit.roundedBox(0.15, 0.018, 0.03, 0.008), shoeMat, 0, -0.372, -0.06);
+                put(leg, ModelKit.roundedBox(0.15, 0.018, 0.03, 0.008), shoeMat, 0, -0.34, 0.02);
               }
             } else if (shoe === 'sneakers') {
               lathe(leg, [[0.086, -0.31], [0.092, -0.34], [0.1, -0.4]], shoeMat, 20);
               sph(leg, 0.095, shoeMat, 0, footY, -0.06, 0.95, 0.72, 1.7, 18);
-              put(leg, new THREE.BoxGeometry(0.2, 0.03, 0.34), soleMat, 0, -0.41, -0.05);
-              for (let l = 0; l < 3; l++) put(leg, new THREE.BoxGeometry(0.07, 0.008, 0.012), mat(0xf8fafc, 0.5), 0, -0.34 - l * 0.0, -0.1 - l * 0.035).position.y = -0.345 + l * -0.005;
+              sole(leg, 0.18, 0.33, -0.41, -0.06, soleMat);
+              // toe cap and criss-cross laces on the tongue
+              sph(leg, 0.06, soleMat, 0, footY - 0.012, -0.17, 1.35, 0.6, 0.9, 12);
+              for (let l = 0; l < 3; l++) [-1, 1].forEach(sd => { const lace = put(leg, new THREE.CylinderGeometry(0.005, 0.005, 0.075, 4), mat(0xf8fafc, 0.5), 0, -0.338 - l * 0.012, -0.085 - l * 0.03); lace.rotation.set(Math.PI / 2 - 0.5, 0, sd * 0.6); });
             } else { // rubber boots
               lathe(leg, [[0.098, -0.2], [0.104, -0.22], [0.1, -0.3], [0.108, -0.4]], shoeMat, 24);
               put(leg, new THREE.TorusGeometry(0.1, 0.013, 6, 20), mat(0x111827, 0.4), 0, -0.2, 0).rotation.x = Math.PI / 2;
               sph(leg, 0.1, shoeMat, 0, footY - 0.005, -0.065, 1.0, 0.72, 1.7, 20);
-              put(leg, new THREE.BoxGeometry(0.215, 0.034, 0.36), soleMat, 0, -0.412, -0.05);
-              put(leg, new THREE.BoxGeometry(0.055, 0.04, 0.016), brass, 0, -0.27, -0.108);
+              sole(leg, 0.195, 0.35, -0.412, -0.06, soleMat);
+              put(leg, ModelKit.roundedBox(0.055, 0.04, 0.016, 0.006), brass, 0, -0.27, -0.108);
             }
           });
           return look;

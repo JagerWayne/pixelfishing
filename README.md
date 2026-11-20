@@ -403,6 +403,11 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 3.10.0: angler polish
+- **Shoes:** the flat slab soles are replaced by rounded soles shaped like the foot (wider at the ball, narrower at the heel) with a heel block, on boots, sneakers and sandals. Sneakers also get a toe cap and criss-cross laces.
+- The animation rig, every customisation option and the presets are unchanged (the character was already built from smooth lathed shapes, so this is a light polish).
+- Version bumped to **v3.10.0**. This completes the model upgrade started in v3.6.0 (pier, island, boats, fish and underwater, angler).
+
 ### 2026-11-20, Version 3.9.0: better fish and underwater props
 - **Fish:** smoother bodies (about twice the polygons) with cleaner pattern edges, fin rays fanning out from the root of every fin, a gill-cover arc and a lateral line on both sides. All 69 catch models still build and fit the catch preview.
 - **Seabed rocks** are lumpy, shaded low-poly rocks instead of twelve-sided shapes.
