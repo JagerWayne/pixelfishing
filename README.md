@@ -498,6 +498,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 4.9.5: head visible in shops in first person
+- Opening a shop in first person now shows the angler from outside with his head (it stayed hidden before, as it is in the first-person view). Leaving the shop returns to the first-person view.
+- Version bumped to **v4.9.5**.
+
 ### 2026-11-20, Version 4.9.4: a clear view of the bounty board
 - While the camera is zoomed on the bounty board the angler steps out of the picture (he is back as soon as you move), so he never stands in front of the contract papers.
 - Version bumped to **v4.9.4**.
