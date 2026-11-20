@@ -26,6 +26,7 @@ description of the game, its systems and its structure.
 - World time is `dt` from `animate()`: it is 0 while paused, in a menu or during a freeze frame, so per-frame code must cope with `dt = 0` (no division by it). Random per-frame events use `chancePerSec(rate, dt)`, never `Math.random() < p`.
 - The pier's width is `PIER_HW` (rails), `PIER_WALK` (walk limit), `PIER_PILE` and `PIER_DX` (port-side shift of the stairs, mooring platform and moored boat, see `MOOR`); use them instead of raw numbers. The boardwalk runs to +-`BW_HALF`; the mooring platform is `PLATFORM` (with `BOAT_TERMINAL` and `DOCK_PUMP` on it). The boardwalk shops are `SHORE_SHOPS` (position, size, sign; fronts face south) and their counters are `SHOP_KINDS` in the shop screen.
 - Boat handling numbers live in `BOAT_TIERS[n].handling`; hull motion is `updateHullMotion`.
+- Where the angler stands on a boat is `BOAT_STATIONS[tier]` (and `LH_STATIONS` for the lighthouse jetty, `LH_J`); the casting direction always comes from the station (`boatCastYaw()`), never from `boatYaw` alone. The bounty board's papers are `world.bountyPapers`, redrawn by `refreshBountyPapers`; claim through `claimBounty(idx)`.
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
 - Deployment is GitHub Pages from `main`.
 
