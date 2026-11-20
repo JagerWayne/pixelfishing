@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.5.0';
+    window.PF_VERSION = '3.5.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -11518,8 +11518,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * 6.5 * dt, -10.59, 5.8);
 
             const getPierXBounds = zVal => {
+              if (zVal >= 4.6) return [-9.3, 9.3];   // the beach boulders start at |x| 9.57
               if (zVal >= 0.45) return [-9.8, 9.8];
-              if (zVal <= -4.45 && zVal >= -6.75) return [-5.75, 2.05];
+              if (zVal <= -4.45 && zVal >= -6.75) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
               return [-2.05, 2.05];
             };
 
@@ -11559,7 +11560,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Solid collision box around the 3D Tackle Shop (-7.6, 1.0)
             const shopMinX = -9.35;
-            const shopMaxX = -5.85;
+            const shopMaxX = -5.7;
             const shopMaxZ = 2.55;
             if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ && nextZ > 0) {
               const penZ = shopMaxZ - nextZ;
@@ -11601,7 +11602,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Solid collision box around the Trophy Cabinet (6.55, 0.8)
             {
-              const trMinX = 5.9, trMaxX = 7.2, trMaxZ = 1.45;
+              const trMinX = 5.85, trMaxX = 7.25, trMaxZ = 1.45;
               if (nextX > trMinX && nextX < trMaxX && nextZ < trMaxZ && nextZ > 0) {
                 const penZ = trMaxZ - nextZ, penXLeft = nextX - trMinX, penXRight = trMaxX - nextX;
                 const minPen = Math.min(penZ, penXLeft, penXRight);
