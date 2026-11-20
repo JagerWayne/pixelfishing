@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.1.0';
+    window.PF_VERSION = '4.2.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -3133,7 +3133,11 @@
             spine: 0.10, chest: 0.18, neck: 0.25, headB: 0.07,
             clavX: female ? 0.028 : 0.032, clavY: 0.20, shoulderX: female ? 0.142 : 0.158,
             upper: 0.285, fore: 0.25, hand: 0.17,
-            headScale: 0.78, headLift: 0.165
+            headScale: 0.78, headLift: 0.165,
+            // bust: mound centre (x from the midline, y above the chest joint) and its pivot on the chest wall
+            bustX: 0.08, bustY: 0.03, bustZ: -0.098 * (0.94 + 0.06 * w),
+            // how firmly the top holds the bust (1 = loose, higher = stiffer and more damped)
+            support: ({ sweater: 1.5, hoodie: 1.7, slicker: 1.8, vest: 1.4, tee: 1.15, tank: 1.05, bikini: 1.0, none: 0.9 })[(look && look.top) || 'tee'] || 1.2
           };
         }
 
@@ -3154,8 +3158,10 @@
           const L = side('L'), R = side('R');
           skelRoot.add(hips);
           const headGroup = new THREE.Group(); head.add(headGroup);
-          const bones = [hips, spine, chest, neck, head, L.clav, L.upper, L.fore, L.hand, L.thigh, L.shin, L.foot, R.clav, R.upper, R.fore, R.hand, R.thigh, R.shin, R.foot];
-          const rig = { root, skelRoot, hips, spine, chest, neck, head, headGroup, L, R, bones, parts: [], dims: this.dims(look || this.defaultLook('male')) };
+          // soft-tissue bones for the bust (driven by the spring physics in AnglerAnimator); kept last so older skin indices stay valid
+          const bustL = B('bustL'), bustR = B('bustR'); chest.add(bustL); chest.add(bustR);
+          const bones = [hips, spine, chest, neck, head, L.clav, L.upper, L.fore, L.hand, L.thigh, L.shin, L.foot, R.clav, R.upper, R.fore, R.hand, R.thigh, R.shin, R.foot, bustL, bustR];
+          const rig = { root, skelRoot, hips, spine, chest, neck, head, headGroup, L, R, bustL, bustR, bones, parts: [], dims: this.dims(look || this.defaultLook('male')) };
           // legacy names (the customise screen and older helpers look for these)
           rig.bodyGroup = hips; rig.leftArm = L.upper; rig.rightArm = R.upper; rig.leftLeg = L.thigh; rig.rightLeg = R.thigh;
           this.layoutBones(rig, rig.dims);
@@ -3179,6 +3185,8 @@
             S.shin.position.set(0, -d.thigh, 0);
             S.foot.position.set(0, -d.shin, 0);
           });
+          // bust pivots sit on the chest wall behind each mound, so a rotation swings the lower pole
+          [[rig.bustL, -1], [rig.bustR, 1]].forEach(([b, s]) => b.position.set(s * d.bustX, d.bustY, d.bustZ));
           rig.skelRoot.scale.setScalar(d.hScale);
           rig.headGroup.position.set(0, d.headLift, 0.0);
           rig.headGroup.scale.setScalar(d.headScale);
@@ -3289,17 +3297,35 @@
           return this.skinGeo(pos, idx, si, sw, opt.colFn ? col : null);
         }
 
+        /* Teardrop bust profile (0..1) for one side at rest-space (x, y): a long, gentle upper slope from the chest,
+           a fuller rounded lower pole that ends in a soft underbust crease, a little wider and further out at the bottom. */
+        static bustMound(d, x, y, sx) {
+          const yb = d.hipY + d.spine + d.chest + 0.035, dy = y - yb;
+          const low = THREE.MathUtils.clamp(-dy / 0.055, 0, 1);
+          const cx = sx * (d.bustX + 0.008 * low), wx = 0.047 + 0.012 * low, dx = x - cx;
+          const vert = dy >= 0 ? Math.pow(Math.max(0, 1 - dy / 0.13), 1.7) : Math.exp(-Math.pow(-dy / 0.052, 4));
+          return vert * Math.exp(-(dx * dx) / (wx * wx));
+        }
+
         /* Lofted torso from the crotch to the top of the neck. prof(y) -> { wx, wz, cz }; front is -Z.
            opt: { y0, y1, off, seg, colFn, keep(angle, y) for openings (vest front, armholes), bust } */
         static torsoGeo(d, idxOf, prof, opt = {}) {
-          const y0 = opt.y0, y1 = opt.y1, off = opt.off || 0, seg = opt.seg || 24;
-          const rings = Math.max(2, Math.ceil((y1 - y0) / 0.025));
+          const y0 = opt.y0, y1 = opt.y1, off = opt.off || 0, seg = opt.seg || (opt.bust ? 32 : 24);
           const pos = [], idx = [], si = [], sw = [], col = [];
           const c = new THREE.Color();
           const ySpine = d.hipY + d.spine, yChest = ySpine + d.chest, yNeck = yChest + d.neck;
+          // ring heights: every 2.5 cm, finer (1.4 cm) through the bust so its curve reads smoothly
+          const ys = [y0];
+          if (!opt.bust) { const nr = Math.max(2, Math.ceil((y1 - y0) / 0.025)); for (let i = 1; i <= nr; i++) ys.push(y0 + (y1 - y0) * (i / nr)); }
+          while (ys[ys.length - 1] < y1 - 1e-4) {
+            const yy = ys[ys.length - 1], inBust = opt.bust && yy > yChest - 0.06 && yy < yChest + 0.17;
+            ys.push(Math.min(y1, yy + (inBust ? 0.014 : 0.025)));
+          }
+          if (ys.length < 3) ys.splice(1, 0, (y0 + y1) / 2);
+          const rings = ys.length - 1;
           const keepMask = [];
           for (let i = 0; i <= rings; i++) {
-            const y = y0 + (y1 - y0) * (i / rings);
+            const y = ys[i];
             const p = prof(y);
             // vertical weights: hips -> spine -> chest -> neck
             const wSpine = THREE.MathUtils.smoothstep(y, d.hipY + 0.02, ySpine + 0.06);
@@ -3312,12 +3338,11 @@
               const e = 2.4;
               const kx = Math.sign(ca) * Math.pow(Math.abs(ca), 2 / e), kz = Math.sign(sa) * Math.pow(Math.abs(sa), 2 / e);
               let x = kx * (p.wx + off), z = kz * (p.wz + off) + p.cz;
-              if (opt.bust && sa < 0) { // bust: two soft mounds on the front of the chest
-                const yb = yChest + 0.06;
-                [-1, 1].forEach(sx => {
-                  const dx = x - sx * 0.075, dy = y - yb;
-                  z -= opt.bust * Math.exp(-(dx * dx) / 0.0028 - (dy * dy) / 0.0035) * Math.max(0, -sa);
-                });
+              let mL = 0, mR = 0;
+              if (opt.bust && sa < 0) { // bust: two teardrop mounds on the front of the chest
+                const fr = Math.max(0, -sa);
+                mL = this.bustMound(d, x, y, -1) * fr; mR = this.bustMound(d, x, y, 1) * fr;
+                z -= opt.bust * (mL + mR);
               }
               if (sa > 0 && y < d.hipY + 0.05 && y > d.hipY - 0.12) z += 0.025 * Math.exp(-((y - d.hipY + 0.03) ** 2) / 0.003) * sa; // seat
               pos.push(x, y, z);
@@ -3327,7 +3352,13 @@
               let wH = 1 - wSpine, wS = wSpine * (1 - wChest), wC = wChest * (1 - wNeck), wN = wNeck;
               const wCl = wC * shoulderW * 0.6; wC -= wCl;
               // pack the four biggest weights
-              const ws = [[idxOf.hips, wH], [idxOf.spine, wS], [idxOf.chest, wC], [idxOf.neck, wN], [clavIdx, wCl]].sort((m, n) => n[1] - m[1]).slice(0, 4);
+              // the mounds ride on their own soft-tissue bones (strongest at the lower pole, fading out at the edges)
+              let wBL = 0, wBR = 0;
+              if (opt.bust && idxOf.bustL != null) {
+                wBL = wC * Math.min(1, Math.pow(mL, 0.75) * 1.05); wBR = wC * Math.min(1, Math.pow(mR, 0.75) * 1.05);
+                wC -= wBL + wBR;
+              }
+              const ws = [[idxOf.hips, wH], [idxOf.spine, wS], [idxOf.chest, wC], [idxOf.neck, wN], [clavIdx, wCl], [idxOf.bustL, wBL], [idxOf.bustR, wBR]].filter(q => q[0] != null).sort((m, n) => n[1] - m[1]).slice(0, 4);
               const tot = ws.reduce((t, q) => t + q[1], 0) || 1;
               ws.forEach(q => { si.push(q[0]); sw.push(q[1] / tot); });
               if (opt.colFn) { opt.colFn(y, a, c); col.push(c.r, c.g, c.b); }
@@ -3381,7 +3412,7 @@
 
           // ---------- rest-space joint positions ----------
           const bi = {}; rig.bones.forEach((b, i) => { bi[b.name] = i; });
-          const idxOf = { hips: bi.hips, spine: bi.spine, chest: bi.chest, neck: bi.neck, clavL: bi.clavL, clavR: bi.clavR };
+          const idxOf = { hips: bi.hips, spine: bi.spine, chest: bi.chest, neck: bi.neck, clavL: bi.clavL, clavR: bi.clavR, bustL: bi.bustL, bustR: bi.bustR };
           const P = b => this.restPos(rig, b);
           const ySpine = d.hipY + d.spine, yChest = ySpine + d.chest, yNeck = yChest + d.neck;
           const W = d.w;
@@ -3402,7 +3433,7 @@
           };
           const T0 = d.hipY - 0.115, T1 = yNeck + 0.06;
           const bodyGeos = [];
-          bodyGeos.push(this.torsoGeo(d, idxOf, prof, { y0: T0, y1: T1, bust: female ? 0.045 : 0, capBottom: true }));
+          bodyGeos.push(this.torsoGeo(d, idxOf, prof, { y0: T0, y1: T1, bust: female ? 0.062 : 0, capBottom: true }));
           // limb profiles
           const armR = (u, s) => { // u 0 shoulder .. 1 wrist
             const k = u < 0.53 ? 0.052 - u * 0.022 + 0.008 * Math.sin(Math.PI * Math.min(1, u / 0.5)) : 0.04 + 0.006 * Math.sin(Math.PI * Math.min(1, (u - 0.53) / 0.3)) - (u - 0.53) * 0.03;
@@ -3494,7 +3525,7 @@
           const top = look.top, bottom = look.bottom;
           const clothGeos = new Map();
           const pushCloth = (m, g) => { if (!clothGeos.has(m)) clothGeos.set(m, []); clothGeos.get(m).push(g); };
-          const tAt = o => this.torsoGeo(d, idxOf, prof, Object.assign({ bust: female ? 0.045 : 0 }, o));   // clothes follow the body's bust
+          const tAt = o => this.torsoGeo(d, idxOf, prof, Object.assign({ bust: female ? 0.062 : 0 }, o));   // clothes follow the body's bust
           const stripeCol = (yy, base, acc) => (c => (yy, a, out) => out.copy((Math.floor((yy - d.hipY) / 0.055) % 2 === 0) ? acc : base))();
           const topBase = C(look.topColor), topAcc = C(look.topAccent);
           const vcol = m => { const k = m.clone(); k.vertexColors = true; k.color.set(0xffffff); return k; };
@@ -3527,7 +3558,7 @@
             pushCloth(topMat, tAt({ y0: top === 'slicker' ? d.hipY - 0.11 : d.hipY - 0.03, y1: shirtTop, off }));
             armCloth(topMat, 0.88, off * 0.8);
           } else if (top === 'bikini') {
-            pushCloth(topMat, tAt({ y0: yChest + 0.03, y1: yChest + 0.1, off: 0.008, bust: female ? 0.05 : 0 }));
+            pushCloth(topMat, tAt({ y0: yChest - 0.02, y1: yChest + 0.09, off: 0.008, bust: female ? 0.068 : 0 }));
           }
           if (bottom === 'jeans' || bottom === 'overalls') {
             pushCloth(botMat, tAt({ y0: d.hipY - 0.115, y1: d.hipY + 0.17, off: 0.012, capBottom: true }));
@@ -3909,6 +3940,65 @@
             S.fingers.forEach((f, i) => f.rotation.set(0, 0, (s === 'L' ? 1 : -1) * curl * (i % 2 ? 0.9 : 0.7)));
           });
           r.root.updateMatrixWorld(true);
+          this.bustPhysics(dt);
+        }
+
+        /* Bust physics: one damped spring per side. A point mass follows an anchor on the chest; the spring and damping
+           work in the chest's own axes (soft up and down, medium sideways, stiff front to back), so walking bob, turns,
+           sitting down, casting and boat motion all make it lag and bounce. The offset then drives the bust bones. */
+        bustPhysics(dt) {
+          const r = this.rig, d = r.dims;
+          if (!r.bustL) return;
+          if (!d.female) { r.bustL.position.set(-d.bustX, d.bustY, d.bustZ); r.bustR.position.set(d.bustX, d.bustY, d.bustZ); return; }
+          if (!this.bust) {
+            this.bust = [0, 1].map(i => ({ X: new THREE.Vector3(), V: new THREE.Vector3(), A: new THREE.Vector3(), AV: new THREE.Vector3(), init: false, tune: i ? 1.06 : 0.95 }));
+            this._bq = new THREE.Quaternion(); this._bqi = new THREE.Quaternion(); this._bs = new THREE.Vector3();
+            this._bd = new THREE.Vector3(); this._bv = new THREE.Vector3(); this._ba = new THREE.Vector3(); this._bo = new THREE.Vector3();
+          }
+          const chest = r.chest, sup = d.support || 1.2;
+          chest.matrixWorld.decompose(this._ba, this._bq, this._bs);   // (position, rotation, scale)
+          const scl = this._bs.x || 1;
+          this._bqi.copy(this._bq).invert();
+          // spring constants per local axis (x sideways, y up, z front/back): natural frequency and damping ratio
+          const fx = 3.1 * Math.sqrt(sup), fy = 2.4 * Math.sqrt(sup), fz = 4.6 * Math.sqrt(sup);
+          const zx = 0.32 * sup, zy = 0.2 * sup, zz = 0.5 * sup;
+          const lim = { x: 0.012, y: 0.018, z: 0.007 };
+          const n = 3, h = dt / n;
+          [r.bustL, r.bustR].forEach((bone, i) => {
+            const S = this.bust[i], sx = i ? 1 : -1, tn = S.tune;
+            const kx = (2 * Math.PI * fx * tn) ** 2, ky = (2 * Math.PI * fy * tn) ** 2, kz = (2 * Math.PI * fz * tn) ** 2;
+            const cx = 2 * zx * 2 * Math.PI * fx * tn, cy = 2 * zy * 2 * Math.PI * fy * tn, cz = 2 * zz * 2 * Math.PI * fz * tn;
+            // anchor: the rest spot of the mound, in world space
+            const anchor = this._ba.set(sx * d.bustX, d.bustY, d.bustZ - 0.04).applyMatrix4(chest.matrixWorld);
+            const jump = S.init ? anchor.distanceTo(S.A) : 1e9;
+            if (!S.init || jump > 0.5 || !isFinite(S.X.x) || dt <= 0) { // first frame or a teleport: start at rest
+              S.X.copy(anchor); S.V.set(0, 0, 0); S.AV.set(0, 0, 0); S.A.copy(anchor); S.init = true;
+            } else {
+              const av = S.AV.copy(anchor).sub(S.A).divideScalar(Math.max(1e-4, dt));   // anchor velocity
+              for (let k = 1; k <= n; k++) {
+                const at = this._bo.copy(S.A).lerp(anchor, (k - 1) / n);   // anchor at the start of this sub-step, same time as X
+                const dl = this._bd.copy(S.X).sub(at).applyQuaternion(this._bqi).divideScalar(scl);
+                const vl = this._bs.copy(S.V).sub(av).applyQuaternion(this._bqi).divideScalar(scl);
+                const acc = this._bs.set(-kx * dl.x - cx * vl.x, -ky * dl.y - cy * vl.y, -kz * dl.z - cz * vl.z).multiplyScalar(scl).applyQuaternion(this._bq);
+                S.V.addScaledVector(acc, h);
+                S.X.addScaledVector(S.V, h);
+              }
+              S.A.copy(anchor);
+            }
+            // local offset, kept within a few centimetres (soft limit) so it never tears through the clothes
+            const o = this._bd.copy(S.X).sub(anchor).applyQuaternion(this._bqi).divideScalar(scl);
+            const hard = 2.5;
+            if (Math.abs(o.x) > lim.x * hard || Math.abs(o.y) > lim.y * hard || Math.abs(o.z) > lim.z * hard) {
+              o.set(THREE.MathUtils.clamp(o.x, -lim.x * hard, lim.x * hard), THREE.MathUtils.clamp(o.y, -lim.y * hard, lim.y * hard), THREE.MathUtils.clamp(o.z, -lim.z * hard, lim.z * hard));
+              S.X.copy(o).multiplyScalar(scl).applyQuaternion(this._bq).add(anchor); S.V.sub(S.AV).multiplyScalar(0.5).add(S.AV);   // keep the body's own velocity, calm only the wobble
+            }
+            const gn = 0.55 / Math.sqrt(sup);   // firmer tops show less of the motion
+            const ox = lim.x * Math.tanh(gn * o.x / lim.x), oy = lim.y * Math.tanh(gn * o.y / lim.y), oz = lim.z * Math.tanh(gn * o.z / lim.z);
+            bone.position.set(sx * d.bustX + ox * 0.6, d.bustY + oy * 0.45, d.bustZ + oz * 0.4);
+            // the lower pole lags: tip down when the mass drops, swings sideways with it
+            bone.rotation.set(oy * 7.5, -ox * 6, 0);
+          });
+          r.bustL.updateMatrixWorld(true); r.bustR.updateMatrixWorld(true);
         }
 
         /* Two-bone IK for one arm: shoulder -> elbow -> wrist onto a world target, elbow bent down and out. */
