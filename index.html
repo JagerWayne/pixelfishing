@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.5.1';
+    window.PF_VERSION = '3.6.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -3441,6 +3441,126 @@
         lampGlass: 0xfff1c8, lampCore: 0xffe6a8
       };
 
+      /* =========================================================================
+         MODEL KIT: rounded (bevelled) boxes, static mesh merging, and the collider registry.
+         ========================================================================= */
+      const ModelKit = (() => {
+        const geoCache = new Map();
+        /* A box with chamfered edges: a 3x3x3-segment box whose inner grid lines are moved to r from each face, then
+           every vertex outside the inner box is pulled onto a sphere of radius r around it. Cached by size. */
+        function roundedBox(w, h, d, r) {
+          r = Math.max(0, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4));
+          const key = [w, h, d, r].map(v => v.toFixed(3)).join('|');
+          let g = geoCache.get(key);
+          if (g) return g;
+          if (r < 0.004) { g = new THREE.BoxGeometry(w, h, d); geoCache.set(key, g); return g; }
+          g = new THREE.BoxGeometry(1, 1, 1, 3, 3, 3);
+          const pos = g.attributes.position, half = [w / 2, h / 2, d / 2], v = new THREE.Vector3(), inner = new THREE.Vector3();
+          const remap = (t, hf) => (Math.abs(t) > 0.4 ? Math.sign(t) * hf : Math.sign(t) * (hf - r));
+          for (let i = 0; i < pos.count; i++) {
+            v.set(remap(pos.getX(i), half[0]), remap(pos.getY(i), half[1]), remap(pos.getZ(i), half[2]));
+            inner.set(THREE.MathUtils.clamp(v.x, -half[0] + r, half[0] - r), THREE.MathUtils.clamp(v.y, -half[1] + r, half[1] - r), THREE.MathUtils.clamp(v.z, -half[2] + r, half[2] - r));
+            const dx = v.x - inner.x, dy = v.y - inner.y, dz = v.z - inner.z, l = Math.hypot(dx, dy, dz);
+            if (l > 1e-6) v.set(inner.x + dx / l * r, inner.y + dy / l * r, inner.z + dz / l * r);
+            pos.setXYZ(i, v.x, v.y, v.z);
+          }
+          // keep textures (signs, wood) undistorted: the inner grid lines of each face sit r from its edges, so move the
+          // matching UV lines there too (the face is known from the box's original normal)
+          const uv = g.attributes.uv, nrm = g.attributes.normal, size = [w, h, d];
+          const fixUV = (t, len) => (Math.abs(t - 1 / 3) < 0.01 ? r / len : Math.abs(t - 2 / 3) < 0.01 ? 1 - r / len : t);
+          for (let i = 0; i < uv.count; i++) {
+            const ax = Math.abs(nrm.getX(i)) > 0.5 ? 0 : Math.abs(nrm.getY(i)) > 0.5 ? 1 : 2;
+            const uAxis = ax === 0 ? 2 : 0, vAxis = ax === 1 ? 2 : 1;
+            uv.setXY(i, fixUV(uv.getX(i), size[uAxis]), fixUV(uv.getY(i), size[vAxis]));
+          }
+          g.computeVertexNormals();
+          geoCache.set(key, g);
+          return g;
+        }
+        /* default bevel for a box of this size: about a fifth of its thinnest side, never more than 3 cm */
+        const bevelFor = (w, h, d) => Math.min(0.03, Math.min(w, h, d) * 0.2);
+
+        const hex = c => (c && c.getHexString ? c.getHexString() : '');
+        function matKey(m) {
+          return [m.type, hex(m.color), m.map ? m.map.uuid : '', m.roughness, m.metalness, hex(m.emissive), m.emissiveIntensity,
+            m.transparent, m.opacity, m.side, m.flatShading, m.wireframe, m.vertexColors, m.depthWrite, m.blending, m.fog].join('|');
+        }
+        /* Bake the static meshes under `root` into one mesh per material look (same colour, map, roughness and so on).
+           Subtrees in `keep` (animated or rebuilt parts) and meshes with userData.noMerge stay as they are. Draw calls
+           drop from hundreds to a few dozen; the result also casts and receives shadows. */
+        function mergeStatic(root, keep = []) {
+          const keepSet = new Set(keep.filter(Boolean));
+          root.updateMatrixWorld(true);
+          const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
+          const buckets = new Map();
+          const victims = [];
+          const visit = o => {
+            if (keepSet.has(o)) return;
+            if (o.isMesh && !o.isInstancedMesh && !o.userData.noMerge && !Array.isArray(o.material) && o.visible && o.geometry && o.geometry.attributes.position) {
+              const k = matKey(o.material);
+              if (!buckets.has(k)) buckets.set(k, { mat: o.material, items: [] });
+              buckets.get(k).items.push(o);
+              victims.push(o);
+            }
+            if (!o.isMesh || true) o.children.forEach(visit);
+          };
+          root.children.forEach(visit);
+          const m4 = new THREE.Matrix4(), nm = new THREE.Matrix3();
+          const merged = [];
+          buckets.forEach(({ mat, items }) => {
+            if (items.length < 2) return;
+            const wantUV = items.every(o => o.geometry.attributes.uv), wantCol = !!mat.vertexColors;
+            let total = 0;
+            const parts = items.map(o => { const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry; total += g.attributes.position.count; return g; });
+            const P = new Float32Array(total * 3), N = new Float32Array(total * 3), U = wantUV ? new Float32Array(total * 2) : null, C = wantCol ? new Float32Array(total * 3) : null;
+            let off = 0;
+            const tv = new THREE.Vector3();
+            items.forEach((o, idx) => {
+              const g = parts[idx];
+              m4.multiplyMatrices(inv, o.matrixWorld);
+              nm.getNormalMatrix(m4);
+              const det = m4.determinant();
+              const pa = g.attributes.position, na = g.attributes.normal, ua = g.attributes.uv, ca = g.attributes.color, n = pa.count;
+              for (let i = 0; i < n; i++) {
+                // mirrored transforms flip the winding: swap the 2nd and 3rd vertex of each triangle
+                const src = det < 0 ? (i % 3 === 1 ? i + 1 : i % 3 === 2 ? i - 1 : i) : i;
+                tv.fromBufferAttribute(pa, src).applyMatrix4(m4); P.set([tv.x, tv.y, tv.z], (off + i) * 3);
+                if (na) { tv.fromBufferAttribute(na, src).applyMatrix3(nm).normalize(); N.set([tv.x, tv.y, tv.z], (off + i) * 3); }
+                if (U) U.set([ua.getX(src), ua.getY(src)], (off + i) * 2);
+                if (C) { if (ca) C.set([ca.getX(src), ca.getY(src), ca.getZ(src)], (off + i) * 3); else C.set([1, 1, 1], (off + i) * 3); }
+              }
+              off += n;
+              if (g !== o.geometry) g.dispose();
+            });
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(P, 3));
+            geo.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+            if (U) geo.setAttribute('uv', new THREE.BufferAttribute(U, 2));
+            if (C) geo.setAttribute('color', new THREE.BufferAttribute(C, 3));
+            geo.computeBoundingSphere();
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.userData.merged = true;
+            mesh.castShadow = !mat.transparent; mesh.receiveShadow = true;
+            merged.push(mesh);
+            items.forEach(o => { o.parent.remove(o); });
+          });
+          merged.forEach(m => root.add(m));
+          return merged.length;
+        }
+        return { roundedBox, bevelFor, mergeStatic };
+      })();
+
+      /* One place for everything solid. Each collider: { kind: 'box' | 'circle', x, z, hx, hz | r, y0, y1, layers, name }.
+         Layers: WALK (the angler on the pier), BOAT (hulls), DIVE (the diver, fish and spear). The models register their
+         own colliders where they are built, and the walk, boat and dive code all read from here. */
+      const COL = { WALK: 1, BOAT: 2, DIVE: 4 };
+      const Colliders = {
+        list: [],
+        box(name, x, z, hx, hz, layers, y0 = -400, y1 = 400) { const c = { kind: 'box', name, x, z, hx, hz, y0, y1, layers }; this.list.push(c); return c; },
+        circle(name, x, z, r, layers, y0 = -400, y1 = 400) { const c = { kind: 'circle', name, x, z, r, y0, y1, layers }; this.list.push(c); return c; },
+        of(layer) { return this.list.filter(c => c.layers & layer); }
+      };
+
       class WorldBuilder {
         /* ------------------------------------------------------------------
            LOFTED FISH GENERATOR
@@ -4524,7 +4644,8 @@
             brass: M(0xd9a21b, 0.3, 0.8),
             rope: M(0xa8845a, 0.95)
           };
-          kit.box = (parent, w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); parent.add(m); return m; };
+          kit.box = (parent, w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(ModelKit.roundedBox(w, h, d, ModelKit.bevelFor(w, h, d)), mat); m.position.set(x, y, z); parent.add(m); return m; };
+          kit.sharpBox = (parent, w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); parent.add(m); return m; };
           kit.cyl = (parent, rt, rb, h, mat, x, y, z, seg = 10) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z); parent.add(m); return m; };
           kit.sph = (parent, r, mat, x, y, z, ws = 10, hs = 8) => { const m = new THREE.Mesh(new THREE.SphereGeometry(r, ws, hs), mat); m.position.set(x, y, z); parent.add(m); return m; };
           // paper texture with a few ink lines, used by the bounty board
@@ -4702,6 +4823,7 @@
           const tripodMat = M(0x334155, 0.35, 0.7), bodyMat = M(0x1e293b, 0.4, 0.5), brassMat = M(0xd97706, 0.25, 0.8), woodMat = M(0x8a5a30, 0.8);
           const lensGlassMat = M(0x38bdf8, 0.08, 0.9, { emissive: new THREE.Color(0x8b5cf6), emissiveIntensity: 0.55 });
           const add = (geo, mat, x, y, z, parent = camGroup) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
+          const K_box = (parent, w, h, d, mat, x, y, z) => add(ModelKit.roundedBox(w, h, d, ModelKit.bevelFor(w, h, d)), mat, x, y, z, parent);
 
           // wooden tripod with spreader and rubber feet
           for (let i = 0; i < 3; i++) {
@@ -4750,6 +4872,15 @@
           add(new THREE.SphereGeometry(0.025, 6, 5), M(0x7f1d1d, 0.5), 0.29, 0.0, 0.2, headGroup);
           const recLight = add(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshBasicMaterial({ color: 0xef4444 }), 0.17, 0.26, -0.27, headGroup);
           camGroup.add(headGroup);
+          // ---- v3.6 detail pass: a clapperboard leaning on a leg and a coil of cable on the deck ----
+          {
+            const clap = new THREE.Group();
+            K_box(clap, 0.3, 0.22, 0.02, M(0x111827, 0.6), 0, 0.11, 0);
+            for (let k = 0; k < 5; k++) K_box(clap, 0.06, 0.05, 0.022, M(k % 2 ? 0xf8fafc : 0x111827, 0.6), -0.12 + k * 0.06, 0.25, 0);
+            for (let k = 0; k < 3; k++) K_box(clap, 0.22, 0.012, 0.022, M(0xf8fafc, 0.8), -0.02, 0.06 + k * 0.045, 0.002);
+            clap.position.set(0.3, 0, 0.18); clap.rotation.set(-0.25, 0.6, 0); camGroup.add(clap);
+            const cable = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 5, 16), M(0x0f172a, 0.6)); cable.rotation.x = Math.PI / 2; cable.position.set(-0.28, 0.02, 0.22); camGroup.add(cable);
+          }
           camGroup.userData = { headGroup, recLight };
           return camGroup;
         }
@@ -4776,6 +4907,23 @@
           // lantern hook and lantern
           const arm = K.box(g, 0.3, 0.04, 0.04, K.iron, 0.9, 1.9, 0.02);
           K.cyl(g, 0.07, 0.07, 0.16, K.M(0xfacc15, 0.3, 0.4, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.7 }), 1.0, 1.78, 0.02, 8);
+          // ---- v3.6 detail pass ----
+          // stone footings, a cross brace behind the board, crossed oars over the header and a ship's bell
+          [-0.68, 0.68].forEach(x => { K.box(g, 0.3, 0.16, 0.3, K.M(0x78716c, 0.95), x, 0.08, -0.02); K.box(g, 0.24, 0.06, 0.24, K.M(0x57534e, 0.95), x, 0.18, -0.02); });
+          [-1, 1].forEach(sd => { const br = K.box(g, 0.05, 1.5, 0.05, K.darkWood, 0, 1.2, -0.08); br.rotation.z = sd * 0.75; });
+          [-1, 1].forEach(sd => {
+            const th = sd * 1.05, L = 1.05;
+            const oar = K.cyl(g, 0.018, 0.018, L, K.lightWood, 0, 2.5, 0.07, 6); oar.rotation.z = th;
+            const ex = -Math.sin(th) * (L / 2 + 0.12), ey = Math.cos(th) * (L / 2 + 0.12);
+            const bl = K.box(g, 0.1, 0.26, 0.022, K.lightWood, ex, 2.5 + ey, 0.07); bl.rotation.z = th;
+          });
+          { const bell = new THREE.Mesh(new THREE.LatheGeometry([[0, 0.16], [0.03, 0.155], [0.06, 0.1], [0.075, 0.02], [0.09, 0]].map(p => new THREE.Vector2(p[0], p[1])), 12), K.brass);
+            bell.position.set(-0.98, 1.62, 0.02); g.add(bell); K.box(g, 0.32, 0.04, 0.04, K.iron, -0.86, 1.8, 0.02); }
+          // two little barrels at its feet
+          [[-0.86, 0.36, 0x7c4a1e], [0.86, 0.34, 0x92400e]].forEach(([x, z, c]) => {
+            K.cyl(g, 0.17, 0.15, 0.42, K.M(c, 0.85, 0, { map: textures.wood }), x, 0.21, z, 12);
+            [0.08, 0.34].forEach(y => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.01, 4, 14), K.iron); r.rotation.x = Math.PI / 2; r.position.set(x, y, z); g.add(r); });
+          });
           return g;
         }
 
@@ -4795,6 +4943,16 @@
           [1.3, 1.82].forEach(y => K.box(g, 1.16, 0.03, 0.5, K.lightWood, 0, y, -0.02));
           const gl = new THREE.Mesh(new THREE.BoxGeometry(1.16, 1.9, 0.02), glass); gl.position.set(0, 1.55, 0.29); g.add(gl);
           K.box(g, 1.1, 0.03, 0.05, K.brass, 0, 0.62, 0.3);
+          // ---- v3.6 detail pass: cornice, turned feet, door frame with mullions, brass handle, interior light strip ----
+          K.box(g, 1.44, 0.06, 0.74, K.lightWood, 0, 2.66, 0.0);
+          K.box(g, 1.38, 0.05, 0.7, K.darkWood, 0, 0.02, 0.0);
+          [[-0.58, 0.24], [0.58, 0.24], [-0.58, -0.24], [0.58, -0.24]].forEach(([x, z]) => K.cyl(g, 0.045, 0.035, 0.06, K.brass, x, -0.01, z, 8));
+          [-0.58, 0.58].forEach(x => K.box(g, 0.05, 1.92, 0.05, K.darkWood, x, 1.55, 0.31));
+          [0.6, 2.5].forEach(y => K.box(g, 1.2, 0.05, 0.05, K.darkWood, 0, y, 0.31));
+          K.box(g, 0.025, 1.88, 0.03, K.darkWood, 0, 1.55, 0.31);
+          K.cyl(g, 0.012, 0.012, 0.22, K.brass, 0.08, 1.5, 0.35, 6);
+          K.box(g, 1.1, 0.025, 0.04, K.M(0xfef3c7, 0.4, 0, { emissive: new THREE.Color(0xfde68a), emissiveIntensity: 0.8 }), 0, 2.5, -0.1);
+          [[-0.29, 2.04], [0.29, 2.04], [-0.29, 1.46], [0.29, 1.46], [0, 0.86]].forEach(([x, y]) => K.box(g, 0.24, 0.06, 0.012, K.brass, x, y, -0.235));
           g.userData.slots = [[-0.29, 2.2], [0.29, 2.2], [-0.29, 1.62], [0.29, 1.62], [0, 1.02]];
           g.userData.fishGroup = new THREE.Group();
           g.add(g.userData.fishGroup);
@@ -4837,6 +4995,25 @@
             const t = i / 6, x = -1.1 + t * 2.2;
             K.sph(g, 0.03, new THREE.MeshBasicMaterial({ color: i % 2 ? 0xfde68a : 0x5eead4 }), x, 1.93 + Math.sin(t * Math.PI) * -0.06, -0.06, 6, 5);
           }
+          // ---- v3.6 detail pass ----
+          // rope trim along the table edge, a cloth fringe, driftwood frame on the sign and a ship in a bottle
+          { const ropeEdge = K.cyl(g, 0.025, 0.025, 2.5, K.rope, 0, 0.84, 0.49, 6); ropeEdge.rotation.z = Math.PI / 2; }
+          for (let i = 0; i < 16; i++) K.box(g, 0.05, 0.1, 0.01, K.M(0x115e59, 0.9), -0.94 + i * 0.125, 0.86, 0.335);
+          [[0, 2.62, 2.5, 0.07], [0, 1.98, 2.5, 0.07]].forEach(([x, y, w, h]) => K.box(g, w, h, 0.14, K.M(0x8b7355, 0.95), x, y, -0.21));
+          [-1.22, 1.22].forEach(x => K.box(g, 0.07, 0.7, 0.14, K.M(0x8b7355, 0.95), x, 2.3, -0.21));
+          {
+            const sb = new THREE.Group();
+            const big = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.5, 14), new THREE.MeshStandardMaterial({ color: 0xccfbf1, transparent: true, opacity: 0.35, roughness: 0.05 }));
+            big.rotation.z = Math.PI / 2; sb.add(big);
+            const neck = K.cyl(sb, 0.05, 0.07, 0.12, K.M(0xccfbf1, 0.1), 0.3, 0, 0, 10); neck.rotation.z = Math.PI / 2;
+            K.box(sb, 0.26, 0.05, 0.08, K.M(0x7c2d12, 0.8), 0, -0.06, 0);
+            K.cyl(sb, 0.006, 0.006, 0.16, K.darkWood, 0, 0.03, 0, 4);
+            const sail = K.box(sb, 0.005, 0.11, 0.08, K.M(0xf8fafc, 0.9), 0.01, 0.04, 0); sail.rotation.y = 0;
+            [-0.18, 0.18].forEach(x => K.box(sb, 0.04, 0.05, 0.16, K.darkWood, x, -0.14, 0));
+            sb.position.set(0, 1.08, 0.12); g.add(sb);
+          }
+          // table legs showing under the front panels
+          [-1.15, 1.15].forEach(x => K.box(g, 0.1, 0.06, 0.7, K.darkWood, x, 0.03, 0.05));
           return g;
         }
 
@@ -4888,7 +5065,9 @@
           K.cyl(g, 0.28, 0.25, 0.62, K.M(0x7c4a1e, 0.85, 0, { map: textures.wood }), 1.55, 0.31, 0.6, 12);
           [0.12, 0.5].forEach(y => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.014, 5, 14), K.iron); r.rotation.x = Math.PI / 2; r.position.set(1.55, y, 0.6); g.add(r); });
           K.box(g, 0.5, 0.36, 0.46, K.lightWood, 1.5, 0.18, 1.1);
-          const net = K.sph(g, 0.22, K.M(0x65a30d, 0.9, 0, { wireframe: true }), 1.55, 0.7, 0.6, 8, 6); net.scale.y = 0.6;
+          // a coiled fishing net with cork floats on the barrel
+          for (let k = 0; k < 3; k++) { const coilN = new THREE.Mesh(new THREE.TorusGeometry(0.17 - k * 0.04, 0.045, 6, 14), K.M(0x4d7c0f, 0.95)); coilN.rotation.x = Math.PI / 2; coilN.position.set(1.55, 0.66 + k * 0.06, 0.6); g.add(coilN); }
+          [0, 1.6, 3.4, 4.8].forEach((a, k) => K.sph(g, 0.045, K.M(k % 2 ? 0xf97316 : 0xfacc15, 0.6), 1.55 + Math.cos(a) * 0.2, 0.7, 0.6 + Math.sin(a) * 0.2, 8, 6));
           // counter goods: scales, fish on a tray, bait bucket
           K.cyl(g, 0.1, 0.12, 0.04, K.brass, -0.7, 1.1, 0.55, 12);
           K.box(g, 0.04, 0.22, 0.04, K.brass, -0.7, 1.22, 0.55);
@@ -4905,7 +5084,47 @@
           K.cyl(keeper, 0.215, 0.215, 0.05, K.M(0x1d4ed8, 0.8), 0, 0.77, 0.02, 12);
           [-0.07, 0.07].forEach(x => K.sph(keeper, 0.025, new THREE.MeshBasicMaterial({ color: 0x0f172a }), x, 0.73, 0.2, 6, 5));
           [-0.28, 0.28].forEach(x => { const arm = K.cyl(keeper, 0.07, 0.065, 0.4, K.M(0xf8fafc, 0.85), x, 0.2, 0.2, 8); arm.rotation.x = 1.1; K.sph(keeper, 0.065, skin, x, 0.08, 0.38, 8, 6); });
+          // keeper face and apron details
+          K.sph(keeper, 0.045, skin, 0, 0.69, 0.2, 8, 6);
+          [-1, 1].forEach(sx => K.sph(keeper, 0.045, skin, sx * 0.19, 0.7, 0.0, 6, 5));
+          K.box(keeper, 0.3, 0.36, 0.02, K.M(0x0f766e, 0.85), 0, 0.2, 0.28);
+          K.box(keeper, 0.06, 0.06, 0.02, K.brass, 0, 0.36, 0.295);
           keeper.position.set(0, 1.08, -0.05); g.add(keeper);
+
+          // ---- v3.6 detail pass ----
+          // shingled roof over the back wall
+          for (let i = 0; i < 5; i++) {
+            const sh = K.box(g, 2.6, 0.04, 0.24, K.M(i % 2 ? 0x5b3a1a : 0x4a2c16, 0.9), 0, 2.36 - i * 0.05, -0.98 + i * 0.16);
+            sh.rotation.x = -0.32;
+          }
+          // chalk price board (A-frame) on the deck at the left front corner
+          {
+            const af = new THREE.Group();
+            const board = K.M(0x1f2937, 0.95);
+            [[-1, 0.18], [1, -0.18]].forEach(([s2, tilt]) => {
+              const leaf = new THREE.Group();
+              K.box(leaf, 0.5, 0.7, 0.03, board, 0, 0.36, 0);
+              K.box(leaf, 0.56, 0.05, 0.05, K.lightWood, 0, 0.73, 0);
+              K.box(leaf, 0.56, 0.05, 0.05, K.lightWood, 0, 0.0, 0);
+              [-0.27, 0.27].forEach(x => K.box(leaf, 0.04, 0.76, 0.05, K.lightWood, x, 0.37, 0));
+              for (let k = 0; k < 4; k++) K.box(leaf, 0.3 - (k % 2) * 0.08, 0.025, 0.005, K.M(0xf8fafc, 0.9), -0.04, 0.58 - k * 0.12, 0.02 * s2);
+              K.box(leaf, 0.1, 0.03, 0.005, K.M(0xfacc15, 0.9), 0.15, 0.58, 0.02 * s2);
+              leaf.rotation.x = tilt; leaf.position.z = s2 * 0.07;
+              af.add(leaf);
+            });
+            af.position.set(-1.35, 0, 1.3); af.rotation.y = 0.35; g.add(af);
+          }
+          // a stack of fish crates with rope handles, and an old wooden oar against the back wall
+          [[0, 0], [0.04, 0.37]].forEach(([dx, y], i) => {
+            const cr = K.box(g, 0.55, 0.34, 0.4, K.lightWood, -1.48 + dx, 0.17 + y, -0.35);
+            cr.rotation.y = i * 0.12;
+            for (let k = 0; k < 3; k++) K.box(g, 0.56, 0.02, 0.41, K.M(0x7c4a1e, 0.9), -1.48 + dx, 0.06 + y + k * 0.11, -0.35);
+          });
+          { const oar = K.cyl(g, 0.025, 0.025, 2.0, K.lightWood, 1.32, 1.05, -0.62, 6); oar.rotation.z = -0.18;
+            const blade = K.box(g, 0.18, 0.5, 0.03, K.lightWood, 1.5, 0.22, -0.62); blade.rotation.z = -0.18; }
+          // a mounted trophy fish on the back wall above the shelves
+          { const tf = this.miniFish(0x1d4ed8, 0xfacc15, K); tf.scale.setScalar(1.6); tf.position.set(0, 2.08, -0.62); g.add(tf);
+            K.box(g, 0.75, 0.32, 0.04, K.darkWood, 0, 2.08, -0.66); }
           return g;
         }
 
@@ -5016,6 +5235,7 @@
           const woodMat = new THREE.MeshStandardMaterial({ map: textures.wood, roughness: 0.85, flatShading: true });
           const postMat = new THREE.MeshStandardMaterial({ color: 0x4a2c16, roughness: 0.9, flatShading: true });
 
+          const RB = (w, h, d) => ModelKit.roundedBox(w, h, d, ModelKit.bevelFor(w, h, d));
           // ---- Deck: boards with the grain running along their length, three tints, dark timber underneath ----
           const deckMats = (rx, ry, rot) => {
             const t = textures.deck.clone(); t.needsUpdate = true;
@@ -5026,7 +5246,7 @@
           const planksAcross = deckMats(4, 1, false);   // pier planks run along X
           const planksAlong = deckMats(1, 4.3, true);   // boardwalk planks run along Z
           const timberDark = new THREE.MeshStandardMaterial({ color: 0x2b180b, roughness: 0.95, flatShading: true });
-          const addBox = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); pierGroup.add(m); return m; };
+          const addBox = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(RB(w, h, d), mat); m.position.set(x, y, z); pierGroup.add(m); return m; };
 
           // dark underlay and joists, so the gaps between boards read as shadowed timber instead of showing the sea
           addBox(21.6, 0.12, 5.7, timberDark, 0, 1.38, 2.85);
@@ -5040,7 +5260,7 @@
 
           // Waterfront boardwalk along the sea edge (X = -10.5 to +10.5, Z = 0.0 to 5.6): one layer only
           for (let x = -10.5, n = 0; x <= 10.5; x += 0.72, n++) {
-            const bwPlank = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.14, 5.6), planksAlong[(n * 7 + Math.floor(n / 3)) % 3]);
+            const bwPlank = new THREE.Mesh(RB(0.64, 0.14, 5.6), planksAlong[(n * 7 + Math.floor(n / 3)) % 3]);
             bwPlank.position.set(x, 1.49 + ((n * 5) % 4) * 0.002, 2.8);
             pierGroup.add(bwPlank);
           }
@@ -5049,7 +5269,7 @@
           for (let k = 0; k < 16; k++) {
             const z = -0.72 * k;
             const depth = k === 0 ? 0.32 : 0.64;
-            const plank = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.14, depth), planksAcross[(k * 5 + Math.floor(k / 2)) % 3]);
+            const plank = new THREE.Mesh(RB(5.2, 0.14, depth), planksAcross[(k * 5 + Math.floor(k / 2)) % 3]);
             plank.position.set(0, 1.48 + ((k * 3) % 4) * 0.002, k === 0 ? -0.16 : z);
             pierGroup.add(plank);
           }
@@ -5059,15 +5279,15 @@
           for (let s = 0; s < stepCount; s++) {
             const stepX = -2.75 - s * 0.30;
             const stepY = 1.32 - s * 0.18;
-            const tread = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 2.2), woodMat);
+            const tread = new THREE.Mesh(RB(0.32, 0.12, 2.2), woodMat);
             tread.position.set(stepX, stepY, -5.6);
-            const riser = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 2.15), postMat);
+            const riser = new THREE.Mesh(RB(0.06, 0.18, 2.15), postMat);
             riser.position.set(stepX + 0.14, stepY - 0.08, -5.6);
             pierGroup.add(tread, riser);
           }
           // Stair Stringer Beams
           [-4.55, -6.65].forEach(sz => {
-            const stringer = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.16, 0.12), postMat);
+            const stringer = new THREE.Mesh(RB(1.45, 0.16, 0.12), postMat);
             stringer.position.set(-3.2, 1.04, sz);
             stringer.rotation.z = 0.54;
             pierGroup.add(stringer);
@@ -5075,14 +5295,14 @@
 
           // Low Water-Level Mooring Platform (X = -3.85 to -6.05, Y = 0.64)
           for (let px = -3.95; px >= -5.95; px -= 0.42) {
-            const dockPlank = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.14, 2.6), woodMat);
+            const dockPlank = new THREE.Mesh(RB(0.36, 0.14, 2.6), woodMat);
             dockPlank.position.set(px, 0.64, -5.6);
             pierGroup.add(dockPlank);
           }
           // Mooring Platform Pontoon Floats, Pilings & Cleats
           [-4.6, -6.6].forEach(pz => {
             const pontoon = new THREE.Mesh(
-              new THREE.BoxGeometry(2.15, 0.36, 0.42),
+              RB(2.15, 0.36, 0.42),
               new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, flatShading: true })
             );
             pontoon.position.set(-4.95, 0.42, pz);
@@ -5094,9 +5314,9 @@
           });
           const cleatMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.75, roughness: 0.3, flatShading: true });
           [-4.75, -6.45].forEach(cz => {
-            const cleatBase = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.12), cleatMat);
+            const cleatBase = new THREE.Mesh(RB(0.12, 0.08, 0.12), cleatMat);
             cleatBase.position.set(-5.82, 0.74, cz);
-            const cleatHorn = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.05, 0.34), cleatMat);
+            const cleatHorn = new THREE.Mesh(RB(0.10, 0.05, 0.34), cleatMat);
             cleatHorn.position.set(-5.82, 0.79, cz);
             pierGroup.add(cleatBase, cleatHorn);
           });
@@ -5124,7 +5344,7 @@
             const angle = Math.atan2(dx, dz);
 
             [2.45, 2.02].forEach(ry => {
-              const rail = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.09, len), woodMat);
+              const rail = new THREE.Mesh(RB(0.11, 0.09, len), woodMat);
               rail.position.set(midX, ry, midZ);
               rail.rotation.y = angle;
               pierGroup.add(rail);
@@ -5135,9 +5355,9 @@
               const t = i / (numPosts - 1);
               const px = x1 + dx * t;
               const pz = z1 + dz * t;
-              const rPost = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.02, 0.14), postMat);
+              const rPost = new THREE.Mesh(RB(0.14, 1.02, 0.14), postMat);
               rPost.position.set(px, 2.05, pz);
-              const rCap = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.18), woodMat);
+              const rCap = new THREE.Mesh(RB(0.18, 0.06, 0.18), woodMat);
               rCap.position.set(px, 2.58, pz);
               pierGroup.add(rPost, rCap);
             }
@@ -5189,6 +5409,16 @@
           tackleToolbox.rotation.y = -0.35;
           pierGroup.add(tackleToolbox);
 
+          // Walk colliders for the stands (the back edge sits on the boardwalk rail at z = 0)
+          const W = COL.WALK;
+          Colliders.box('tackle shop', -7.525, 1.275, 1.825, 1.275, W);
+          Colliders.box('bounty board', -4.2, 0.825, 1.0, 0.825, W);
+          Colliders.box('bottle gallery', 4.4, 0.875, 1.3, 0.875, W);
+          Colliders.box('trophy cabinet', 6.55, 0.725, 0.7, 0.725, W);
+          Colliders.circle('film camera', 8.2, 0.9, 0.85, W);
+          Colliders.box('toolbox', 1.55, -7.6, 0.55, 0.45, W);
+          const bucketCollider = Colliders.box('bucket', -1.55, -7.6, 0.69, 0.65, W);
+
           let cheatGull = null;
           let lighthouseBeacon = null;
           // ---- Pier detail layer: structure, mooring gear, bunting, gulls and a distant lighthouse ----
@@ -5222,6 +5452,9 @@
             });
 
             // mooring bollards at the pier tip with rope coils
+            [-2.2, 2.2].forEach(x => Colliders.circle('bollard', x, -9.6, 0.22, COL.WALK));
+            Colliders.box('rod rack', -2.3, -9.05, 0.12, 0.4, COL.WALK);
+            [-2.45, 2.45].forEach(x => Colliders.circle('bunting pole', x, 0.3, 0.1, COL.WALK));
             [-2.2, 2.2].forEach(x => {
               K.cyl(pierGroup, 0.12, 0.16, 0.34, K.iron, x, deckY + 0.17, -9.6, 10);
               K.cyl(pierGroup, 0.19, 0.12, 0.08, K.iron, x, deckY + 0.38, -9.6, 10);
@@ -5232,7 +5465,7 @@
             const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.085, 8, 18), K.M(0xf97316, 0.5));
             ring.rotation.y = Math.PI / 2; ring.position.set(2.30, 2.2, -3.48); pierGroup.add(ring);
             for (let i = 0; i < 4; i++) {
-              const band = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.1), K.M(0xf8fafc, 0.5));
+              const band = new THREE.Mesh(RB(0.02, 0.18, 0.1), K.M(0xf8fafc, 0.5));
               const a = (i / 4) * Math.PI * 2;
               band.position.set(2.30, 2.2 + Math.cos(a) * 0.26, -3.48 + Math.sin(a) * 0.26); band.rotation.x = a; pierGroup.add(band);
             }
@@ -5262,6 +5495,32 @@
               pierGroup.add(line);
               [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.075, 3.4, K.darkWood, x, 3.25, 0.30, 6));
             }
+
+            // ---- v3.6: benches facing the sea at the back of the boardwalk, and barrel and crate stacks at its ends ----
+            const bench = (x, z) => {
+              const b = new THREE.Group();
+              for (let k = 0; k < 3; k++) K.box(b, 1.6, 0.05, 0.13, K.lightWood, 0, 0.46, -0.16 + k * 0.15);
+              for (let k = 0; k < 2; k++) { const bk = K.box(b, 1.6, 0.12, 0.04, K.lightWood, 0, 0.66 + k * 0.17, 0.27); bk.rotation.x = -0.18; }
+              [-0.68, 0.68].forEach(lx => {
+                K.box(b, 0.07, 0.44, 0.07, K.iron, lx, 0.22, -0.18); K.box(b, 0.07, 0.95, 0.07, K.iron, lx, 0.47, 0.25);
+                K.box(b, 0.07, 0.05, 0.5, K.iron, lx, 0.44, 0.03); K.box(b, 0.07, 0.04, 0.38, K.iron, lx, 0.64, -0.02);
+              });
+              b.position.set(x, deckY, z); pierGroup.add(b);
+              Colliders.box('bench', x, z + 0.05, 0.82, 0.35, COL.WALK);
+            };
+            bench(-4.6, 5.25); bench(4.6, 5.25);
+            const barrelStack = (x, z, seed) => {
+              const st = new THREE.Group();
+              [[0, 0, 0x7c4a1e], [0.42, 0.12, 0x92400e], [0.18, -0.34, 0x78350f]].forEach(([bx, bz, c], k) => {
+                K.cyl(st, 0.2, 0.18, 0.52, K.M(c, 0.85, 0, { map: textures.wood }), bx, 0.26, bz, 12);
+                [0.08, 0.44].forEach(y => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.195, 0.012, 4, 14), K.iron); r.rotation.x = Math.PI / 2; r.position.set(bx, y, bz); st.add(r); });
+                K.cyl(st, 0.17, 0.17, 0.02, K.darkWood, bx, 0.53, bz, 12);
+              });
+              const cr = K.box(st, 0.46, 0.34, 0.4, K.lightWood, 0.12, 0.7, -0.05); cr.rotation.y = 0.4 + seed;
+              st.position.set(x, deckY, z); st.rotation.y = seed; pierGroup.add(st);
+              Colliders.circle('barrels', x + 0.15, z - 0.05, 0.66, COL.WALK);
+            };
+            barrelStack(9.15, 2.75, 0.3); barrelStack(-9.25, 3.5, -0.5);
 
             // seagull builder: only the one hiding behind the tackle shop is placed (the secret-menu gull)
             const buildGull = yaw => {
@@ -5360,6 +5619,9 @@
             };
           }
 
+          // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The film camera (it turns to
+          // face you), the trophy mounts (rebuilt when records change) and the secret seagull stay separate.
+          ModelKit.mergeStatic(pierGroup, [filmCamera, trophyCabinet.userData.fishGroup, cheatGull]);
           scene.add(pierGroup);
 
           const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -5464,25 +5726,26 @@
 
           // Solid objects on the sea for boat collision, as circles {x, z, r}.
           // Keep the lighthouse numbers in sync with the lighthouse built above (position 52,-150, scale 1.6).
-          const seaObstacles = [];
           {
             const LH = { x: 52, z: -150, s: 1.6 };
+            const SEA = COL.BOAT | COL.DIVE;
             for (let i = 0; i < 6; i++) {
               const rad = 3 + (i % 3);
-              seaObstacles.push({ name: 'rocks', x: LH.x + Math.cos(i * 1.2) * 3.5 * LH.s, z: LH.z + Math.sin(i * 1.2) * 3.0 * LH.s, r: rad * LH.s * 1.05 });
+              Colliders.circle('rocks', LH.x + Math.cos(i * 1.2) * 3.5 * LH.s, LH.z + Math.sin(i * 1.2) * 3.0 * LH.s, rad * LH.s * 1.05, SEA);
             }
-            seaObstacles.push({ name: 'lighthouse', x: LH.x, z: LH.z, r: 1.8 * LH.s });
-            buoys.forEach(b => seaObstacles.push({ name: 'buoy', x: b.position.x, z: b.position.z, r: 1.0 }));
+            Colliders.circle('lighthouse', LH.x, LH.z, 1.8 * LH.s, SEA);
+            // buoys float: solid for hulls, and for a diver only near the surface
+            buoys.forEach(b => Colliders.circle('buoy', b.position.x, b.position.z, 1.0, SEA, -2.5, 3));
             // Pier and boardwalk pilings plus the two mooring pilings (same list as the pilings built above)
             [[-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0], [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-5.95, -4.6], [-5.95, -6.6], [-2.4, -11.25], [2.4, -11.25]]
-              .forEach(([x, z]) => seaObstacles.push({ name: 'pier', x, z, r: 0.3 }));
+              .forEach(([x, z]) => Colliders.circle('pier', x, z, 0.3, SEA));
+            // Solid rectangles for hulls: pier deck, boardwalk, stairs + mooring platform (all above the water, so not for divers)
+            Colliders.box('pier', 0, -5.7, 2.75, 5.8, COL.BOAT);
+            Colliders.box('pier', 0, 3.95, 10.7, 4.05, COL.BOAT);
+            Colliders.box('pier', -4.3, -5.6, 1.8, 1.35, COL.BOAT);
           }
-          // Solid rectangles (x1,z1 .. x2,z2): pier deck, boardwalk, stairs + mooring platform
-          const boatRects = [
-            { name: 'pier', x1: -2.75, z1: -11.5, x2: 2.75, z2: 0.1 },
-            { name: 'pier', x1: -10.7, z1: -0.1, x2: 10.7, z2: 8 },
-            { name: 'pier', x1: -6.1, z1: -6.95, x2: -2.5, z2: -4.25 }
-          ];
+          const seaObstacles = Colliders.of(COL.BOAT).filter(c => c.kind === 'circle');
+          const boatRects = Colliders.of(COL.BOAT).filter(c => c.kind === 'box').map(c => ({ name: c.name, x1: c.x - c.hx, z1: c.z - c.hz, x2: c.x + c.hx, z2: c.z + c.hz }));
           // The island: the beach reaches the waterline (y = 0) near z = 1.8; everything beyond is land
           const shoreZ = x => 6.2 * Math.max(0, (0.6 - Math.sin(x * 0.05) * 0.35 * 0.35) / 2.08);
 
@@ -5551,6 +5814,7 @@
           };
           const ironMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.32, flatShading: true });
           const buildHarborLamp = (lx, ly, lz, withLight = true) => {
+            Colliders.circle('lamp post', lx, lz, 0.22, COL.WALK);
             const lamp = new THREE.Group();
             lamp.position.set(lx, ly, lz);
             const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.26, 0.24, 8), ironMat);
@@ -6004,6 +6268,7 @@
             buoys,
             seaObstacles,
             boatCircles: seaObstacles,
+            bucketCollider,
             boatRects,
             shoreZ,
             filmCamera,
@@ -6596,6 +6861,40 @@ const mainCanvas = document.getElementById('game-canvas');
       const sunLight = new THREE.DirectionalLight(0xfef3c7, 1.15);
       sunLight.position.set(28, 45, 22);
       scene.add(sunLight);
+      scene.add(sunLight.target);
+      /* Soft sun shadows (High graphics only): one shadow map that follows the player or the boat, so the stands, the
+         angler and the boat ground themselves on the deck and the water's edge. Battery saver switches them off. */
+      const SUN_DIR = new THREE.Vector3(28, 45, 22).normalize();
+      sunLight.shadow.mapSize.set(1024, 1024);
+      sunLight.shadow.bias = -0.0006;
+      sunLight.shadow.normalBias = 0.02;
+      Object.assign(sunLight.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 5, far: 120 });
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      function applyShadowQuality() {
+        const on = settings.quality !== 'low';
+        if (renderer.shadowMap.enabled === on && sunLight.castShadow === on) return;
+        renderer.shadowMap.enabled = on;
+        sunLight.castShadow = on;
+        scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { m.needsUpdate = true; }); });
+      }
+      const _shadowFocus = new THREE.Vector3();
+      let shadowMarkT = 0;
+      function updateSunShadow(dt, fx, fz, diving) {
+        if (!renderer.shadowMap.enabled) return;
+        sunLight.castShadow = !diving && sunLight.intensity > 0.05;
+        // snap the focus to a coarse grid so the shadow edges do not crawl as you move
+        _shadowFocus.set(Math.round(fx * 4) / 4, 0, Math.round(fz * 4) / 4);
+        sunLight.target.position.copy(_shadowFocus);
+        sunLight.position.copy(_shadowFocus).addScaledVector(SUN_DIR, 60);
+        // things that are rebuilt (angler outfit, boat, bucket, trophy mounts) get their caster flag back twice a second
+        shadowMarkT -= dt;
+        if (shadowMarkT <= 0) {
+          shadowMarkT = 0.5;
+          [world.anglerGroup, playerBoatMesh, pierBucketMesh, world.filmCamera, world.trophyCabinet && world.trophyCabinet.userData.fishGroup].forEach(g => {
+            if (g) g.traverse(o => { if (o.isMesh && !o.castShadow && !(o.material && o.material.transparent)) { o.castShadow = true; o.receiveShadow = true; } });
+          });
+        }
+      }
 
       const moonLight = new THREE.DirectionalLight(0x93c5fd, 0.0);
       moonLight.position.set(-28, 38, -24);
@@ -6603,12 +6902,35 @@ const mainCanvas = document.getElementById('game-canvas');
 
       const textures = PixelTextureFactory.createAllTextures();
       const world = WorldBuilder.buildWorld(scene, textures);
+      const walkColliders = Colliders.of(COL.WALK);
+      /* Debug view (secret menu): every collider as a wireframe. Green = walking, orange = boats, cyan = diving
+         (including the seabed rocks, coral, wrecks and chests around you when it is switched on). */
+      let colliderView = null;
+      function toggleColliderView() {
+        if (colliderView) { scene.remove(colliderView); colliderView.traverse(o => { if (o.geometry) o.geometry.dispose(); }); colliderView = null; return false; }
+        colliderView = new THREE.Group();
+        const mats = { 1: 0x22c55e, 2: 0xf97316, 4: 0x22d3ee };
+        const add = (c, layer) => {
+          const y0 = layer === COL.WALK ? Math.max(c.y0, 1.5) : (c.y0 < -100 ? -6 : c.y0), y1 = layer === COL.WALK ? Math.min(c.y1, 3.6) : (c.y1 > 100 ? 3 : c.y1);
+          const hgt = Math.max(0.2, y1 - y0);
+          const geo = c.kind === 'box' ? new THREE.BoxGeometry(c.hx * 2, hgt, c.hz * 2) : new THREE.CylinderGeometry(c.r, c.r, hgt, 16, 1, true);
+          const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: mats[layer], wireframe: true, depthTest: false, transparent: true, opacity: 0.85 }));
+          m.position.set(c.x, (y0 + y1) / 2, c.z); m.renderOrder = 20; colliderView.add(m);
+        };
+        Colliders.list.forEach(c => [COL.WALK, COL.BOAT, COL.DIVE].forEach(l => { if (c.layers & l) add(c, l); }));
+        if (typeof diveSolids !== 'undefined') diveSolids.forEach(sd => add({ kind: 'circle', x: sd.x, z: sd.z, r: sd.r, y0: sd.y0, y1: sd.y1 }, COL.DIVE));
+        scene.add(colliderView);
+        return true;
+      }
       const vfx = new VFXManager(scene);
 
       let playerBoatMesh = new THREE.Group();
       scene.add(playerBoatMesh);
       let pierBucketMesh = new THREE.Group();
       scene.add(pierBucketMesh);
+      // everything solid-looking can receive the sun's shadow (merged pier meshes already do)
+      scene.traverse(o => { if (o.isMesh && o.material && o.material.isMeshStandardMaterial && !o.material.transparent) o.receiveShadow = true; });
+      applyShadowQuality();
       scene.add(world.anglerGroup);
 
 function replaceSceneMesh(parent, oldObj, newObj) {
@@ -7480,6 +7802,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { title: '🌊 Sea events (on a boat)', items: [
           ['Spawn treasure chest', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('treasure'); }],
           ['Spawn boss shadow', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('boss'); }]] },
+        { title: '🧱 Debug', items: [
+          ['Show / hide collision boxes', () => { const on = toggleColliderView(); showToast(on ? '🧱 Collision boxes shown (green walk, orange boat, cyan dive)' : 'Collision boxes hidden'); }]] },
         { title: '⚙️ Cheats', items: [
           ['Turn all toggles off', () => { Object.keys(cheats).forEach(k => { cheats[k] = false; }); renderCheatMenu(); showToast('Cheat toggles off'); }]] }
       ];
@@ -9867,6 +10191,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         saveSettings();
         renderSettings();
         resizeViewport();
+        applyShadowQuality();
       });
       document.getElementById('btn-open-settings').addEventListener('click', () => {
         renderSettings();
@@ -10472,7 +10797,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           addDiveSolid(key, w.position.x + lx * c, w.position.z - lx * sn, r, base - 0.5, base + 2.6));
       }
       function buildDiveStatic() {
-        diveStatic = world.boatCircles.map(o => ({ x: o.x, z: o.z, r: o.name === 'buoy' ? 0.9 : o.r, y0: o.name === 'buoy' ? -2.5 : -400, y1: 3 }));
+        // every DIVE collider in the registry (pilings, lighthouse rocks, buoys near the surface); circles only, as cylinders
+        diveStatic = Colliders.of(COL.DIVE).filter(c => c.kind === 'circle').map(c => ({ x: c.x, z: c.z, r: c.name === 'buoy' ? 0.9 : c.r, y0: c.y0, y1: Math.min(c.y1, 3) }));
       }
       function resolveDiveSolids(pos, rad, halfH) {
         let hit = false;
@@ -11417,6 +11743,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         const twilightFactor = Math.max(0, 1 - Math.abs(sunHeight) * 4.5);
         sunLight.intensity = dayFactor * 1.15 * weather.skyDim + lightningFlash * 2.8;
+        updateSunShadow(dt, onBoat ? boatPos.x : playerX, onBoat ? boatPos.z : playerZ, mode === 'DIVING');
         sunLight.color.setHex(lightningFlash > 0.2 ? 0xe0f2fe : (twilightFactor > 0.35 ? 0xe08e55 : 0xfef3c7));
         moonLight.intensity = (1 - dayFactor) * (moonPhase.isFull ? 0.72 : 0.36) * weather.skyDim;
         hemiLight.intensity = (0.32 + dayFactor * 0.65) * weather.skyDim + lightningFlash * 1.4;
@@ -11520,7 +11847,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             const getPierXBounds = zVal => {
               if (zVal >= 4.6) return [-9.3, 9.3];   // the beach boulders start at |x| 9.57
               if (zVal >= 0.45) return [-9.8, 9.8];
-              if (zVal <= -4.45 && zVal >= -6.75) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
+              if (zVal <= -4.65 && zVal >= -6.55) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
               return [-2.05, 2.05];
             };
 
@@ -11532,25 +11859,25 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             // BEFORE narrowing X to the pier width, otherwise a step past the platform edge snaps the player
             // sideways onto the pier.
             if (playerX < -2.05 && playerZ < 0.4) {
-              nextZ = THREE.MathUtils.clamp(nextZ, -6.75, -4.45);
+              nextZ = THREE.MathUtils.clamp(nextZ, -6.55, -4.65);   // stay on the treads, clear of the stringers
             }
 
             const [initMinX, initMaxX] = getPierXBounds(nextZ);
             let nextX = THREE.MathUtils.clamp(playerX + moveX * 6.5 * dt, initMinX, initMaxX);
 
-            // Prevent walking across the side railing gap onto the boat stairs before Z = -4.45
+            // Prevent walking across the side railing gap onto the boat stairs before Z = -4.65
             // (only on the pier deck itself; the boardwalk at Z >= 0.45 is wide open so players can reach the shop)
-            if (nextX < -2.05 && nextZ > -4.45 && nextZ < 0.45) {
+            if (nextX < -2.05 && nextZ > -4.65 && nextZ < 0.45) {
               if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -4.45;
+              else nextZ = -4.65;
             }
-            if (nextX < -2.05 && nextZ < -6.75) {
+            if (nextX < -2.05 && nextZ < -6.55) {
               if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -6.75;
+              else nextZ = -6.55;
             }
-            if (nextX < -2.05 && nextZ < -6.85) {
+            if (nextX < -2.05 && nextZ < -6.55) {
               if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -6.85;
+              else nextZ = -6.55;
             }
 
             // Solid collision against the boardwalk sea-edge railings (Z = 0.12, |X| > 2.05)
@@ -11558,87 +11885,40 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               nextZ = 0.45;
             }
 
-            // Solid collision box around the 3D Tackle Shop (-7.6, 1.0)
-            const shopMinX = -9.35;
-            const shopMaxX = -5.7;
-            const shopMaxZ = 2.55;
-            if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ && nextZ > 0) {
-              const penZ = shopMaxZ - nextZ;
-              const penXLeft = nextX - shopMinX;
-              const penXRight = shopMaxX - nextX;
-              const minPen = Math.min(penZ, penXLeft, penXRight);
-              if (minPen === penZ) nextZ = shopMaxZ;
-              else if (minPen === penXLeft) nextX = shopMinX;
-              else nextX = shopMaxX;
-            }
-
-            // Solid collision box around the 3D Bounty Board (-4.2, 0.8)
-            const bntMinX = -5.2;
-            const bntMaxX = -3.2;
-            const bntMaxZ = 1.65;
-            if (nextX > bntMinX && nextX < bntMaxX && nextZ < bntMaxZ && nextZ > 0) {
-              const penZ = bntMaxZ - nextZ;
-              const penXLeft = nextX - bntMinX;
-              const penXRight = bntMaxX - nextX;
-              const minPen = Math.min(penZ, penXLeft, penXRight);
-              if (minPen === penZ) nextZ = bntMaxZ;
-              else if (minPen === penXLeft) nextX = bntMinX;
-              else nextX = bntMaxX;
-            }
-
-            // Solid collision box around the 3D Bottle Gallery (4.4, 0.8)
-            const galMinX = 3.1;
-            const galMaxX = 5.7;
-            const galMaxZ = 1.75;
-            if (nextX > galMinX && nextX < galMaxX && nextZ < galMaxZ && nextZ > 0) {
-              const penZ = galMaxZ - nextZ;
-              const penXLeft = nextX - galMinX;
-              const penXRight = galMaxX - nextX;
-              const minPen = Math.min(penZ, penXLeft, penXRight);
-              if (minPen === penZ) nextZ = galMaxZ;
-              else if (minPen === penXLeft) nextX = galMinX;
-              else nextX = galMaxX;
-            }
-
-            // Solid collision box around the Trophy Cabinet (6.55, 0.8)
-            {
-              const trMinX = 5.85, trMaxX = 7.25, trMaxZ = 1.45;
-              if (nextX > trMinX && nextX < trMaxX && nextZ < trMaxZ && nextZ > 0) {
-                const penZ = trMaxZ - nextZ, penXLeft = nextX - trMinX, penXRight = trMaxX - nextX;
-                const minPen = Math.min(penZ, penXLeft, penXRight);
-                if (minPen === penZ) nextZ = trMaxZ;
-                else if (minPen === penXLeft) nextX = trMinX;
-                else nextX = trMaxX;
+            // Solid objects on the pier: every WALK collider from the registry. Boxes resolve along the side the player came
+            // from (so you slide along them instead of being snapped across); circles push straight out.
+            world.bucketCollider.hx = 0.55 + Math.min(state.bucketTier, 4) * 0.14;
+            const BODY = 0.15;   // extra room for the angler's body on top of each collider
+            for (const c of walkColliders) {
+              if (c.kind === 'box') {
+                const hx = c.hx + BODY, hz = c.hz + BODY, dx = nextX - c.x, dz = nextZ - c.z;
+                if (Math.abs(dx) >= hx || Math.abs(dz) >= hz) continue;
+                const cameFromSide = Math.abs(prevX - c.x) >= hx, cameFromEnd = Math.abs(prevZ - c.z) >= hz;
+                let resolveX;
+                if (cameFromSide && !cameFromEnd) resolveX = true;
+                else if (cameFromEnd && !cameFromSide) resolveX = false;
+                else resolveX = (hx - Math.abs(dx)) < (hz - Math.abs(dz));
+                // never push sideways through the pier rail: if leaving by X would cross the walkable edge, leave by Z
+                const outX = c.x + (Math.sign(dx) || Math.sign(prevX - c.x) || 1) * hx;
+                const [bMinX, bMaxX] = getPierXBounds(nextZ);
+                if (resolveX && (outX < bMinX - 1e-3 || outX > bMaxX + 1e-3)) resolveX = false;
+                if (resolveX) nextX = outX;
+                else nextZ = c.z + (Math.sign(dz) || Math.sign(prevZ - c.z) || 1) * hz;
+              } else {
+                const dx = nextX - c.x, dz = nextZ - c.z, d = Math.hypot(dx, dz), m = c.r + BODY;
+                if (d < m && d > 1e-4) { nextX = c.x + dx / d * m; nextZ = c.z + dz / d * m; }
               }
             }
 
-            // Solid collision boxes around the pier bucket (-1.55, -7.6) and tackle toolbox (1.55, -7.6).
-            // Resolve along the axis the player entered from (using the previous position) so the
-            // player slides along the box instead of being snapped across it.
-            const pushOutOfBox = (cx, cz, hx, hz) => {
-              const dx = nextX - cx;
-              const dz = nextZ - cz;
-              if (Math.abs(dx) >= hx || Math.abs(dz) >= hz) return;
-              const cameFromSide = Math.abs(prevX - cx) >= hx;
-              const cameFromEnd = Math.abs(prevZ - cz) >= hz;
-              let resolveX;
-              if (cameFromSide && !cameFromEnd) resolveX = true;
-              else if (cameFromEnd && !cameFromSide) resolveX = false;
-              else resolveX = (hx - Math.abs(dx)) < (hz - Math.abs(dz));
-              if (resolveX) nextX = cx + (Math.sign(dx) || Math.sign(prevX - cx) || 1) * hx;
-              else nextZ = cz + (Math.sign(dz) || Math.sign(prevZ - cz) || 1) * hz;
-            };
-            pushOutOfBox(-1.55, -7.6, 0.55 + Math.min(state.bucketTier, 4) * 0.14, 0.65);
-            pushOutOfBox(1.55, -7.6, 0.55, 0.45);
-
-            // Solid collision cylinder around the 3D Fourth-Wall Film Camera (8.2, 0.9)
-            const camDX = nextX - 8.2;
-            const camDZ = nextZ - 0.9;
-            const camDist = Math.hypot(camDX, camDZ);
-            const camMinR = 0.85;
-            if (camDist < camMinR && camDist > 0.0001) {
-              nextX = 8.2 + (camDX / camDist) * camMinR;
-              nextZ = 0.9 + (camDZ / camDist) * camMinR;
+            // Two colliders close together can push the angler back and forth into each other; if the result still
+            // overlaps any of them, stay where you were (the previous spot was always clear).
+            const insideAny = (px, pz) => walkColliders.some(c => c.kind === 'box'
+              ? Math.abs(px - c.x) < c.hx + BODY - 1e-3 && Math.abs(pz - c.z) < c.hz + BODY - 1e-3
+              : Math.hypot(px - c.x, pz - c.z) < c.r + BODY - 1e-3);
+            if (insideAny(nextX, nextZ) && !insideAny(prevX, prevZ)) {
+              if (!insideAny(nextX, prevZ)) nextZ = prevZ;
+              else if (!insideAny(prevX, nextZ)) nextX = prevX;
+              else { nextX = prevX; nextZ = prevZ; }
             }
 
             const [finalMinX, finalMaxX] = getPierXBounds(nextZ);

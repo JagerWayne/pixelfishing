@@ -277,7 +277,7 @@ Your look is saved and applied immediately in the game world. While walking, the
 
 There is a hidden cheat menu. Stand close to the **seagull perched on the west end post of the boardwalk rail**, at the far left of the boardwalk and press the action button while it reads **WALK EDGE** **31 times in a row**. Pressing any other key or button resets the count, and so does an action press anywhere else.
 
-The menu can spawn a treasure chest or boss shadow (on a boat), add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
+The menu can show the collision boxes, spawn a treasure chest or boss shadow (on a boat), add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
 
 ## Settings
 
@@ -285,7 +285,7 @@ Open **☰ Menu → Settings**.
 
 - **Sound effects** on or off (also on the 🔊 button).
 - **Haptics** (vibration) on or off, independent of sound.
-- **Graphics:** *High* or *Battery saver* (renders at lower resolution).
+- **Graphics:** *High* (with soft sun shadows) or *Battery saver* (renders at lower resolution and turns shadows off).
 - **Full screen:** on by default; the game enters full screen when you tap *Start*. Turn it off here to stay windowed. (iPhone Safari does not allow full screen for web pages; the installed home-screen app is already full screen.)
 - **Handedness:** *Right* or *Left*; left swaps the thumbstick and action button.
 - **Thumbstick:** *Fixed*, or *Floating*, where the stick appears under your thumb anywhere on its half of the screen and the fixed one stays as a faint hint.
@@ -363,6 +363,9 @@ Notes on the models:
 - **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom) with four detailed vessels on top. Paint shifts the hue of the hull's vertex colours.
 - **The character** is built from a skin body plus layered clothing shells, driven by a `look` object. It dresses the same animated rig the game already used (body, head, arms, legs), so walking, sitting, casting and reeling are unaffected. The customise screen uses a second rig with its own small renderer.
 - Models keep their footprints and orientation (fronts face +Z, boats point toward -Z), so collisions and interaction ranges do not change when art is updated.
+- **Model kit:** `ModelKit.roundedBox` gives every box-built prop bevelled edges (textures stay undistorted), and `ModelKit.mergeStatic` bakes the static pier into one mesh per material look, which roughly halves the draw calls. The film camera, the trophy mounts and the secret seagull stay separate because they move or are rebuilt.
+- **Colliders:** everything solid registers in one list, `Colliders`, with layers for walking (`COL.WALK`), boats (`COL.BOAT`) and diving (`COL.DIVE`). The pier walk code, the boat hull collisions and the dive all read from it, so a new prop only needs one `Colliders.box(...)` or `Colliders.circle(...)` line next to its model. The secret menu's **🧱 Debug → Show / hide collision boxes** draws them as wireframes (green walking, orange boats, cyan diving).
+- **Shadows:** on *High* graphics the sun casts one soft shadow map that follows the player or the boat.
 
 ## Running and deploying
 
@@ -399,6 +402,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 3.6.0: better pier models, shadows and one collision system
+- **Better pier models:** every box-built prop now has bevelled edges. The **tackle shop** has a shingled roof, a chalk price board, stacked fish crates, an oar, a mounted trophy fish, a coiled net with floats and a shopkeeper with an apron. The **bounty board** has stone footings, crossed oars, a ship's bell and barrels. The **trophy cabinet** has a cornice, brass feet, a framed glass door, a light strip and brass plaques. The **bottle gallery** has a driftwood frame, a rope trim, a cloth fringe and a ship in a bottle. The **film camera** has a clapperboard and a cable coil.
+- **New boardwalk props:** two benches facing the sea and barrel stacks at both ends, all solid.
+- **Soft sun shadows** on *High* graphics (off on *Battery saver*).
+- **Fewer draw calls:** the static pier is merged into a few meshes, which roughly halves the draw calls on the pier.
+- **One collision system:** the stands, benches, barrels, pilings, pier, lighthouse and buoys all register in one collider list used by walking, boats and diving. The walking boxes now keep a little extra room for the angler's body. A new **Debug** section in the secret menu shows every collision box.
+- Version bumped to **v3.6.0**.
 
 ### 2026-11-20, Version 3.5.1: collision sweep
 - **Underwater collisions:** seabed rocks, coral, shipwrecks, sunken chests, the pier and mooring pilings, the lighthouse rocks and the channel buoys are now solid for the diver, for the fish and for the spear (the spear stops on rock and returns). Before, you could swim, and fish could swim, straight through them. Kelp, grass and tube plants stay soft on purpose.
