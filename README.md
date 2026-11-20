@@ -403,6 +403,16 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 3.7.0: better island, lighthouse and buoys
+- **Island:** the cone-shaped hills are replaced by one rolling heightfield with lighter and darker grass, dry patches and rocky slopes, plus bushes and rocks scattered over it.
+- **Palm trees:** eight palms with curved, ringed trunks, drooping leafy fronds and coconuts (there were four simple ones).
+- **Fishermen's cottages:** four little houses along the back of the harbour terrace, with gabled tiled roofs, chimneys, doors, shuttered windows and flower boxes, and a stone path from the pier ramp.
+- **Rocks:** the seawall boulders and the lighthouse rocks are lumpy, shaded low-poly rocks instead of plain twelve-sided shapes.
+- **Lighthouse:** a tapered red-and-white tower with a stone base, a door, windows, a gallery railing, a framed lantern room with a dome and vent, and a keeper's hut on the rocks. The rotating beacon is unchanged.
+- **Buoys:** lattice day-marks with legs, hoops, a top deck, a radar reflector, a number board and a solar panel.
+- Collisions are unchanged: the island shore, lighthouse rocks and buoys keep their colliders. The new cottages and hills are beyond where you can walk or sail.
+- Version bumped to **v3.7.0**.
+
 ### 2026-11-20, Version 3.6.0: better pier models, shadows and one collision system
 - **Better pier models:** every box-built prop now has bevelled edges. The **tackle shop** has a shingled roof, a chalk price board, stacked fish crates, an oar, a mounted trophy fish, a coiled net with floats and a shopkeeper with an apron. The **bounty board** has stone footings, crossed oars, a ship's bell and barrels. The **trophy cabinet** has a cornice, brass feet, a framed glass door, a light strip and brass plaques. The **bottle gallery** has a driftwood frame, a rope trim, a cloth fringe and a ship in a bottle. The **film camera** has a clapperboard and a cable coil.
 - **New boardwalk props:** two benches facing the sea and barrel stacks at both ends, all solid.
