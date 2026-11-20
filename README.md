@@ -18,23 +18,25 @@ Once installed it also works offline.
 3. [The pier](#the-pier)
 4. [Progression and equipment](#progression-and-equipment)
 5. [The sea: zones, weather and the moon](#the-sea-zones-weather-and-the-moon)
-6. [Catches and the encyclopedia](#catches-and-the-encyclopedia)
-7. [Bounties, bottles and rewards](#bounties-bottles-and-rewards)
-8. [Diving and spearfishing](#diving-and-spearfishing)
-9. [Career: rank and achievements](#career-rank-and-achievements)
-10. [The fish market](#the-fish-market)
-11. [The Trophy Cabinet](#the-trophy-cabinet)
-12. [Sea events](#sea-events)
-13. [Character customisation](#character-customisation)
-14. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
-15. [Settings](#settings)
-16. [Saving](#saving)
-17. [Installing and offline play](#installing-and-offline-play)
-18. [Technical overview](#technical-overview)
-19. [Running and deploying](#running-and-deploying)
-20. [Testing](#testing)
-21. [Maintaining this file](#maintaining-this-file)
-22. [Changelog](#changelog)
+6. [The fight](#the-fight)
+7. [Catch of the Day and the daily streak](#catch-of-the-day-and-the-daily-streak)
+8. [Catches and the encyclopedia](#catches-and-the-encyclopedia)
+9. [Bounties, bottles and rewards](#bounties-bottles-and-rewards)
+10. [Diving and spearfishing](#diving-and-spearfishing)
+11. [Career: rank and achievements](#career-rank-and-achievements)
+12. [The fish market](#the-fish-market)
+13. [The Trophy Cabinet](#the-trophy-cabinet)
+14. [Sea events](#sea-events)
+15. [Character customisation](#character-customisation)
+16. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
+17. [Settings](#settings)
+18. [Saving](#saving)
+19. [Installing and offline play](#installing-and-offline-play)
+20. [Technical overview](#technical-overview)
+21. [Running and deploying](#running-and-deploying)
+22. [Testing](#testing)
+23. [Maintaining this file](#maintaining-this-file)
+24. [Changelog](#changelog)
 
 ---
 
@@ -42,7 +44,7 @@ Once installed it also works offline.
 
 1. Walk to the **far tip of the pier** and sit in the fishing chair. You can only cast from the tip of the pier, or from a boat.
 2. **Hold the action button** to charge a cast and **release** to throw. Longer holds throw further. The power bar loops, and a **yellow sweet spot at 72 to 88%** is marked on it (the label reads *★ SWEET!* while you are in it).
-3. When a fish bites, hook it and **reel it in**, keeping the line tension in the safe zone. Pull too hard on a fish your rod can't handle and the line snaps.
+3. When a fish bites, hook it and **reel it in**, keeping the line tension in the safe zone. Pull too hard on a fish your rod can't handle and the line snaps. Every fish fights in its own style (see [The fight](#the-fight)), and landing it is a short slow-motion moment as it leaps out of the water to you.
 4. Keep what you want in your **bucket** or release it. Bring the bucket to the **Tackle Shop** to sell the catch.
 5. Spend your money on better rods, boats, bait, buckets and boat modules. Complete **bounties**, collect **message bottles**, recycle junk and fill the **encyclopedia**.
 
@@ -53,7 +55,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Action | Touch | Keyboard |
 |---|---|---|
 | Walk | Thumbstick | `W` `A` `S` `D` or arrow keys |
-| Sail the boat | Thumbstick: **up** sails ahead, **left / right** turn, **down** brakes then reverses; the camera follows the boat, and turns are smoother the faster you go | `W` `S` throttle and reverse, `A` `D` or arrow keys turn |
+| Sail the boat | Thumbstick: **up** is the throttle, **left / right** the helm, **down** brakes then reverses. The helm needs the boat moving (no spinning on the spot) | `W` `S` throttle and reverse, `A` `D` or arrow keys steer |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space`, `E` or `Enter` (all three are the action button: they do exactly what the button shows) |
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
 | Open encyclopedia | **☰ Menu → 📖 Log** (a dot on ☰ marks new species) | `L` |
@@ -63,6 +65,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Switch **first person / third person** view | **☰ Menu → 🎥 View** tile (shows 👁️ in first person) | `V` |
 | Open the menu (Bag, Log, Career, Trophies, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
+| **Pause** (world stops, sound toggle, controls help) | **⏸** button, top right | `P` or `Esc` (when no menu is open) |
 
 **First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself (Shop, Bounty Board, Gallery, Trophy Cabinet and Camera) and lets go as soon as you move.
 
@@ -111,8 +114,8 @@ Boats take you out of the cove. They burn fuel (refill at the shop) and limit wh
 You ride each boat at a proper helm, built for the angler's body and checked in first and third person:
 - **Wooden Rowboat:** sit on the stern bench, facing forward, right hand on a tiller arm that swings as you steer.
 - **Fiberglass Skiff:** stand at a padded **leaning post** behind the console; the wheel is on the console's aft face, facing you, with a throttle and chart plotter beside it.
-- **Deep-Sea Trawler:** sit in a **helm chair inside an open-backed wheelhouse**, wheel and console in front and the bow through big front windows. In third person the wheelhouse roof turns see-through while you drive.
-- **Expedition Yacht:** sit on a **raised helm seat** behind the helm console, high enough to look over the (now lower) cabin and the bow; a radar arch replaces the old flybridge.
+- **Deep-Sea Trawler:** sit in a **helm chair inside an open-backed wheelhouse** (which stands clear above the bulwark since v4.3.0), wheel and console in front and the bow through big front windows. In third person the wheelhouse roof turns see-through while you drive.
+- **Expedition Yacht:** sit on a **raised helm seat** behind the helm console, high enough to look over the low cabin and the bow; a radar arch replaces the old flybridge. Since v4.3.0 the hull has a lower freeboard, so the cabin and its windows sit properly above the sheer.
 Your hands stay on the wheel or tiller and the wheel turns as you steer. When you fish from a boat you stand at the stern instead.
 
 | Boat | Cost | Fuel tank | Reaches zone |
@@ -122,6 +125,17 @@ Your hands stay on the wheel or tiller and the wheel turns as you steer. When yo
 | Fiberglass Skiff | $550 | 150 | 3 |
 | Deep-Sea Trawler | $1,800 | 350 | 4 |
 | Expedition Yacht | $6,500 | 700 | 5 |
+
+**Handling (since v4.3.0).** Each hull has its own feel:
+
+| Boat | Top speed | Character |
+|---|---|---|
+| Wooden Rowboat | 8 m/s | light and twitchy, rolls and pitches a lot in chop |
+| Fiberglass Skiff | 13 m/s | quick to accelerate, planes with its bow up, banks hard and skids in turns, slams the most |
+| Deep-Sea Trawler | 15 m/s | heavy: slow to speed up and to turn, wide turning circle, ploughs through chop and barely rolls |
+| Expedition Yacht | 20 m/s | fast and steady, planes and banks gently, only slams in the big outer zones |
+
+How it works: the throttle pushes against water drag, so a boat builds up speed over several seconds and **coasts down slowly** when you let go. The helm only works with water flowing past it, so a boat at rest can't spin on the spot (a little throttle lets it creep round). Turns have inertia, are wider at full speed, and the hull keeps some sideways momentum, so it **skids** through a fast turn and loses speed. The hull floats on the swell plus a short chop that grows with the zone and the weather: it heaves, pitches and rolls on springs, rises onto the plane, banks into turns, and at speed **slams into the chop**, kicking the bow up with spray off both sides, a thud, a camera jolt and a haptic bump (each slam costs a little speed). Spray peels off the bow at speed. When you fish from a boat it drifts to a stop.
 
 ### Boat modules
 | Module | Cost | Effect |
@@ -194,6 +208,36 @@ Boats are solid: the **pier deck, stairs, mooring platform and pilings, the boar
 - **Feeding Frenzies** are patches of churning water. Casting into one gives much faster bites and better odds at rare fish.
 - **Sea events** (see below) add floating treasure and a boss fish.
 - Days and nights pass in real time, and the sky, lighting and lamps change with them.
+
+## The fight
+
+The reel box names the fish's fighting style next to its direction (for example *⚡ RUNNER: LEFT ◀*):
+
+| Style | Fish | What it does | How to beat it |
+|---|---|---|---|
+| 🐟 Steady | standard-shaped fish | the classic tug of war, left and right | hold the reel and steer the stick against it |
+| ⚡ Runner | tuna-shaped fish | every few seconds a long, fast run to one side with a heavier pull | keep countering; the run ends after about 2 s |
+| ⬇ Diver | flatfish, groupers, anglerfish, spiky fish and every boss | heavy dives straight down: the reel barely gains and the tension spikes | **ease off the reel** during the dive; read it well (reel held for less than 40% of it) and you gain 4% |
+| 🐬 Jumper | slim fish and marlins | a tell (*! SOMETHING IS COMING UP !*), then the fish leaps clear of the water | **tap the action button while *TAP TO DIP THE ROD!* shows**: +7% and less tension. Miss it and the line goes slack (-6%) |
+| 〰 Thrasher | eels | changes direction twice as often and moves faster | quick stick work |
+
+Junk, weed and bottles are dead weight, and an underpowered rod skips the events (it is already a losing fight).
+
+**Feel:** while you reel, a strain sound (a hum and a creaking line) rises with the tension, a red vignette closes in from the screen edges above 55%, and above 80% the phone pulses like a heartbeat (with haptics on), faster as it gets worse.
+
+**Landing:** at 100% the game freezes for a split second, drops into slow motion and the catch leaps out of the water in an arc to the angler, with a splash in its rarity colour, a camera kick that grows with rarity, a rising sting (one more note per rarity step) and its name, weight and value floating above it. Then the catch card opens.
+
+## Catch of the Day and the daily streak
+
+- **Catch of the Day:** one fish species a day (picked from the real date, the same for everyone, more often common and uncommon ones) is worth **3x** when you catch it on the rod that day. It is shown on the start screen, the pause screen, the shop's market board and with a gold ⭐ TODAY tag in the encyclopedia; the catch card shows *⭐ CATCH OF THE DAY x3*. The first one each day also gives +25 XP.
+- **Daily streak:** the first time you play on a new calendar day you get a reward, and playing on consecutive days builds a streak (missing a day starts again at 1):
+
+| Streak day | Reward |
+|---|---|
+| every day | $10 + $10 per streak day (up to $80) |
+| 3, 10, 17... | + 5 Garden Worms |
+| 5, 12, 19... | + 5 Live Shrimp |
+| 7, 14, 21... | + 3 Glowing Lures and $50 |
 
 ## Catches and the encyclopedia
 
@@ -317,7 +361,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 | Key | Contents |
 |---|---|
-| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, boat paints and more (save format version 2; new fields are validated and old saves load with defaults) |
+| `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, boat paints, the daily streak (`daily`) and more (save format version 2; new fields are validated and old saves load with defaults) |
 | `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
@@ -379,6 +423,9 @@ Notes on the models:
 - **Model kit:** `ModelKit.roundedBox` gives every box-built prop bevelled edges (textures stay undistorted), and `ModelKit.mergeStatic` bakes the static pier into one mesh per material look, which roughly halves the draw calls. The film camera, the trophy mounts and the secret seagull stay separate because they move or are rebuilt.
 - **Colliders:** everything solid registers in one list, `Colliders`, with layers for walking (`COL.WALK`), boats (`COL.BOAT`) and diving (`COL.DIVE`). The pier walk code, the boat hull collisions and the dive all read from it, so a new prop only needs one `Colliders.box(...)` or `Colliders.circle(...)` line next to its model. The secret menu's **🧱 Debug → Show / hide collision boxes** draws them as wireframes (green walking, orange boats, cyan diving).
 - **Shadows:** on *High* graphics the sun casts one soft shadow map that follows the player or the boat.
+- **Game loop and time:** `animate()` takes the real frame time (capped at 50 ms) and turns it into world time: 0 while paused or while any menu sheet is open (`isGamePaused()`), 0 during a freeze frame (`hitStop`) and scaled during slow motion (`slowMo`). Camera shake is an offset added after the follow camera and removed at the start of the next frame. Random effects use `chancePerSec(rate, dt)`, so they don't depend on the frame rate.
+- **Boat physics:** `updateBoatControl` (thrust against drag, a helm that needs flow, yaw inertia, sideways slip in `boatSide`) and `updateHullMotion` (heave, pitch and roll springs on the swell plus `chopHeight`, planing, banking, slam detection at the bow). Each boat's numbers are in `BOAT_TIERS[n].handling`.
+- **Game feel:** `fightTick` runs the fighting styles and returns multipliers for the reel simulation; `startLeap`/`beginLanding` fly a catch model in an arc; the line-strain voice is `sfx.startLineStrain`/`updateLineStrain`/`stopLineStrain`; `endFightFx` turns everything off when a fight ends.
 
 ## Running and deploying
 
@@ -399,6 +446,7 @@ There is no test framework in the repository. Changes are checked with headless 
 - the page boots with no console or page errors, including with a deliberately corrupted save,
 - settings, bucket sorting, encyclopedia filters, the bounty tracker and the customise screen work,
 - walking and collisions (shop reachable, railings hold, ramp and platform ends, no teleports),
+- the fight (each style, the jump prompt, pause and the 3-2-1 resume, menu keys blocked mid-fight, the landing moment) and the boat handling numbers (top speed, no spin at rest, turn rates, coasting, slams per zone),
 - the action button only responds to the button, not the canvas,
 - every one of the 69 catch models builds,
 - the app registers its service worker and reloads and runs offline,
@@ -415,6 +463,23 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.3.0: game feel, fight styles, daily catch, real boat handling, fixed boats
+- **Landing moment:** a freeze frame, slow motion and the catch leaping out of the water to you, with a rarity splash, camera kick, a rising sting and its name, weight and value floating up, before the catch card.
+- **A line that feels alive:** a strain sound that rises with the tension, a red vignette at the screen edges and a heartbeat on the phone near snapping point.
+- **Fish fighting styles:** steady, runners, divers, jumpers (tap to dip the rod when one leaps) and thrashers. See [The fight](#the-fight).
+- **Pause screen:** ⏸ button, `P` or `Esc`; it also opens by itself when you switch away mid-fight or hide the tab. Sound toggle, menu and a controls cheat sheet; in a fight it resumes with a 3-2-1 countdown.
+- **Catch of the Day and daily streak:** one species pays 3x each day; daily rewards that grow with your streak. New save field `daily` (validated).
+- **Boat handling:** lower top speeds (8 / 13 / 15 / 20 m/s), thrust against drag with slow coasting, a helm that needs flow (no spinning on the spot), yaw inertia, skids in fast turns, and a hull that heaves, pitches, rolls, planes, banks and slams into chop with spray, a thud and a camera jolt.
+- **Boat models:** the trawler's wheelhouse and the yacht's cabin no longer sink into the hull (both hulls had far too much freeboard above their decks); the trawl doors and rail floats were moved to match, and the yacht's outboards now sit on the transom.
+- **Fixes:**
+  - The fight kept running behind menus (B, L and T now wait until the fight ends, and every menu freezes the world clock: weather, time of day, sea events, treasure timers, the fight).
+  - Camera shake was being smoothed into a slow wobble by the follow camera (now an offset that is removed every frame).
+  - Ripples, wakes, frenzy rings and glow sparkles spawned more often on high refresh-rate screens (now per second).
+  - Sound kept playing in a hidden tab (the audio now suspends and resumes, also on iOS after a touch).
+  - The game saved to `localStorage` every frame while sailing (now every 2 s).
+  - Fewer per-frame allocations in the camera, fight and live bait cam code.
+- Version bumped to **v4.3.0**.
 
 ### 2026-11-20, Version 4.2.0: teardrop bust and bust physics
 - **Shape:** the female bust is reshaped from two round bumps into a natural teardrop (a long, gentle upper slope, a fuller rounded lower curve and a soft crease underneath), with a finer mesh through the chest so the curve looks smooth. All tops, the bikini and the overalls bib follow the new shape.
