@@ -75,24 +75,30 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) and a **42 m waterfront boardwalk** (twice as long since v4.6.0) with every shop along its sea edge, backs to the sea and fronts facing south (toward the island), like the Tackle Shop. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Stop in front of a shop and the camera zooms in on it.
 
-**Shops (since v4.5.0 each one has its own trade, since v4.8.0 none of them is a menu):** press the action button at a shop (*Browse*, or *Sell Fish* at the Fish Market) and the shopkeeper slides a **display counter** out along the shop front with the real goods on it (rods, baits, buckets, scale-model boats, boat modules, a fuel can, dive kits, spear guns, or the fish from your bucket). The angler steps out of view and the camera sits in front of one item at a time:
+**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Cabin. All fronts face south and every back is on the sea rail. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `CABIN` in `index.html`.
 
-- **Browse:** the ‹ and › arrows at the sides of the info card, a swipe left or right, or `A` / `D` / the arrow keys move to the next item; the camera slides along the counter. Small chips at the top switch category (Tackle: Rods, Bait, Buckets; Boatyard: Boats, Modules, Fuel; Dive: Dive gear, Spear guns) and `✕ Leave` (or `Esc`) walks you away.
-- **Read:** each item has a price tag on the counter, and the card shows its title, stats, description, price and state (*Equipped*, *Owned*, *Locked: needs tier 2 first*, *Need $x more*, *Hot today*).
-- **Buy:** tap an item (a neighbour on screen selects it first; the centred item, or the card, asks to buy) and a **confirmation** appears: *Buy X for $Y? Cash $a to $b*, with *Cancel* and *Buy*. Nothing is bought without it, and unaffordable or locked items just tell you why. At the Fish Market the first item is **Sell everything** and every fish in your bucket follows; selling asks the same way.
+**Shops (each has its own trade; none is a menu):**
 
-| Shop | Where | What it sells |
+| Shop | Where | What it does |
 |---|---|---|
-| 🎣 **Tackle Shop** | boardwalk, west of the pier | rods (and the live bait cam), bait packs, buckets |
-| ⚓ **Boatyard** | boardwalk, far west (a fuel pump and an outboard on a stand outside) | boats, boat modules, **fuel** |
-| 🐟 **Fish Market** | boardwalk, east, past the film camera (an iced fish bench outside) | **buys your catch** (one by one or *Sell All*), today's market board and Catch of the Day, the Mayor's recycling perk. It is the only place that buys; the bag's per-item *Sell* buttons also work only in front of it. |
-| 🤿 **Dive Shop** | boardwalk, far east (tanks, fins and a diver-down flag outside) | dive gear and spear guns |
+| 🎣 **Tackle Shop** | left of the pier, small | **catalogue:** rods (and the live bait cam), bait packs, buckets |
+| ⚓ **Boatyard** | far left, big (a fuel pump and an outboard on a stand outside) | **catalogue:** boats, boat modules, **fuel** |
+| 🤿 **Dive Shop** | left, big (tanks, fins and a diver-down flag outside) | **catalogue:** dive gear and spear guns |
+| 🐟 **Fish Market** | right of the pier, small (an iced fish bench outside) | your **bucket of fish** as a list with a **Sell all fish** button; shows today's market and the Catch of the Day. It buys fish only. |
+| ♻️ **Recycling** | right of the pier, three skips (green *Flora*, blue *Metal*, yellow *Other*) | your **junk and seaweed** as a list grouped by skip, a **Recycle all** button and the Mayor's award bar ($1,000 per 100 kg) |
 
-| Object | What it does |
-|---|---|
+- **The catalogue (Tackle Shop, Boatyard, Dive Shop):** press *Browse* and a cream paper brochure slides up over the lower part of the screen while the camera stays on the shop. Category chips on top (Tackle: Rods, Bait, Buckets; Boatyard: Boats, Modules, Fuel; Dive: Dive gear, Spear guns). **One item per page:** a big picture of the item, its title, stats, description, price and state (*Equipped*, *Owned*, *Locked: needs tier 2 first*, *Need $x more*). The ‹ › arrows turn the page (with a page-turn animation), a swipe works too, `A` / `D` or the arrow keys on a keyboard, and `1` to `3` pick a category. `✕` or `Esc` closes it.
+- **Buying:** tap the picture or the *Buy for $X* button; a **confirmation** asks first (*Buy X for $Y? Cash $a to $b*, *Cancel* / *Buy*). The touch that opens it can never confirm it by accident. Locked or unaffordable pages have no active button and say why.
+- **Lists (Fish Market, Recycling):** each row is one piece from your bucket (icon, name, kg, price, hot or glut marks); tap a row to sell just that one (after the confirm) or the big button at the bottom to sell or recycle them all. The bag screen's own *Sell* buttons work only in front of the matching stand.
+- The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
+
+**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **trophy case** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. The front wall and roof fade away while you are inside so the camera can see in.
+
+In **third person the island's palms, cottages and bushes are hidden** so the camera never gets stuck behind them; first person shows them again.
+
 | 📋 **Bounty Board** | Your three open contracts are written on papers pinned to the board (title, task, reward, progress). Tap a finished paper (marked READY) or press the action button to claim it. |
-| 📜 **Bottle Gallery** | Browse the message-in-a-bottle collection. |
-| 🎬 **Director's Camera** | Change the camera lens (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
+| 📜 **Bottle Gallery** (cabin, back wall left) | Browse the message-in-a-bottle collection. |
+| 🎬 **Director's Camera** (cabin, by the door) | Change the camera lens (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
 | ⚓ **Moored boat** (down the stairs on the port side, beside the low mooring platform, which is 4.5 m long since v4.6.0) | Board your boat once you own one. |
@@ -312,7 +318,7 @@ Prices move every in-game day (every 3.5 minutes). Each fish species gets a mult
 
 ## The Trophy Cabinet
 
-A glass cabinet stands on the boardwalk between the Bottle Gallery and the Director's Camera. It mounts your **five best species** (ranked by rarity, then how close your record is to the species' top weight) as small 3D fish with name plates. Walk up to it and press **TROPHIES** (or use **☰ Menu → 🏆 Trophies**) for the full list: every fish you have caught with its record weight, catch count and a medal: 🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below.
+A glass cabinet stands inside the Cabin, on the back wall to the right of the Bottle Gallery. It mounts your **five best species** (ranked by rarity, then how close your record is to the species' top weight) as small 3D fish with name plates. Walk up to it and press **TROPHIES** (or use **☰ Menu → 🏆 Trophies**) for the full list: every fish you have caught with its record weight, catch count and a medal: 🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below.
 
 ## Sea events
 
@@ -438,7 +444,7 @@ The script inside `index.html` is organised in labelled sections:
 | H | Career (XP, ranks, achievements), the daily market, save state, validation and helper queries |
 | I | Boarding, docking and the rescue loop |
 | J | Fishing mechanics and the context-sensitive action button |
-| K | UI: shop browser (counter, arrows, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
+| K | UI: shop catalogue and bucket lists (brochure, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
 | L | HUD and button synchronisation |
 | M | Main animation and physics loop |
 
@@ -491,6 +497,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.9.0: shop catalogues, recycling, a cabin, a new harbour order
+- **Catalogue brochure:** the Tackle Shop, Boatyard and Dive Shop open a page-flip brochure (one item per page: a rendered picture, title, stats, description, price and state; arrows, swipe or keys turn the pages; category chips on top; buying asks to confirm). It replaces the counter and camera sliding of v4.8.0.
+- **Fish Market:** shows your bucket's fish as a list with a *Sell all fish* button (fish only). New **Recycling stand** with three coloured skips (flora, metal, other) takes junk and seaweed, with a *Recycle all* button and the Mayor's award bar. Bucket Sell buttons follow: fish at the Fish Market, junk at Recycling.
+- **New harbour order:** Boatyard (big), Dive Shop (big), Tackle Shop, Bounty board, pier, Recycling, Fish Market (smaller), Cabin. The bottle gallery, trophy case and film camera moved into the new walk-in **Cabin**, whose front wall and roof fade out while you are inside. Colliders, lights, stand zooms, rail-lean spots and the cheat menu's teleports (new: Recycling, Cabin) follow the new layout.
+- **Third person:** the island's palms, cottages and bushes are hidden so the camera is never blocked; first person shows them.
+- Version bumped to **v4.9.0**.
 
 ### 2026-11-20, Version 4.8.0: no more shop menus, real goods on a counter
 - **Shop browser:** the Tackle Shop, Boatyard, Dive Shop and Fish Market no longer open a menu. A display counter slides out with the actual goods on it (new low-poly models for 9 rods and the live cam, baits in jars, buckets, scale-model boats, three boat modules, a fuel can, five dive kits, five spear guns, and a crate for *Sell everything*; your own fish go on the counter at the Fish Market). The camera slides from item to item with arrows, swipe or `A` / `D`; category chips switch tabs.
