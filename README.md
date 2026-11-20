@@ -290,7 +290,7 @@ The encyclopedia (📖 Log) tracks **69 catchable things**:
 
 ## Bounties, bottles and rewards
 
-- **Bounties:** the board offers three contracts at a time from a pool of 16 (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. The contracts are **written on the three papers pinned to the board** (there is no menu any more): stand in front of it and the camera zooms in so you can read the title, task, reward and progress bar of each. A finished contract gets a red READY stamp; **tap its paper**, or press the action button (*Claim*), to collect, and a fresh contract is pinned up in its place. Tapping an unfinished paper just tells you its progress. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
+- **Bounties:** the board offers three contracts at a time from a pool of 16 (since v4.10.0 only ones you can actually do: the farthest zone is the pier's zone 1, or your boat's top zone, and a heavy-fish contract must be within your rod's rated weight and a species that big must live in reach; the three are balanced into a mix of types and of easy, medium and stretch contracts, and a claimed paper is replaced the same way; old saves swap any untouched contract that was out of reach) (catch fish in a zone, land a heavy fish, land rare catches, clean up junk, and so on). Each pays cash plus bait. The contracts are **written on the three papers pinned to the board** (there is no menu any more): stand in front of it and the camera zooms in so you can read the title, task, reward and progress bar of each. A finished contract gets a red READY stamp; **tap its paper**, or press the action button (*Claim*), to collect, and a fresh contract is pinned up in its place. Tapping an unfinished paper just tells you its progress. A tracker on the HUD shows your closest contract and tells you when one is ready to claim.
 - **Message in a bottle:** 36 collectable scrolls are hidden across the four zones. Keep a bottle in your bucket to add its message to the Gallery. Collect all 36 for a **$2,500 Master Archivist** reward.
 - **Eco cleanup:** junk and flora you sell are recycled. Every **100 kg** recycled earns a **$1,000 Mayor's Award**.
 
@@ -497,6 +497,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.10.0: bounties you can actually do
+- **Possible contracts only:** the board no longer offers Trench or Rift contracts to a player on the pier, or a 100 kg fish to someone with a bamboo rod. What counts as possible comes from your boat's top zone (the pier is zone 1) and your rod's rated weight (`bountyReach`, `bountyEligible`).
+- **Balanced mix:** each board is a spread of contract types and difficulties (easy, medium, stretch) instead of three random picks, and the paper that replaces a claimed one is chosen the same way. A new boat or rod unlocks the next zone's contracts with the next replacement.
+- **Old saves:** contracts with no progress that are out of reach are swapped for fitting ones on load; started contracts are kept.
+- Version bumped to **v4.10.0**.
 
 ### 2026-11-20, Version 4.9.5: head visible in shops in first person
 - Opening a shop in first person now shows the angler from outside with his head (it stayed hidden before, as it is in the first-person view). Leaving the shop returns to the first-person view.
