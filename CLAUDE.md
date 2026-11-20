@@ -23,6 +23,8 @@ description of the game, its systems and its structure.
   `AnglerAnimator`; front is -Z. The rod pivot, chair and bobber stay on `world.anglerGroup`.
 - Anything solid gets a collider in the `Colliders` registry (`Colliders.box` / `Colliders.circle` with `COL.WALK`, `COL.BOAT`, `COL.DIVE`) right where its model is built. The walk, boat and dive code all read from it; check with the secret menu's Debug → collision boxes.
 - Static pier props are merged by `ModelKit.mergeStatic`; anything that moves or is rebuilt must be passed in its `keep` list.
+- World time is `dt` from `animate()`: it is 0 while paused, in a menu or during a freeze frame, so per-frame code must cope with `dt = 0` (no division by it). Random per-frame events use `chancePerSec(rate, dt)`, never `Math.random() < p`.
+- Boat handling numbers live in `BOAT_TIERS[n].handling`; hull motion is `updateHullMotion`.
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
 - Deployment is GitHub Pages from `main`.
 

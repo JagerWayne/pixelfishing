@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.2.0';
+    window.PF_VERSION = '4.3.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1206,6 +1206,43 @@
       box-shadow: none;
     }
 
+    /* game feel: tension vignette, leap prompt, pause screen, daily catch */
+    #tension-vignette {
+      position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0;
+      background: radial-gradient(ellipse at center, transparent 52%, rgba(220, 38, 38, 0.6) 100%);
+    }
+    @media (prefers-reduced-motion: reduce) { #tension-vignette { display: none; } }
+    #leap-banner {
+      display: none; background: #0369a1; color: #fff; border: 3px solid #fde047;
+      box-shadow: 0 0 0 3px #000, 0 0 20px rgba(56, 189, 248, 0.85);
+      padding: 10px 18px; font-size: 17px; font-weight: 900; letter-spacing: 1px; text-align: center;
+      animation: bounceAlert 0.2s infinite alternate;
+    }
+    #leap-banner.show { display: block; }
+    #pause-overlay {
+      position: fixed; inset: 0; z-index: 65; display: none; align-items: center; justify-content: center;
+      padding: calc(12px + var(--safe-top, 0px)) 16px calc(12px + var(--safe-bottom, 0px)); background: rgba(4, 8, 16, 0.78);
+    }
+    #pause-overlay.open { display: flex; }
+    #pause-overlay.counting { background: rgba(4, 8, 16, 0.35); }
+    #pause-overlay.counting .pause-card { display: none; }
+    .pause-card { width: min(92vw, 400px); max-height: 100%; overflow-y: auto; padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+    .pause-title { margin: 0; color: #ffd24c; font-size: 24px; text-shadow: 2px 2px 0 #000; letter-spacing: 2px; }
+    #btn-resume { font-size: 17px; padding: 12px; }
+    .pause-row { display: flex; gap: 8px; }
+    .pause-row .pixel-btn { flex: 1; }
+    .pause-daily, .start-daily { font-size: 12.5px; line-height: 1.5; color: #fde68a; }
+    .start-daily { margin-bottom: 12px; }
+    .start-daily:empty, .pause-daily:empty { display: none; }
+    .pause-help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; font-size: 11.5px; line-height: 1.5; color: #cbd5e1; border-top: 2px solid #334155; padding-top: 10px; }
+    @media (max-width: 380px) { .pause-help { grid-template-columns: 1fr; } }
+    #pause-count { display: none; font-size: 110px; font-weight: 900; color: #ffd24c; text-shadow: 4px 4px 0 #000, 0 0 30px rgba(250, 204, 21, 0.6); }
+    #pause-overlay.counting #pause-count { display: block; animation: countPop 1s ease-out infinite; }
+    @keyframes countPop { 0% { transform: scale(1.5); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.85; } }
+    .cod-badge { background: #a16207 !important; color: #fef08a !important; border-color: #fde047 !important; }
+    .log-card.cod { border-color: #fde047; box-shadow: 0 0 10px rgba(250, 204, 21, 0.45); }
+    .log-cod { display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 10px; font-weight: 900; color: #451a03; background: #fde047; border-radius: 2px; }
+
     /* loading screen */
     #loading-screen {
       position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px;
@@ -1476,6 +1513,7 @@
   </div>
   <!-- Main Responsive WebGL Viewport -->
   <canvas id="game-canvas"></canvas>
+  <div id="tension-vignette" aria-hidden="true"></div>
 
   <!-- Start screen: title, save summary, angler choice, Continue / New game -->
   <div id="start-overlay" class="open">
@@ -1487,6 +1525,7 @@
         Sail out, cast your line, fill your bucket and sell your catch at the pier. Upgrade your boat, rod and bucket to reach deeper waters and rarer fish.
       </p>
       <div id="start-save-summary" style="display: none; font-size: 13px; color: #4ade80; font-weight: bold; margin-bottom: 12px;"></div>
+      <div id="start-daily" class="start-daily"></div>
       <div style="font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 6px;">CHOOSE YOUR ANGLER</div>
       <div style="display: flex; gap: 8px; margin-bottom: 8px;">
         <button class="pixel-btn green" id="btn-start-male" type="button" style="flex: 1;">🧔 Male</button>
@@ -1496,6 +1535,24 @@
       <button class="pixel-btn gold" id="btn-start-game" type="button" style="width: 100%; font-size: 16px; margin-bottom: 8px;">🎣 START NEW GAME</button>
       <button class="pixel-btn red" id="btn-new-game" type="button" style="width: 100%; display: none;">✨ NEW GAME</button>
     </div>
+  </div>
+
+  <!-- Pause screen (P / Esc / the pause button; also opens by itself when the tab is hidden) -->
+  <div id="pause-overlay" role="dialog" aria-label="Paused">
+    <div class="pixel-box pause-card" id="pause-card">
+      <h2 class="pause-title">⏸ PAUSED</h2>
+      <div id="pause-daily" class="pause-daily"></div>
+      <button class="pixel-btn gold" id="btn-resume" type="button">▶ RESUME</button>
+      <div class="pause-row">
+        <button class="pixel-btn" id="btn-pause-sound" type="button">🔊 Sound: On</button>
+        <button class="pixel-btn" id="btn-pause-menu" type="button">☰ Menu</button>
+      </div>
+      <div class="pause-help">
+        <div><b>Keyboard</b><br/>Move: WASD / arrows<br/>Action: Space, E or Enter (hold to cast, hold to reel)<br/>Steer the fight: A / D<br/>B bag · T toolbox · L log · V view · X dive<br/>P or Esc: pause</div>
+        <div><b>Touch</b><br/>Stick: walk, steer the boat and the fight<br/>Big button: the action shown on it<br/>Tap it when a fish leaps!</div>
+      </div>
+    </div>
+    <div id="pause-count" aria-live="assertive"></div>
   </div>
 
   <!-- Toast notifications -->
@@ -1530,6 +1587,7 @@
         <div class="hud-right">
           <span class="hud-chip" id="hud-weather" title="Weather">☀️ Clear</span>
           <span class="hud-chip" id="hud-time">12:00</span>
+          <button class="sleek-menu-btn" id="btn-pause" type="button" aria-label="Pause" title="Pause (P)">⏸</button>
           <button class="sleek-menu-btn menu-dot" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
         </div>
       </div>
@@ -1595,6 +1653,7 @@
     <div id="center-hud">
       <div id="proximity-banner">⚓ TACKLE SHOP — PRESS ACTION BUTTON TO OPEN</div>
       <div id="bite-banner">! BITE! TAP HOOK NOW !</div>
+      <div id="leap-banner">🐟 IT'S JUMPING! TAP TO DIP THE ROD!</div>
 
       <div class="pixel-box" id="cast-meter-box">
         <div class="stat-row">
@@ -1940,6 +1999,7 @@
         <div>
           <span class="rarity-badge" id="catch-rarity">Common</span>
           <span class="record-badge" id="catch-record-badge">🏆 NEW RECORD!</span>
+          <span class="record-badge cod-badge" id="catch-cod-badge" style="display:none;">⭐ CATCH OF THE DAY ×3</span>
           <h2 style="margin: 6px 0 4px; color: #fff; font-size: 20px;" id="catch-name">Sunlit Minnow</h2>
           <div style="font-size: 12px; color: #94a3b8;" id="catch-zone">Zone 1: Pier & Shallow Cove</div>
         </div>
@@ -2397,6 +2457,55 @@
           this.playTone({ freq: pitch * 0.7, endFreq: pitch * 0.6, type: 'sine', duration: 0.06, vol: 0.05 });
         }
 
+        /* A continuous line-strain voice for the fight: a low hum plus a filtered creak, both rising with the tension. */
+        startLineStrain() {
+          if (!this.enabled || !this.ctx || this.ctx.state !== 'running' || this.strain) return;
+          const ctx = this.ctx, out = ctx.createGain(); out.gain.value = 0; out.connect(ctx.destination);
+          const hum = ctx.createOscillator(); hum.type = 'triangle'; hum.frequency.value = 90;
+          const humLp = ctx.createBiquadFilter(); humLp.type = 'lowpass'; humLp.frequency.value = 700;
+          if (!this._strainBuf) {
+            const len = ctx.sampleRate, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+            for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+            this._strainBuf = buf;
+          }
+          const noise = ctx.createBufferSource(); noise.buffer = this._strainBuf; noise.loop = true;
+          const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 7; bp.frequency.value = 600;
+          const nGain = ctx.createGain(); nGain.gain.value = 0.55;
+          hum.connect(humLp); humLp.connect(out); noise.connect(bp); bp.connect(nGain); nGain.connect(out);
+          hum.start(); noise.start();
+          this.strain = { out, hum, noise, bp, beat: 0 };
+        }
+        updateLineStrain(tension, dt) {
+          const s = this.strain; if (!s) return;
+          const now = this.ctx.currentTime, k = Math.max(0, (tension - 0.35) / 0.65);   // quiet below 35% tension
+          s.out.gain.setTargetAtTime(this.enabled ? 0.055 * k * k : 0, now, 0.06);
+          s.hum.frequency.setTargetAtTime(75 + 170 * tension, now, 0.06);
+          s.bp.frequency.setTargetAtTime(380 + 1900 * tension, now, 0.06);
+          if (tension > 0.8) {                                        // heartbeat on the phone, faster as it gets worse
+            s.beat -= dt;
+            if (s.beat <= 0) { this.vibrate([16, 70, 10]); s.beat = Math.max(0.28, 0.75 - (tension - 0.8) * 2.4); }
+          } else s.beat = 0;
+        }
+        stopLineStrain() {
+          const s = this.strain; if (!s) return;
+          this.strain = null;
+          try { s.out.gain.setTargetAtTime(0, this.ctx.currentTime, 0.04); } catch {}
+          setTimeout(() => { try { s.hum.stop(); s.noise.stop(); s.out.disconnect(); } catch {} }, 250);
+        }
+        /* rarity sting when a catch leaps out of the water: one more note per rarity step */
+        playLandingSting(notes) {
+          if (!this.enabled) return;
+          this.vibrate(notes.length > 3 ? [30, 30, 70] : 25);
+          notes.forEach((f, i) => this.playTone({ freq: f, type: 'triangle', duration: 0.2 + i * 0.03, vol: 0.06, delay: 0.08 + i * 0.075 }));
+        }
+        playFightCue(kind) {
+          if (!this.enabled) return;
+          if (kind === 'run') { this.playTone({ freq: 760, endFreq: 1180, type: 'sine', duration: 0.45, vol: 0.035 }); this.vibrate(30); }
+          else if (kind === 'dive') { this.playTone({ freq: 150, endFreq: 70, type: 'sine', duration: 0.35, vol: 0.09 }); this.vibrate([40, 30, 40]); }
+          else if (kind === 'good') { this.playTone({ freq: 660, type: 'triangle', duration: 0.1, vol: 0.06 }); this.playTone({ freq: 990, type: 'triangle', duration: 0.16, vol: 0.06, delay: 0.09 }); this.vibrate(20); }
+          else if (kind === 'bad') { this.playTone({ freq: 220, endFreq: 140, type: 'sine', duration: 0.3, vol: 0.07 }); this.vibrate([60, 40, 60]); }
+        }
+
         playLineSnap() {
           this.vibrate([80, 40, 120]);
           this.playTone({ freq: 420, endFreq: 90, type: 'triangle', duration: 0.3, vol: 0.18 });
@@ -2441,6 +2550,14 @@
           this.playTone({ freq: 58 + speedFactor * 14, endFreq: 44, type: 'sine', duration: 0.09, vol: 0.06 });
         }
 
+        /* the hull slamming into chop: a low thud plus a short wash of spray */
+        playHullSlam(I = 0.5) {
+          if (!this.enabled) return;
+          this.vibrate(Math.round(14 + 30 * I));
+          this.playTone({ freq: 95, endFreq: 48, type: 'sine', duration: 0.16, vol: 0.05 + 0.07 * I });
+          this.playNoise({ duration: 0.22 + 0.12 * I, vol: 0.04 + 0.05 * I, filterFreq: 1400, filterType: 'bandpass' });
+        }
+
         playRescueHorn() {
           this.vibrate([120, 60, 160]);
           this.playTone({ freq: 185, endFreq: 178, type: 'triangle', duration: 0.5, vol: 0.15, delay: 0 });
@@ -2475,6 +2592,7 @@
         }
         if (!startOverlayEl.classList.contains('open')) return;
         startOverlayEl.classList.remove('open');
+        checkDailyStreak();
         updateHUD();
         sfx.init();
         sfx.playCoin();
@@ -2492,10 +2610,14 @@
          ========================================================================= */
       const BOAT_TIERS = [
         { tier: 0, name: 'None (Pier Only)', cost: 0, maxFuel: 0, speed: 0, burnRate: 0, maxZone: 1, desc: 'Fish directly from the wooden harbor pier.' },
-        { tier: 1, name: 'Wooden Rowboat', cost: 120, maxFuel: 60, speed: 14, burnRate: 0.20, maxZone: 2, desc: 'Clinker hull with 5HP outboard. Reaches Coastal Reef (300m).' },
-        { tier: 2, name: 'Fiberglass Skiff', cost: 550, maxFuel: 150, speed: 22, burnRate: 0.17, maxZone: 3, desc: 'Agile planing center-console skiff. Safely navigates Open Shelf (650m).' },
-        { tier: 3, name: 'Deep-Sea Trawler', cost: 1800, maxFuel: 350, speed: 30, burnRate: 0.14, maxZone: 4, desc: 'Heavy steel expedition vessel built for Abyssal Trench swells (1200m+).' },
-        { tier: 4, name: 'Expedition Yacht', cost: 6500, maxFuel: 700, speed: 38, burnRate: 0.12, maxZone: 5, desc: 'Twin-engine ocean yacht with a flybridge. The only boat that reaches the Mariana Rift (1500m+).' }
+        { tier: 1, name: 'Wooden Rowboat', cost: 120, maxFuel: 60, speed: 8, burnRate: 0.20, maxZone: 2,
+          handling: { accel: 2.0, turn: 0.85, yawK: 2.6, slip: 3.2, hz: 1.5, damp: 0.3, plane: 0.04, bank: 0.05, chop: 1.2 }, desc: 'Clinker hull with 5HP outboard. Reaches Coastal Reef (300m).' },
+        { tier: 2, name: 'Fiberglass Skiff', cost: 550, maxFuel: 150, speed: 13, burnRate: 0.17, maxZone: 3,
+          handling: { accel: 3.0, turn: 0.8, yawK: 2.4, slip: 2.0, hz: 1.25, damp: 0.28, plane: 0.09, bank: 0.13, chop: 1.0 }, desc: 'Agile planing center-console skiff. Safely navigates Open Shelf (650m).' },
+        { tier: 3, name: 'Deep-Sea Trawler', cost: 1800, maxFuel: 350, speed: 15, burnRate: 0.14, maxZone: 4,
+          handling: { accel: 1.5, turn: 0.5, yawK: 1.1, slip: 4.5, hz: 0.7, damp: 0.45, plane: 0.025, bank: 0.04, chop: 0.55 }, desc: 'Heavy steel expedition vessel built for Abyssal Trench swells (1200m+).' },
+        { tier: 4, name: 'Expedition Yacht', cost: 6500, maxFuel: 700, speed: 20, burnRate: 0.12, maxZone: 5,
+          handling: { accel: 2.4, turn: 0.55, yawK: 1.5, slip: 2.8, hz: 0.9, damp: 0.38, plane: 0.07, bank: 0.1, chop: 0.75 }, desc: 'Twin-engine ocean yacht with a radar arch and a raised helm. The only boat that reaches the Mariana Rift (1500m+).' }
       ];
 
       const BOAT_MODULES = [
@@ -3769,7 +3891,7 @@
         /* st: { dt, elapsed, speed, sit (0..1), seatH, feetZ, casting, castCharge, reeling, cranking, tension, pull,
                  hands: { L, R } (world-space wrist targets or null), handBlend, sway, idleAllowed } */
         update(st) {
-          const r = this.rig, d = r.dims, dt = Math.min(0.05, st.dt || 0.016), t = st.elapsed || 0;
+          const r = this.rig, d = r.dims, dt = Math.min(0.05, st.dt == null ? 0.016 : st.dt), t = st.elapsed || 0;
           const damp = (cur, goal, k) => cur + (goal - cur) * (1 - Math.exp(-k * dt));
           const ss = (x, a, b) => THREE.MathUtils.smoothstep(x, a, b);
           // ---- rest pose ----
@@ -3948,7 +4070,7 @@
            sitting down, casting and boat motion all make it lag and bounce. The offset then drives the bust bones. */
         bustPhysics(dt) {
           const r = this.rig, d = r.dims;
-          if (!r.bustL) return;
+          if (!r.bustL || (dt <= 0 && this.bust)) return;   // frozen (pause / freeze frame): hold the current offsets
           if (!d.female) { r.bustL.position.set(-d.bustX, d.bustY, d.bustZ); r.bustR.position.set(d.bustX, d.bustY, d.bustZ); return; }
           if (!this.bust) {
             this.bust = [0, 1].map(i => ({ X: new THREE.Vector3(), V: new THREE.Vector3(), A: new THREE.Vector3(), AV: new THREE.Vector3(), init: false, tune: i ? 1.06 : 0.95 }));
@@ -3971,7 +4093,7 @@
             // anchor: the rest spot of the mound, in world space
             const anchor = this._ba.set(sx * d.bustX, d.bustY, d.bustZ - 0.04).applyMatrix4(chest.matrixWorld);
             const jump = S.init ? anchor.distanceTo(S.A) : 1e9;
-            if (!S.init || jump > 0.5 || !isFinite(S.X.x) || dt <= 0) { // first frame or a teleport: start at rest
+            if (!S.init || jump > 0.5 || !isFinite(S.X.x)) { // first frame or a teleport: start at rest
               S.X.copy(anchor); S.V.set(0, 0, 0); S.AV.set(0, 0, 0); S.A.copy(anchor); S.init = true;
             } else {
               const av = S.AV.copy(anchor).sub(S.A).divideScalar(Math.max(1e-4, dt));   // anchor velocity
@@ -5243,7 +5365,8 @@
 
           if (tier === 3) {
             // ---- Deep-sea steel trawler ----
-            const hull = this.loftHull({ L: 9.4, beam: 3.7, draft: 1.0, depth: 2.6, bowRise: 0.5, sternRise: 0.2, sternW: 0.86, planks: 0,
+            const hull = this.loftHull({ L: 9.4, beam: 3.7, draft: 1.0, depth: 2.05,   // sheer ~0.55 m above the deck, so the wheelhouse stands clear of the bulwark
+              bowRise: 0.5, sternRise: 0.2, sternW: 0.86, planks: 0,
               bands: [{ y0: -9, y1: -0.15, color: '#7f1d1d' }, { y0: -0.15, y1: 0.0, color: '#f8fafc' }, { y0: 0.0, y1: 0.7, color: '#1e3a8a' }, { y0: 0.7, y1: 0.85, color: '#facc15' }, { y0: 0.85, y1: 9, color: '#1e3a8a' }] });
             hull.L = 9.4; group.add(new THREE.Mesh(hull.geo, hullMat), new THREE.Mesh(hull.transom, hullMat));
             const white = M(0xf1f5f9, 0.45), steel = M(0x94a3b8, 0.4, 0.6), darkM = M(0x1e293b, 0.6, 0.3), orange = M(0xf97316, 0.5), red = M(0xb91c1c, 0.5), yellow = M(0xfacc15, 0.5);
@@ -5289,7 +5412,7 @@
             const block = cyl(0.12, 0.12, 0.2, steel, 0, 3.35, 3.15, 10); block.rotation.z = Math.PI / 2;
             cyl(0.012, 0.012, 3.3, darkM, 0, 1.9, 2.5, 4).rotation.x = -0.55;
             // trawl doors (otter boards) hung on the quarters
-            [-1, 1].forEach(s => { const d = box(0.08, 1.2, 0.8, M(0x7f1d1d, 0.6, 0.3), s * 1.95, 1.25, 1.6); d.rotation.z = s * 0.1; box(0.1, 0.1, 0.9, steel, s * 1.95, 0.7, 1.6); });
+            [-1, 1].forEach(s => { const d = box(0.08, 1.0, 0.8, M(0x7f1d1d, 0.6, 0.3), s * 1.93, 0.6, 1.6); d.rotation.z = s * 0.1; box(0.1, 0.1, 0.9, steel, s * 1.93, 1.12, 1.6); });
             // crates, barrels, life ring
             [[-1.0, 1.0], [-0.55, 1.4], [0.9, 0.2]].forEach(([x, z], i) => box(0.6, 0.45, 0.6, M(i % 2 ? 0x0e7490 : 0xea580c, 0.7), x, 0.78, z));
             [[1.1, -0.9], [1.2, -0.3]].forEach(([x, z]) => cyl(0.26, 0.26, 0.6, M(0x1d4ed8, 0.6), x, 0.83, z, 12));
@@ -5306,14 +5429,15 @@
             { const raft = cyl(0.25, 0.25, 0.8, white, 0.75, 2.6, -2.2, 12); raft.rotation.x = Math.PI / 2; [0.25, -0.25].forEach(dz => torus(0.255, 0.02, M(0x1e293b, 0.6), 0.75, 2.6, -2.2 + dz)); }
             { const netM = M(0x15803d, 0.95); const n = cyl(0.5, 0.5, 1.2, netM, 0, 0.95, 1.9, 14); n.rotation.z = Math.PI / 2; for (let k = 0; k < 6; k++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), orange); f.position.set(-0.5 + k * 0.2, 1.47, 1.9); group.add(f); } }
             for (let k = 0; k < 5; k++) box(0.04, 0.03, 0.4, steel, 1.02, 0.95 + k * 0.3, -1.3);   // ladder to the roof on the starboard wall
-            [-1, 1].forEach(sd => [0.6, 1.4, 2.4].forEach(z => { const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), z === 1.4 ? yellow : orange); f.position.set(sd * hull.halfW((z + 4.7) / 9.4) * 1.0, 1.2, z); group.add(f); }));
+            [-1, 1].forEach(sd => [0.6, 1.4, 2.4].forEach(z => { const f = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), z === 1.4 ? yellow : orange); f.position.set(sd * hull.halfW((z + 4.7) / 9.4) * 1.02, 0.86, z); group.add(f); }));
             cyl(0.18, 0.2, 0.25, M(0x111827, 0.7), 0, 3.65, -1.0, 10);
             group.userData.helm.roof = group.children.filter(m => m.isMesh && m.position.y >= 2.3 && m.position.y < 2.9 && m.position.z < -0.7 && m.position.z > -3.1);
             group.userData.helm.roof.forEach(m => { m.material = m.material.clone(); m.material.transparent = true; });
           }
           if (tier === 4) {
             // ---- Expedition yacht: twin outboards, flybridge and an aft helm ----
-            const hull = this.loftHull({ L: 11.0, beam: 4.0, draft: 0.9, depth: 2.5, bowRise: 0.6, sternRise: 0.15, sternW: 0.9, planks: 0,
+            const hull = this.loftHull({ L: 11.0, beam: 4.0, draft: 0.9, depth: 1.9,    // low freeboard: the cabin and its windows sit above the sheer
+              bowRise: 0.6, sternRise: 0.15, sternW: 0.9, planks: 0,
               bands: [{ y0: -9, y1: -0.2, color: '#1e3a8a' }, { y0: -0.2, y1: -0.05, color: '#f8fafc' }, { y0: -0.05, y1: 0.55, color: '#f8fafc' }, { y0: 0.55, y1: 0.72, color: '#facc15' }, { y0: 0.72, y1: 9, color: '#f8fafc' }] });
             hull.L = 11.0; group.add(new THREE.Mesh(hull.geo, hullMat), new THREE.Mesh(hull.transom, hullMat));
             const white = M(0xf8fafc, 0.35), navy = M(0x1e3a8a, 0.45), steel = M(0xcbd5e1, 0.3, 0.8), teak = M(0xb9854a, 0.8);
@@ -7315,7 +7439,7 @@ this._scratchVec = new THREE.Vector3();
             f.innerRing.rotation.z = -elapsed * 1.1;
             const pulse = 0.88 + Math.sin(elapsed * 4 + f.zoneId) * 0.14;
             f.innerRing.scale.setScalar(pulse);
-            if (this.frenzyVisible && Math.random() < 0.08) {
+            if (this.frenzyVisible && chancePerSec(5, dt)) {
               this.spawnRipple(new THREE.Vector3(f.x + (Math.random() - 0.5) * f.radius, f.mesh.position.y, f.z + (Math.random() - 0.5) * f.radius), 0xfef08a, 1.5);
             }
           }
@@ -7830,7 +7954,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let boatYaw = 0;
       let boatVel = 0;
       let lastBumpAt = -10;
-      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0;
+      let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0, boatSaveT = 0;
       let boatPowered = false; // true while the engine is driving the boat (burns fuel)
       /* Where the angler rides on each boat (boat-local metres; the bow points to -Z) and how he holds on while steering.
          y is the height of his feet (or of his seat when `sit`). hands: arm raise (radians) for the left / right arm. */
@@ -8039,21 +8163,38 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
       window.addEventListener('blur', releaseAllInputs);
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden) releaseAllInputs();
+        if (document.hidden) {
+          releaseAllInputs();
+          if (sfx.ctx && sfx.ctx.state === 'running') sfx.ctx.suspend().catch(() => {});
+          if (!document.getElementById('start-overlay').classList.contains('open') && !document.querySelector('.modal-backdrop.open')) pauseGame(true);
+        } else {
+          if (sfx.enabled && sfx.ctx) sfx.ctx.resume().catch(() => {});
+          if (!document.getElementById('start-overlay').classList.contains('open')) checkDailyStreak();
+        }
       });
+      // iOS keeps a suspended context silent until a touch: resume on the next press
+      window.addEventListener('pointerdown', () => { if (sfx.enabled && sfx.ctx && sfx.ctx.state !== 'running' && !document.hidden) sfx.ctx.resume().catch(() => {}); }, { passive: true, capture: true });
 
       window.addEventListener('keydown', e => {
         keys[e.code] = true;
         if (e.code === 'Escape') {
           if (cheatConfirmModal.classList.contains('open')) { pendingCheat = null; cheatConfirmModal.classList.remove('open'); return; }
-          closeAllModals();
+          if (gamePause.on) { resumeGame(); return; }
+          if (document.querySelector('.modal-backdrop.open')) { closeAllModals(); return; }
+          if (!document.getElementById('start-overlay').classList.contains('open')) pauseGame();
           return;
         }
+        if (gamePause.on) { if (e.code === 'KeyP') resumeGame(); return; }
         if (isAnyModalOpen()) {
           if (e.code === 'Space' && document.getElementById('modal-catch').classList.contains('open')) {
             e.preventDefault();
             attemptKeepPendingCatch();
           }
+          return;
+        }
+        if (e.code === 'KeyP') { togglePause(); return; }
+        if (inFight() && (e.code === 'KeyB' || e.code === 'KeyT' || e.code === 'KeyL')) {
+          showToast('🎣 Finish the fight first! (P pauses)');
           return;
         }
         if (e.code === 'KeyB') {
@@ -8254,6 +8395,54 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const marketMult = id => marketFor(state.dayCount || 0).mult[id] || 1;
       const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id)));
 
+      /* ---- Catch of the Day and the daily streak: both keyed on the real calendar date (local time) ---- */
+      function todayNum() { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
+      const COD_WEIGHT = { Common: 3, Uncommon: 3, Rare: 2, Epic: 1, Legendary: 0.4 };
+      let codCache = { day: -1, item: null };
+      function catchOfDay(day = todayNum()) {
+        if (codCache.day === day) return codCache.item;
+        let a = (Math.imul(day + 7, 2246822519) ^ 0x85ebca6b) >>> 0;
+        const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        const pool = MARKET_FISH.map(id => CATALOG_INDEX[id]).filter(Boolean);
+        const tot = pool.reduce((t, c) => t + (COD_WEIGHT[c.rarity] || 1), 0);
+        let r = rnd() * tot, item = pool[0];
+        for (const c of pool) { r -= COD_WEIGHT[c.rarity] || 1; if (r <= 0) { item = c; break; } }
+        codCache = { day, item };
+        return item;
+      }
+      function streakReward(n) {
+        const r = { cash: 10 + 10 * Math.min(n, 7), bait: null };
+        const k = n % 7;
+        if (k === 3) r.bait = { tier: 2, qty: 5 };
+        else if (k === 5) r.bait = { tier: 3, qty: 5 };
+        else if (k === 0) { r.bait = { tier: 4, qty: 3 }; r.cash += 50; }
+        return r;
+      }
+      /* Called when the game starts and when the tab comes back: a new calendar day pays the streak reward once. */
+      function checkDailyStreak() {
+        if (!state.daily) state.daily = { day: 0, streak: 0, best: 0, codDay: 0, codCount: 0 };
+        const dl = state.daily, today = todayNum();
+        if (dl.day === today) return;
+        if (dl.day > today) { dl.day = today; return; }               // clock went backwards: no reward, no reset
+        dl.streak = (dl.day > 0 && today - dl.day === 1) ? dl.streak + 1 : 1;
+        dl.best = Math.max(dl.best, dl.streak);
+        dl.day = today;
+        const r = streakReward(dl.streak);
+        state.cash = +(state.cash + r.cash).toFixed(2);
+        if (r.bait) state.baitStock[r.bait.tier] = (state.baitStock[r.bait.tier] || 0) + r.bait.qty;
+        saveGame();
+        updateHUD();
+        const baitTxt = r.bait ? ` and ${r.bait.qty}x ${BAIT_TIERS[r.bait.tier - 1].name}` : '';
+        setTimeout(() => showToast(`🔥 Day ${dl.streak} fishing streak! +$${r.cash}${baitTxt}`), 900);
+        setTimeout(() => showToast(`⭐ Catch of the Day: ${catchOfDay().name} pays x3 today`), 2400);
+      }
+      function dailyLine(onStart) {
+        const cod = catchOfDay(), dl = state.daily || {};
+        const streak = dl.streak > 0 ? ` &middot; 🔥 Streak: <b>${dl.streak}</b> day${dl.streak === 1 ? '' : 's'}${dl.best > dl.streak ? ` (best ${dl.best})` : ''}` : '';
+        const zones = cod.zones && cod.zones.length ? ` <span style="color:#94a3b8;">(zone ${cod.zones.join('/')})</span>` : '';
+        return `⭐ Catch of the Day: <b>${cod.name}</b>${zones} pays <b>x3</b>${onStart && !hadSavedGame ? '' : streak}`;
+      }
+
       const BOAT_PAINTS = [
         { id: 'classic', name: 'Classic', cost: 0, rank: 0, hue: 0, sat: 1, light: 1 },
         { id: 'sunset', name: 'Sunset Orange', cost: 150, rank: 0, hue: 0.07, sat: 1.1, light: 1.05 },
@@ -8297,6 +8486,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           ownedPaints: ['classic'],
           diveTier: 0,
           spearTier: 0,
+          daily: { day: 0, streak: 0, best: 0, codDay: 0, codCount: 0 },
           saveVersion: 2
         };
       }
@@ -8729,6 +8919,9 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         out.junkRecycledKg = num(src.junkRecycledKg, 0, 0, 1e9);
         out.mayorRewardsClaimed = int(src.mayorRewardsClaimed, 0, 0, 1e6);
         out.vfxShader = typeof src.vfxShader === 'string' ? src.vfxShader : 'none';
+        const dl = src.daily && typeof src.daily === 'object' ? src.daily : {};
+        out.daily = { day: int(dl.day, 0, 0, 1e7), streak: int(dl.streak, 0, 0, 1e5), best: int(dl.best, 0, 0, 1e5), codDay: int(dl.codDay, 0, 0, 1e7), codCount: int(dl.codCount, 0, 0, 1e7) };
+        out.daily.best = Math.max(out.daily.best, out.daily.streak);
 
         out.baitStock = { 2: 0, 3: 0, 4: 0 };
         if (src.baitStock && typeof src.baitStock === 'object') {
@@ -9082,7 +9275,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       const BUMP_TEXT = { rocks: '🪨 Watch the rocks!', lighthouse: '🪨 Watch the rocks!', buoy: '🛟 Bumped a buoy!', pier: '⚓ Mind the pier!', island: '🏝️ Shallow water, that is the beach!' };
 
-      /* ---- Arcade boat control, relative to the boat: up = ahead, left / right = turn, down = brake then reverse ---- */
+      /* ---- Boat handling, relative to the boat: up = throttle ahead, left / right = helm, down = brake then reverse ----
+         A small hull model instead of a car: thrust against water drag (linear + quadratic, so each boat has a natural
+         top speed and coasts down slowly), the helm only bites with water flowing past it (no spinning on the spot),
+         yaw has inertia, and the hull keeps some sideways momentum in a turn (it skids, more for planing hulls). */
+      const BOAT_DEFAULT_HANDLING = { accel: 2, turn: 0.7, yawK: 2, slip: 3, hz: 1.1, damp: 0.35, plane: 0.05, bank: 0.08, chop: 1 };
+      let boatSide = 0;   // sideways slip speed (m/s), + = to starboard
       function updateBoatControl(dt, boat) {
         let throttle = -joyState.y, steer = joyState.x;
         if (keys['KeyW'] || keys['ArrowUp']) throttle += 1;
@@ -9091,31 +9289,96 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (keys['KeyD'] || keys['ArrowRight']) steer += 1;
         throttle = THREE.MathUtils.clamp(throttle, -1, 1);
         steer = THREE.MathUtils.clamp(steer, -1, 1);
-        const maxSpd = boat.speed;
+        if (Math.abs(throttle) < 0.1) throttle = 0;
+        if (Math.abs(steer) < 0.1) steer = 0;
+        const hd = boat.handling || BOAT_DEFAULT_HANDLING, V = Math.max(1, boat.speed);
         const hasFuel = cheats.freeFuel || state.fuel > 0;
-        const active = hasFuel && (Math.abs(throttle) > 0.1 || Math.abs(steer) > 0.1);
-        boatPowered = active;
-        if (!hasFuel) {
-          // no engine: the boat keeps its way and slows down by water drag alone (inertia), holding its heading
-          const drag = (0.55 * Math.abs(boatVel) + 0.35) * dt;
-          boatVel = Math.abs(boatVel) <= drag ? 0 : boatVel - Math.sign(boatVel) * drag;
-          boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, 0, Math.min(1, dt * 2.5));
-        } else if (active) {
-          const ahead = Math.abs(throttle) > 0.1 ? throttle : 0;
-          const target = ahead >= 0 ? ahead * maxSpd * (1 - 0.25 * Math.abs(steer)) : ahead * maxSpd * 0.35;
-          boatVel = THREE.MathUtils.lerp(boatVel, target, Math.min(1, dt * 2.6));
-          // a slow boat still pivots a little, a moving one turns faster; backwards the helm works like a car
-          const rate = 0.6 + 1.5 * Math.min(1, Math.abs(boatVel) / (maxSpd * 0.4));
-          const dir = boatVel < -0.3 ? -1 : 1;
-          const want = -steer * rate * dir;
-          boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, want, Math.min(1, dt * 7));
-          if (Math.abs(ahead) > 0.1) sfx.playEngineChug(maxSpd / 14);
-        } else {
-          boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, 0, Math.min(1, dt * 6));
-          boatVel = THREE.MathUtils.lerp(boatVel, 0, Math.min(1, dt * 2.2));
-          if (Math.abs(boatVel) < 0.05) boatVel = 0;
+        if (!hasFuel) throttle = 0;                                   // no engine: inertia and the helm only
+        boatPowered = hasFuel && throttle !== 0;
+        // thrust (reverse is weaker) against drag; a fixed term so the boat really comes to rest
+        const thrust = throttle >= 0 ? throttle * hd.accel : throttle * hd.accel * 0.65;
+        const r = boatVel / V;
+        const drag = hd.accel * (0.25 * r + 0.75 * r * Math.abs(r)) + Math.sign(boatVel) * (throttle === 0 ? 0.55 : 0.2);
+        let nv = boatVel + (thrust - drag) * dt;
+        if (Math.sign(nv) !== Math.sign(boatVel) && boatVel !== 0 && throttle === 0) nv = 0;  // drag never pushes it backwards
+        boatVel = THREE.MathUtils.clamp(nv, -0.4 * V, V * 1.05);
+        if (Math.abs(boatVel) < 0.03 && throttle === 0) boatVel = 0;
+        // the helm needs water flowing past it; a little prop wash lets a slow boat creep round when throttled
+        const flow = Math.min(1, Math.abs(boatVel) / (0.35 * V));
+        const auth = Math.pow(flow, 0.8) + (throttle !== 0 ? 0.12 : 0);
+        const dir = boatVel < -0.2 ? -1 : 1;                          // astern the helm works the other way
+        const highSpeed = 1 - 0.35 * Math.pow(Math.min(1, Math.abs(boatVel) / V), 2);   // wider turns at full speed
+        const want = -steer * hd.turn * Math.min(1, auth) * highSpeed * dir;
+        boatTurnRate += (want - boatTurnRate) * (1 - Math.exp(-hd.yawK * dt));
+        const dYaw = boatTurnRate * dt;
+        boatYaw += dYaw;
+        // keep the world momentum through the turn, then let the keel bleed off the sideways part (the skid)
+        const cu = Math.cos(dYaw), su = Math.sin(dYaw);
+        const u = boatVel * cu - boatSide * su, w = boatSide * cu + boatVel * su;
+        boatVel = u;
+        boatSide = w * Math.exp(-hd.slip * dt);
+        if (Math.abs(boatSide) < 0.01) boatSide = 0;
+        if (boatPowered && throttle !== 0) sfx.playEngineChug(0.6 + 1.6 * Math.abs(boatVel) / V);
+        return { throttle, steer };
+      }
+
+      /* ---- Hull motion: the hull floats on the swell plus a short boat-scale chop, sampled at the bow, stern and both
+         sides. Heave, pitch and roll are springs (lighter hulls are quicker), so the boat bobs, rises onto the plane, banks
+         into turns and, at speed, slams into the chop: a kick to the bow, spray, a thud and a camera jolt. ---- */
+      const hullMo = { init: false, heave: 0, hv: 0, pitch: 0, pv: 0, roll: 0, rv: 0, gap: 0, slamCd: 0 };
+      const _hF = new THREE.Vector3(), _hR = new THREE.Vector3(), _hP = new THREE.Vector3();
+      function chopHeight(x, z, t, zone) {
+        const amp = (0.06 + 0.3 * zone.waveAmp) * getWeatherObj().waveMult;
+        return amp * (Math.sin(x * 0.85 + t * 2.3) * Math.sin(z * 0.72 - t * 1.9) + 0.45 * Math.sin((x + z) * 1.55 + t * 3.1));
+      }
+      function seaSurface(x, z, t, zone, chopK) { return getWaveHeight(x, z, t, zone) + chopK * chopHeight(x, z, t, zone); }
+      function resetHullMotion() { hullMo.init = false; boatSide = 0; }
+      function updateHullMotion(dt, boat, zone) {
+        const hd = boat.handling || BOAT_DEFAULT_HANDLING, V = Math.max(1, boat.speed);
+        const L = boatHalfLen * 0.82, W = boatHalfWid * 0.95, t = elapsed, ck = hd.chop;
+        _hF.set(-Math.sin(boatYaw), 0, -Math.cos(boatYaw)); _hR.set(Math.cos(boatYaw), 0, -Math.sin(boatYaw));
+        const S = (f, r) => { _hP.copy(boatPos).addScaledVector(_hF, f).addScaledVector(_hR, r); return seaSurface(_hP.x, _hP.z, t, zone, ck); };
+        const hb = S(L, 0), hs = S(-L, 0), hp = S(0, -W), hr = S(0, W);
+        const r = Math.min(1.05, Math.abs(boatVel) / V), fwd = boatVel > 0 ? r : 0;
+        // targets: float on the surface, the bow rises as the hull climbs onto the plane, bank into turns
+        const planeLift = hd.plane * (Math.sin(Math.min(1, fwd / 0.55) * Math.PI / 2) - 0.35 * Math.max(0, fwd - 0.55));
+        const heaveT = (hb + hs + hp + hr) * 0.25 + fwd * hd.plane * 0.8;
+        const pitchT = Math.atan2(hb - hs, 2 * L) + planeLift;
+        const rollT = Math.atan2(hr - hp, 2 * W) * 0.8 + boatTurnRate * fwd * hd.bank * 3;
+        if (!hullMo.init || dt <= 0) {
+          if (!hullMo.init) Object.assign(hullMo, { init: true, heave: heaveT, hv: 0, pitch: pitchT, pv: 0, roll: rollT, rv: 0, gap: 0, slamCd: 0 });
+          return;
         }
-        boatYaw += boatTurnRate * dt;
+        const w0 = 2 * Math.PI * hd.hz, k = w0 * w0, c = 2 * hd.damp * w0;
+        const h = Math.min(dt, 0.05) / 2;
+        for (let i = 0; i < 2; i++) {                                  // two semi-implicit sub-steps
+          hullMo.hv += (k * (heaveT - hullMo.heave) - c * hullMo.hv) * h; hullMo.heave += hullMo.hv * h;
+          hullMo.pv += (k * 1.3 * (pitchT - hullMo.pitch) - c * 1.1 * hullMo.pv) * h; hullMo.pitch += hullMo.pv * h;
+          hullMo.rv += (k * 0.8 * (rollT - hullMo.roll) - c * 0.9 * hullMo.rv) * h; hullMo.roll += hullMo.rv * h;
+        }
+        hullMo.pitch = THREE.MathUtils.clamp(hullMo.pitch, -0.32, 0.38);
+        hullMo.roll = THREE.MathUtils.clamp(hullMo.roll, -0.3, 0.3);
+        // slamming: the water at the bow rising past the hull, fast, at speed
+        const bowY = hullMo.heave + Math.sin(hullMo.pitch) * L;
+        const gap = hb - bowY, closing = (gap - hullMo.gap) / dt;
+        hullMo.gap = gap;
+        hullMo.slamCd -= dt;
+        if (fwd > 0.4 && gap > 0.04 && closing > 0.5 && hullMo.slamCd <= 0) {
+          const I = THREE.MathUtils.clamp((closing - 0.5) * 0.55 * fwd + gap * 1.5, 0.15, 1.4) * (0.6 + 0.4 * ck);
+          hullMo.pv += 1.1 * I; hullMo.hv += 0.9 * I;
+          hullMo.slamCd = 0.32;
+          boatVel *= 1 - 0.035 * I;                                    // each slam costs a little way
+          triggerCamShake(0.04 + 0.13 * I);
+          _hP.copy(boatPos).addScaledVector(_hF, L * 0.85);
+          [-1, 1].forEach(sd => vfx.spawnSplash(_hP.clone().addScaledVector(_hR, sd * W * 0.9).setY(hb + 0.2), Math.round(6 + 10 * I), 0xf0f9ff, 2.2 + 2.2 * I));
+          sfx.playHullSlam(I);
+        }
+        // spray peeling off the bow at speed
+        if (fwd > 0.3 && chancePerSec(14 * fwd, dt)) {
+          _hP.copy(boatPos).addScaledVector(_hF, L * 0.8).addScaledVector(_hR, (Math.random() < 0.5 ? -1 : 1) * W * 0.85);
+          _hP.y = hb + 0.15;
+          vfx.spawnSplash(_hP, 3, 0xf0f9ff, 1.2 + 1.6 * fwd);
+        }
       }
 
       function handleBoardOrDockToggle() {
@@ -9139,6 +9402,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           boatVel = 0;
           boatTurnRate = 0;
           boatCamYaw = 0;
+          resetHullMotion();
           resolveBoatCollisions();
           sfx.vibrate(25);
           showToast(`Sailing ${getCurrentBoat().name}! Up to sail, left or right to turn, down to reverse.`);
@@ -9152,7 +9416,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           mode = 'PIER_IDLE';
           playerX = -5.2;
           playerZ = -5.6;
-          boatVel = 0;
+          boatVel = 0; boatSide = 0;
+          saveGame();
           sfx.vibrate(25);
           showToast('Docked at Mooring Platform.');
         }
@@ -9191,7 +9456,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function handleActionPress() {
+        if (gamePause.on || mode === 'LANDING') return;
         if (mode === 'DIVING') { diveAction(); return; }
+        if (mode === 'REELING') { fightTap(); return; }
         const prevCheatTaps = cheatTaps;
         cheatTaps = 0; // any action press that is not a counted "WALK EDGE" press beside the gull resets the count
         if (mode === 'PIER_IDLE') {
@@ -9435,6 +9702,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function hookFish() {
         document.getElementById('bite-banner').style.display = 'none';
         activeCatch = selectCatchForCurrentZone();
+        if (activeCatch.item.category === 'Fish' && activeCatch.item.id === catchOfDay().id) {
+          activeCatch.value = Math.round(activeCatch.value * 3);
+          activeCatch.isCOD = true;
+        }
+        startFight(activeCatch);
         mode = 'REELING';
         tension = 0.28;
         reelProgress = 0.05;
@@ -9470,6 +9742,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function cancelFishing(reasonMsg) {
+        endFightFx();
         mode = onBoat ? 'BOAT_DRIVING' : 'PIER_IDLE';
         world.bobberGroup.visible = false;
         world.fishingLine.visible = false;
@@ -9535,6 +9808,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         advanceBountiesOnCatch(c);
         recordCatchProgress(c, isNewSpecies, isNewRecord);
+        if (c.isCOD) {
+          const today = todayNum();
+          if (state.daily.codDay !== today) { state.daily.codDay = today; addXp(25); setTimeout(() => showToast('⭐ Catch of the Day landed! x3 value and +25 XP'), 700); }
+          state.daily.codCount++;
+        }
         if (isNewSpecies || isNewRecord) rebuildTrophyCabinet();
         saveGame();
 
@@ -9547,8 +9825,19 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          ========================================================================= */
       let activeShopTab = 'rods';
 
+      /* Frame-rate independent random event: on average `perSec` times per second, whatever the frame rate (0 when paused). */
+      function chancePerSec(perSec, dt) { return dt > 0 && Math.random() < 1 - Math.exp(-perSec * dt); }
+
+      /* The world clock stops while a menu sheet or the pause screen is open (the start screen, the rescue cut-scene
+         and the camera's live viewfinder keep it running). */
+      function isGamePaused() {
+        return gamePause.on || !!document.querySelector('.modal-backdrop.open:not(#modal-camera)');
+      }
+      const FIGHT_MODES = ['CASTING', 'WAITING_BITE', 'BITE_WINDOW', 'REELING', 'LANDING'];
+      const inFight = () => FIGHT_MODES.includes(mode);
+
       function isAnyModalOpen() {
-        return document.querySelectorAll('.modal-backdrop.open, #rescue-overlay.open, #start-overlay.open').length > 0;
+        return document.querySelectorAll('.modal-backdrop.open, #rescue-overlay.open, #start-overlay.open, #pause-overlay.open').length > 0;
       }
 
       function closeAllModals() {
@@ -9779,7 +10068,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const names = ids => ids.map(id => `<b>${CATALOG_INDEX[id].name}</b> x${m.mult[id].toFixed(1)}`).join(' &middot; ');
         const left = Math.max(0, Math.round((1 - state.timeOfDay) * 210)), mm = Math.floor(left / 60), ss = String(left % 60).padStart(2, '0');
         host.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px; font-weight:900; color:#c4b5fd;"><span>📈 TODAY'S FISH MARKET</span><span style="color:#94a3b8; font-weight:bold;">new prices in ${mm}:${ss}</span></div>
-          <div style="color:#bbf7d0;">🔥 Hot: ${names(m.hot)}</div><div style="color:#fecaca;">📉 Glut: ${names(m.glut)}</div>`;
+          <div style="color:#bbf7d0;">🔥 Hot: ${names(m.hot)}</div><div style="color:#fecaca;">📉 Glut: ${names(m.glut)}</div>
+          <div style="color:#fde047;">⭐ Catch of the Day: <b>${catchOfDay().name}</b> pays x3 until midnight</div>`;
       }
 
       /* Career screen: rank, counters and achievements */
@@ -10553,6 +10843,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const GAME_VERSION = window.PF_VERSION;
       function refreshStartScreen() {
         document.getElementById('start-version').textContent = `Pixel Fishing v${GAME_VERSION}`;
+        document.getElementById('start-daily').innerHTML = dailyLine(true);
         const startBtn = document.getElementById('btn-start-game');
         const summary = document.getElementById('start-save-summary');
         const newBtn = document.getElementById('btn-new-game');
@@ -10678,6 +10969,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         const recBadge = document.getElementById('catch-record-badge');
         recBadge.style.display = c.isNewRecord ? 'inline-block' : 'none';
+        document.getElementById('catch-cod-badge').style.display = c.isCOD ? 'inline-block' : 'none';
 
         document.getElementById('catch-name').textContent = c.bottleMessage
           ? `📜 Bottle #${c.bottleMessage.id}: "${c.bottleMessage.title}"`
@@ -10849,11 +11141,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               ? ` • PB: <b style="color:#4ade80;">${stat.maxWeight.toFixed(2)}kg</b> (${stat.count}x)`
               : '');
           const card = document.createElement('div');
-          card.className = `log-card ${found ? '' : 'undiscovered'}`;
+          const isCod = item.id === catchOfDay().id;
+          card.className = `log-card ${found ? '' : 'undiscovered'} ${isCod ? 'cod' : ''}`;
           card.innerHTML = `
             <img class="item-icon" src="${ITEM_ICONS[item.id]}" style="${found ? '' : 'filter: brightness(0);'}" alt="" />
             <div style="font-size: 12px; line-height: 1.35;">
-              <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}${isNew ? '<span class="new-badge">NEW</span>' : ''}</div>
+              <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}${isNew ? '<span class="new-badge">NEW</span>' : ''}${isCod ? '<span class="log-cod">⭐ TODAY x3</span>' : ''}</div>
               <div style="color: #94a3b8;">Zones: ${item.zones.join(', ')} • ${item.rarity}</div>
               <div style="color: #ffd24c;">${found ? `~$${item.value}${recordTxt}` : 'Undiscovered'}</div>
             </div>
@@ -11064,6 +11357,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('bite');
           iconEl.textContent = '❗';
           labelEl.textContent = 'HOOK IT!';
+        } else if (mode === 'LANDING') {
+          primaryBtn.classList.add('reeling');
+          iconEl.textContent = '🎣';
+          labelEl.textContent = 'LANDING!';
         } else if (mode === 'REELING') {
           primaryBtn.classList.add('reeling');
           iconEl.textContent = '🔄';
@@ -12131,7 +12428,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         dive.bag = []; dive.maxDepth = 0; dive.hudT = 0; dive.lock = null; dive.nearChest = null;
         dive.airMax = gear.air; dive.air = gear.air; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
         dive.bubbleT = 2; dive.whaleT = 40 + Math.random() * 60; dive.depthWarnT = 0; dive.leashWarnT = 0;
-        if (onBoat) { dive.startX = boatPos.x; dive.startZ = boatPos.z; dive.pos.set(boatPos.x, 0.25, boatPos.z); dive.yaw = boatYaw; boatVel = 0; }
+        if (onBoat) { dive.startX = boatPos.x; dive.startZ = boatPos.z; dive.pos.set(boatPos.x, 0.25, boatPos.z); dive.yaw = boatYaw; boatVel = 0; boatSide = 0; }
         else { dive.startX = playerX; dive.startZ = playerZ; dive.pos.set(THREE.MathUtils.clamp(playerX, -2, 2), 0.25, playerZ - 1.2); dive.yaw = 0; }
         dive.pitch = -0.1; dive.vy = -2.2; dive.vf = 0;
         dive.zone = diveZoneAt(dive.pos.z);
@@ -12252,8 +12549,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function updateDiveSim(rawDt) {
-        const paused = isAnyModalOpen();
-        const dt = paused ? 0 : rawDt;
+        const dt = rawDt;   // already 0 while paused or in a menu
         const gear = diveGear(), gun = spearGun();
         dive.t += dt;
 
@@ -12834,11 +13130,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (mode === 'BOAT_DRIVING' && !isAnyModalOpen()) {
             updateBoatControl(dt, boat);
 
-            const stepDist = Math.abs(boatVel) * dt;
+            const stepDist = Math.hypot(boatVel, boatSide) * dt;
             if (stepDist > 0.001) {
               bumpStat('metersSailed', stepDist);
-              const dx = -Math.sin(boatYaw) * boatVel * dt;
-              const dz = -Math.cos(boatYaw) * boatVel * dt;
+              const dx = (-Math.sin(boatYaw) * boatVel + Math.cos(boatYaw) * boatSide) * dt;
+              const dz = (-Math.cos(boatYaw) * boatVel - Math.sin(boatYaw) * boatSide) * dt;
               const speedBefore = boatVel;
               const steps = Math.max(1, Math.ceil(stepDist / 0.4));
               let hit = null, into = 0;
@@ -12855,9 +13151,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                   showToast(BUMP_TEXT[hit] || '💥 Bump!');
                 }
                 boatVel *= 1 - 0.6 * Math.min(1, into);
+                boatSide *= 0.4;
+                hullMo.rv += 0.6 * Math.min(1, into) * Math.sign(Math.random() - 0.5); triggerCamShake(0.1 * Math.min(1, into));
               }
 
-              if (Math.random() < 0.45) {
+              if (chancePerSec(36, dt)) {
                 const sternWake = boatPos.clone().add(new THREE.Vector3(Math.sin(boatYaw) * 2.4, 0, Math.cos(boatYaw) * 2.4));
                 vfx.spawnWake(sternWake, boatYaw, Math.abs(boatVel) / 14);
               }
@@ -12865,30 +13163,29 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               const hadFuel = state.fuel > 0;
               if (!cheats.freeFuel && boatPowered) state.fuel = Math.max(0, state.fuel - stepDist * boat.burnRate);
               if (hadFuel && state.fuel <= 0) showToast('⛽ Out of fuel! Drifting...');
-              saveGame();
+              boatSaveT += dt;
+              if (boatSaveT > 2 || (hadFuel && state.fuel <= 0)) { boatSaveT = 0; saveGame(); }   // not every frame
               updateHUD();
             }
             // out of fuel and far from the pier: the tow starts once the boat has coasted to a stop
             if (state.fuel <= 0 && !cheats.freeFuel && Math.abs(boatVel) < 0.4 && getDistanceMeters() > 15) {
-              boatVel = 0;
+              boatVel = 0; boatSide = 0;
               triggerRescueSequence();
             }
             updatePrimaryActionButton();
           } else {
-            boatVel = THREE.MathUtils.lerp(boatVel, 0, dt * 4);
+            boatVel = THREE.MathUtils.lerp(boatVel, 0, Math.min(1, dt * 1.5));   // fishing / in a menu: the boat drifts to a stop
+            boatSide = THREE.MathUtils.lerp(boatSide, 0, Math.min(1, dt * 2));
+            boatTurnRate = THREE.MathUtils.lerp(boatTurnRate, 0, Math.min(1, dt * 2));
+            if (dt > 0) { boatYaw += boatTurnRate * dt; boatPos.x += (-Math.sin(boatYaw) * boatVel + Math.cos(boatYaw) * boatSide) * dt; boatPos.z += (-Math.cos(boatYaw) * boatVel - Math.sin(boatYaw) * boatSide) * dt; if (Math.abs(boatVel) > 0.05) resolveBoatCollisions(); }
           }
 
           if (zone.id > (state.stats.maxZone || 1)) state.stats.maxZone = zone.id;
-          const waveY = getWaveHeight(boatPos.x, boatPos.z, elapsed, zone);
-          boatPos.y = waveY;
+          updateHullMotion(dt, boat, zone);
+          boatPos.y = hullMo.heave;
           playerBoatMesh.position.copy(boatPos);
-          const spdRatio = Math.min(1, Math.abs(boatVel) / Math.max(1, boat.speed));
           playerBoatMesh.rotation.order = 'YXZ';
-          playerBoatMesh.rotation.set(
-            Math.sin(elapsed * 2.1) * 0.05 * zone.waveAmp * 2 + spdRatio * 0.05,
-            boatYaw,
-            Math.cos(elapsed * 1.8) * 0.06 * zone.waveAmp * 2 + boatTurnRate * 0.09 * spdRatio
-          );
+          playerBoatMesh.rotation.set(hullMo.pitch, boatYaw, hullMo.roll);
 
           // the rider is carried by the hull: he sits or stands at the boat's ride spot and tilts, banks and bobs with it
           const ride = currentRideSpot();
@@ -12937,9 +13234,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           rodPullAngle = THREE.MathUtils.lerp(rodPullAngle, targetRodAngle, dt * 8.5);
           world.rodPivot.rotation.y = -rodPullAngle * 0.68;
           world.rodPivot.rotation.z = -rodPullAngle * 0.42;
-          world.rodPivot.rotation.x = -0.25 - tension * 0.35 + stowOffsetPitch;
+          world.rodPivot.rotation.x = -0.25 - tension * 0.35 + stowOffsetPitch + fight.dip * 0.6;
           bendAmount = 0.08 + tension * 0.28;
           lateralBend = -rodPullAngle * 0.12;
+        } else if (mode === 'LANDING') {
+          world.rodPivot.rotation.x = THREE.MathUtils.lerp(world.rodPivot.rotation.x, -0.75 + stowOffsetPitch, Math.min(1, dt * 10));
+          bendAmount = 0.22;
         } else {
           rodPullAngle = THREE.MathUtils.lerp(rodPullAngle, 0, dt * 6);
           world.rodPivot.rotation.x = THREE.MathUtils.lerp(world.rodPivot.rotation.x, stowOffsetPitch, dt * 8);
@@ -12958,7 +13258,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           });
         }
 
-        if (mode === 'WAITING_BITE' || mode === 'BITE_WINDOW' || mode === 'REELING') {
+        if (mode === 'WAITING_BITE' || mode === 'BITE_WINDOW' || mode === 'REELING' || mode === 'LANDING') {
           if (!bobberInWater) {
             bobberVel.y -= 16 * dt;
             bobberPos.addScaledVector(bobberVel, dt);
@@ -13002,8 +13302,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               if (biteTimer <= 0) {
                 cancelFishing('The fish nibbled the bait and got away!');
               }
-            } else if (mode === 'REELING' && activeCatch) {
+            } else if (mode === 'REELING' && activeCatch && dt > 0) {
               const isPassiveItem = activeCatch.item.category === 'Junk' || activeCatch.item.category === 'Flora';
+              const fm = fightTick(dt, isPassiveItem || activeCatch.isUnderpowered);
 
               let surge = 0.25;
               let weightFactor = Math.min(0.45, 0.12 + activeCatch.weight / 35);
@@ -13017,15 +13318,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 if (fishDirTimer <= 0) {
                   const dirs = [-1, 0, 1];
                   fishSwimDir = dirs[Math.floor(Math.random() * dirs.length)];
-                  fishDirTimer = 1.3 + Math.random() * 1.5;
+                  fishDirTimer = (1.3 + Math.random() * 1.5) * (fight.style === 'thrasher' ? 0.45 : 1);
                 }
+                if (fm.dir) fishSwimDir = fm.dir;
+                if (fm.center) fishLateralPos = THREE.MathUtils.lerp(fishLateralPos, 0, dt * 3);
 
                 fishPullPhase += dt * (2.6 + activeCatch.zoneObj.id * 0.7);
                 surge = 0.65 + 0.35 * Math.sin(fishPullPhase);
                 weightFactor = Math.min(1.5, 0.35 + activeCatch.weight / 28);
-                fishDragForce = (0.20 + weightFactor * 0.26) * surge;
+                fishDragForce = (0.20 + weightFactor * 0.26) * surge * fm.drag;
 
-                const lateralSpeed = (0.55 + weightFactor * 0.35) * surge;
+                const lateralSpeed = (0.55 + weightFactor * 0.35) * surge * fm.lat;
                 fishLateralPos = THREE.MathUtils.clamp(
                   fishLateralPos + (fishSwimDir * lateralSpeed + rodPullAngle * 0.42) * dt,
                   -1,
@@ -13034,11 +13337,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               }
 
               const activeYaw = onBoat ? boatYaw : playerYaw;
-              const rightVec = new THREE.Vector3(Math.cos(activeYaw), 0, -Math.sin(activeYaw));
-              const forwardVec = new THREE.Vector3(-Math.sin(activeYaw), 0, -Math.cos(activeYaw));
+              const rightVec = _fightRight.set(Math.cos(activeYaw), 0, -Math.sin(activeYaw));
+              const forwardVec = _fightFwd.set(-Math.sin(activeYaw), 0, -Math.cos(activeYaw));
 
               const currentDist = Math.max(2.0, initialLineDist * (1 - reelProgress * 0.85));
-              const targetBobber = world.anglerGroup.position.clone()
+              const targetBobber = _fightTgt.copy(world.anglerGroup.position)
                 .addScaledVector(forwardVec, currentDist)
                 .addScaledVector(rightVec, fishLateralPos * (2.5 + currentDist * 0.28));
               bobberPos.x = THREE.MathUtils.lerp(bobberPos.x, targetBobber.x, dt * 4);
@@ -13074,7 +13377,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                   const reelEfficiency = isPassiveItem
                     ? 0.26
                     : (isCounterPulling ? 0.22 : (isPullingSameWay ? 0.04 : 0.11));
-                  reelProgress += reelEfficiency * dt;
+                  reelProgress += reelEfficiency * fm.reel * dt;
                   sfx.playReelTick(tension);
                 } else {
                   tension -= (0.28 + dragRelief * 0.65) * dt;
@@ -13084,11 +13387,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               }
 
               tension = THREE.MathUtils.clamp(tension, 0.04, 1.0);
-              world.fishShadow.position.set(bobberPos.x, waterY - 0.18, bobberPos.z);
+              sfx.startLineStrain();
+              sfx.updateLineStrain(tension, dt);
+              setTensionVignette(tension, elapsed);
+              world.fishShadow.position.set(bobberPos.x, waterY - 0.18 - fm.sink, bobberPos.z);
               const swimOrient = fishSwimDir !== 0 ? fishSwimDir : (Math.abs(fishLateralPos) > 0.08 ? Math.sign(fishLateralPos) : 0);
               world.fishShadow.rotation.y = activeYaw + (swimOrient < 0 ? Math.PI * 0.42 : (swimOrient > 0 ? -Math.PI * 0.42 : 0));
 
-              if (Math.random() < 0.14) {
+              if (chancePerSec(9, dt)) {
                 vfx.spawnRipple(bobberPos, 0xe0f2fe, 1.9);
               }
               if (cheats.noSnap) tension = Math.min(tension, 0.9);
@@ -13103,7 +13409,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               const dirText = isPassiveItem
                 ? 'DEAD WEIGHT ▲'
                 : (fishLateralPos < -0.18 ? 'LEFT ◀' : (fishLateralPos > 0.18 ? 'RIGHT ▶' : 'CENTER ▲'));
-              document.getElementById('fish-dir-label').textContent = `FISH DRAG: ${dirText}`;
+              document.getElementById('fish-dir-label').textContent = `${FIGHT_STYLES[fight.style].label}: ${dirText}`;
 
               const hintEl = document.getElementById('counter-pull-hint');
               if (isPassiveItem) {
@@ -13122,6 +13428,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 hintEl.textContent = 'HOLD REEL BUTTON!';
                 hintEl.style.color = '#4ade80';
               }
+              if (fight.hint) { hintEl.textContent = fight.hint; hintEl.style.color = fight.hintCol; }
 
               document.getElementById('reel-dist-label').textContent = `LINE: ${currentDist.toFixed(1)} m`;
               document.getElementById('reel-progress-label').textContent = `REEL: ${Math.round(reelProgress * 100)}%`;
@@ -13140,7 +13447,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               progBar.style.backgroundColor = isCounterPulling ? '#4ade80' : '#facc15';
 
               if (reelProgress >= 1.0) {
-                completeCatch();
+                beginLanding();
                 return;
               }
             }
@@ -13148,11 +13455,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
           world.bobberGroup.position.copy(bobberPos);
 
-          const tipPos = new THREE.Vector3();
+          const tipPos = _camV3;
           world.anglerGroup.updateMatrixWorld(true);
           world.rodTipAnchor.getWorldPosition(tipPos);
           const posAttr = world.fishingLine.geometry.attributes.position;
-          const sagAmount = mode === 'REELING'
+          const sagAmount = mode === 'LANDING' ? 0.04 : mode === 'REELING'
             ? Math.max(0.05, (1.0 - tension) * 0.65)
             : 0.75 + Math.sin(elapsed * 3.5) * 0.12;
           for (let i = 0; i < 16; i++) {
@@ -13271,7 +13578,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (isHookedGlowing || isFullMoonNight()) {
             world.fishShadow.material.color.setHex(0x38bdf8);
             world.fishShadow.material.opacity = 0.72 + Math.sin(elapsed * 8) * 0.2;
-            if (Math.random() < 0.22) {
+            if (chancePerSec(15, dt)) {
               vfx.spawnSparkles(world.fishShadow.position, 2, 0x67e8f9);
             }
           } else {
@@ -13291,12 +13598,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const isPortrait = camera.aspect < 0.85;
           const lateralFollow = isPortrait ? 0.95 : 0.72;
           const camZ = playerZ + (isPortrait ? 8.4 : 7.8);
-          const targetCamPos = new THREE.Vector3(
+          const targetCamPos = _camV1.set(
             playerX * lateralFollow,
             5.6 + Math.sin(elapsed * 1.4) * 0.06,
             camZ
           );
-          const lookGoal = new THREE.Vector3(playerX * lateralFollow, 1.35, playerZ - 6.0);
+          const lookGoal = _camV2.set(playerX * lateralFollow, 1.35, playerZ - 6.0);
           if (standFocus.stand) {
             standCameraPose(standFocus.stand);
             targetCamPos.copy(_standPos);
@@ -13313,21 +13620,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           // Chase camera: it swings round behind the boat with a short lag so turns feel smooth
           const yawErr = Math.atan2(Math.sin(boatYaw - boatCamYaw), Math.cos(boatYaw - boatCamYaw));
           boatCamYaw += yawErr * (1 - Math.exp(-3.5 * dt));
-          const backOffset = new THREE.Vector3(
+          const backOffset = _camV3.set(
             Math.sin(boatCamYaw) * (9.5 + speedZoom),
             5.8 + speedZoom * 0.35,
             Math.cos(boatCamYaw) * (9.5 + speedZoom)
           );
-          const activeBoatSpec = BOAT_TIERS[state.boatTier] || BOAT_TIERS[0];
-          const speedRatio = activeBoatSpec.speed > 0 ? Math.min(1, Math.abs(boatVel) / activeBoatSpec.speed) : 0;
-          const targetPitch = speedRatio * 0.085;
-          const targetRoll = -boatTurnRate * speedRatio * 0.14;
-          playerBoatMesh.rotation.x += (targetPitch - playerBoatMesh.rotation.x) * Math.min(1, dt * 6);
-          playerBoatMesh.rotation.z += (targetRoll - playerBoatMesh.rotation.z) * Math.min(1, dt * 6);
 
-          const targetCamPos = boatPos.clone().add(backOffset);
+          const targetCamPos = _camV1.copy(boatPos).add(backOffset);
           camera.position.lerp(targetCamPos, camSmooth);
-          const lookTarget = boatPos.clone().add(new THREE.Vector3(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
+          const lookTarget = _camV2.copy(boatPos).add(_camV3.set(-Math.sin(boatCamYaw) * 8, 1.0, -Math.cos(boatCamYaw) * 8));
           if (reelLookW > 0.002) lookTarget.lerp(world.fishShadow.position, reelLookW); // look at the fish while it is dragged
           camLookCur.copy(lookTarget); camLookInit = true;
           camera.lookAt(lookTarget);
@@ -13341,14 +13642,23 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       let achTimer = 0;
       function animate(now) {
         requestAnimationFrame(animate);
-        const dt = Math.min(0.05, (now - lastTime) / 1000);
+        const rawDt = Math.min(0.05, Math.max(0, (now - lastTime) / 1000));
         lastTime = now;
+        // world time: frozen while paused or in a menu, frozen for a freeze frame, slowed during slow motion
+        let dt = isGamePaused() ? 0 : rawDt;
+        if (dt > 0 && timeFx.hitStop > 0) { timeFx.hitStop -= rawDt; dt = 0; }
+        else if (dt > 0 && timeFx.slowT > 0) { timeFx.slowT -= rawDt; dt *= timeFx.slow; }
+        // take last frame's shake back out, so the follow camera never smooths the shake into a wobble
+        camera.position.sub(_shakeOff); _shakeOff.set(0, 0, 0);
 
         updateSimulation(dt);
+        updateLanding(dt);
+        updateLeap(dt);
         seaEvents.update(dt, elapsed);
-        achTimer += dt;
+        updatePauseCountdown(rawDt);
+        achTimer += rawDt;
         if (achTimer > 2) { achTimer = 0; checkAchievements(); }
-        const fishingNow = mode === 'CASTING' || mode === 'WAITING_BITE' || mode === 'BITE_WINDOW' || mode === 'REELING' ? '1' : '0';
+        const fishingNow = inFight() ? '1' : '0';
         if (document.body.dataset.fishing !== fishingNow) document.body.dataset.fishing = fishingNow;
         hudClockTimer += dt;
         if (hudClockTimer >= 0.5) {
@@ -13357,7 +13667,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
 
 if (mode === 'REELING' && tension > 0.78) {
-          camJuice.shake = Math.max(camJuice.shake, (tension - 0.78) * 0.42);
+          camJuice.shake = Math.max(camJuice.shake, (tension - 0.78) * 0.3);
         }
         const targetFovOffset = (settings.firstPerson && standFocus.stand) ? -14 : (mode === 'REELING' ? -4.5 : (mode === 'CASTING' ? 2.5 : 0));
         camJuice.fovOffset += (targetFovOffset - camJuice.fovOffset) * Math.min(1, dt * 6);
@@ -13366,10 +13676,10 @@ if (mode === 'REELING' && tension > 0.78) {
           camera.fov = baseFov + camJuice.fovOffset;
           camera.updateProjectionMatrix();
         }
-        if (camJuice.shake > 0.002) {
-          camera.position.x += (Math.random() - 0.5) * camJuice.shake;
-          camera.position.y += (Math.random() - 0.5) * camJuice.shake;
-          camJuice.shake *= Math.pow(0.04, dt);
+        if (camJuice.shake > 0.002 && !isGamePaused()) {
+          _shakeOff.set((Math.random() - 0.5) * camJuice.shake, (Math.random() - 0.5) * camJuice.shake, 0).applyQuaternion(camera.quaternion);
+          camera.position.add(_shakeOff);
+          camJuice.shake *= Math.pow(0.04, rawDt);   // decays in real time, also through a freeze frame
         }
 
         compass.update();
@@ -13412,8 +13722,7 @@ if (mode === 'REELING' && tension > 0.78) {
 
           // Update fishing line endpoint to stay connected to the fish's mouth
           pipFishHolder.updateMatrixWorld(true);
-          const mouthPos = new THREE.Vector3();
-          pipRigGroup.getWorldPosition(mouthPos);
+          const mouthPos = pipRigGroup.getWorldPosition(_camV1);
           const lArr = pipLine.geometry.attributes.position.array;
           lArr[0] = -0.35;
           lArr[1] = 1.25;
@@ -13435,7 +13744,292 @@ if (mode === 'REELING' && tension > 0.78) {
         }
       }
 
+
+      /* =========================================================================
+         GAME FEEL: fish fighting styles, the leap prompt, the landing moment, the tension vignette and the pause screen
+         ========================================================================= */
+      const FIGHT_STYLES = {
+        passive:  { label: 'DEAD WEIGHT' },
+        steady:   { label: '🐟 STEADY' },
+        runner:   { label: '⚡ RUNNER' },
+        diver:    { label: '⬇ DIVER' },
+        jumper:   { label: '🐬 JUMPER' },
+        thrasher: { label: '〰 THRASHER' }
+      };
+      function fightStyleFor(c) {
+        if (!c || c.item.category !== 'Fish') return 'passive';
+        if (c.isBoss) return 'diver';
+        const sh = c.item.shape;
+        if (sh === 'fish_marlin' || sh === 'fish_slim') return 'jumper';
+        if (sh === 'fish_tuna') return 'runner';
+        if (sh === 'fish_eel') return 'thrasher';
+        if (sh === 'fish_flat' || sh === 'fish_angler' || sh === 'fish_round' || sh === 'fish_spiky') return 'diver';
+        return 'steady';
+      }
+      const fight = { style: 'steady', ev: null, evT: 0, evDur: 0, next: 3, dir: 0, held: 0, hint: '', hintCol: '#fde047', qte: false, qteHit: false, dip: 0 };
+      const FM = { drag: 1, lat: 1, reel: 1, dir: 0, center: false, sink: 0 };
+      const leapBanner = document.getElementById('leap-banner');
+      const vignetteEl = document.getElementById('tension-vignette');
+
+      function startFight(c) {
+        endFightFx();
+        fight.style = fightStyleFor(c);
+        fight.ev = null; fight.evT = 0; fight.hint = ''; fight.dip = 0;
+        fight.next = 2.5 + Math.random() * 1.5;
+      }
+      function fightCallout(text, color) { spawnWorldCallout(bobberPos, text, color); }
+
+      /* per-frame fight events; returns the multipliers the reel simulation applies */
+      function fightTick(dt, calm) {
+        FM.drag = 1; FM.lat = 1; FM.reel = 1; FM.dir = 0; FM.center = false; FM.sink = 0;
+        fight.dip = Math.max(0, fight.dip - dt * 2.5);
+        if (fight.style === 'thrasher') FM.lat = 1.25;
+        if (calm || fight.style === 'steady' || fight.style === 'passive' || fight.style === 'thrasher') { fight.hint = ''; return FM; }
+        if (!fight.ev) {
+          fight.next -= dt;
+          if (fight.next <= 0 && reelProgress < 0.92) {
+            fight.ev = fight.style === 'runner' ? 'run' : fight.style === 'diver' ? 'dive' : 'leap';
+            fight.evT = 0; fight.held = 0; fight.qte = false; fight.qteHit = false;
+            if (fight.ev === 'run') {
+              fight.evDur = 1.4 + Math.random() * 0.8;
+              fight.dir = fishLateralPos >= 0 ? 1 : -1;
+              sfx.playFightCue('run'); vfx.spawnSplash(bobberPos, 10, 0xe0f2fe, 2.4);
+            } else if (fight.ev === 'dive') {
+              fight.evDur = 1.25;
+              sfx.playFightCue('dive'); vfx.spawnRipple(bobberPos, 0xe0f2fe, 2.6);
+            } else {
+              fight.evDur = 1.35;                                   // 0.3 s tell, then the fish is in the air
+              vfx.spawnRipple(bobberPos, 0xfef08a, 2.2); sfx.playBubble && sfx.playBubble();
+            }
+          }
+          fight.hint = '';
+          return FM;
+        }
+        fight.evT += dt;
+        const t = fight.evT;
+        if (fight.ev === 'run') {
+          FM.dir = fight.dir; FM.lat = 1.9; FM.drag = 1.3;
+          fight.hint = `⚡ IT'S RUNNING ${fight.dir < 0 ? '◀' : '▶'} STEER AGAINST IT!`; fight.hintCol = '#fb923c';
+        } else if (fight.ev === 'dive') {
+          FM.drag = 1.75; FM.reel = 0.25; FM.center = true; FM.sink = 0.55 * Math.sin(Math.PI * Math.min(1, t / fight.evDur));
+          if (isHoldingAction) fight.held += dt;
+          fight.hint = '⬇ DIVING! EASE OFF THE REEL'; fight.hintCol = '#38bdf8';
+        } else if (fight.ev === 'leap') {
+          if (t < 0.3) { fight.hint = '! SOMETHING IS COMING UP !'; fight.hintCol = '#fde047'; }
+          else {
+            if (!leap.active && !fight.qte && !fight.qteHit) startLeap();
+            FM.drag = 0.3; FM.reel = 0.4;                           // in the air the fish barely pulls
+            const open = t >= 0.42 && t <= 1.05 && !fight.qteHit;
+            if (open !== fight.qte) { fight.qte = open; leapBanner.classList.toggle('show', open); }
+            fight.hint = open ? '🐬 TAP NOW: DIP THE ROD!' : fight.hint; fight.hintCol = '#38bdf8';
+          }
+        }
+        if (t >= fight.evDur) finishFightEvent();
+        return FM;
+      }
+      function finishFightEvent() {
+        if (fight.ev === 'dive') {
+          if (fight.held / fight.evDur < 0.4) {
+            reelProgress = Math.min(0.97, reelProgress + 0.04);
+            fightCallout('✓ READ THE DIVE', '#4ade80'); sfx.playFightCue('good');
+          }
+          fight.next = 4 + Math.random() * 3;
+        } else if (fight.ev === 'leap') {
+          if (!fight.qteHit) {                                       // missed: the line went slack
+            reelProgress = Math.max(0, reelProgress - 0.06);
+            tension = 0.1;
+            fightCallout('SLACK LINE! -6%', '#fb923c'); sfx.playFightCue('bad'); triggerCamShake(0.12);
+          }
+          fight.next = 4.5 + Math.random() * 3.5;
+        } else {
+          fight.next = 3.5 + Math.random() * 2.5;
+        }
+        fight.ev = null; fight.qte = false; fight.hint = '';
+        leapBanner.classList.remove('show');
+      }
+      /* a fresh press of the action button during the fight */
+      function fightTap() {
+        if (fight.qte && !fight.qteHit) {
+          fight.qteHit = true; fight.qte = false; fight.dip = 1;
+          leapBanner.classList.remove('show');
+          reelProgress = Math.min(0.97, reelProgress + 0.07);
+          tension = Math.max(0.12, tension - 0.18);
+          fightCallout('✓ BOWED TO THE JUMP! +7%', '#4ade80');
+          sfx.playFightCue('good');
+          vfx.spawnSparkles(bobberPos.clone().add(new THREE.Vector3(0, 0.8, 0)), 12, 0x7dd3fc);
+        }
+      }
+
+      /* the fish leaping clear of the water during a jumper's fight */
+      const leap = { active: false, t: 0, dur: 0.9, mesh: null, from: new THREE.Vector3(), side: new THREE.Vector3(), h: 1.4 };
+      function catchMesh(c) {
+        const m = WorldBuilder.buildSculptedFishMesh(c.item, textures);
+        m.scale.setScalar(THREE.MathUtils.clamp(0.32 + 0.12 * Math.cbrt(c.weight), 0.32, 1.1));
+        m.traverse(o => { if (o.isMesh) o.castShadow = true; });
+        return m;
+      }
+      function disposeCatchMesh(m) {
+        if (!m) return;
+        if (m.parent) m.parent.remove(m);
+        m.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(x => x.dispose()); });
+      }
+      function startLeap() {
+        if (!activeCatch) return;
+        leap.mesh = catchMesh(activeCatch);
+        leap.from.copy(bobberPos);
+        const a = Math.random() * Math.PI * 2;
+        leap.side.set(Math.cos(a) * 1.6, 0, Math.sin(a) * 1.6);
+        leap.h = 1.1 + 0.6 * Math.min(1, activeCatch.weight / 40);
+        leap.mesh.position.copy(leap.from);
+        scene.add(leap.mesh);
+        leap.t = 0; leap.active = true;
+        world.fishShadow.visible = false;
+        vfx.spawnSplash(bobberPos, 18, 0xe0f2fe, 3.4); sfx.playSplash();
+      }
+      function endLeap() {
+        if (!leap.active) return;
+        disposeCatchMesh(leap.mesh); leap.mesh = null; leap.active = false;
+        if (mode === 'REELING') world.fishShadow.visible = true;
+      }
+      function updateLeap(dt) {
+        if (!leap.active) return;
+        leap.t = Math.min(1, leap.t + dt / leap.dur);
+        const t = leap.t, m = leap.mesh;
+        m.position.copy(leap.from).addScaledVector(leap.side, t);
+        m.position.y = leap.from.y + Math.sin(Math.PI * t) * leap.h;
+        m.rotation.set(0, Math.atan2(-leap.side.z, leap.side.x), (0.5 - t) * 2.2);   // nose up on the way out, down on the way back
+        if (t >= 1) {
+          vfx.spawnSplash(m.position, 20, 0xe0f2fe, 3.6); sfx.playSplash();
+          endLeap();
+        }
+      }
+
+      /* the landing moment: freeze frame, slow motion and the catch leaping out of the water to the angler */
+      const RARITY_FX = {
+        Common:    { col: 0xe0f2fe, shake: 0.10, notes: [523] },
+        Uncommon:  { col: 0x86efac, shake: 0.14, notes: [523, 659] },
+        Rare:      { col: 0x60a5fa, shake: 0.22, notes: [523, 659, 784] },
+        Epic:      { col: 0xc084fc, shake: 0.30, notes: [523, 659, 784, 1047] },
+        Legendary: { col: 0xfde047, shake: 0.42, notes: [523, 659, 784, 1047, 1319] }
+      };
+      const landing = { active: false, t: 0, mesh: null, from: new THREE.Vector3(), to: new THREE.Vector3(), mouth: new THREE.Vector3() };
+      function beginLanding() {
+        const c = activeCatch;
+        if (!c) return;
+        const fx = RARITY_FX[c.item.rarity] || { col: 0xd6d3d1, shake: 0.08, notes: [392] };
+        endFightFx();
+        mode = 'LANDING';
+        releaseAllInputs();
+        document.getElementById('reel-meter-box').style.display = 'none';
+        document.getElementById('live-bait-pip').classList.remove('active');
+        world.fishShadow.visible = false; world.bobberGroup.visible = false;
+        landing.mesh = catchMesh(c);
+        landing.from.copy(bobberPos);
+        const yaw = onBoat ? boatYaw : playerYaw;
+        landing.to.copy(world.anglerGroup.position).add(_camV3.set(-Math.sin(yaw) * 0.9, 1.25, -Math.cos(yaw) * 0.9));
+        landing.mesh.position.copy(landing.from);
+        scene.add(landing.mesh);
+        landing.t = 0; landing.active = true;
+        hitStop(0.07); slowMo(0.45, 0.35);
+        triggerCamShake(c.isBoss ? 0.5 : fx.shake);
+        vfx.spawnSplash(bobberPos, c.item.category === 'Fish' ? 26 : 14, fx.col, 4.2);
+        sfx.playSplash();
+        sfx.playLandingSting(fx.notes);
+        const tag = c.isCOD ? '⭐ ' : '';
+        spawnWorldCallout(landing.to.clone().add(_camV3.set(0, 0.6, 0)), `${tag}${c.item.name} · ${c.weight.toFixed(2)} kg · +$${c.value}`, '#' + fx.col.toString(16).padStart(6, '0'));
+        updatePrimaryActionButton();
+      }
+      function updateLanding(dt) {
+        if (!landing.active) return;
+        landing.t = Math.min(1, landing.t + dt / 0.8);
+        const t = landing.t, ease = 1 - Math.pow(1 - t, 2), m = landing.mesh;
+        m.position.lerpVectors(landing.from, landing.to, ease);
+        m.position.y += Math.sin(Math.PI * t) * 2.2;                   // the arc out of the water
+        m.rotation.set(Math.sin(t * 18) * 0.5 * (1 - t), t * 7, Math.cos(t * 14) * 0.3 * (1 - t));   // thrashing in the air
+        bobberPos.copy(m.position);                                     // the line follows the catch
+        if (t >= 1) {
+          disposeCatchMesh(landing.mesh);
+          landing.active = false; landing.mesh = null;
+          if (mode === 'LANDING') completeCatch();
+        }
+      }
+
+      function setTensionVignette(tns, t) {
+        const k = Math.max(0, (tns - 0.55) / 0.45);
+        const pulse = tns > 0.8 ? 0.15 * Math.sin(t * (9 + tns * 8)) : 0;
+        vignetteEl.style.opacity = Math.min(1, k + pulse * k).toFixed(2);
+      }
+      /* everything the fight switched on goes off again (snap, cancel, landing, pause) */
+      function endFightFx() {
+        sfx.stopLineStrain();
+        vignetteEl.style.opacity = '0';
+        leapBanner.classList.remove('show');
+        fight.ev = null; fight.qte = false; fight.hint = '';
+        endLeap();
+      }
+
+      /* ---- pause screen ---- */
+      const gamePause = { on: false, count: 0 };
+      const pauseOverlay = document.getElementById('pause-overlay');
+      const pauseCountEl = document.getElementById('pause-count');
+      function renderPauseScreen() {
+        document.getElementById('btn-pause-sound').textContent = sfx.enabled ? '🔊 Sound: On' : '🔇 Sound: Off';
+        document.getElementById('pause-daily').innerHTML = dailyLine(false);
+      }
+      function pauseGame(auto) {
+        if (gamePause.on || document.getElementById('start-overlay').classList.contains('open')) return;
+        gamePause.on = true; gamePause.count = 0;
+        releaseAllInputs();
+        sfx.stopLineStrain();
+        vignetteEl.style.opacity = '0';
+        renderPauseScreen();
+        pauseOverlay.classList.remove('counting');
+        pauseOverlay.classList.add('open');
+      }
+      function resumeGame() {
+        if (!gamePause.on || gamePause.count > 0) return;
+        if (mode === 'REELING' || mode === 'BITE_WINDOW') {          // a fair restart in the middle of a fight
+          gamePause.count = 3;
+          pauseCountEl.textContent = '3';
+          pauseOverlay.classList.add('counting');
+          sfx.playTick();
+          return;
+        }
+        finishResume();
+      }
+      function finishResume() {
+        gamePause.on = false; gamePause.count = 0;
+        pauseOverlay.classList.remove('open', 'counting');
+        lastTime = performance.now();
+        updateHUD();
+      }
+      function updatePauseCountdown(rawDt) {
+        if (!gamePause.on || gamePause.count <= 0) return;
+        const before = Math.ceil(gamePause.count);
+        gamePause.count -= rawDt;
+        const now = Math.ceil(gamePause.count);
+        if (gamePause.count <= 0) { finishResume(); return; }
+        if (now !== before) { pauseCountEl.textContent = String(now); sfx.playTick(); }
+      }
+      function togglePause() { if (gamePause.on) resumeGame(); else pauseGame(); }
+      document.getElementById('btn-pause').addEventListener('click', () => pauseGame());
+      document.getElementById('btn-resume').addEventListener('click', () => resumeGame());
+      document.getElementById('btn-pause-sound').addEventListener('click', () => { toggleSound(); renderPauseScreen(); });
+      document.getElementById('btn-pause-menu').addEventListener('click', () => {
+        finishResume();
+        document.getElementById('modal-menu').classList.add('open');   // the menu keeps the world paused by itself
+      });
+      pauseOverlay.addEventListener('click', e => { if (e.target === pauseOverlay && gamePause.count <= 0) resumeGame(); });
+      window.addEventListener('blur', () => { if (inFight() && mode !== 'CASTING') pauseGame(true); });
+
       const camJuice = { shake: 0, fovOffset: 0 };
+      // scratch vectors for the per-frame camera and fight maths (no garbage every frame)
+      const _camV1 = new THREE.Vector3(), _camV2 = new THREE.Vector3(), _camV3 = new THREE.Vector3();
+      const _fightRight = new THREE.Vector3(), _fightFwd = new THREE.Vector3(), _fightTgt = new THREE.Vector3();
+      const _shakeOff = new THREE.Vector3();
+      const timeFx = { hitStop: 0, slowT: 0, slow: 1 };
+      function hitStop(sec) { timeFx.hitStop = Math.max(timeFx.hitStop, sec); }
+      function slowMo(sec, scale = 0.35) { timeFx.slowT = Math.max(timeFx.slowT, sec); timeFx.slow = scale; }
       function triggerCamShake(intensity = 0.25) {
         camJuice.shake = Math.max(camJuice.shake, intensity);
       }
