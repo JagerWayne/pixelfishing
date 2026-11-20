@@ -221,6 +221,7 @@ You can leave the surface and hunt fish by hand. You need **dive gear** (to go u
 - **Air** drains at 1 second per second at the surface and faster with depth (pressure). Warnings come at 25% and 10%. At zero you make an **emergency ascent** and lose the heaviest half of your catch bag. The dive also stops you at your gear's **rated depth**, at the sea floor, and 150 m from where you entered the water.
 - **Catch bag:** each gear tier has a bag size in kilograms; when it is full, surface to unload it. When the dive ends the fish go into your bucket, and anything that does not fit is sold on the spot.
 - **Underwater world:** a sea floor that changes with depth and distance from shore (sand, then rock, then dark silt), props such as corals and rocks, **wrecks and sunken chests** (open a chest with the action button for cash), a headlamp that matters in the deep, light shafts near the surface, marine snow, bubbles, a whale that sometimes drifts past, and underwater sound and a pressure rumble. The dive HUD shows depth, air, bag and the nearest lock.
+- Rocks, coral, wrecks, chests, pilings, the lighthouse rocks and buoys are solid: you slide around them, fish steer away, and the spear stops on them.
 - Seven new achievements cover it (see Career): *First Plunge*, *Regular Diver*, *Spearfisher*, *Harpoon Hunter*, *Deep Diver* (30 m), *Abyss Walker* (100 m) and *Wreck Raider*.
 
 ## Career: rank and achievements
@@ -398,6 +399,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 3.5.1: collision sweep
+- **Underwater collisions:** seabed rocks, coral, shipwrecks, sunken chests, the pier and mooring pilings, the lighthouse rocks and the channel buoys are now solid for the diver, for the fish and for the spear (the spear stops on rock and returns). Before, you could swim, and fish could swim, straight through them. Kelp, grass and tube plants stay soft on purpose.
+- **Pier walking:** found by walking the whole pier and boardwalk and testing the angler's body against every mesh in the scene. The mooring platform no longer lets you stand inside the two corner pilings (the limit moved 25 cm in), the boardwalk ends stop short of the beach boulders (limit 9.3 m at the beach end), and the shop and trophy cabinet boxes were widened by a few centimetres to cover their props.
+- Checked: all 69 catch models build, a corrupted save boots with no errors, and the dive, spear and surface flow runs without errors.
+- Version bumped to **v3.5.1**.
 
 ### 2026-11-20, Version 3.5.0: diving and spearfishing
 Made by hand in `index.html` and documented here.

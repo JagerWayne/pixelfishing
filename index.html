@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '3.5.0';
+    window.PF_VERSION = '3.5.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -10336,6 +10336,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         f.pos.x += Math.cos(f.h) * cp * f.v * dt;
         f.pos.y += Math.sin(f.p) * f.v * dt;
         f.pos.z += Math.sin(f.h) * cp * f.v * dt;
+        if (resolveDiveSolids(f.pos, f.radius * 0.8, f.radius * 0.6)) { f.h += 1.2; f.v *= 0.6; }
         const fy = seabedY(f.pos.x, f.pos.z) + f.radius + 0.25;
         if (f.pos.y < fy) { f.pos.y = fy; f.p = Math.max(f.p, 0.15); }
         const top = -(f.radius + 0.9);
@@ -10453,6 +10454,45 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const diveOpened = new Set();
       let propKeyI = 1e9, propKeyJ = 1e9;
       const propRadius = () => (settings.quality === 'low' ? 3 : 5);
+      /* Solid things under the water, as vertical cylinders {x, z, r, y0, y1}: seabed rocks, coral, wrecks and chests (per cell,
+         dropped with the cell) plus the pier pilings, lighthouse rocks and buoys (taken from the boat colliders). The diver, the
+         fish and the spear all use them, so nothing swims or flies through a rock or a wreck. */
+      const diveSolids = [];
+      let diveStatic = [];
+      function addDiveSolid(key, x, z, r, y0, y1) { diveSolids.push({ key, x, z, r, y0, y1 }); }
+      function addSolidFromObject(key, obj, shrink) {
+        obj.updateMatrixWorld(true);
+        const b = new THREE.Box3().setFromObject(obj);
+        const r = Math.max(b.max.x - b.min.x, b.max.z - b.min.z) * 0.5 * shrink;
+        addDiveSolid(key, (b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2, r, b.min.y, b.max.y);
+      }
+      function addWreckSolids(key, w) {
+        const a = w.rotation.y, c = Math.cos(a), sn = Math.sin(a), base = w.position.y;
+        [[-3.4, 1.75], [-1.7, 1.75], [0, 1.75], [1.7, 1.75], [3.4, 1.75], [5.0, 1.3]].forEach(([lx, r]) =>
+          addDiveSolid(key, w.position.x + lx * c, w.position.z - lx * sn, r, base - 0.5, base + 2.6));
+      }
+      function buildDiveStatic() {
+        diveStatic = world.boatCircles.map(o => ({ x: o.x, z: o.z, r: o.name === 'buoy' ? 0.9 : o.r, y0: o.name === 'buoy' ? -2.5 : -400, y1: 3 }));
+      }
+      function resolveDiveSolids(pos, rad, halfH) {
+        let hit = false;
+        const one = s => {
+          if (pos.y + halfH < s.y0 || pos.y - halfH > s.y1) return;
+          const dx = pos.x - s.x, dz = pos.z - s.z, m = s.r + rad, d2 = dx * dx + dz * dz;
+          if (d2 < m * m) { const d = Math.sqrt(d2) || 1e-3; pos.x = s.x + dx / d * m; pos.z = s.z + dz / d * m; hit = true; }
+        };
+        for (let i = 0; i < diveSolids.length; i++) one(diveSolids[i]);
+        for (let i = 0; i < diveStatic.length; i++) one(diveStatic[i]);
+        return hit;
+      }
+      function pointInDiveSolid(p) {
+        for (const list of [diveSolids, diveStatic]) for (const s of list) {
+          if (p.y < s.y0 || p.y > s.y1) continue;
+          const dx = p.x - s.x, dz = p.z - s.z;
+          if (dx * dx + dz * dz < s.r * s.r) return true;
+        }
+        return false;
+      }
       function buildProp(kind, h, depth) {
         const g = new THREE.Group();
         const r = k => hash2(Math.floor(h * 1e6) + k * 131, k * 977 + 5);
@@ -10549,17 +10589,19 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const p = buildProp(kind, hash2(i, j + 5), depth);
           p.rotation.y = hash2(i + 9, j) * 6.28;
           place(p, px, pz, -0.05);
+          if (kind === 'rock') addSolidFromObject(key, p, 0.8); else if (kind === 'coral') addSolidFromObject(key, p, 0.7);
           if (p.userData.sway || p.userData.pulse) swayList.push(p);
         }
         const cx = (i + 0.2 + hash2(i + 71, j - 3) * 0.6) * CELL, cz = (j + 0.2 + hash2(i - 5, j + 71) * 0.6) * CELL;
         if (cz < -8 && hash2(i + 501, j - 77) < 0.045 && !diveOpened.has(key)) {
           const c = buildChest(); c.userData.key = key; c.rotation.y = hash2(i, j * 3) * 6.28;
           place(c, cx, cz);
+          addDiveSolid(key, c.position.x, c.position.z, 0.55, c.position.y - 0.1, c.position.y + 0.55);
           diveChests.push(c);
         } else if (cz < -20 && -seabedY(cx, cz) > 5 && hash2(i - 33, j + 909) < 0.012) {
-          place(buildWreck(), cx, cz, -0.3);
+          { const wk = buildWreck(); place(wk, cx, cz, -0.3); addWreckSolids(key, wk); }
           const c = buildChest(); c.userData.key = key + 'w'; c.rotation.y = 1.4;
-          if (!diveOpened.has(key + 'w')) { place(c, cx + 3.5, cz + 2.5); diveChests.push(c); }
+          if (!diveOpened.has(key + 'w')) { place(c, cx + 3.5, cz + 2.5); addDiveSolid(key, c.position.x, c.position.z, 0.55, c.position.y - 0.1, c.position.y + 0.55); diveChests.push(c); }
         }
         propCells.set(key, parts);
       }
@@ -10572,6 +10614,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const ci = diveChests.indexOf(o); if (ci >= 0) diveChests.splice(ci, 1);
         });
         propCells.delete(key);
+        for (let i = diveSolids.length - 1; i >= 0; i--) if (diveSolids[i].key === key) diveSolids.splice(i, 1);
       }
       function updateProps(cx, cz, force) {
         const ci = Math.floor(cx / CELL), cj = Math.floor(cz / CELL);
@@ -10867,6 +10910,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               if (segmentHitsSphere(harpoon.prev, harpoon.pos, f.pos, f.radius * (cheats.autoHit ? 1.8 : 1) + 0.14)) { onSpearHit(f); break; }
             }
             if (harpoon.state !== 'flying') break;
+            if (pointInDiveSolid(harpoon.pos)) { emitBubbles(harpoon.pos.x, harpoon.pos.y, harpoon.pos.z, 4, 0.2); startHarpoonReturn(); break; }
             if (harpoon.pos.y < seabedY(harpoon.pos.x, harpoon.pos.z) + 0.05 || harpoon.pos.y > -0.02 || harpoon.travelled > gun.range) {
               emitBubbles(harpoon.pos.x, harpoon.pos.y, harpoon.pos.z, 3, 0.2);
               startHarpoonReturn();
@@ -10936,6 +10980,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         dive.pitch = -0.1; dive.vy = -2.2; dive.vf = 0;
         dive.zone = diveZoneAt(dive.pos.z);
         mode = 'DIVING';
+        buildDiveStatic();
         document.body.dataset.diving = '1';
         diveRoot.visible = true; gunGroup.visible = spearGun().tier > 0;
         gunBody.material.color.setHex(GUN_COLORS[state.spearTier] || GUN_COLORS[0]);
@@ -11077,6 +11122,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         dive.pos.x += -Math.sin(dive.yaw) * dive.vf * dt;
         dive.pos.z += -Math.cos(dive.yaw) * dive.vf * dt;
         dive.pos.y += dive.vy * dt;
+        if (resolveDiveSolids(dive.pos, 0.45, 0.4)) dive.vf *= 0.5;
 
         /* limits: pier / beach, leash, sea floor, surface, rated depth */
         if (dive.pos.z > -3.6) { dive.pos.z = -3.6; dive.vf *= 0.5; }
@@ -11472,8 +11518,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * 6.5 * dt, -10.59, 5.8);
 
             const getPierXBounds = zVal => {
+              if (zVal >= 4.6) return [-9.3, 9.3];   // the beach boulders start at |x| 9.57
               if (zVal >= 0.45) return [-9.8, 9.8];
-              if (zVal <= -4.45 && zVal >= -6.75) return [-5.75, 2.05];
+              if (zVal <= -4.45 && zVal >= -6.75) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
               return [-2.05, 2.05];
             };
 
@@ -11513,7 +11560,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Solid collision box around the 3D Tackle Shop (-7.6, 1.0)
             const shopMinX = -9.35;
-            const shopMaxX = -5.85;
+            const shopMaxX = -5.7;
             const shopMaxZ = 2.55;
             if (nextX > shopMinX && nextX < shopMaxX && nextZ < shopMaxZ && nextZ > 0) {
               const penZ = shopMaxZ - nextZ;
@@ -11555,7 +11602,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Solid collision box around the Trophy Cabinet (6.55, 0.8)
             {
-              const trMinX = 5.9, trMaxX = 7.2, trMaxZ = 1.45;
+              const trMinX = 5.85, trMaxX = 7.25, trMaxZ = 1.45;
               if (nextX > trMinX && nextX < trMaxX && nextZ < trMaxZ && nextZ > 0) {
                 const penZ = trMaxZ - nextZ, penXLeft = nextX - trMinX, penXRight = trMaxX - nextX;
                 const minPen = Math.min(penZ, penXLeft, penXRight);
