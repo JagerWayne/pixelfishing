@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.9.4';
+    window.PF_VERSION = '4.9.5';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -12337,9 +12337,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const _fpHead = new THREE.Vector3(), _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3(), _fpUp = new THREE.Vector3(0, 1, 0);
       let fpBlend = 0, fpEyeY = null;
       function updateFirstPersonCamera(dt) {
-        const fp = !!settings.firstPerson;
+        const fp = !!settings.firstPerson && !shopBrowse.active;   // a shop shows the angler from outside, head and all
         if (world.headGroup.visible === fp) world.headGroup.visible = !fp;
-        if (!fp || shopBrowse.active) { if (!fp) fpBlend = 0; return; }
+        if (!fp) { fpBlend = 0; return; }
         world.anglerGroup.updateMatrixWorld(true);
         _fpFwd.set(0, 0, -1).applyQuaternion(world.anglerGroup.quaternion);
         _fpFwd.y = 0;
