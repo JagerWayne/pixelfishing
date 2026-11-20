@@ -20,6 +20,8 @@ description of the game, its systems and its structure.
   ranges stay valid.
 - The animated angler rig (body, head, arms, legs, rod pivot, chair) must keep its pivots. Change the look through
   `AnglerFactory`, not by moving groups.
+- Anything solid gets a collider in the `Colliders` registry (`Colliders.box` / `Colliders.circle` with `COL.WALK`, `COL.BOAT`, `COL.DIVE`) right where its model is built. The walk, boat and dive code all read from it; check with the secret menu's Debug → collision boxes.
+- Static pier props are merged by `ModelKit.mergeStatic`; anything that moves or is rebuilt must be passed in its `keep` list.
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
 - Deployment is GitHub Pages from `main`.
 
