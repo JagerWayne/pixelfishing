@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.9.3';
+    window.PF_VERSION = '4.9.4';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -14426,6 +14426,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           camera.lookAt(lookTarget);
         }
 
+        // zoomed on the bounty board: step the angler out of the picture so he never stands in front of the papers
+        if (!dive.active && mode !== 'DIVING') world.anglerGroup.visible = !(!onBoat && !settings.firstPerson && standFocus.stand && standFocus.stand.id === 'bounty');
         updateFirstPersonCamera(dt);
         updateDive(dt);
       }
