@@ -498,6 +498,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-20, Version 4.9.4: a clear view of the bounty board
+- While the camera is zoomed on the bounty board the angler steps out of the picture (he is back as soon as you move), so he never stands in front of the contract papers.
+- Version bumped to **v4.9.4**.
+
 ### 2026-11-20, Version 4.9.3: a clear path to the secret seagull
 - The west barrel stack moved back from the walkway and the Boatyard and Dive Shop shifted a little east, so the angler can walk up to the seagull on the end post of the boardwalk rail again (it had been walled in since the layout change).
 - Version bumped to **v4.9.3**.
