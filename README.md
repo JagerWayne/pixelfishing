@@ -250,28 +250,34 @@ A pill under the top bar shows the nearest event with its distance and bearing r
 Open it from the start screen (**🎨 Customise Look**), the **☰ Menu** (**🎨 Look**) or **Settings → Appearance**.
 
 - A live **3D preview** that rotates by itself and can be dragged to turn.
-- **Male / Female** bodies. The female body has a different build and a smoothly shaped bust that every top, sweater and coat follows.
-- Tabs: **Outfits** (quick presets), **Body** (skin tone, eye colour), **Hair** (style and colour), **Face** (facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
-- **Quick outfits:** one tap sets a whole outfit: *Fisherman*, *Beach: Bikini* (bikini, sandals, straw hat, sunglasses), *Beach: Shorts only* (swim shorts, bare chest, barefoot) and *Raincoat day*.
-- **Hats and hair:** some hair styles would poke through a hat, so they are greyed out while that hat is worn (and picking a hat that clashes switches the hair to *Short*). Cap blocks Wavy, Bob and Bun; Beanie, Bucket hat and Straw hat also block Ponytail; the Sou'wester also blocks Long. Choose *None* for the hat to use every style.
+- **A human-shaped angler** (since v4.0.0): a real skeleton (hips, spine, chest, neck, head, shoulders, elbows, wrists, hips, knees and ankles) with one smooth skinned body, so knees, elbows and shoulders bend like skin. Stylised adult proportions with a slightly larger head.
+- **Male / Female** bodies with different builds and a smoothly shaped bust that every top, sweater and coat follows.
+- Tabs: **Outfits** (quick presets), **Body** (skin tone, height, build, eye colour), **Hair** (style and colour), **Face** (face shape, nose, eyebrows, facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
+- **Quick outfits:** one tap sets a whole outfit: *Fisherman*, *Vest & overalls* (fishing vest, bib overalls, cap with flaps), *Beach: Bikini* (bikini, sandals, straw hat, sunglasses), *Beach: Shorts only* (swim shorts, bare chest, barefoot) and *Raincoat day*.
+- **Hats and hair:** some hair styles would poke through a hat, so they are greyed out while that hat is worn (and picking a hat that clashes switches the hair to *Short*). Cap blocks Wavy, Bob and Bun; Beanie, Bucket hat and Straw hat also block Ponytail; the Sou'wester also blocks Long. Choose *None* for the hat to use every style. The cap with ear flaps blocks the same styles as the beanie.
 - **🎲 Random** rolls a whole new character (it keeps your chosen gender) and **↺ Reset** restores the default outfit.
 - Options:
 
 | Category | Choices |
 |---|---|
 | Skin tone | 6 |
+| Height | Very short, Short, Average, Tall, Very tall (about ±8%) |
+| Build | Slim, Average, Broad |
+| Face shape | Oval, Round, Square, Long |
+| Nose | Straight, Small, Button, Broad |
+| Eyebrows | Normal, Thin, Bushy |
 | Eye colour | 4 |
 | Hair styles | Short, Buzz, Wavy, Ponytail, Long, Bob, Bun, Braid, Bald |
 | Hair colours | 10 |
 | Facial hair | None, Stubble, Mustache, Goatee, Full beard |
 | Glasses | None, Round, Sunglasses |
-| Tops | Striped sweater, T-shirt, Tank top, Hoodie, Raincoat, Bikini top, Bare chest |
-| Bottoms | Jeans, Shorts, Swim shorts, Bikini bottom, Skirt |
+| Tops | Striped sweater, T-shirt, Fishing vest, Tank top, Hoodie, Raincoat, Bikini top, Bare chest |
+| Bottoms | Jeans, Bib overalls, Shorts, Swim shorts, Bikini bottom, Skirt |
 | Shoes | Rubber boots, Sneakers, Sandals, Barefoot |
-| Hats | Sou'wester, Cap, Beanie, Bucket hat, Straw hat, None |
+| Hats | Sou'wester, Cap, Cap with flaps, Beanie, Bucket hat, Straw hat, None |
 | Clothing colours | 14 per item |
 
-Your look is saved and applied immediately in the game world. While walking, the arms swing opposite to the legs; when you stop they return to the rod-holding pose.
+Your look is saved and applied immediately in the game world. In the world the angler walks and jogs with bending knees and elbows, breathes and shifts weight when standing, holds the rod in both hands, sits properly on the chair and in the rowboat, and puts the hands on the controls while driving a boat.
 
 ## Secret: the Seagull's menu
 
@@ -361,7 +367,7 @@ Notes on the models:
 
 - **Fish** are generated from a per-species spec (length, height, width, fin layout, markings and features) and lofted into a smooth body with vertex-colour countershading, a pixel scale texture, fin rays, a gill arc and a lateral line. They are normalised to fit the catch preview.
 - **Boats** share a lofted hull generator (sheer line, keel, rounded quarters, transom, extra rows at every paint-band edge for crisp stripes) with four detailed vessels on top. Paint shifts the hue of the hull's vertex colours.
-- **The character** is built from a skin body plus layered clothing shells, driven by a `look` object. It dresses the same animated rig the game already used (body, head, arms, legs), so walking, sitting, casting and reeling are unaffected. The customise screen uses a second rig with its own small renderer.
+- **The character** (v4) is a `THREE.Skeleton` with a generated `SkinnedMesh` body: the torso is lofted from chest, waist and hip sections and the limbs along their bones, with skin weights blended across every joint; clothes are skinned shells cut from the same lofts, and the head, hands, shoes, hats and glasses are rigid meshes on their bones. `AnglerAnimator` poses it every frame: a speed-driven gait (walk to jog, the steps follow the ground speed), idle breathing, weight shifts, looking around and stretches, sitting on the chair or the rowboat thwart, the cast wind-up and whip, reeling with the right hand on the crank, leaning back against a fish, a step when boarding, and two-bone IK that puts the hands on the rod, the wheel or the tiller.
 - Models keep their footprints and orientation (fronts face +Z, boats point toward -Z), so collisions and interaction ranges do not change when art is updated.
 - **Model kit:** `ModelKit.roundedBox` gives every box-built prop bevelled edges (textures stay undistorted), and `ModelKit.mergeStatic` bakes the static pier into one mesh per material look, which roughly halves the draw calls. The film camera, the trophy mounts and the secret seagull stay separate because they move or are rebuilt.
 - **Colliders:** everything solid registers in one list, `Colliders`, with layers for walking (`COL.WALK`), boats (`COL.BOAT`) and diving (`COL.DIVE`). The pier walk code, the boat hull collisions and the dive all read from it, so a new prop only needs one `Colliders.box(...)` or `Colliders.circle(...)` line next to its model. The secret menu's **🧱 Debug → Show / hide collision boxes** draws them as wireframes (green walking, orange boats, cyan diving).
@@ -402,6 +408,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-20, Version 4.0.0: a human angler
+- **New body:** the toy-like figure is replaced by a stylised adult on a real skeleton (spine, neck, shoulders, elbows, wrists, hips, knees and ankles) with one smooth skinned body, so joints bend like skin instead of hinges. Hands have fingers that curl round the rod, and feet have heels and toes.
+- **Clothes bend with the body:** shirts, sweaters, hoodies, raincoats, jeans, shorts and overalls are skinned to the same skeleton.
+- **New customisation:** height (five steps), build (slim, average, broad), face shape (oval, round, square, long), nose (straight, small, button, broad) and eyebrows (normal, thin, bushy); new clothes: a **fishing vest**, **bib overalls** and a **cap with ear flaps**, plus a *Vest & overalls* quick outfit. Old saves keep their look and get the defaults for the new options.
+- **Human movement:** a gait that follows your speed (walk to jog, with knees, elbows, hip sway and counter-rotating shoulders), idle breathing, weight shifts, looking around and an occasional stretch; a cast with a wind-up and a whip; reeling with the right hand turning the crank and the body leaning back as tension rises; sitting properly on the chair and the rowboat thwart; hands on the console, wheelhouse door or tiller while driving; a step when boarding or docking. The customise preview plays the idle animation.
+- First person now takes its eye height from the head bone.
+- Version bumped to **v4.0.0**.
 
 ### 2026-11-20, Version 3.10.0: angler polish
 - **Shoes:** the flat slab soles are replaced by rounded soles shaped like the foot (wider at the ball, narrower at the heel) with a heel block, on boots, sneakers and sandals. Sneakers also get a toe cap and criss-cross laces.
