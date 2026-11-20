@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.4.0';
+    window.PF_VERSION = '4.5.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1793,7 +1793,7 @@
   <div class="modal-backdrop" id="modal-shop">
     <div class="pixel-box modal-window">
       <div class="modal-header">
-        <span class="modal-title">⚓ HARBOR DOCK & OUTFITTER</span>
+        <span class="modal-title" id="shop-title">🎣 TACKLE SHOP</span>
         <span id="shop-cash-head">$0</span>
         <button class="pixel-btn red" data-close="modal-shop">Close</button>
       </div>
@@ -1803,14 +1803,14 @@
             <div style="font-size: 14px; font-weight: bold; color: #ffd24c;" id="shop-cash-banner">Cash: $25.00</div>
             <div style="font-size: 12px; color: #94a3b8;" id="shop-bucket-banner">Bucket Value: $0.00 (0.0 / 6.0 kg)</div>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; width: 100%;">
+          <div id="shop-action-row" style="display: flex; gap: 8px; flex-wrap: wrap; width: 100%;">
             <button class="pixel-btn green" id="btn-sell-all" style="flex:1;">Sell All Catch</button>
             <button class="pixel-btn gold" id="btn-refill-fuel" style="flex:1;">Refill Fuel</button>
           </div>
         </div>
 
         <!-- Saving the Environment Mayor Perk Card -->
-        <div class="pixel-box" style="padding: 9px 12px; margin-bottom: 12px; background: #0f291e; border-color: #4ade80;">
+        <div class="pixel-box" id="shop-eco-card" style="padding: 9px 12px; margin-bottom: 12px; background: #0f291e; border-color: #4ade80;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
             <span style="font-size:12px; font-weight:900; color:#4ade80;">♻️ PERK: SAVING THE ENVIRONMENT</span>
             <span style="font-size:12px; font-weight:bold; color:#fef08a;" id="shop-eco-progress">0.0 / 100.0 kg</span>
@@ -1825,7 +1825,8 @@
 
         <div class="pixel-box" id="shop-market" style="padding: 9px 12px; margin-bottom: 12px; background: #1b1830; border-color: #a78bfa; font-size: 12px; line-height: 1.5;"></div>
 
-        <div class="tab-row">
+        <div class="tab-row" id="shop-tab-row">
+          <button class="pixel-btn tab-btn" data-shop-tab="catch" style="display:none;">Catch</button>
           <button class="pixel-btn tab-btn active" data-shop-tab="rods">Rods</button>
           <button class="pixel-btn tab-btn" data-shop-tab="boats">Boats</button>
           <button class="pixel-btn tab-btn" data-shop-tab="modules">Modules</button>
@@ -4300,7 +4301,21 @@
          Layers: WALK (the angler on the pier), BOAT (hulls), DIVE (the diver, fish and spear). The models register their
          own colliders where they are built, and the walk, boat and dive code all read from here. */
       const COL = { WALK: 1, BOAT: 2, DIVE: 4 };
-      const BOAT_TERMINAL = { x: -4.06, z: -6.86, useX: -4.15, useZ: -6.35 };   // kiosk on the mooring platform's corner
+      /* Pier layout (v4.5.0 widened the pier from 4.9 m to 6.9 m). The rails stand at x = +-PIER_HW, the angler walks up
+         to +-PIER_WALK, the pilings are at +-PIER_PILE, and everything on the port side (stairs, mooring platform, moored
+         boat) is shifted out by PIER_DX compared with the old 2.45 m half-width. */
+      const PIER_HW = 3.45, PIER_DX = PIER_HW - 2.45, PIER_WALK = PIER_HW - 0.4, PIER_PILE = PIER_HW - 0.05;
+      const PIER_TOOLBOX_X = 2.15, PIER_BUCKET_X = -2.15;   // toolbox (starboard) and catch bucket (port) near the tip
+      const MOOR = { boardX: -5.2 - PIER_DX, boatX: -7.6 - PIER_DX, startX: -8.2 - PIER_DX, z: -5.6 };
+      /* Shops on the harbour terrace behind the boardwalk (v4.5.0). Centre x/z, width w and depth d of the building; the
+         front (counter) faces the sea (-Z), so you walk up to them from the boardwalk. */
+      const SHORE_SHOPS = {
+        boatyard: { x: -5.6, z: 8.45, w: 3.6, d: 2.4, extra: 1.5, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES, PAINT & FUEL', color: '#60a5fa' },
+        fish:     { x: 0,    z: 9.3,  w: 3.4, d: 2.3, extra: 1.4, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR CATCH', color: '#38bdf8' },
+        dive:     { x: 5.6,  z: 8.45, w: 3.2, d: 2.3, extra: 1.8, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
+      };
+      const shopFrontZ = sh => sh.z - sh.d / 2 - (sh.front || 0);
+      const BOAT_TERMINAL = { x: -4.06 - PIER_DX, z: -6.86, useX: -4.15 - PIER_DX, useZ: -6.35 };   // kiosk on the mooring platform's corner
 
       const Colliders = {
         list: [],
@@ -5892,6 +5907,127 @@
           return g;
         }
 
+        /* A small harbour shop house: plank floor, walls, a wide serving hatch with a counter, a gabled roof, a striped
+           awning, a painted sign and a shopkeeper, plus props for its trade. Front faces +Z (rotate it to face the sea). */
+        static buildShopHouse(kind, sh, textures) {
+          const g = new THREE.Group();
+          const K = this.propKit(textures);
+          const W = sh.w, D = sh.d, H = 2.4;
+          const pal = {
+            boatyard: { wall: 0xe2e8f0, trim: 0x1e3a8a, roof: 0x1d4ed8, stripeA: '#1d4ed8', stripeB: '#f8fafc', cap: 0x1e3a8a, shirt: 0xf97316 },
+            fish:     { wall: 0xf8fafc, trim: 0x0369a1, roof: 0x0c4a6e, stripeA: '#0284c7', stripeB: '#f8fafc', cap: 0xf8fafc, shirt: 0x0ea5e9 },
+            dive:     { wall: 0x5eead4, trim: 0x0f766e, roof: 0x115e59, stripeA: '#facc15', stripeB: '#111827', cap: 0x111827, shirt: 0xfacc15 }
+          }[kind];
+          const wallM = K.M(pal.wall, 0.8), trimM = K.M(pal.trim, 0.6), roofM = K.M(pal.roof, 0.7);
+          const canvasTex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding; return t; };
+          // floor and walls (the front wall is a frame round a wide serving hatch)
+          K.box(g, W + 0.2, 0.12, D + 0.2, K.darkWood, 0, 0.06, 0);
+          K.box(g, W, H, 0.14, wallM, 0, H / 2, -D / 2 + 0.07);
+          [-1, 1].forEach(sd => K.box(g, 0.14, H, D, wallM, sd * (W / 2 - 0.07), H / 2, 0));
+          const hatchW = W * 0.62, pierW = (W - hatchW) / 2;
+          K.box(g, W, 0.95, 0.14, wallM, 0, 0.475, D / 2 - 0.07);
+          K.box(g, W, 0.42, 0.14, wallM, 0, H - 0.21, D / 2 - 0.07);
+          [-1, 1].forEach(sd => K.box(g, pierW, H - 1.37, 0.14, wallM, sd * (W / 2 - pierW / 2), 0.95 + (H - 1.37) / 2, D / 2 - 0.07));
+          // trim: corner posts, hatch frame, skirting
+          [-1, 1].forEach(sx => [-1, 1].forEach(sz => K.box(g, 0.16, H, 0.16, trimM, sx * (W / 2 - 0.05), H / 2, sz * (D / 2 - 0.05))));
+          K.box(g, hatchW + 0.1, 0.07, 0.2, trimM, 0, 1.98, D / 2 - 0.05);
+          K.box(g, W + 0.05, 0.14, 0.18, trimM, 0, 0.07, D / 2 - 0.04);
+          // counter shelf and goods shelves inside
+          K.box(g, hatchW + 0.2, 0.07, 0.5, K.lightWood, 0, 1.0, D / 2 + 0.1);
+          [1.25, 1.75].forEach(y => K.box(g, W - 0.4, 0.05, 0.3, K.darkWood, 0, y, -D / 2 + 0.3));
+          // gabled roof with the ridge along X, and eaves
+          {
+            const shape = new THREE.Shape();
+            const half = D / 2 + 0.35, rh = 0.95;
+            shape.moveTo(-half, 0); shape.lineTo(half, 0); shape.lineTo(0, rh); shape.closePath();
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: W + 0.4, bevelEnabled: false });
+            geo.translate(0, 0, -(W + 0.4) / 2);
+            const roof = new THREE.Mesh(geo, roofM); roof.rotation.y = Math.PI / 2; roof.position.y = H; g.add(roof);
+            K.box(g, W + 0.5, 0.06, 0.12, trimM, 0, H + 0.02, half - 0.02);
+            K.box(g, W + 0.5, 0.06, 0.12, trimM, 0, H + 0.02, -half + 0.02);
+          }
+          // striped awning over the hatch, with a scalloped edge
+          const stripeTex = canvasTex(64, 16, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? pal.stripeB : pal.stripeA; x.fillRect(i * 8, 0, 8, h); } });
+          const awning = new THREE.Mesh(new THREE.BoxGeometry(hatchW + 0.5, 0.05, 0.95), new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.7, side: THREE.DoubleSide }));
+          awning.position.set(0, 2.12, D / 2 + 0.42); awning.rotation.x = 0.32; g.add(awning);
+          for (let i = 0; i < 7; i++) {
+            const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 10, 1, false, 0, Math.PI), K.M(i % 2 ? new THREE.Color(pal.stripeB).getHex() : new THREE.Color(pal.stripeA).getHex(), 0.7));
+            sc.rotation.set(Math.PI / 2, 0, Math.PI / 2); sc.position.set(-(hatchW + 0.3) / 2 + i * (hatchW + 0.3) / 6, 1.95, D / 2 + 0.86); g.add(sc);
+          }
+          // painted sign on the roof front
+          const signTex = canvasTex(256, 64, (x, w, h) => {
+            x.fillStyle = '#0b1220'; x.fillRect(0, 0, w, h);
+            x.strokeStyle = sh.color; x.lineWidth = 6; x.strokeRect(3, 3, w - 6, h - 6);
+            x.fillStyle = '#fef3c7'; x.font = 'bold 34px "Courier New", monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
+            x.fillText(sh.name, w / 2, h / 2 + 2);
+          });
+          const sign = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(2.6, W * 0.8), 0.62), new THREE.MeshBasicMaterial({ map: signTex }));
+          sign.position.set(0, H + 0.42, D / 2 + 0.36); sign.rotation.x = -0.12; g.add(sign);
+          K.box(g, Math.min(2.6, W * 0.8) + 0.12, 0.72, 0.05, trimM, 0, H + 0.42, D / 2 + 0.33).rotation.x = -0.12;
+          // shopkeeper behind the counter
+          {
+            const kp = new THREE.Group(), skin = K.M(0xf5c9a0, 0.75);
+            K.cyl(kp, 0.24, 0.28, 0.6, K.M(pal.shirt, 0.85), 0, 0.3, 0, 10);
+            K.sph(kp, 0.19, skin, 0, 0.78, 0, 12, 10);
+            const cap = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), K.M(pal.cap, 0.8)); cap.position.set(0, 0.84, 0); kp.add(cap);
+            [-0.07, 0.07].forEach(x => K.sph(kp, 0.024, new THREE.MeshBasicMaterial({ color: 0x0f172a }), x, 0.8, 0.17, 6, 5));
+            [-0.27, 0.27].forEach(x => { const arm = K.cyl(kp, 0.065, 0.06, 0.4, K.M(pal.shirt, 0.85), x, 0.32, 0.18, 8); arm.rotation.x = 1.0; });
+            kp.position.set(0.3, 0.45, D / 2 - 0.55); g.add(kp);
+          }
+          const iron = K.iron;
+          if (kind === 'boatyard') {
+            // fuel pump on the right, an outboard on a stand on the left, life rings and crossed oars
+            const pump = new THREE.Group();
+            K.box(pump, 0.46, 1.2, 0.34, K.M(0xdc2626, 0.5), 0, 0.6, 0);
+            K.box(pump, 0.34, 0.24, 0.02, K.M(0x0b1220, 0.2, 0, { emissive: new THREE.Color(0x22c55e), emissiveIntensity: 0.6 }), 0, 0.95, 0.18);
+            K.box(pump, 0.5, 0.1, 0.38, K.M(0xf8fafc, 0.5), 0, 1.25, 0);
+            const hose = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 14, Math.PI * 1.5), K.M(0x111827, 0.6)); hose.position.set(0.24, 0.6, 0.05); hose.rotation.y = Math.PI / 2; pump.add(hose);
+            K.box(pump, 0.08, 0.2, 0.1, K.M(0x111827, 0.5), 0.27, 0.78, 0.12);
+            pump.position.set(W / 2 + 0.45, 0.06, D / 2 - 0.2); g.add(pump);
+            const stand = new THREE.Group();
+            K.box(stand, 0.5, 0.06, 0.5, K.darkWood, 0, 0.75, 0); [-0.2, 0.2].forEach(x => [-0.2, 0.2].forEach(z => K.box(stand, 0.05, 0.75, 0.05, K.darkWood, x, 0.375, z)));
+            K.box(stand, 0.36, 0.42, 0.46, K.M(0x111827, 0.4, 0.2), 0, 1.0, 0); K.box(stand, 0.37, 0.05, 0.47, K.M(0xdc2626, 0.5), 0, 0.9, 0);
+            K.box(stand, 0.12, 0.7, 0.16, K.M(0x94a3b8, 0.4, 0.3), 0, 0.55, 0.12);
+            stand.position.set(-W / 2 - 0.5, 0.06, D / 2 - 0.25); g.add(stand);
+            [-1, 1].forEach(sd => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.065, 8, 16), K.M(0xf97316, 0.5)); r.position.set(sd * (W / 2 - pierW / 2), 1.5, D / 2 + 0.02); g.add(r); });
+            [-0.5, 0.5].forEach(r => { const oar = K.cyl(g, 0.025, 0.025, 2.0, K.lightWood, 0, H + 0.42, D / 2 + 0.42, 6); oar.rotation.z = Math.PI / 2 + r; oar.position.y = H + 0.9; });
+          } else if (kind === 'dive') {
+            // a rack of yellow tanks, fins and a diver-down flag
+            const rack = new THREE.Group();
+            K.box(rack, 0.9, 0.06, 0.32, iron, 0, 1.05, 0); K.box(rack, 0.9, 0.06, 0.32, iron, 0, 0.3, 0);
+            for (let i = 0; i < 3; i++) { K.cyl(rack, 0.1, 0.1, 0.8, K.M(0xfacc15, 0.4, 0.3), -0.3 + i * 0.3, 0.62, 0.02, 12); K.cyl(rack, 0.04, 0.04, 0.12, K.M(0x111827, 0.4, 0.5), -0.3 + i * 0.3, 1.08, 0.02, 8); }
+            rack.position.set(W / 2 + 0.47, 0.06, D / 2 - 0.25); g.add(rack);
+            [0, 0.22].forEach((dx, i) => { const fin = K.box(g, 0.2, 0.55, 0.03, K.M(i ? 0x2563eb : 0xf97316, 0.5), -W / 2 - 0.35 + dx, 0.36, D / 2 + 0.1); fin.rotation.z = 0.12 - i * 0.2; });
+            K.cyl(g, 0.03, 0.03, 2.6, iron, -W / 2 - 0.55, 1.36, D / 2 - 0.2, 6);
+            const flagTex = canvasTex(64, 44, (x, w, h) => { x.fillStyle = '#dc2626'; x.fillRect(0, 0, w, h); x.strokeStyle = '#f8fafc'; x.lineWidth = 9; x.beginPath(); x.moveTo(0, 0); x.lineTo(w, h); x.stroke(); });
+            const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.42), new THREE.MeshStandardMaterial({ map: flagTex, side: THREE.DoubleSide, roughness: 0.8 }));
+            flag.position.set(-W / 2 - 0.24, 2.4, D / 2 - 0.2); g.add(flag);
+            // a mask and a speargun on the counter
+            K.box(g, 0.24, 0.12, 0.08, K.M(0x111827, 0.4), -0.45, 1.1, D / 2 + 0.15); K.box(g, 0.18, 0.08, 0.02, K.M(0x7dd3fc, 0.1, 0.1, { transparent: true, opacity: 0.6 }), -0.45, 1.11, D / 2 + 0.2);
+            const gun = K.cyl(g, 0.02, 0.02, 0.9, K.M(0x334155, 0.4, 0.5), 0.6, 1.07, D / 2 + 0.12, 6); gun.rotation.z = Math.PI / 2;
+          } else if (kind === 'fish') {
+            // an iced display bench of fish in front of the counter, a hanging scale, a crate stack and a chalk board
+            const bench = new THREE.Group();
+            K.box(bench, hatchW + 0.2, 0.75, 0.6, K.lightWood, 0, 0.375, 0);
+            const ice = K.box(bench, hatchW + 0.1, 0.1, 0.56, K.M(0xe0f2fe, 0.3, 0.05), 0, 0.8, 0); ice.rotation.x = -0.25;
+            const cols = [[0x38bdf8, 0xf97316], [0x94a3b8, 0x1e3a8a], [0xfacc15, 0xdc2626], [0xf472b6, 0x7c3aed], [0x22c55e, 0x166534]];
+            for (let i = 0; i < 5; i++) for (let r = 0; r < 2; r++) {
+              const f = this.miniFish(cols[(i + r) % 5][0], cols[(i + r) % 5][1], K); f.scale.setScalar(0.55);
+              f.position.set(-hatchW / 2 + 0.2 + i * (hatchW - 0.2) / 4, 0.9 + r * 0.06, -0.12 + r * 0.22); f.rotation.set(-0.25, 0.3 * (r ? 1 : -1), 0); bench.add(f);
+            }
+            bench.position.set(0, 0.06, D / 2 + 0.55); g.add(bench);
+            K.cyl(g, 0.012, 0.012, 0.35, iron, W / 2 - pierW / 2, 1.82, D / 2 + 0.2, 4);
+            K.cyl(g, 0.14, 0.14, 0.03, K.brass, W / 2 - pierW / 2, 1.6, D / 2 + 0.2, 12);
+            [[0, 0], [0.03, 0.36]].forEach(([dx, dy], i) => K.box(g, 0.44, 0.34, 0.4, K.M(i % 2 ? 0x0e7490 : 0xb45309, 0.8), W / 2 + 0.3 + dx, 0.23 + dy, D / 2 - 0.4));
+            const board = canvasTex(96, 72, (x, w, h) => { x.fillStyle = '#1f2a24'; x.fillRect(0, 0, w, h); x.fillStyle = '#e5e7eb'; x.font = 'bold 13px monospace'; x.fillText('TODAY', 26, 16); for (let i = 0; i < 4; i++) { x.fillRect(10, 28 + i * 10, 46 - (i % 2) * 14, 3); x.fillText('$', 70, 32 + i * 10); } });
+            const bd = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.48), new THREE.MeshStandardMaterial({ map: board, roughness: 0.9 }));
+            bd.position.set(-W / 2 - 0.36, 0.75, D / 2 - 0.1); bd.rotation.y = 0.35; g.add(bd);
+            [-0.25, 0.25].forEach(dx => { const leg = K.box(g, 0.04, 1.0, 0.04, K.darkWood, -W / 2 - 0.36 + dx * Math.cos(0.35), 0.5, D / 2 - 0.1 - dx * Math.sin(0.35)); });
+          }
+          g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          return g;
+        }
+
         static buildTackleShop(textures) {
           const g = new THREE.Group();
           const K = this.propKit(textures);
@@ -6252,20 +6388,20 @@
             if (rot) { t.center.set(0.5, 0.5); t.rotation = Math.PI / 2; }
             return [0xffffff, 0xe7cfb6, 0xd2b497].map(c => new THREE.MeshStandardMaterial({ map: t, color: c, roughness: 0.88, flatShading: true }));
           };
-          const planksAcross = deckMats(4, 1, false);   // pier planks run along X
+          const planksAcross = deckMats(4 * PIER_HW / 2.45, 1, false);   // pier planks run along X
           const planksAlong = deckMats(1, 4.3, true);   // boardwalk planks run along Z
           const timberDark = new THREE.MeshStandardMaterial({ color: 0x2b180b, roughness: 0.95, flatShading: true });
           const addBox = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(RB(w, h, d), mat); m.position.set(x, y, z); pierGroup.add(m); return m; };
 
           // dark underlay and joists, so the gaps between boards read as shadowed timber instead of showing the sea
           addBox(21.6, 0.12, 5.7, timberDark, 0, 1.38, 2.85);
-          addBox(5.5, 0.12, 11.5, timberDark, 0, 1.38, -5.7);
+          addBox(2 * PIER_HW + 0.6, 0.12, 11.5, timberDark, 0, 1.38, -5.7);
           for (let jz = 0.4; jz < 5.6; jz += 1.44) addBox(21.4, 0.16, 0.14, timberDark, 0, 1.28, jz);
-          for (let jz = -0.3; jz > -11.4; jz -= 1.44) addBox(5.4, 0.16, 0.14, timberDark, 0, 1.28, jz);
+          for (let jz = -0.3; jz > -11.4; jz -= 1.44) addBox(2 * PIER_HW + 0.5, 0.16, 0.14, timberDark, 0, 1.28, jz);
           // fascia trim: the island edge of the boardwalk, its sea edge either side of the pier, and the seam where the pier starts
           addBox(21.6, 0.2, 0.1, timberDark, 0, 1.45, 5.68);
-          [-1, 1].forEach(sd => addBox(7.9, 0.2, 0.1, timberDark, sd * 6.55, 1.45, -0.04));
-          addBox(5.4, 0.2, 0.1, timberDark, 0, 1.47, 0.0);
+          [-1, 1].forEach(sd => addBox(10.5 - (PIER_HW + 0.15), 0.2, 0.1, timberDark, sd * (10.5 + PIER_HW + 0.15) / 2, 1.45, -0.04));
+          addBox(2 * PIER_HW + 0.5, 0.2, 0.1, timberDark, 0, 1.47, 0.0);
 
           // Waterfront boardwalk along the sea edge (X = -10.5 to +10.5, Z = 0.0 to 5.6): one layer only
           for (let x = -10.5, n = 0; x <= 10.5; x += 0.72, n++) {
@@ -6278,7 +6414,7 @@
           for (let k = 0; k < 16; k++) {
             const z = -0.72 * k;
             const depth = k === 0 ? 0.32 : 0.64;
-            const plank = new THREE.Mesh(RB(5.2, 0.14, depth), planksAcross[(k * 5 + Math.floor(k / 2)) % 3]);
+            const plank = new THREE.Mesh(RB(2 * PIER_HW + 0.3, 0.14, depth), planksAcross[(k * 5 + Math.floor(k / 2)) % 3]);
             plank.position.set(0, 1.48 + ((k * 3) % 4) * 0.002, k === 0 ? -0.16 : z);
             pierGroup.add(plank);
           }
@@ -6286,7 +6422,7 @@
           // Port-Side Wooden Stairs Descending to a Low Floating Mooring Platform (Z = -5.6)
           const stepCount = 4;
           for (let s = 0; s < stepCount; s++) {
-            const stepX = -2.75 - s * 0.30;
+            const stepX = -2.75 - PIER_DX - s * 0.30;
             const stepY = 1.32 - s * 0.18;
             const tread = new THREE.Mesh(RB(0.32, 0.12, 2.2), woodMat);
             tread.position.set(stepX, stepY, -5.6);
@@ -6297,13 +6433,13 @@
           // Stair Stringer Beams
           [-4.55, -6.65].forEach(sz => {
             const stringer = new THREE.Mesh(RB(1.45, 0.16, 0.12), postMat);
-            stringer.position.set(-3.2, 1.04, sz);
+            stringer.position.set(-3.2 - PIER_DX, 1.04, sz);
             stringer.rotation.z = 0.54;
             pierGroup.add(stringer);
           });
 
           // Low Water-Level Mooring Platform (X = -3.85 to -6.05, Y = 0.64)
-          for (let px = -3.95; px >= -5.95; px -= 0.42) {
+          for (let px = -3.95 - PIER_DX; px >= -5.95 - PIER_DX; px -= 0.42) {
             const dockPlank = new THREE.Mesh(RB(0.36, 0.14, 2.6), woodMat);
             dockPlank.position.set(px, 0.64, -5.6);
             pierGroup.add(dockPlank);
@@ -6314,26 +6450,26 @@
               RB(2.15, 0.36, 0.42),
               new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, flatShading: true })
             );
-            pontoon.position.set(-4.95, 0.42, pz);
+            pontoon.position.set(-4.95 - PIER_DX, 0.42, pz);
             const piling = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.20, 3.2, 8), postMat);
-            piling.position.set(-5.95, 0.35, pz);
+            piling.position.set(-5.95 - PIER_DX, 0.35, pz);
             const cap = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.14, 8), woodMat);
-            cap.position.set(-5.95, 2.02, pz);
+            cap.position.set(-5.95 - PIER_DX, 2.02, pz);
             pierGroup.add(pontoon, piling, cap);
           });
           const cleatMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.75, roughness: 0.3, flatShading: true });
           [-4.75, -6.45].forEach(cz => {
             const cleatBase = new THREE.Mesh(RB(0.12, 0.08, 0.12), cleatMat);
-            cleatBase.position.set(-5.82, 0.74, cz);
+            cleatBase.position.set(-5.82 - PIER_DX, 0.74, cz);
             const cleatHorn = new THREE.Mesh(RB(0.10, 0.05, 0.34), cleatMat);
-            cleatHorn.position.set(-5.82, 0.79, cz);
+            cleatHorn.position.set(-5.82 - PIER_DX, 0.79, cz);
             pierGroup.add(cleatBase, cleatHorn);
           });
 
           // Pier & Boardwalk Pilings
           const pilingCoords = [
             [-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0],
-            [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-2.4, -11.25], [2.4, -11.25]
+            [-PIER_PILE, -3.2], [PIER_PILE, -3.2], [-PIER_PILE, -9.8], [PIER_PILE, -9.8], [-PIER_PILE, -11.25], [PIER_PILE, -11.25]
           ];
           pilingCoords.forEach(([px, pz]) => {
             const piling = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 4.2, 8), postMat);
@@ -6373,15 +6509,15 @@
           };
 
           // Boardwalk sea-edge railings flanking the pier entrance
-          addRailingSegment(-10.4, 0.12, -2.45, 0.12);
-          addRailingSegment(2.45, 0.12, 10.4, 0.12);
+          addRailingSegment(-10.4, 0.12, -PIER_HW, 0.12);
+          addRailingSegment(PIER_HW, 0.12, 10.4, 0.12);
           // First section of the main pier railings (Z = 0.12 down to Z = -4.2)
-          addRailingSegment(-2.45, 0.12, -2.45, -4.2);
-          addRailingSegment(2.45, 0.12, 2.45, -4.2);
+          addRailingSegment(-PIER_HW, 0.12, -PIER_HW, -4.2);
+          addRailingSegment(PIER_HW, 0.12, PIER_HW, -4.2);
           // Railings continue down both sides to the far end. The port side keeps an opening
           // (Z -4.2 to -6.9) for the stairs down to the mooring platform.
-          addRailingSegment(2.45, -4.2, 2.45, -11.34);
-          addRailingSegment(-2.45, -6.9, -2.45, -11.34);
+          addRailingSegment(PIER_HW, -4.2, PIER_HW, -11.34);
+          addRailingSegment(-PIER_HW, -6.9, -PIER_HW, -11.34);
 
           // 3D Tackle Shop on the Waterfront Edge with Back to the Sea, Facing South (+Z) so Player Walks in Front
           const tackleShop = this.buildTackleShop(textures);
@@ -6414,9 +6550,19 @@
 
           // 3D Tackle Toolbox on the Starboard Front Pier Opposite the Catch Bucket
           const tackleToolbox = this.buildTackleToolbox();
-          tackleToolbox.position.set(1.55, 1.56, -7.6);
+          tackleToolbox.position.set(PIER_TOOLBOX_X, 1.56, -7.6);
           tackleToolbox.rotation.y = -0.35;
           pierGroup.add(tackleToolbox);
+
+          // Shops on the harbour terrace (fronts face the sea)
+          Object.entries(SHORE_SHOPS).forEach(([kind, sh]) => {
+            const house = this.buildShopHouse(kind, sh, textures);
+            house.position.set(sh.x, 1.48, sh.z); house.rotation.y = Math.PI;
+            scene.add(house);
+            const frontPad = kind === 'fish' ? 0.85 : 0.45;   // the fish bench and the awning stick out at the front
+            Colliders.box(kind + ' shop', sh.x, sh.z - frontPad / 2, sh.w / 2 + sh.extra / 2, sh.d / 2 + frontPad / 2 + 0.05, COL.WALK);
+            sh.front = frontPad;
+          });
 
           // Walk colliders for the stands (the back edge sits on the boardwalk rail at z = 0)
           const W = COL.WALK;
@@ -6425,8 +6571,8 @@
           Colliders.box('bottle gallery', 4.4, 0.875, 1.3, 0.875, W);
           Colliders.box('trophy cabinet', 6.55, 0.725, 0.7, 0.725, W);
           Colliders.circle('film camera', 8.2, 0.9, 0.85, W);
-          Colliders.box('toolbox', 1.55, -7.6, 0.55, 0.45, W);
-          const bucketCollider = Colliders.box('bucket', -1.55, -7.6, 0.69, 0.65, W);
+          Colliders.box('toolbox', PIER_TOOLBOX_X, -7.6, 0.55, 0.45, W);
+          const bucketCollider = Colliders.box('bucket', PIER_BUCKET_X, -7.6, 0.69, 0.65, W);
 
           let cheatGull = null;
           let lighthouseBeacon = null;
@@ -6436,8 +6582,8 @@
             const deckY = 1.55;
 
             // side stringers and under-deck cross bracing so the pier reads as a built structure
-            [-2.6, 2.6].forEach(x => K.box(pierGroup, 0.16, 0.3, 11.44, K.darkWood, x, 1.36, -5.72));
-            [[-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-2.4, -11.25], [2.4, -11.25]].forEach(([px, pz]) => {
+            [-1, 1].forEach(sd => K.box(pierGroup, 0.16, 0.3, 11.44, K.darkWood, sd * (PIER_HW + 0.15), 1.36, -5.72));
+            [[-PIER_PILE, -3.2], [PIER_PILE, -3.2], [-PIER_PILE, -9.8], [PIER_PILE, -9.8], [-PIER_PILE, -11.25], [PIER_PILE, -11.25]].forEach(([px, pz]) => {
               // barnacle ring at the waterline and a rope wrap near the top
               for (let i = 0; i < 9; i++) {
                 const a = (i / 9) * Math.PI * 2;
@@ -6450,21 +6596,21 @@
               wrap.rotation.x = Math.PI / 2; wrap.position.set(px, 1.7, pz); pierGroup.add(wrap);
               const wrap2 = wrap.clone(); wrap2.position.y = 1.82; pierGroup.add(wrap2);
             });
-            [[-3.2], [-9.8], [-11.25]].forEach(([z]) => K.box(pierGroup, 4.8, 0.14, 0.14, K.darkWood, 0, 0.75, z));
+            [[-3.2], [-9.8], [-11.25]].forEach(([z]) => K.box(pierGroup, 2 * PIER_HW - 0.1, 0.14, 0.14, K.darkWood, 0, 0.75, z));
             [-1, 1].forEach(s => [-3.2, -9.8].forEach(z => { /* diagonals across the span between the two bent pairs */ }));
             const span = Math.hypot(6.6, 0.9);
             [-1, 1].forEach(s => {
-              const brace = K.box(pierGroup, 0.1, 0.1, span, K.darkWood, s * 2.4, 0.78, -6.5);
+              const brace = K.box(pierGroup, 0.1, 0.1, span, K.darkWood, s * PIER_PILE, 0.78, -6.5);
               brace.rotation.x = 0; brace.rotation.y = 0; brace.rotation.z = 0;
-              const diag = K.box(pierGroup, 0.09, 0.09, 4.6, K.darkWood, s * 2.4, 1.0, -6.5);
+              const diag = K.box(pierGroup, 0.09, 0.09, 4.6, K.darkWood, s * PIER_PILE, 1.0, -6.5);
               diag.rotation.x = s * 0.28;
             });
 
             // mooring bollards at the pier tip with rope coils
-            [-2.2, 2.2].forEach(x => Colliders.circle('bollard', x, -9.6, 0.22, COL.WALK));
-            Colliders.box('rod rack', -2.3, -9.05, 0.12, 0.4, COL.WALK);
-            [-2.45, 2.45].forEach(x => Colliders.circle('bunting pole', x, 0.3, 0.1, COL.WALK));
-            [-2.2, 2.2].forEach(x => {
+            [-1, 1].forEach(sd => Colliders.circle('bollard', sd * (PIER_HW - 0.25), -9.6, 0.22, COL.WALK));
+            Colliders.box('rod rack', -(PIER_HW - 0.15), -9.05, 0.12, 0.4, COL.WALK);
+            [-PIER_HW, PIER_HW].forEach(x => Colliders.circle('bunting pole', x, 0.3, 0.1, COL.WALK));
+            [-(PIER_HW - 0.25), PIER_HW - 0.25].forEach(x => {
               K.cyl(pierGroup, 0.12, 0.16, 0.34, K.iron, x, deckY + 0.17, -9.6, 10);
               K.cyl(pierGroup, 0.19, 0.12, 0.08, K.iron, x, deckY + 0.38, -9.6, 10);
               const rope = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.03, 5, 12), K.rope);
@@ -6472,16 +6618,16 @@
             });
             // life ring station on the starboard rail, and a coiled hose
             const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.085, 8, 18), K.M(0xf97316, 0.5));
-            ring.rotation.y = Math.PI / 2; ring.position.set(2.30, 2.2, -3.48); pierGroup.add(ring);
+            ring.rotation.y = Math.PI / 2; ring.position.set(PIER_HW - 0.15, 2.2, -3.48); pierGroup.add(ring);
             for (let i = 0; i < 4; i++) {
               const band = new THREE.Mesh(RB(0.02, 0.18, 0.1), K.M(0xf8fafc, 0.5));
               const a = (i / 4) * Math.PI * 2;
-              band.position.set(2.30, 2.2 + Math.cos(a) * 0.26, -3.48 + Math.sin(a) * 0.26); band.rotation.x = a; pierGroup.add(band);
+              band.position.set(PIER_HW - 0.15, 2.2 + Math.cos(a) * 0.26, -3.48 + Math.sin(a) * 0.26); band.rotation.x = a; pierGroup.add(band);
             }
             // rod rack at the tip, port side: in the bay between two rail posts (z -8.38 and -9.86), inside the rail line
-            K.box(pierGroup, 0.06, 0.5, 0.5, K.darkWood, -2.34, deckY + 0.25, -9.12);
+            K.box(pierGroup, 0.06, 0.5, 0.5, K.darkWood, -(PIER_HW - 0.11), deckY + 0.25, -9.12);
             [0xd97706, 0x0284c7, 0x16a34a].forEach((c, i) => {
-              const r = K.cyl(pierGroup, 0.013, 0.02, 1.9, K.M(c, 0.4, 0.2), -2.26, deckY + 0.95, -8.94 - i * 0.18, 5); r.rotation.z = -0.12;
+              const r = K.cyl(pierGroup, 0.013, 0.02, 1.9, K.M(c, 0.4, 0.2), -(PIER_HW - 0.19), deckY + 0.95, -8.94 - i * 0.18, 5); r.rotation.z = -0.12;
             });
 
             // bunting across the pier entrance
@@ -6491,7 +6637,7 @@
               const N = 18;
               for (let i = 0; i < N; i++) {
                 const t0 = i / N, t1 = (i + 0.8) / N;
-                const p = t => [(-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.30];
+                const p = t => [(-1 + 2 * t) * PIER_HW, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.30];
                 const a = p(t0), b = p(t1), mid = p((t0 + t1) / 2);
                 posByColor[i % 4].push(a[0], a[1], a[2], b[0], b[1], b[2], mid[0], mid[1] - 0.34, mid[2]);
               }
@@ -6500,9 +6646,9 @@
                 g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); g.computeVertexNormals();
                 pierGroup.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: cols[i][0], side: THREE.DoubleSide, roughness: 0.85 })));
               });
-              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * 2.45, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.30); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
+              const line = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: 13 }, (_, i) => { const t = i / 12; return new THREE.Vector3((-1 + 2 * t) * PIER_HW, 4.8 - Math.sin(t * Math.PI) * 0.36, 0.30); })), 30, 0.012, 4, false), K.M(0x111827, 0.8));
               pierGroup.add(line);
-              [-2.45, 2.45].forEach(x => K.cyl(pierGroup, 0.05, 0.075, 3.4, K.darkWood, x, 3.25, 0.30, 6));
+              [-PIER_HW, PIER_HW].forEach(x => K.cyl(pierGroup, 0.05, 0.075, 3.4, K.darkWood, x, 3.25, 0.30, 6));
             }
 
             // ---- v3.6: benches facing the sea at the back of the boardwalk, and barrel and crate stacks at its ends ----
@@ -6799,12 +6945,12 @@
             // buoys float: solid for hulls, and for a diver only near the surface
             buoys.forEach(b => Colliders.circle('buoy', b.position.x, b.position.z, 1.0, SEA, -2.5, 3));
             // Pier and boardwalk pilings plus the two mooring pilings (same list as the pilings built above)
-            [[-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0], [-2.4, -3.2], [2.4, -3.2], [-2.4, -9.8], [2.4, -9.8], [-5.95, -4.6], [-5.95, -6.6], [-2.4, -11.25], [2.4, -11.25]]
+            [[-10.4, 0.0], [-5.2, 0.0], [5.2, 0.0], [10.4, 0.0], [-PIER_PILE, -3.2], [PIER_PILE, -3.2], [-PIER_PILE, -9.8], [PIER_PILE, -9.8], [-5.95 - PIER_DX, -4.6], [-5.95 - PIER_DX, -6.6], [-PIER_PILE, -11.25], [PIER_PILE, -11.25]]
               .forEach(([x, z]) => Colliders.circle('pier', x, z, 0.3, SEA));
             // Solid rectangles for hulls: pier deck, boardwalk, stairs + mooring platform (all above the water, so not for divers)
-            Colliders.box('pier', 0, -5.7, 2.75, 5.8, COL.BOAT);
+            Colliders.box('pier', 0, -5.7, PIER_HW + 0.3, 5.8, COL.BOAT);
             Colliders.box('pier', 0, 3.95, 10.7, 4.05, COL.BOAT);
-            Colliders.box('pier', -4.3, -5.6, 1.8, 1.35, COL.BOAT);
+            Colliders.box('pier', -4.3 - PIER_DX, -5.6, 1.8, 1.35, COL.BOAT);
           }
           const seaObstacles = Colliders.of(COL.BOAT).filter(c => c.kind === 'circle');
           const boatRects = Colliders.of(COL.BOAT).filter(c => c.kind === 'box').map(c => ({ name: c.name, x1: c.x - c.hx, z1: c.z - c.hz, x2: c.x + c.hx, z2: c.z + c.hz }));
@@ -6916,10 +7062,10 @@
 
           // Pier lamp posts stand on the rail line, in pairs: near the entrance, flanking the bucket and toolbox, and at the tip.
           // (only three carry a real light, the pools of the others fill in)
-          buildHarborLamp(-2.45, 1.55, -2.2, true);
-          buildHarborLamp(2.45, 1.55, -2.2, false);
-          buildHarborLamp(-2.45, 1.55, -8.0, false);
-          buildHarborLamp(2.45, 1.55, -8.0, true);
+          buildHarborLamp(-PIER_HW, 1.55, -2.2, true);
+          buildHarborLamp(PIER_HW, 1.55, -2.2, false);
+          buildHarborLamp(-PIER_HW, 1.55, -8.0, false);
+          buildHarborLamp(PIER_HW, 1.55, -8.0, true);
           buildHarborLamp(-2.3, 1.55, -11.1, true);
           buildHarborLamp(2.3, 1.55, -11.1, false);
 
@@ -6978,12 +7124,18 @@
             scene.add(kiosk);
             Colliders.box('boat terminal', T.x, T.z, 0.24, 0.18, COL.WALK);
           }
+          // Terrace shops: a warm light over each counter
+          Object.values(SHORE_SHOPS).forEach(sh => {
+            const fz = sh.z - sh.d / 2;
+            if (realLights) addLight(sh.x, 1.48 + 2.5, fz - 1.0, LIGHT_TUNING.shop.color, 9, LIGHT_TUNING.shop.k);
+            addPool(sh.x, 1.5, fz - 1.1, 2.6, LIGHT_TUNING.shop.pool, 0.9);
+          });
           // Mooring platform: lantern on the piling
           {
-            const glass = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), bulbMat(LIGHT_TUNING.bulbs[1])); glass.position.set(-5.95, 2.3, -4.6); scene.add(glass);
-            const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.3, 6, 1, true), ironMat); cage.position.set(-5.95, 2.3, -4.6); scene.add(cage);
-            if (realLights) addLight(-5.95, 2.35, -4.6, LIGHT_TUNING.mooring.color, 8, LIGHT_TUNING.mooring.k);
-            addPool(-5.0, 0.66, -5.6, 2.2, LIGHT_TUNING.mooring.pool, 0.8);
+            const glass = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), bulbMat(LIGHT_TUNING.bulbs[1])); glass.position.set(-5.95 - PIER_DX, 2.3, -4.6); scene.add(glass);
+            const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.3, 6, 1, true), ironMat); cage.position.set(-5.95 - PIER_DX, 2.3, -4.6); scene.add(cage);
+            if (realLights) addLight(-5.95 - PIER_DX, 2.35, -4.6, LIGHT_TUNING.mooring.color, 8, LIGHT_TUNING.mooring.k);
+            addPool(-5.0 - PIER_DX, 0.66, -5.6, 2.2, LIGHT_TUNING.mooring.pool, 0.8);
           }
 
           // Articulated Fisherman Character with Wader Overalls, Rain Slicker & Sou'wester Hat
@@ -8000,6 +8152,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let boatVel = 0;
       let lastBumpAt = -10;
       let boatHalfLen = 2.4, boatHalfWid = 1.0, boatTurnRate = 0, boatCamYaw = 0, boatSaveT = 0, boatCamReverse = false, fpBack = 0;
+      let camInland = 0, camInlandGoal = 0, camInlandYaw = 0, camCtlYaw = 0;   // the terrace camera swing and the stick mapping
       let boatPowered = false; // true while the engine is driving the boat (burns fuel)
       /* Where the angler rides on each boat (boat-local metres; the bow points to -Z) and how he holds on while steering.
          y is the height of his feet (or of his seat when `sit`). hands: arm raise (radians) for the left / right arm. */
@@ -8031,20 +8184,21 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         BENCH_SEATS.forEach(s => { const d = Math.hypot(px - s.x, (pz - 4.8) * 1.6); if (pz > 4.3 && d < bd) { bd = d; best = s; } });
         if (best) return best;
         // pier sides: along the walking limit, away from the stairs, bucket, toolbox, bollards, rod rack and lamp posts
-        if (Math.abs(px) > 1.9 && pz < -0.3 && pz > -10.9) {
+        if (Math.abs(px) > PIER_WALK - 0.15 && pz < -0.3 && pz > -10.9) {
           const side = px > 0 ? 1 : -1;
           const blocked = [[-7.6, 0.95], [-9.6, 0.55], [-2.2, 0.35], [-8.0, 0.35]].some(([z, r]) => Math.abs(pz - z) < r)
             || (side < 0 && ((pz < -4.4 && pz > -6.8) || (pz < -8.5 && pz > -9.65)));
-          if (!blocked) return { kind: 'rail', x: side * 2.17, z: pz, yaw: -side * Math.PI / 2, railX: side * 2.45, railZ: null, side };
+          if (!blocked) return { kind: 'rail', x: side * (PIER_WALK + 0.12), z: pz, yaw: -side * Math.PI / 2, railX: side * PIER_HW, railZ: null, side };
         }
         // boardwalk sea-edge rail, between the stands
-        if (pz < 0.62 && Math.abs(px) > 2.6 && Math.abs(px) < 10.1) {
+        if (pz < 0.62 && Math.abs(px) > PIER_HW + 0.15 && Math.abs(px) < 10.1) {
           const busy = [[-9.55, -5.5], [-5.4, -3.0], [2.9, 5.9], [5.65, 7.45], [7.0, 9.4]].some(([a, b]) => px > a && px < b);
           if (!busy) return { kind: 'rail', x: px, z: 0.33, yaw: 0, railX: null, railZ: 0.12, side: 0 };
         }
         return null;
       }
       const WALK_SPEED = 3.0;   // m/s at full stick (was 6.5 before v4.0.1)
+      const TERRACE_MAX_Z = 10.0;   // the walkable harbour terrace behind the boardwalk (the cottages start at z 10.6)
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
       let bobberPos = new THREE.Vector3();
       let bobberVel = new THREE.Vector3();
@@ -8840,7 +8994,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           ['Empty bucket', () => { state.bucket = []; rebuildPierBucketVisual(); cheatDone('🪣 Bucket emptied'); }]] },
         { title: '🧭 Teleport (on the pier)', items: [
           ['Pier tip', cheatTeleport(0, -10.59, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
-          ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(-5.2, -5.6, 'Mooring platform')]] },
+          ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(MOOR.boardX, -5.6, 'Mooring platform')],
+          ['Fish market', cheatTeleport(SHORE_SHOPS.fish.x, 6.5, 'Fish market')], ['Boatyard', cheatTeleport(SHORE_SHOPS.boatyard.x, 6.5, 'Boatyard')], ['Dive shop', cheatTeleport(SHORE_SHOPS.dive.x, 6.5, 'Dive shop')]] },
         { title: '🌊 Sea events (on a boat)', items: [
           ['Spawn treasure chest', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('treasure'); }],
           ['Spawn boss shadow', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('boss'); }]] },
@@ -9143,7 +9298,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 3.0, cz: 0.8, halfW: 1.0,  halfH: 1.3, side: 1 },
         { id: 'gallery', near: () => isNearPierGallery(),  cx: 4.4,  cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: -1 },
         { id: 'trophy',  near: () => isNearPierTrophies(), cx: 6.55, cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
-        { id: 'camera',  near: () => isNearPierCamera(),   cx: 8.2,  cy: 3.1, cz: 0.9, halfW: 1.0,  halfH: 1.1, side: -1 }
+        { id: 'camera',  near: () => isNearPierCamera(),   cx: 8.2,  cy: 3.1, cz: 0.9, halfW: 1.0,  halfH: 1.1, side: -1 },
+        ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.48 + 1.75, cz: sh.z - sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55, side: sh.x < 0 ? 1 : -1, face: -1 }))
       ];
       function currentStandView() {
         for (const st of STAND_VIEWS) if (st.near()) return st;
@@ -9159,23 +9315,26 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         _standPos.set(
           st.cx + Math.sin(yaw) * Math.cos(pitch) * dist,
           st.cy + Math.sin(pitch) * dist,
-          st.cz + Math.cos(yaw) * Math.cos(pitch) * dist
+          st.cz + (st.face || 1) * Math.cos(yaw) * Math.cos(pitch) * dist
         );
       }
 
       function isNearPierShop() { return nearStandFront(-7.6, 2.05, 2.55, 1.0); }
+      /* in front of a terrace shop (they face the sea, so you stand on the -Z side of the counter) */
+      function nearShoreShop(sh) { const fz = shopFrontZ(sh); return !onBoat && mode === 'PIER_IDLE' && Math.abs(playerX - sh.x) <= sh.w / 2 + 0.35 && playerZ <= fz + 0.1 && playerZ >= fz - 1.35; }
+      function shoreShopHere() { for (const k in SHORE_SHOPS) if (nearShoreShop(SHORE_SHOPS[k])) return k; return null; }
       function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
       function isNearPierGallery() { return nearStandFront(4.4, 1.6, 1.75, 1.0); }
       function isNearPierTrophies() { return nearStandFront(6.55, 0.8, 1.45, 1.0); }
       function isNearPierCamera() { return nearSpot(8.2, 0.9, 1.45); }
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
-      function isNearPierToolbox() { return nearSpot(1.55, -7.6, 1.25); }
-      function isNearMooredBoat() { return nearSpot(-5.2, -5.6, 1.4) && !isNearBoatTerminal(); }
+      function isNearPierToolbox() { return nearSpot(PIER_TOOLBOX_X, -7.6, 1.25); }
+      function isNearMooredBoat() { return nearSpot(MOOR.boardX, -5.6, 1.4) && !isNearBoatTerminal(); }
       function isNearBoatTerminal() { return nearSpot(BOAT_TERMINAL.useX, BOAT_TERMINAL.useZ, 0.72); }
 
       function isAtPierWaterEdge() {
         // Only the far tip of the pier is a fishing spot; the sides are railed off.
-        return !onBoat && playerZ <= -10.39 && Math.abs(playerX) <= 2.1;
+        return !onBoat && playerZ <= -10.39 && Math.abs(playerX) <= PIER_WALK + 0.05;
       }
 
       function canDockAtPier() {
@@ -9184,7 +9343,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
       function rebuildPierBucketVisual() {
 pierBucketMesh = replaceSceneMesh(scene, pierBucketMesh, WorldBuilder.buildPierBucketMesh(state.bucketTier, state.bucket.length, textures));
-        pierBucketMesh.position.set(-1.55, 1.56, -7.6);
+        pierBucketMesh.position.set(PIER_BUCKET_X, 1.56, -7.6);
         pierBucketMesh.rotation.y = 0.28;
         // the bucket's walk collider grows with the model: measured from the upgrade that is on the pier now
         pierBucketMesh.updateMatrixWorld(true);
@@ -9262,7 +9421,7 @@ pierBucketMesh = replaceSceneMesh(scene, pierBucketMesh, WorldBuilder.buildPierB
         updateHUD();
         renderBoatTerminal();
         sfx.playCoin();
-        vfx.spawnSplash(new THREE.Vector3(-7.6, 0.1, -5.6), 18, 0xe0f2fe, 3);
+        vfx.spawnSplash(new THREE.Vector3(MOOR.boatX, 0.1, -5.6), 18, 0xe0f2fe, 3);
         showToast(`${BOAT_ICONS[tier]} ${BOAT_TIERS[tier].name} is now moored at the platform.`);
       }
 
@@ -9503,7 +9662,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
           onBoat = true;
           mode = 'BOAT_DRIVING';
-          boatPos.set(-8.2, 0, -9.0);
+          boatPos.set(MOOR.startX, 0, -9.0);
           boatYaw = 0;
           boatVel = 0;
           boatTurnRate = 0;
@@ -9520,7 +9679,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
           onBoat = false;
           mode = 'PIER_IDLE';
-          playerX = -5.2;
+          playerX = MOOR.boardX;
           playerZ = -5.6;
           boatVel = 0; boatSide = 0;
           saveGame();
@@ -9572,7 +9731,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            openShopModal();
+            openShopModal('tackle');
+            return;
+          }
+          const shoreKind = shoreShopHere();
+          if (shoreKind) {
+            isHoldingAction = false;
+            actionPointerId = null;
+            primaryBtn.classList.remove('pressed');
+            openShopModal(shoreKind);
             return;
           }
           if (isNearPierBounty()) {
@@ -10293,13 +10460,45 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       document.getElementById('menu-trophies').addEventListener('click', () => openTrophiesModal());
 
-      function openShopModal() {
-        if (getDistanceMeters() > 15) {
-          showToast('Dock at the Pier to visit the Tackle Shop!');
-          return;
-        }
+      /* One shop screen, four storefronts: each shop shows only its own counters */
+      const SHOP_KINDS = {
+        tackle:   { title: '🎣 TACKLE SHOP: RODS, BAIT & BUCKETS', tabs: ['rods', 'baits', 'buckets'], sell: false, fuel: false },
+        boatyard: { title: SHORE_SHOPS.boatyard.title, tabs: ['boats', 'modules', 'paint'], sell: false, fuel: true },
+        dive:     { title: SHORE_SHOPS.dive.title, tabs: ['dive', 'spear'], sell: false, fuel: false },
+        fish:     { title: SHORE_SHOPS.fish.title, tabs: ['catch'], sell: true, fuel: false }
+      };
+      let shopKind = 'tackle';
+      function openShopModal(kind = 'tackle') {
+        shopKind = SHOP_KINDS[kind] ? kind : 'tackle';
+        const sk = SHOP_KINDS[shopKind];
+        if (!sk.tabs.includes(activeShopTab)) activeShopTab = sk.tabs[0];
+        document.getElementById('shop-title').textContent = sk.title;
+        document.querySelectorAll('[data-shop-tab]').forEach(b => {
+          b.style.display = sk.tabs.includes(b.dataset.shopTab) ? '' : 'none';
+          b.classList.toggle('active', b.dataset.shopTab === activeShopTab);
+        });
+        document.getElementById('shop-tab-row').style.display = sk.tabs.length > 1 ? '' : 'none';
+        document.getElementById('btn-sell-all').style.display = sk.sell ? '' : 'none';
+        document.getElementById('btn-refill-fuel').style.display = sk.fuel ? '' : 'none';
+        document.getElementById('shop-action-row').style.display = sk.sell || sk.fuel ? 'flex' : 'none';
+        document.getElementById('shop-bucket-banner').style.display = sk.sell ? '' : 'none';
+        document.getElementById('shop-eco-card').style.display = sk.sell ? '' : 'none';
+        document.getElementById('shop-market').style.display = sk.sell ? '' : 'none';
         renderShop();
         document.getElementById('modal-shop').classList.add('open');
+      }
+      function sellBucketEntry(idx) {
+        const [soldItem] = state.bucket.splice(idx, 1);
+        if (!soldItem) return;
+        const got = sellValue(soldItem);
+        state.cash = +(state.cash + got).toFixed(2);
+        bumpStat('earned', got);
+        sfx.playCoin();
+        processEcoCleanupReward([soldItem]);
+        checkAchievements();
+        saveGame();
+        rebuildPierBucketVisual();
+        updateHUD();
       }
 
       function openToolboxModal() {
@@ -10503,7 +10702,25 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const container = document.getElementById('shop-items-container');
         container.innerHTML = '';
 
-        if (activeShopTab === 'rods') {
+        if (activeShopTab === 'catch') {
+          if (!state.bucket.length) {
+            container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Bring your catch here to sell it.</p>';
+          }
+          const cod = catchOfDay();
+          state.bucket.map((entry, idx) => ({ entry, idx })).sort((a, b) => sellValue(b.entry) - sellValue(a.entry)).forEach(({ entry, idx }) => {
+            const m = marketMult(entry.id);
+            const card = document.createElement('div');
+            card.className = 'shop-card';
+            card.innerHTML = `<div><div class="card-title"><span>${ITEM_ICONS[entry.id] ? `<img src="${ITEM_ICONS[entry.id]}" style="width:22px;height:22px;vertical-align:middle;image-rendering:pixelated;margin-right:4px;" alt="" />` : ''}${entry.name}${entry.id === cod.id ? ' <span class="log-cod">⭐ TODAY</span>' : ''}</span><span style="color:#ffd24c;">$${sellValue(entry)}</span></div>
+              <div class="card-stats">${entry.weight.toFixed(2)} kg${m > 1.1 ? ' • <span style="color:#4ade80;">▲ hot today x' + m.toFixed(1) + '</span>' : m < 0.9 ? ' • <span style="color:#f87171;">▼ glut x' + m.toFixed(1) + '</span>' : ''}</div></div>`;
+            const btn = document.createElement('button');
+            btn.className = 'pixel-btn green';
+            btn.textContent = `Sell $${sellValue(entry)}`;
+            btn.onclick = () => { sellBucketEntry(idx); renderShop(); };
+            card.appendChild(btn);
+            container.appendChild(card);
+          });
+        } else if (activeShopTab === 'rods') {
           const hasCam = !!state.hasLiveBaitCam;
           const camCard = document.createElement('div');
           camCard.className = `shop-card ${hasCam ? 'equipped' : ''}`;
@@ -10997,7 +11214,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (state.bucket.length === 0) {
           container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Cast a line to catch fish!</p>';
         } else {
-          const atShop = isNearPierShop();
+          const atShop = nearShoreShop(SHORE_SHOPS.fish);
           const sortBar = document.createElement('div');
           sortBar.className = 'chip-row';
           sortBar.innerHTML = '<span style="font-size: 12px; color:#94a3b8; align-self:center;">Sort:</span>';
@@ -11037,19 +11254,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               const sellBtn = document.createElement('button');
               sellBtn.className = 'pixel-btn green';
               sellBtn.textContent = `Sell $${sellValue(entry)}`;
-              sellBtn.onclick = () => {
-                const [soldItem] = state.bucket.splice(idx, 1);
-                const got = sellValue(soldItem);
-                state.cash = +(state.cash + got).toFixed(2);
-                bumpStat('earned', got);
-                sfx.playCoin();
-                processEcoCleanupReward([soldItem]);
-                checkAchievements();
-                saveGame();
-                rebuildPierBucketVisual();
-                openBucketModal();
-                updateHUD();
-              };
+              sellBtn.onclick = () => { sellBucketEntry(idx); openBucketModal(); };
               btnGroup.appendChild(sellBtn);
             }
 
@@ -11533,6 +11738,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           labelEl.textContent = 'OPEN BUCKET';
           proxEl.textContent = `🪣 ${BUCKET_TIERS[state.bucketTier - 1].name.toUpperCase()} — PRESS [T] OR BUTTON TO INSPECT`;
           proxEl.style.display = 'block';
+        } else if (shoreShopHere()) {
+          const sh = SHORE_SHOPS[shoreShopHere()];
+          primaryBtn.classList.add('shop');
+          iconEl.textContent = sh.icon;
+          labelEl.textContent = sh.name === 'FISH MARKET' ? 'SELL FISH' : 'OPEN SHOP';
+          proxEl.style.borderColor = sh.color;
+          proxEl.style.color = '#e0f2fe';
+          proxEl.textContent = `${sh.title} — PRESS BUTTON`;
+          proxEl.style.display = 'block';
         } else if (isNearBoatTerminal()) {
           primaryBtn.classList.add('shop');
           iconEl.textContent = '🛥️';
@@ -11692,6 +11906,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       let lastTime = performance.now();
       const currentWaterColor = new THREE.Color(ZONES[0].waterColor);
       const currentFogColor = new THREE.Color(ZONES[0].fogColor);
+      const ZONE_SKY_MOOD = [0, 0.06, 0.12, 0.17, 0.21];   // how much each zone's own (darker) fog colour tints the daytime sky
+      const _skyCol1 = new THREE.Color(), _skyCol2 = new THREE.Color(), _skyCol3 = new THREE.Color();
 
       function getWaveHeight(x, z, time, zone) {
         const wMult = getWeatherObj().waveMult;
@@ -12556,7 +12772,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         dive.airMax = gear.air; dive.air = gear.air; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
         dive.bubbleT = 2; dive.whaleT = 40 + Math.random() * 60; dive.depthWarnT = 0; dive.leashWarnT = 0;
         if (onBoat) { dive.startX = boatPos.x; dive.startZ = boatPos.z; dive.pos.set(boatPos.x, 0.25, boatPos.z); dive.yaw = boatYaw; boatVel = 0; boatSide = 0; }
-        else { dive.startX = playerX; dive.startZ = playerZ; dive.pos.set(THREE.MathUtils.clamp(playerX, -2, 2), 0.25, playerZ - 1.2); dive.yaw = 0; }
+        else { dive.startX = playerX; dive.startZ = playerZ; dive.pos.set(THREE.MathUtils.clamp(playerX, -PIER_WALK + 0.05, PIER_WALK - 0.05), 0.25, playerZ - 1.2); dive.yaw = 0; }
         dive.pitch = -0.1; dive.vy = -2.2; dive.vf = 0;
         dive.zone = diveZoneAt(dive.pos.z);
         mode = 'DIVING';
@@ -13001,11 +13217,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         moonLight.intensity = (1 - dayFactor) * (moonPhase.isFull ? 0.72 : 0.36) * weather.skyDim;
         hemiLight.intensity = (0.32 + dayFactor * 0.65) * weather.skyDim + lightningFlash * 1.4;
 
-        const targetWater = new THREE.Color(zone.waterColor).multiplyScalar((0.36 + dayFactor * 0.64) * weather.skyDim);
+        // Far out the water turns deep blue, but by day the sky stays a daylight sky: each zone only tints it a little
+        // (the darkest zone colours only show at night and in bad weather).
+        const zoneMood = ZONE_SKY_MOOD[zone.id - 1] || 0;
+        const targetWater = _skyCol1.setHex(zone.waterColor).lerp(_skyCol2.setHex(ZONES[2].waterColor), zone.id >= 4 ? dayFactor * 0.45 : 0)
+          .multiplyScalar((0.36 + dayFactor * 0.64) * weather.skyDim);
         if (moonPhase.isFull && dayFactor < 0.4) {
           targetWater.lerp(new THREE.Color(0x387899), 0.2);
         }
-        const targetSky = new THREE.Color(zone.fogColor).multiplyScalar((0.10 + dayFactor * 0.90) * weather.skyDim);
+        const targetSky = _skyCol3.setHex(ZONES[0].fogColor).lerp(_skyCol2.setHex(zone.fogColor), zoneMood + (1 - dayFactor) * zoneMood)
+          .multiplyScalar((0.10 + dayFactor * 0.90) * weather.skyDim);
         if (twilightFactor > 0.25 && weather.id === 'CLEAR') {
           targetSky.lerp(new THREE.Color(0xd97742), twilightFactor * 0.35);
         }
@@ -13046,7 +13267,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const pct = Math.min(1, rescueTimer / 3.0);
           document.getElementById('rescue-progress-bar').style.width = `${pct * 100}%`;
 
-          boatPos.lerpVectors(rescueStartPos, new THREE.Vector3(-8.2, 0, -9.0), pct);
+          boatPos.lerpVectors(rescueStartPos, _camV1.set(MOOR.startX, 0, -9.0), pct);
           boatYaw = 0;
           world.rescueBoat.visible = true;
           world.rescueBoat.position.set(boatPos.x - 2.4, getWaveHeight(boatPos.x, boatPos.z, elapsed, zone), boatPos.z + 1.5);
@@ -13056,7 +13277,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             document.getElementById('rescue-overlay').classList.remove('open');
             onBoat = false;
             mode = 'PIER_IDLE';
-            playerX = -5.2;
+            playerX = MOOR.boardX;
             playerZ = -5.6;
             updateHUD();
             showToast(`Towed back to Mooring Platform! Paid $${rescueFeePaid.toFixed(2)} rescue fee.`);
@@ -13069,7 +13290,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (!onBoat) {
           playerBoatMesh.visible = state.boatTier > 0;
           if (state.boatTier > 0) {
-            playerBoatMesh.position.set(-7.6, getWaveHeight(-7.6, -5.6, elapsed, zone), -5.6);
+            playerBoatMesh.position.set(MOOR.boatX, getWaveHeight(MOOR.boatX, -5.6, elapsed, zone), -5.6);
             playerBoatMesh.rotation.set(Math.sin(elapsed * 1.8) * 0.04, 0.0, Math.cos(elapsed * 1.5) * 0.05);
           }
 
@@ -13084,6 +13305,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             moveX = THREE.MathUtils.clamp(moveX, -1, 1);
             moveZ = THREE.MathUtils.clamp(moveZ, -1, 1);
             pierMoveInput = Math.hypot(moveX, moveZ);
+            if (!settings.firstPerson) {
+              // third person: the stick follows the camera. The mapping only turns while the stick is let go, so the
+              // camera swinging round on the terrace never reverses a direction you are holding.
+              if (Math.hypot(moveX, moveZ) < 0.15) camCtlYaw = camInlandYaw;
+              if (Math.abs(camCtlYaw) > 1e-3) {
+                const ca = Math.cos(camCtlYaw), sa = Math.sin(camCtlYaw);
+                const mx = moveX * ca + moveZ * sa, mz = -moveX * sa + moveZ * ca;
+                moveX = mx; moveZ = mz;
+              }
+            }
             if (settings.firstPerson) {
               // First-person controls: left / right turn on the spot, up / down walk forward / backward
               playerYaw -= moveX * 2.3 * dt;
@@ -13097,23 +13328,23 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             // Small invisible border at the farthest end of the pier (Z = -10.59) so the fisherman doesn't step onto the very tip
             // walking pace: about 3 m/s at full stick (a brisk walk); diagonals are no faster than straight lines
             { const mag = Math.hypot(moveX, moveZ); if (mag > 1) { moveX /= mag; moveZ /= mag; } }
-            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * WALK_SPEED * dt, -10.59, 5.8);
+            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * WALK_SPEED * dt, -10.59, TERRACE_MAX_Z);
 
             const getPierXBounds = zVal => {
               if (zVal >= 4.6) return [-9.3, 9.3];   // the beach boulders start at |x| 9.57
               if (zVal >= 0.45) return [-9.8, 9.8];
-              if (zVal <= -4.65 && zVal >= -6.55) return [-5.5, 2.05];   // keeps the body clear of the mooring pilings at x -5.95
-              return [-2.05, 2.05];
+              if (zVal <= -4.65 && zVal >= -6.55) return [-5.5 - PIER_DX, PIER_WALK];   // keeps the body clear of the mooring pilings
+              return [-PIER_WALK, PIER_WALK];
             };
 
             // Stop at the boardwalk sea-edge railing BEFORE narrowing X to the pier width; otherwise a step across
             // Z = 0.45 clamps X to the pier and snaps the player sideways into the middle of the pier.
-            if (nextZ < 0.45 && Math.abs(playerX) > 2.05 && playerZ >= 0.40) nextZ = 0.45;
+            if (nextZ < 0.45 && Math.abs(playerX) > PIER_WALK && playerZ >= 0.40) nextZ = 0.45;
 
             // On the stairs / mooring platform (port side of the pier, below the boardwalk): stop at its ends
             // BEFORE narrowing X to the pier width, otherwise a step past the platform edge snaps the player
             // sideways onto the pier.
-            if (playerX < -2.05 && playerZ < 0.4) {
+            if (playerX < -PIER_WALK && playerZ < 0.4) {
               nextZ = THREE.MathUtils.clamp(nextZ, -6.55, -4.65);   // stay on the treads, clear of the stringers
             }
 
@@ -13122,21 +13353,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Prevent walking across the side railing gap onto the boat stairs before Z = -4.65
             // (only on the pier deck itself; the boardwalk at Z >= 0.45 is wide open so players can reach the shop)
-            if (nextX < -2.05 && nextZ > -4.65 && nextZ < 0.45) {
-              if (prevX >= -2.04) nextX = -2.05;
+            if (nextX < -PIER_WALK && nextZ > -4.65 && nextZ < 0.45) {
+              if (prevX >= -PIER_WALK + 0.01) nextX = -PIER_WALK;
               else nextZ = -4.65;
             }
-            if (nextX < -2.05 && nextZ < -6.55) {
-              if (prevX >= -2.04) nextX = -2.05;
-              else nextZ = -6.55;
-            }
-            if (nextX < -2.05 && nextZ < -6.55) {
-              if (prevX >= -2.04) nextX = -2.05;
+            if (nextX < -PIER_WALK && nextZ < -6.55) {
+              if (prevX >= -PIER_WALK + 0.01) nextX = -PIER_WALK;
               else nextZ = -6.55;
             }
 
             // Solid collision against the boardwalk sea-edge railings (Z = 0.12, |X| > 2.05)
-            if (nextZ < 0.45 && Math.abs(nextX) > 2.05 && prevZ >= 0.40) {
+            if (nextZ < 0.45 && Math.abs(nextX) > PIER_WALK && prevZ >= 0.40) {
               nextZ = 0.45;
             }
 
@@ -13176,7 +13403,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
 
             const [finalMinX, finalMaxX] = getPierXBounds(nextZ);
-            playerZ = THREE.MathUtils.clamp(nextZ, -10.59, 5.8);
+            playerZ = THREE.MathUtils.clamp(nextZ, -10.59, TERRACE_MAX_Z);
             playerX = THREE.MathUtils.clamp(nextX, finalMinX, finalMaxX);
 
             walkDX = playerX - prevX;
@@ -13186,11 +13413,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
           // Smooth vertical elevation down the wooden boat stairs (-2.55 -> -3.85) onto the mooring platform (Y = 0.71)
           let playerY = 1.55;
-          if (playerX < -2.55 && playerZ <= -4.35 && playerZ >= -6.85) {
-            const stairT = THREE.MathUtils.clamp((-2.55 - playerX) / 1.30, 0, 1);
+          if (playerX < -2.55 - PIER_DX && playerZ <= -4.35 && playerZ >= -6.85) {
+            const stairT = THREE.MathUtils.clamp((-2.55 - PIER_DX - playerX) / 1.30, 0, 1);
             playerY = THREE.MathUtils.lerp(1.55, 0.71, stairT);
           }
 
+          if (playerZ > 5.6) {
+            const up = THREE.MathUtils.smoothstep(playerZ, 5.65, 5.95), down = THREE.MathUtils.smoothstep(playerZ, 6.45, 6.75);
+            playerY = 1.55 + 0.08 * up - 0.12 * down;   // a step over the seawall curb, then the terrace (y 1.48)
+          }
           world.anglerGroup.position.set(playerX, playerY, playerZ);
           const walkSpeed = Math.hypot(walkDX, walkDZ);
           // Rest spots: stand still for 2 s next to a bench seat or the railing and the angler sits down or leans on the rail.
@@ -13238,13 +13469,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           } else if (isNearPierCamera()) {
             targetYaw = Math.atan2(-(8.2 - playerX), -(0.9 - playerZ));
           } else if (isNearPierToolbox()) {
-            targetYaw = Math.atan2(-(1.55 - playerX), -(-7.6 - playerZ));
+            targetYaw = Math.atan2(-(PIER_TOOLBOX_X - playerX), -(-7.6 - playerZ));
           } else if (isNearPierBucket()) {
-            targetYaw = Math.atan2(-(-1.55 - playerX), -(-7.6 - playerZ));
+            targetYaw = Math.atan2(-(PIER_BUCKET_X - playerX), -(-7.6 - playerZ));
+          } else if (shoreShopHere()) {
+            const sh = SHORE_SHOPS[shoreShopHere()];
+            targetYaw = Math.atan2(-(sh.x - playerX), -(sh.z - playerZ));
           } else if (isNearBoatTerminal()) {
             targetYaw = Math.atan2(-(BOAT_TERMINAL.x - playerX), -(BOAT_TERMINAL.z - playerZ));
           } else if (isNearMooredBoat()) {
-            targetYaw = Math.atan2(-(-7.6 - playerX), -(-5.6 - playerZ));
+            targetYaw = Math.atan2(-(MOOR.boatX - playerX), -(-5.6 - playerZ));
           } else if (isAtPierWaterEdge()) {
             targetYaw = 0;
           }
@@ -13726,13 +13960,18 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (!onBoat) {
           const isPortrait = camera.aspect < 0.85;
           const lateralFollow = isPortrait ? 0.95 : 0.72;
-          const camZ = playerZ + (isPortrait ? 8.4 : 7.8);
+          // on the terrace the camera swings round (via the side) to the sea side so it looks at the shop fronts
+          if (playerZ > 5.75) camInlandGoal = 1; else if (playerZ < 5.15) camInlandGoal = 0;
+          camInland += (camInlandGoal - camInland) * (1 - Math.exp(-2.6 * dt));
+          const ci = camInland * camInland * (3 - 2 * camInland);
+          camInlandYaw = Math.PI * ci;
+          const R = isPortrait ? 8.4 : 7.8, followX = playerX * THREE.MathUtils.lerp(lateralFollow, 1, ci);
           const targetCamPos = _camV1.set(
-            playerX * lateralFollow,
+            followX + Math.sin(camInlandYaw) * R * 0.75,
             5.6 + Math.sin(elapsed * 1.4) * 0.06,
-            camZ
+            playerZ + Math.cos(camInlandYaw) * R
           );
-          const lookGoal = _camV2.set(playerX * lateralFollow, 1.35, playerZ - 6.0);
+          const lookGoal = _camV2.set(followX - Math.sin(camInlandYaw) * 4, 1.35 + ci * 0.6, playerZ - Math.cos(camInlandYaw) * 6.0);
           if (standFocus.stand) {
             standCameraPose(standFocus.stand);
             targetCamPos.copy(_standPos);
