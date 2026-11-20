@@ -7148,7 +7148,7 @@
             pump.position.set(P.x, 0.71, P.z); pump.rotation.y = 0.6;
             pump.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
             scene.add(pump);
-            Colliders.box('fuel pump', P.x, P.z, 0.3, 0.26, COL.WALK);
+            Colliders.box('fuel pump', P.x, P.z, 0.4, 0.34, COL.WALK);   // covers the hose loop too
           }
           // Terrace shops: a warm light over each counter
           Object.values(SHORE_SHOPS).forEach(sh => {
