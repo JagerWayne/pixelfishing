@@ -318,21 +318,23 @@ Prices move every in-game day (every 3.5 minutes). Each fish species gets a mult
 
 ## The Aquarium
 
-Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the Trophy Case). Stand in front of it, press **AQUARIUM** and a paper sheet opens with four tabs:
+Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the Trophy Case). The tank grows with each tier (1.8 m wide for the Starter Tank up to 4.3 m for the Grand Aquarium) and the Cabin is wide enough for the biggest. Stand in front of it: the angler steps out of the picture and the camera slowly sweeps along the glass from the right end to the left end and back (it stays still when the whole tank fits on screen). Press **AQUARIUM** and a paper sheet opens with four tabs:
 
 - **🐠 Fish:** what lives in the tank, with weight, value and mood; each can go back into your bucket or be released.
 - **➕ Add:** the fish in your bucket, each with an *Add* button, or the reason it cannot go in. **Only fish go in, and large fish never do.** Each tank has a largest fish it can hold and a limit on room (a fish takes about its weight to the power 0.8 of room, at least 1):
 
-| Tank | Largest fish | Room | Decorations | Price |
-|---|---|---|---|---|
-| Starter Tank | 1.5 kg | 8 | 3 | owned |
-| Reef Tank | 4 kg | 20 | 4 | $450 |
-| Display Tank | 9 kg | 40 | 5 | $1,800 |
-| Grand Aquarium | 18 kg | 80 | 6 | $6,000 |
+| Tank | Largest fish | Room | Decorations | Glass | Price |
+|---|---|---|---|---|---|
+| Starter Tank | 1.5 kg | 8 | 3 | 1.8 x 0.95 m | owned |
+| Reef Tank | 4 kg | 20 | 4 | 2.4 x 1.14 m | $450 |
+| Display Tank | 9 kg | 40 | 5 | 3.3 x 1.25 m | $1,800 |
+| Grand Aquarium | 18 kg | 80 | 6 | 4.3 x 1.35 m | $6,000 |
 
   Anything over 18 kg never fits in any tank, so marlin, sailfish, swordfish, sharks, oarfish, mola and every deep monster stay in the sea (27 species can never be kept).
-- **🧽 Care:** food, cleanliness and happiness bars. Fish eat and foul the water as in-game days pass (more fish, faster): *Fish flakes* are free (+35 food), *Premium pellets* cost $20 and fill the bar, *Clean the tank* is free. Visitors pay tickets while the fish are happy; the money banks up to about 8 days and **Collect** pays it out. Neglect never kills a fish: unhappy fish (happiness under 35) just earn nothing and swim slowly, and the water goes green.
-- **🛒 Shop:** tank upgrades and eight decorations (plants, rocks, driftwood, coral, castle, chest, shipwreck, light show) that add charm and show in the tank.
+- **🧽 Care:** food, cleanliness and happiness bars. Fish eat and foul the water as in-game days pass (more fish, faster): *Fish flakes* are free (+35 food), *Premium pellets* fill the bar (from your stock), *Clean the tank* is free and a *Deep clean* (one kit) also halves the dirt for 3 days. Visitors pay tickets that you *Collect* here.
+- **🪸 Decor:** every decoration you own, with *Remove* (it goes to storage) or *Place* (free, when a slot is free). Removed decorations are never bought again.
+
+**The Aquarium Shop** (on the boardwalk between the Fish Market and the Cabin) is a catalogue like the Tackle Shop: **Tanks** (each upgrade), **Decor** (eight decorations: plants, rocks, driftwood, coral, castle, chest, shipwreck, light show; a purchase goes straight into the tank, or into storage when the slots are full), **Care** (*Premium pellets*, 5 feeds for $90; *Deep-clean kit*, $60) and **Book** (*The Aquarist's Handbook*).
 
 **Breeding:** two or more grown fish of one species, kept happy (60%+), can have fry on any day (40% chance per species). Fry are tiny, grow up over a few days (never past the tank's limit) and may be a **colour form** (golden, albino or midnight: 2x, 2x, 3x tickets) that can pass on. Each new species you keep adds 3% to all tickets, and six new achievements cover it (*Fish Keeper*, *Reef Keeper*, *Aquarist*, *Full House*, *Fish Breeder*, *Rare Colour*). A catch that would fit the tank says so in its reveal.
 
@@ -340,7 +342,7 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 
 ## Skill books
 
-Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market, Recycling and Aquarium sheets; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `index.html`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
+Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market and Recycling sheets and the Aquarium Shop; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `index.html`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
 
 | Book | Shop | Price | Perk at 310 / 310 pages |
 |---|---|---|---|
@@ -349,7 +351,7 @@ Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boaty
 | 🤿 Deep Water Freediving & Ichthyology | Dive Shop | $900 | +40% underwater breath capacity, +40% rare-fish odds when diving, and the underwater weight guess tightens from +-35% to +-5% |
 | 🐟 The Fishmonger's Ledger | Fish Market | $500 | +15% fish sale prices |
 | ♻️ Green Harbour Handbook | Recycling | $350 | +50% junk and seaweed recycling prices |
-| 🐠 The Aquarist's Handbook | Aquarium (Book tab) | $600 | +30% aquarium visitor ticket income |
+| 🐠 The Aquarist's Handbook | Aquarium Shop | $600 | +30% aquarium visitor ticket income |
 
 **Reading:** sit on a bench (stand still in front of one for two seconds) and the action button says **READ** (or *No books* if you own none). It opens your books with pages read (e.g. *155 / 310 pages*), the percentage and every perk's current and maximum value; finished books can't be chosen. Pick one and the angler reads, with the book in his lap and a purple pill under the top bar showing pages, percent and the time left in the session.
 - **310 pages = 44,640 in-game minutes.** Progress is counted in in-game minutes from the day-night clock (`timeOfDay`), never in real seconds, so it follows game speed and stops while the game is paused.
@@ -535,6 +537,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-21, Version 5.5.0: Aquarium Shop, bigger cabin, harbour map
+- **Aquarium Shop** on the boardwalk (between the Fish Market and the Cabin): tank upgrades, decorations, care goods (premium pellets and deep-clean kits) and The Aquarist's Handbook, in a catalogue like the Tackle Shop.
+- **The tank grows with each tier** (1.8 m to 4.3 m of glass) and is rebuilt in the Cabin when you upgrade. The **Cabin is wider** (8.4 m) and moved east; the boardwalk now runs to +-27 m.
+- **Aquarium view:** the angler is hidden and the camera sweeps slowly along the tank from right to left and back.
+- **Decorations stay yours:** removing one stores it; place it again for free from the tank's new *Decor* tab. A purchase with no free slot goes to storage.
+- **Harbour map:** wherever the action button would have nothing to do (on the pier or a boat), it becomes **🗺️ MAP**. The map shows the harbour from above, where you are, which way you face, every shop and landmark with what it is for, and how far and in which direction each one is. The lighthouse is shown by distance and direction.
+- The camera follows you fully at the far ends of the boardwalk. New save fields `aquarium.stored`, `pellets`, `kits`, `cleanBoost`. Version bumped to **v5.5.0**.
 
 ### 2026-11-21, Version 5.4.0: better pier fishing, faster walking
 - **No more walking off after a fight:** when the line snaps, the fish escapes or you land a catch while holding the stick (or A/D) to one side, the angler (or the boat) ignores it until you let go.

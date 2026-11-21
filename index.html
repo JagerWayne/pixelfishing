@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.4.0';
+    window.PF_VERSION = '5.5.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -980,6 +980,12 @@
       color: #fae8ff;
     }
 
+    #btn-primary-action.map { background: radial-gradient(circle at 35% 30%, #fbbf24, #b45309); border-color: #fde68a; color: #fffbeb; }
+    .map-row { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 2px solid #334155; background: var(--bg-card); margin-bottom: 5px; }
+    .map-row .mi { font-size: 20px; width: 26px; text-align: center; }
+    .map-row b { display: block; font-size: 13px; }
+    .map-row small { display: block; color: #94a3b8; font-size: 12px; }
+    .map-row .md { margin-left: auto; color: #fde68a; font-size: 12px; white-space: nowrap; }
     #btn-primary-action.bounty {
       background: radial-gradient(circle at 35% 30%, #10b981, #065f46);
       border-color: #a7f3d0;
@@ -1912,6 +1918,20 @@
   </div>
 
   <!-- MODAL 2: BUCKET INVENTORY -->
+  <!-- MAP: the harbour from above, where you are and which way you face, every landmark with what it is for -->
+  <div class="modal-backdrop" id="modal-map">
+    <div class="pixel-box modal-window" style="width: min(96vw, 640px);">
+      <div class="modal-header">
+        <span class="modal-title">🗺️ HARBOUR MAP</span>
+        <button class="pixel-btn red" data-close="modal-map" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="map-canvas" style="width:100%; display:block; border:2px solid #334155; border-radius:6px; background:#0b4a6f;"></canvas>
+        <div id="map-legend" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="modal-bucket">
     <div class="pixel-box modal-window" style="width: min(96vw, 560px);">
       <div class="modal-header">
@@ -4365,19 +4385,28 @@
          (root x/z, deck height y, length, half width). A boat berths along its south side, bow to the west. */
       const LH_J = { x: 41.6, y: 1.15, z: -147.3, len: 9.5, hw: 0.85, berthX: 32.5, yaw: Math.PI / 2, reach: 11 };
       function lhBerthPose() { return { x: LH_J.berthX, z: LH_J.z + LH_J.hw + 0.15 + boatHalfWid, yaw: LH_J.yaw }; }
-      const BW_HALF = 21;   // the waterfront boardwalk runs from x -21 to +21 (v4.6.0, was 10.5)
+      const BW_HALF = 27;   // the waterfront boardwalk runs from x -27 to +27 (v5.5.0; 21 since v4.6.0, 10.5 before)
       /* Shops on the waterfront boardwalk (v4.6.0): backs on the sea rail, fronts facing south (+Z) like the Tackle Shop.
          Centre x/z, width w and depth d of the building; extra = room for the props beside it. */
       const SHORE_SHOPS = {
         boatyard: { x: -16.9, z: 1.2, w: 3.6, d: 2.05, extra: 1.1, s: 0.85, name: 'BOATYARD', icon: '⚓', title: '⚓ BOATYARD: BOATS, MODULES & FUEL', color: '#60a5fa' },
         fish:     { x: 11.4,  z: 1.15, w: 2.5, d: 1.95, extra: 1.0, s: 0.85, name: 'FISH MARKET', icon: '🐟', title: '🐟 FISH MARKET: SELL YOUR FISH', color: '#38bdf8' },
-        dive:     { x: -11.9, z: 1.15, w: 3.4, d: 1.95, extra: 1.2, s: 0.85, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' }
+        dive:     { x: -11.9, z: 1.15, w: 3.4, d: 1.95, extra: 1.2, s: 0.85, name: 'DIVE SHOP', icon: '🤿', title: '🤿 DIVE SHOP: DIVE GEAR & SPEAR GUNS', color: '#2dd4bf' },
+        aquashop: { x: 15.4, z: 1.15, w: 3.0, d: 1.95, extra: 0.6, s: 0.85, name: 'AQUARIUM SHOP', icon: '🐠', title: '🐠 AQUARIUM SHOP: TANKS, DECOR & CARE', color: '#22d3ee' }
       };
       const shopFrontZ = sh => sh.z + sh.d / 2 + (sh.front || 0);
       /* Harbour order (v4.9.0), left to right looking from the island: Boatyard, Dive Shop, Tackle Shop, Bounty board,
-         [pier], Recycling, Fish Market, Cabin (with the bottle gallery, trophy case and film camera inside). */
+         [pier], Recycling, Fish Market, Aquarium Shop, Cabin (with the bottle gallery, aquarium and film camera inside; v5.5.0). */
       const RECYCLE = { x: 6.8, w: 4.5, d: 1.3, frontZ: 1.3 };
-      const CABIN = { x: 16.9, w: 6.4, d: 3.6, doorW: 2.0, windowX: 0.55, galleryX: 15.25, aquaX: 18.7, camX: 15.0, camZ: 2.9 };
+      /* aquarium tanks (v5.0.0; w / h = glass size in metres since v5.5.0); defined early because the world build uses them */
+      const AQUARIUM_TANKS = [
+        { tier: 1, name: 'Starter Tank', maxW: 1.5, cap: 8, cost: 0, decor: 3, w: 1.8, h: 0.95 },
+        { tier: 2, name: 'Reef Tank', maxW: 4, cap: 20, cost: 450, decor: 4, w: 2.4, h: 1.14 },
+        { tier: 3, name: 'Display Tank', maxW: 9, cap: 40, cost: 1800, decor: 5, w: 3.3, h: 1.25 },
+        { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6, w: 4.3, h: 1.35 }
+      ];
+      const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0, camZ: 2.9 };   // wide enough for the Grand Aquarium (v5.5.0)
+      CABIN.galleryX = CABIN.x - 2.75; CABIN.aquaX = CABIN.x + 1.0; CABIN.camX = CABIN.galleryX - 0.25;
 
       const Colliders = {
         list: [],
@@ -5888,38 +5917,41 @@
           return g;
         }
 
-        /* AQUARIUM (v5.0.0): a glass tank on a cabinet, 2.4 m wide. Origin: floor, centre of the footprint, front +Z.
-           userData.live holds everything that changes (water, fish, decor, bubbles) and stays out of mergeStatic;
-           the fish swim inside x +-1.1, y 1.05 to 1.85, z +-0.3 (tank-local). */
-        static buildAquariumTank(textures) {
+        /* AQUARIUM (v5.0.0, sized per tier since v5.5.0). Origin: floor, centre of the footprint, front +Z.
+           The whole tank stays out of mergeStatic: it is rebuilt when the tier changes (aquaSync). */
+        /* the aquarium, sized by tier: glass W wide and GH tall on a cabinet (front faces +Z, origin on the floor) */
+        static buildAquariumTank(textures, tank) {
+          const W = (tank && tank.w) || 2.4, GH = (tank && tank.h) || 1.14, hw = W / 2, gy = 0.91 + GH / 2, top = 0.91 + GH;
           const g = new THREE.Group(), K = this.propKit(textures);
-          const live = new THREE.Group(); g.add(live); g.userData.live = live;
-          // cabinet with two doors and brass handles
-          K.box(g, 2.5, 0.84, 0.86, K.darkWood, 0, 0.42, 0);
-          [-0.6, 0.6].forEach(x => { K.box(g, 1.1, 0.64, 0.03, K.wood, x, 0.42, 0.44); K.cyl(g, 0.02, 0.02, 0.1, K.brass, x * 0.2 + (x < 0 ? 0.35 : -0.35), 0.42, 0.47, 6); });
-          K.box(g, 2.58, 0.07, 0.94, K.lightWood, 0, 0.875, 0);
+          const live = new THREE.Group(); g.add(live); g.userData.live = live; g.userData.tier = (tank && tank.tier) || 1; g.userData.w = W;
+          // cabinet with doors and brass handles
+          K.box(g, W + 0.1, 0.84, 0.86, K.darkWood, 0, 0.42, 0);
+          const nd = Math.max(2, Math.round(W / 1.2)), dw = (W - 0.1) / nd;
+          for (let k = 0; k < nd; k++) { const x = -hw + 0.05 + dw * (k + 0.5); K.box(g, dw - 0.1, 0.64, 0.03, K.wood, x, 0.42, 0.44); K.cyl(g, 0.02, 0.02, 0.1, K.brass, x + (k % 2 ? -1 : 1) * (dw / 2 - 0.15), 0.42, 0.47, 6); }
+          K.box(g, W + 0.18, 0.07, 0.94, K.lightWood, 0, 0.875, 0);
           // glass (front and sides), corner posts, backdrop
           const glassM = new THREE.MeshStandardMaterial({ color: 0x9bd8f5, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.1, depthWrite: false });
           const pane = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glassM); m.position.set(x, y, z); m.renderOrder = 6; g.add(m); };
-          pane(2.4, 1.14, 0.02, 0, 1.48, 0.41); pane(0.02, 1.14, 0.82, -1.2, 1.48, 0); pane(0.02, 1.14, 0.82, 1.2, 1.48, 0);
-          [[-1.2, -0.41], [1.2, -0.41], [-1.2, 0.41], [1.2, 0.41]].forEach(([x, z]) => K.box(g, 0.07, 1.18, 0.07, K.iron, x, 1.47, z));
+          pane(W, GH, 0.02, 0, gy, 0.41); pane(0.02, GH, 0.82, -hw, gy, 0); pane(0.02, GH, 0.82, hw, gy, 0);
+          [[-hw, -0.41], [hw, -0.41], [-hw, 0.41], [hw, 0.41]].forEach(([x, z]) => K.box(g, 0.07, GH + 0.04, 0.07, K.iron, x, gy - 0.01, z));
           const bc = document.createElement('canvas'); bc.width = 8; bc.height = 64; { const x = bc.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#0b3b5c'); gr.addColorStop(1, '#0e6f9b'); x.fillStyle = gr; x.fillRect(0, 0, 8, 64); }
           const bt = new THREE.CanvasTexture(bc); if (THREE.sRGBEncoding) bt.encoding = THREE.sRGBEncoding;
-          const back = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.14), new THREE.MeshBasicMaterial({ map: bt })); back.position.set(0, 1.48, -0.4); g.add(back);
+          const back = new THREE.Mesh(new THREE.PlaneGeometry(W, GH), new THREE.MeshBasicMaterial({ map: bt })); back.position.set(0, gy, -0.4); g.add(back);
           // hood with a light strip and the sign
-          K.box(g, 2.6, 0.3, 0.96, K.darkWood, 0, 2.2, 0);
-          K.box(g, 2.3, 0.04, 0.6, K.M(0xe0f2fe, 0.3, 0, { emissive: new THREE.Color(0x7dd3fc), emissiveIntensity: 1.0 }), 0, 2.03, 0);
-          K.box(g, 1.3, 0.22, 0.04, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🐠 AQUARIUM', 320, 64) }), 0, 2.2, 0.49);
+          K.box(g, W + 0.2, 0.3, 0.96, K.darkWood, 0, top + 0.15, 0);
+          K.box(g, W - 0.1, 0.04, 0.6, K.M(0xe0f2fe, 0.3, 0, { emissive: new THREE.Color(0x7dd3fc), emissiveIntensity: 1.0 }), 0, top - 0.02, 0);
+          K.box(g, Math.min(1.6, W * 0.55), 0.22, 0.04, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🐠 ' + ((tank && tank.name) || 'AQUARIUM').toUpperCase(), 320, 64) }), 0, top + 0.15, 0.49);
           // sand, gravel and the air stone with its pipe
-          K.box(g, 2.38, 0.1, 0.82, K.M(0xe8d5a0, 0.95), 0, 0.98, 0);
-          for (let i = 0; i < 26; i++) { const s = K.sph(g, 0.03 + (i % 3) * 0.012, K.M([0x9ca3af, 0xd6c08e, 0x78716c][i % 3], 0.9), -1.05 + (i * 0.37) % 2.1, 1.045, -0.32 + ((i * 0.53) % 0.64), 5, 4); s.scale.y = 0.6; }
-          K.cyl(g, 0.045, 0.05, 0.05, K.M(0x64748b, 0.8), -0.95, 1.06, -0.28, 8);
+          K.box(g, W - 0.02, 0.1, 0.82, K.M(0xe8d5a0, 0.95), 0, 0.98, 0);
+          const ng = Math.round(W * 11);
+          for (let i = 0; i < ng; i++) { const s = K.sph(g, 0.03 + (i % 3) * 0.012, K.M([0x9ca3af, 0xd6c08e, 0x78716c][i % 3], 0.9), -hw + 0.15 + (i * 0.37) % (W - 0.3), 1.045, -0.32 + ((i * 0.53) % 0.64), 5, 4); s.scale.y = 0.6; }
+          K.cyl(g, 0.045, 0.05, 0.05, K.M(0x64748b, 0.8), -hw + 0.25, 1.06, -0.28, 8);
           // water (tinted by cleanliness at run time), bubbles, fish, decor
-          const water = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.94, 0.8), new THREE.MeshBasicMaterial({ color: 0x5ec5ee, transparent: true, opacity: 0.2, depthWrite: false }));
-          water.position.set(0, 1.5, 0); water.renderOrder = 5; live.add(water); g.userData.water = water;
-          const bubbles = [];
-          for (let i = 0; i < 9; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.018 + (i % 3) * 0.006, 6, 5), new THREE.MeshBasicMaterial({ color: 0xe0f7ff, transparent: true, opacity: 0.7, depthWrite: false })); b.position.set(-0.95, 1.1 + i * 0.1, -0.28); b.renderOrder = 7; live.add(b); bubbles.push(b); }
-          g.userData.bubbles = bubbles;
+          const water = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, GH - 0.2, 0.8), new THREE.MeshBasicMaterial({ color: 0x5ec5ee, transparent: true, opacity: 0.2, depthWrite: false }));
+          water.position.set(0, 0.93 + (GH - 0.2) / 2 + 0.06, 0); water.renderOrder = 5; live.add(water); g.userData.water = water;
+          const bubbles = [], nb = Math.round((GH - 0.3) / 0.1);
+          for (let i = 0; i < nb; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.018 + (i % 3) * 0.006, 6, 5), new THREE.MeshBasicMaterial({ color: 0xe0f7ff, transparent: true, opacity: 0.7, depthWrite: false })); b.position.set(-hw + 0.25, 1.1 + i * 0.1, -0.28); b.renderOrder = 7; live.add(b); bubbles.push(b); }
+          g.userData.bubbles = bubbles; g.userData.bubbleTop = 1.1 + nb * 0.1;
           g.userData.fishGroup = new THREE.Group(); live.add(g.userData.fishGroup);
           g.userData.decorGroup = new THREE.Group(); live.add(g.userData.decorGroup);
           g.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
@@ -6019,7 +6051,8 @@
           const pal = {
             boatyard: { wall: 0xe2e8f0, trim: 0x1e3a8a, roof: 0x1d4ed8, stripeA: '#1d4ed8', stripeB: '#f8fafc', cap: 0x1e3a8a, shirt: 0xf97316 },
             fish:     { wall: 0xf8fafc, trim: 0x0369a1, roof: 0x0c4a6e, stripeA: '#0284c7', stripeB: '#f8fafc', cap: 0xf8fafc, shirt: 0x0ea5e9 },
-            dive:     { wall: 0x5eead4, trim: 0x0f766e, roof: 0x115e59, stripeA: '#facc15', stripeB: '#111827', cap: 0x111827, shirt: 0xfacc15 }
+            dive:     { wall: 0x5eead4, trim: 0x0f766e, roof: 0x115e59, stripeA: '#facc15', stripeB: '#111827', cap: 0x111827, shirt: 0xfacc15 },
+            aquashop: { wall: 0xcffafe, trim: 0x0e7490, roof: 0x155e75, stripeA: '#22d3ee', stripeB: '#ecfeff', cap: 0x0e7490, shirt: 0x22d3ee }
           }[kind];
           const wallM = K.M(pal.wall, 0.8), trimM = K.M(pal.trim, 0.6), roofM = K.M(pal.roof, 0.7);
           const canvasTex = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding; return t; };
@@ -6488,6 +6521,18 @@
             [[-0.3, 0.34, 0.18], [0.3, 0.34, 0.2], [0.1, 0.35, -0.2]].forEach(([x, y, z]) => K.box(g, 0.08, 0.08, 0.08, M(0xffffff, 0.2, 0, { transparent: true, opacity: 0.7 }), x, y, z));
             [0, 1, 2].forEach(i => K.cyl(g, 0.07, 0.07, 0.025, M(0xfacc15, 0.25, 0.8), 0.52, 0.015 + i * 0.027, 0.25, 12));
             maxDim = 0.95;
+          } else if (key === 'tank') {
+            const t = this.buildAquariumTank(textures, d); t.traverse(o => { if (o.isMesh && o.material && o.material.transparent && o.material.opacity < 0.3) o.material = o.material.clone(); });
+            g.add(t); maxDim = 1.0;
+          } else if (key === 'decor') {
+            const base = K.box(g, 0.5, 0.05, 0.36, M(0xe8d5a0, 0.95), 0, 0.025, 0); base.receiveShadow = true;
+            const dm = this.buildAquariumDecor(d.id, textures); dm.position.y = 0.05; g.add(dm); maxDim = 0.8;
+          } else if (key === 'pellets') {
+            K.cyl(g, 0.16, 0.16, 0.34, M(0xf97316, 0.5), 0, 0.17, 0, 14); K.cyl(g, 0.165, 0.165, 0.06, M(0x0e7490, 0.5), 0, 0.37, 0, 14);
+            K.box(g, 0.2, 0.12, 0.01, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🐟 FOOD', 128, 64) }), 0, 0.18, 0.162); maxDim = 0.7;
+          } else if (key === 'kit') {
+            K.box(g, 0.5, 0.26, 0.3, M(0x22d3ee, 0.5), 0, 0.13, 0); K.box(g, 0.2, 0.05, 0.05, M(0x0e7490, 0.5), 0, 0.3, 0);
+            K.cyl(g, 0.05, 0.05, 0.24, M(0xf8fafc, 0.4), -0.12, 0.38, 0, 10); K.box(g, 0.18, 0.06, 0.08, M(0xfacc15, 0.8), 0.12, 0.29, 0); maxDim = 0.8;
           } else if (key === 'book') {
             const cover = M(d.color, 0.7);
             g.rotation.x = 0.28;
@@ -6899,7 +6944,7 @@
           pierGroup.add(galleryStand);
 
           // The aquarium on the cabin's back wall, right of the bottle gallery (front faces +Z)
-          const aquarium = this.buildAquariumTank(textures);
+          const aquarium = this.buildAquariumTank(textures, AQUARIUM_TANKS[0]);
           aquarium.position.set(CABIN.aquaX, 1.56, 0.5);
           pierGroup.add(aquarium);
 
@@ -6937,7 +6982,7 @@
           Colliders.box('tackle shop', -7.525, 1.275, 1.825, 1.275, W);
           Colliders.box('bounty board', -4.2, 0.825, 1.0, 0.825, W);
           Colliders.box('bottle gallery', CABIN.galleryX, 0.875, 1.3, 0.875, W);
-          Colliders.box('aquarium', CABIN.aquaX, 0.5, 1.3, 0.5, W);
+          aquarium.userData.collider = Colliders.box('aquarium', CABIN.aquaX, 0.5, AQUARIUM_TANKS[0].w / 2 + 0.1, 0.5, W);
           Colliders.circle('film camera', CABIN.camX, CABIN.camZ, 0.6, W);
           Colliders.box('recycling', RECYCLE.x, 0.65, RECYCLE.w / 2, 0.65, W);
           {   // the cabin: side walls, the front wall with its door gap, the bunk bed
@@ -7225,7 +7270,7 @@
 
           // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The film camera (it turns to
           // face you), the aquarium's water and fish (they change) and the secret seagull stay separate.
-          ModelKit.mergeStatic(pierGroup, [filmCamera, aquarium.userData.live, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
+          ModelKit.mergeStatic(pierGroup, [filmCamera, aquarium, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
           scene.add(pierGroup);
 
           const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -9025,12 +9070,6 @@ function replaceSceneMesh(parent, oldObj, newObj) {
          (AQUARIUM_MAX_W is the top tank's limit, so the big gamefish and deep monsters never fit in any tank) and a room
          limit. Fish eat and foul the water over in-game days, keep visitors happy and pay a ticket income, and can breed.
          ========================================================================= */
-      const AQUARIUM_TANKS = [
-        { tier: 1, name: 'Starter Tank', maxW: 1.5, cap: 8, cost: 0, decor: 3 },
-        { tier: 2, name: 'Reef Tank', maxW: 4, cap: 20, cost: 450, decor: 4 },
-        { tier: 3, name: 'Display Tank', maxW: 9, cap: 40, cost: 1800, decor: 5 },
-        { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6 }
-      ];
       const AQUARIUM_MAX_W = AQUARIUM_TANKS[AQUARIUM_TANKS.length - 1].maxW;
       const AQUARIUM_FORMS = {
         normal: { name: '', mult: 1 }, golden: { name: 'Golden', mult: 2, tint: 0xffd24c },
@@ -9047,7 +9086,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'lights', name: 'Light Show', icon: '✨', cost: 900, charm: 12, desc: 'Colour-changing glow ring.' }
       ];
       const aquaLoad = w => Math.max(1, Math.pow(w, 0.8));      // how much room a fish takes
-      function defaultAquarium() { return { tier: 1, fish: [], food: 80, clean: 80, decor: [], tickets: 0, lastDay: 0, kept: [], bred: 0, forms: [] }; }
+      function defaultAquarium() { return { tier: 1, fish: [], food: 80, clean: 80, decor: [], stored: [], pellets: 0, kits: 0, cleanBoost: 0, tickets: 0, lastDay: 0, kept: [], bred: 0, forms: [] }; }
       const aquaTankOf = aq => AQUARIUM_TANKS[Math.max(1, Math.min(AQUARIUM_TANKS.length, aq.tier || 1)) - 1];
       const aquaUsed = aq => aq.fish.reduce((s, f) => s + aquaLoad(f.w), 0);
       /* can this bucket fish (or { category, weight }) go into the tank? -> { ok, reason } */
@@ -9082,7 +9121,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         aq.tickets = +Math.min(aquaBankCap(aq), aq.tickets + aquaIncome(aq)).toFixed(2);
         const load = aquaUsed(aq);
         aq.food = Math.max(0, aq.food - (10 + load * 0.5));
-        aq.clean = Math.max(0, aq.clean - (7 + load * 0.45));
+        aq.clean = Math.max(0, aq.clean - (7 + load * 0.45) * (aq.cleanBoost > 0 ? 0.5 : 1));
+        if (aq.cleanBoost > 0) aq.cleanBoost--;
         aq.fish.forEach(f => {   // fry grow up, never past what the tank can hold
           if (!f.g) return;
           const it = CATALOG_INDEX[f.id]; if (!it) { f.g = 0; return; }
@@ -9133,11 +9173,22 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function aquariumRelease(i) { const aq = state.aquarium; if (!aq.fish[i]) return false; aq.fish.splice(i, 1); saveGame(); return true; }
       function aquariumFeed(premium) {
         const aq = state.aquarium;
-        if (premium) { if (state.cash < 20) { showToast('Premium pellets cost $20.'); return false; } state.cash = +(state.cash - 20).toFixed(2); aq.food = 100; sfx.playCoin(); }
+        if (premium) { if (aq.pellets < 1) return false; aq.pellets--; aq.food = 100; }
         else aq.food = Math.min(100, aq.food + 35);
-        saveGame(); updateHUD(); return true;
+        sfx.playTick(); saveGame(); updateHUD(); return true;
       }
-      function aquariumClean() { state.aquarium.clean = 100; saveGame(); return true; }
+      function aquariumClean(deep) {
+        const aq = state.aquarium;
+        if (deep) { if (aq.kits < 1) return false; aq.kits--; aq.cleanBoost = 3; }
+        aq.clean = 100; sfx.playTick(); saveGame(); return true;
+      }
+      const aquaDecorOwned = id => state.aquarium.decor.includes(id) || state.aquarium.stored.includes(id);
+      function aquariumPlaceDecor(id) {
+        const aq = state.aquarium, d = AQUARIUM_DECOR.find(x => x.id === id), i = aq.stored.indexOf(id);
+        if (!d || i < 0 || aq.decor.length >= aquaTankOf(aq).decor) return false;
+        aq.stored.splice(i, 1); aq.decor.push(id); sfx.playTick(); saveGame();
+        showToast(`${d.icon} ${d.name} placed in the tank.`); return true;
+      }
       function aquariumCollect() {
         const aq = state.aquarium, got = Math.floor(aq.tickets * 100) / 100; if (got < 1) return false;
         state.cash = +(state.cash + got).toFixed(2); aq.tickets = 0; bumpStat('earned', got);
@@ -9151,15 +9202,17 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       }
       function aquariumBuyDecor(id) {
         const aq = state.aquarium, d = AQUARIUM_DECOR.find(x => x.id === id);
-        if (!d || aq.decor.includes(id) || aq.decor.length >= aquaTankOf(aq).decor || state.cash < d.cost) return false;
-        state.cash = +(state.cash - d.cost).toFixed(2); aq.decor.push(id); sfx.playCoin(); saveGame(); updateHUD();
-        showToast(`${d.icon} ${d.name} added to the tank.`); return true;
+        if (!d || aquaDecorOwned(id) || state.cash < d.cost) return false;
+        state.cash = +(state.cash - d.cost).toFixed(2); sfx.playCoin();
+        const room = aq.decor.length < aquaTankOf(aq).decor;
+        (room ? aq.decor : aq.stored).push(id); saveGame(); updateHUD();
+        showToast(room ? `${d.icon} ${d.name} placed in your tank.` : `${d.icon} ${d.name} bought. No free slot, so it is stored; place it from the tank's Decor tab.`); return true;
       }
       function aquariumRemoveDecor(id) {
         const aq = state.aquarium, d = AQUARIUM_DECOR.find(x => x.id === id), i = aq.decor.indexOf(id);
         if (!d || i < 0) return false;
-        aq.decor.splice(i, 1); sfx.playTick(); saveGame();
-        showToast(`${d.icon} ${d.name} removed from the tank.`); return true;
+        aq.decor.splice(i, 1); if (!aq.stored.includes(id)) aq.stored.push(id); sfx.playTick(); saveGame();
+        showToast(`${d.icon} ${d.name} stored. You can place it again any time.`); return true;
       }
       function sanitizeAquarium(src) {
         const aq = defaultAquarium();
@@ -9177,7 +9230,11 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           aq.fish.push({ id: f.id, w: +w.toFixed(3), v: Math.floor(num(f.v, it.value, 0, 1e6)), form: AQUARIUM_FORMS[f.form] ? f.form : 'normal', born: Math.floor(num(f.born, 0, 0, 1e6)), g: f.g ? 1 : 0 });
         });
         aq.food = num(src.food, 80, 0, 100); aq.clean = num(src.clean, 80, 0, 100);
-        aq.decor = [...new Set((Array.isArray(src.decor) ? src.decor : []).filter(id => AQUARIUM_DECOR.some(d => d.id === id)))].slice(0, tank.decor);
+        const okDecor = id => AQUARIUM_DECOR.some(d => d.id === id);
+        const placed = [...new Set((Array.isArray(src.decor) ? src.decor : []).filter(okDecor))];
+        aq.decor = placed.slice(0, tank.decor);
+        aq.stored = [...new Set([...placed.slice(tank.decor), ...(Array.isArray(src.stored) ? src.stored : []).filter(okDecor)])].filter(id => !aq.decor.includes(id));
+        aq.pellets = Math.floor(num(src.pellets, 0, 0, 999)); aq.kits = Math.floor(num(src.kits, 0, 0, 999)); aq.cleanBoost = Math.floor(num(src.cleanBoost, 0, 0, 30));
         aq.tickets = num(src.tickets, 0, 0, 1e6); aq.lastDay = Math.floor(num(src.lastDay, 0, 0, 1e6));
         aq.kept = [...new Set((Array.isArray(src.kept) ? src.kept : []).filter(id => CATALOG_INDEX[id] && CATALOG_INDEX[id].category === 'Fish'))];
         aq.bred = Math.floor(num(src.bred, 0, 0, 1e6));
@@ -9203,10 +9260,10 @@ function replaceSceneMesh(parent, oldObj, newObj) {
                     perks: [{ id: 'fishPrice', label: 'Fish sale prices', max: 0.15, kind: 'pct' }] },
         green:    { id: 'green', shop: 'recycle', icon: '♻️', color: 0x16a34a, title: 'Green Harbour Handbook', cost: 350, desc: "What the scrapyards pay for: sorting junk and seaweed so nothing is wasted.",
                     perks: [{ id: 'junkPrice', label: 'Junk and seaweed recycling prices', max: 0.50, kind: 'pct' }] },
-        aquarist: { id: 'aquarist', shop: 'aqua', icon: '🐠', color: 0x7c3aed, title: "The Aquarist's Handbook", cost: 600, desc: 'Water, feed and display: what makes visitors pay to look at your tank.',
+        aquarist: { id: 'aquarist', shop: 'aquashop', icon: '🐠', color: 0x7c3aed, title: "The Aquarist's Handbook", cost: 600, desc: 'Water, feed and display: what makes visitors pay to look at your tank.',
                     perks: [{ id: 'aquaTickets', label: 'Aquarium visitor ticket income', max: 0.30, kind: 'pct' }] }
       };
-      const SHOP_BOOK = { tackle: 'pier', boatyard: 'boat', dive: 'dive', fish: 'ledger', recycle: 'green', aqua: 'aquarist' };
+      const SHOP_BOOK = { tackle: 'pier', boatyard: 'boat', dive: 'dive', fish: 'ledger', recycle: 'green', aquashop: 'aquarist' };
       const reading = { id: null, left: 0, saveT: 0, pillMin: -1 };
       const bookOwned = id => !!(state.books && state.books[id] && state.books[id].owned);
       const bookMinutes = id => (bookOwned(id) ? state.books[id].minutes : 0);
@@ -9880,7 +9937,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           ['Pier tip', cheatTeleport(0, -10.59, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
           ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(MOOR.boardX, -5.6, 'Mooring platform')],
           ['Fish market', cheatTeleport(SHORE_SHOPS.fish.x, 6.5, 'Fish market')], ['Boatyard', cheatTeleport(SHORE_SHOPS.boatyard.x, 6.5, 'Boatyard')], ['Dive shop', cheatTeleport(SHORE_SHOPS.dive.x, 6.5, 'Dive shop')],
-          ['Recycling', cheatTeleport(RECYCLE.x, 4.2, 'Recycling')], ['Cabin', cheatTeleport(CABIN.x, 2.4, 'Cabin')]] },
+          ['Recycling', cheatTeleport(RECYCLE.x, 4.2, 'Recycling')], ['Aquarium Shop', cheatTeleport(SHORE_SHOPS.aquashop.x, 4.2, 'Aquarium Shop')], ['Cabin', cheatTeleport(CABIN.x, 2.4, 'Cabin')]] },
         { title: '🌊 Sea events (on a boat)', items: [
           ['Spawn treasure chest', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('treasure'); }],
           ['Spawn boss shadow', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('boss'); }]] },
@@ -10187,7 +10244,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
         { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
         { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
-        { id: 'aquarium', near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.35, cz: 0.5, halfW: 1.5, halfH: 1.0, side: -1 },
+        { id: 'aquarium', near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.45, cz: 0.5, halfW: 0.9, halfH: 0.82, side: 1, pan: true },
         { id: 'camera',  near: () => isNearPierCamera(),   cx: CABIN.camX,     cy: 2.9, cz: CABIN.camZ, halfW: 1.0, halfH: 1.1, side: 1 },
         { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
         ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75 * sh.s, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55 * sh.s + 0.1, side: sh.x < 0 ? 1 : -1 }))
@@ -10197,9 +10254,21 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         return null;
       }
       const _standPos = new THREE.Vector3(), _standLook = new THREE.Vector3();
+      /* the aquarium view: straight in front of the glass; when the tank is wider than the screen the view sweeps
+         slowly from its right end to its left end and back (aquaPan.phase advances with dt in the stand-focus code) */
+      const aquaPan = { phase: 0 };
       function standCameraPose(st) {
         const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
         const th = tv * camera.aspect;
+        if (st.pan) {
+          const t = aquaTankOf(state.aquarium || {}), tw = t.w, halfH = (t.h + 0.75) / 2, cy = 1.56 + 0.91 + t.h / 2 + 0.12;
+          const dist = THREE.MathUtils.clamp(halfH / tv * 1.12 + 0.45, 2.2, 3.4);
+          const visHalf = th * (dist - 0.45), span = Math.max(0, tw / 2 + 0.12 - visHalf);
+          const x = st.cx + span * Math.cos(aquaPan.phase);
+          _standLook.set(x, cy, st.cz);
+          _standPos.set(x, cy + 0.15, st.cz + dist);
+          return;
+        }
         const dist = THREE.MathUtils.clamp(Math.max(st.halfH / tv, st.halfW / th) * (st.pad || 1.2) + (st.add != null ? st.add : 0.8), st.minDist || 3.4, 12);
         const yaw = (st.yaw || 0.68) * st.side, pitch = 0.24;
         _standLook.set(st.cx, st.cy, st.cz);
@@ -10217,7 +10286,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
       function isNearPierGallery() { return nearStandFront(CABIN.galleryX, 1.6, 1.75, 1.0); }
       function isNearRecycle() { return nearStandFront(RECYCLE.x, RECYCLE.w / 2 + 0.2, RECYCLE.frontZ, 1.0); }
-      function isNearAquarium() { return nearStandFront(CABIN.aquaX, 1.35, 1.0, 1.0); }
+      function isNearAquarium() { return nearStandFront(CABIN.aquaX, Math.min(2.2, aquaTankOf(state.aquarium || {}).w / 2 + 0.15), 1.0, 1.1); }
       function isNearPierCamera() { return nearSpot(CABIN.camX, CABIN.camZ, 1.3); }
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(PIER_TOOLBOX_X, -7.6, 1.25); }
@@ -10613,10 +10682,88 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - CHEAT_GULL.x, playerZ - CHEAT_GULL.z) <= CHEAT_GULL.radius;
       }
 
+      /* ---- the harbour map ---- */
+      const MAP_PLACES = () => [
+        { icon: '⚓', name: 'Boatyard', desc: 'Buy boats, boat modules and fuel.', x: SHORE_SHOPS.boatyard.x, z: SHORE_SHOPS.boatyard.z, w: SHORE_SHOPS.boatyard.w, d: SHORE_SHOPS.boatyard.d, col: SHORE_SHOPS.boatyard.color },
+        { icon: '🤿', name: 'Dive Shop', desc: 'Dive gear and spear guns for fishing underwater.', x: SHORE_SHOPS.dive.x, z: SHORE_SHOPS.dive.z, w: SHORE_SHOPS.dive.w, d: SHORE_SHOPS.dive.d, col: SHORE_SHOPS.dive.color },
+        { icon: '🎣', name: 'Tackle Shop', desc: 'Rods, bait and bigger buckets.', x: -7.6, z: 0.9, w: 2.5, d: 1.8, col: '#ef4444' },
+        { icon: '📋', name: 'Bounty Board', desc: 'Contracts that pay a reward for special catches.', x: -4.2, z: 0.6, w: 1.6, d: 0.8, col: '#10b981' },
+        { icon: '🪑', name: 'Pier end', desc: 'Cast your line from here. Your catch bucket and bait box are close by.', x: 0, z: -10.3, w: 2.2, d: 0.8, col: '#a16207' },
+        { icon: '⛵', name: 'Mooring platform', desc: 'Board your boat, choose a boat at the terminal and refuel at the dock pump.', x: (PLATFORM.xOut + PLATFORM.xIn) / 2, z: (PLATFORM.zMin + PLATFORM.zMax) / 2, w: PLATFORM.xIn - PLATFORM.xOut, d: PLATFORM.zMax - PLATFORM.zMin, col: '#64748b' },
+        { icon: '♻️', name: 'Recycling', desc: 'Sell the junk and seaweed you reel in.', x: RECYCLE.x, z: RECYCLE.d / 2, w: RECYCLE.w, d: RECYCLE.d, col: '#22c55e' },
+        { icon: '🐟', name: 'Fish Market', desc: 'Sell your fish.', x: SHORE_SHOPS.fish.x, z: SHORE_SHOPS.fish.z, w: SHORE_SHOPS.fish.w, d: SHORE_SHOPS.fish.d, col: SHORE_SHOPS.fish.color },
+        { icon: '🐠', name: 'Aquarium Shop', desc: 'Tanks, decorations, fish food and cleaning kits.', x: SHORE_SHOPS.aquashop.x, z: SHORE_SHOPS.aquashop.z, w: SHORE_SHOPS.aquashop.w, d: SHORE_SHOPS.aquashop.d, col: SHORE_SHOPS.aquashop.color },
+        { icon: '🏠', name: 'Cabin', desc: 'Your home, with the bottle gallery, your aquarium and the film camera.', x: CABIN.x, z: CABIN.d / 2, w: CABIN.w, d: CABIN.d, col: '#b08a5a' },
+        { icon: '📖', name: 'Benches', desc: 'Sit down to rest and read your skill books.', x: -4.6, z: 5.2, w: 1.4, d: 0.5, col: '#78350f', also: [4.6, 5.2] },
+        { icon: '🗼', name: 'Lighthouse', desc: 'Out at sea in the Coastal Reef, with a small jetty you can dock at and fish from.', x: 52, z: -150, far: true }
+      ];
+      function mapCompass(dx, dz) {
+        const a = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
+        return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(a / 45) % 8];
+      }
+      function openMapModal() {
+        document.getElementById('modal-map').classList.add('open');
+        requestAnimationFrame(drawMap);
+      }
+      function drawMap() {
+        const cv = document.getElementById('map-canvas'), cw = Math.max(260, cv.clientWidth || 360);
+        const px = onBoat ? boatPos.x : playerX, pz = onBoat ? boatPos.z : playerZ;
+        const yaw = onBoat ? boatYaw : world.anglerGroup.rotation.y;
+        const viewW = THREE.MathUtils.clamp(cw / 11, 26, 2 * BW_HALF + 4), sc = cw / viewW;   // metres across, pixels per metre
+        const z0 = -12.5, z1 = 7.5, ch = Math.round((z1 - z0) * sc);
+        const half = viewW / 2, cx = THREE.MathUtils.clamp(px, -BW_HALF - 2 + half, BW_HALF + 2 - half);
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        cv.width = cw * dpr; cv.height = ch * dpr; cv.style.height = ch + 'px';
+        const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const X = x => (x - cx + half) * sc, Y = z => (z - z0) * sc;
+        const rect = (x, z, w, d, col) => { g.fillStyle = col; g.fillRect(X(x - w / 2), Y(z - d / 2), w * sc, d * sc); };
+        g.fillStyle = '#0b4a6f'; g.fillRect(0, 0, cw, ch);                                  // sea
+        g.fillStyle = '#3f6212'; g.fillRect(0, Y(5.7), cw, ch - Y(5.7));                    // the island
+        rect(0, 2.85, 2 * BW_HALF, 5.7, '#8b5a2b');                                         // boardwalk
+        rect(0, -5.45, 2 * PIER_HW, 10.9, '#9a6a3a');                                       // pier
+        g.fillStyle = 'rgba(255,255,255,0.08)'; for (let x = -BW_HALF; x <= BW_HALF; x += 1.5) g.fillRect(X(x), Y(0), 1, 5.7 * sc);
+        const places = MAP_PLACES();
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        places.forEach(p => {
+          if (p.far) return;
+          rect(p.x, p.z, p.w, p.d, p.col);
+          if (p.also) rect(p.also[0], p.also[1], p.w, p.d, p.col);
+          g.font = `${Math.round(Math.max(13, sc * 0.9))}px sans-serif`;
+          g.fillText(p.icon, X(p.x), Y(p.z));
+          if (p.also) g.fillText(p.icon, X(p.also[0]), Y(p.also[1]));
+          g.font = `bold ${Math.round(Math.max(9, sc * 0.42))}px monospace`; g.fillStyle = '#f8fafc';
+          const ly = p.z < -1 ? Y(p.z - p.d / 2) - 7 : Y(p.z + p.d / 2) + 8;
+          g.fillText(p.name.toUpperCase(), X(p.x), ly);
+        });
+        if (state.boatTier > 0 && !onBoat) { g.fillStyle = '#e2e8f0'; g.beginPath(); g.ellipse(X(MOOR.boatX), Y(MOOR.z), 0.7 * sc, 2.0 * sc, 0, 0, Math.PI * 2); g.fill(); }
+        // the lighthouse: an arrow on the edge pointing toward it
+        { const lh = places.find(p => p.far), dx = lh.x - px, dz = lh.z - pz, d = Math.hypot(dx, dz), ax = THREE.MathUtils.clamp(X(px) + dx / d * 1e4, 16, cw - 16), ay = 14;
+          g.font = 'bold 12px monospace'; g.fillStyle = 'rgba(7,11,20,0.7)'; g.fillRect(4, 4, 150, 20); g.fillStyle = '#fde68a'; g.textAlign = 'left';
+          g.fillText(`🗼 Lighthouse ${Math.round(d)} m ${mapCompass(dx, dz)}`, 10, ay); g.textAlign = 'center'; }
+        // you: a marker with the way you face
+        const mx = THREE.MathUtils.clamp(X(px), 10, cw - 10), my = THREE.MathUtils.clamp(Y(pz), 10, ch - 10);
+        const fx = -Math.sin(yaw), fz = -Math.cos(yaw), r = Math.max(9, sc * 0.75);
+        g.fillStyle = 'rgba(253,224,71,0.25)'; g.beginPath(); g.moveTo(mx, my);
+        g.arc(mx, my, r * 3.2, Math.atan2(fz, fx) - 0.45, Math.atan2(fz, fx) + 0.45); g.closePath(); g.fill();
+        g.save(); g.translate(mx, my); g.rotate(Math.atan2(fz, fx) + Math.PI / 2);
+        g.fillStyle = '#facc15'; g.strokeStyle = '#111827'; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(0, -r); g.lineTo(r * 0.7, r * 0.8); g.lineTo(0, r * 0.4); g.lineTo(-r * 0.7, r * 0.8); g.closePath(); g.fill(); g.stroke(); g.restore();
+        g.font = 'bold 11px monospace'; g.fillStyle = '#fef9c3'; g.fillText('YOU', mx, my + r + 9);
+        g.fillStyle = '#e2e8f0'; g.font = 'bold 12px monospace'; g.fillText('N ▲', cw - 22, ch - 12);
+        // the list: every landmark, what it is for, how far and which way
+        const rows = places.map(p => { const dx = p.x - px, dz = p.z - pz; return { p, d: Math.hypot(dx, dz), dir: mapCompass(dx, dz) }; }).sort((a, b) => a.d - b.d);
+        document.getElementById('map-legend').innerHTML = `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(yaw), -Math.cos(yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea.</div>` +
+          rows.map(({ p, d, dir }) => `<div class="map-row"><span class="mi">${p.icon}</span><span><b>${p.name}</b><small>${p.desc}</small></span><span class="md">${d < 2.5 ? 'Here' : `${Math.round(d)} m ${dir}`}</span></div>`).join('');
+      }
+
       function handleActionPress() {
         if (gamePause.on || mode === 'LANDING') return;
         if (mode === 'DIVING') { diveAction(); return; }
         if (mode === 'REELING') { fightTap(); return; }
+        if (actionIsMap && (mode === 'PIER_IDLE' || mode === 'BOAT_DRIVING')) {
+          isHoldingAction = false; actionPointerId = null; primaryBtn.classList.remove('pressed'); cheatTaps = 0;
+          openMapModal(); return;
+        }
         const prevCheatTaps = cheatTaps;
         cheatTaps = 0; // any action press that is not a counted "WALK EDGE" press beside the gull resets the count
         if (mode === 'PIER_IDLE') {
@@ -11362,7 +11509,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       /* ---- the tank in the world: swimming fish, water that gets murky, bubbles ---- */
       const aquaView = { sig: '', fish: [], tpl: {}, green: new THREE.Color(0x4d7c0f) };
-      const AQ_BOUNDS = { x: 1.08, y0: 1.1, y1: 1.82, z: 0.15 };
+      const AQ_BOUNDS = { x: 0.78, y0: 1.1, y1: 1.6, z: 0.15 };   // swim box (tank-local), set from the tier by aquaSetBounds
+      function aquaSetBounds(t) { AQ_BOUNDS.x = t.w / 2 - 0.12; AQ_BOUNDS.y1 = 0.91 + t.h - 0.3; }
       function aquaTemplate(id) {
         if (aquaView.tpl[id]) return aquaView.tpl[id];
         const m = WorldBuilder.buildSculptedFishMesh(CATALOG_INDEX[id], textures);
@@ -11387,10 +11535,23 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         return p;
       }
       function aquaDispose(obj) { obj.traverse(o => { if (o.geometry && o.userData.ownGeo) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.userData && m.userData.own) m.dispose(); }); }); }
-      const AQ_DECOR_SLOTS = [[-0.85, -0.08], [0.85, 0.06], [-0.3, 0.08], [0.35, -0.08], [0.0, 0.0], [-0.6, -0.12]];
+      const AQ_DECOR_SLOTS = [[-0.71, -0.08], [0.71, 0.06], [-0.25, 0.08], [0.29, -0.08], [0.0, 0.0], [-0.5, -0.12]];   // x as a fraction of the half width
       /* rebuild the swimmers and the decoration when the tank's contents changed */
+      /* a new tier gets a new tank model (bigger glass, cabinet and hood), swapped in place */
+      function aquaRebuildTank() {
+        const old = world.aquarium, t = aquaTankOf(state.aquarium), par = old.parent;
+        const A = WorldBuilder.buildAquariumTank(textures, t);
+        A.position.copy(old.position); A.userData.collider = old.userData.collider;
+        if (par) { par.remove(old); par.add(A); }
+        old.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+        world.aquarium = A; aquaView.fish = []; aquaView.sig = '';
+        if (A.userData.collider) A.userData.collider.hx = t.w / 2 + 0.1;
+        aquaSetBounds(t);
+        return A;
+      }
       function aquaSync(force) {
-        const A = world && world.aquarium; if (!A || !state.aquarium) return;
+        let A = world && world.aquarium; if (!A || !state.aquarium) return;
+        if (A.userData.tier !== aquaTankOf(state.aquarium).tier) { A = aquaRebuildTank(); force = true; }
         const aq = state.aquarium, sig = aq.tier + '|' + aq.decor.join() + '|' + aq.fish.map(f => f.id + ':' + f.form + ':' + f.w.toFixed(2)).join(',');
         if (!force && sig === aquaView.sig) return;
         aquaView.sig = sig;
@@ -11398,7 +11559,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         aquaView.fish.forEach(p => { fg.remove(p); aquaDispose(p); });
         aquaView.fish = aq.fish.map(f => { const p = aquaMakeFish(f); fg.add(p); return p; });
         while (dg.children.length) { const c = dg.children.pop(); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
-        aq.decor.forEach((id, i) => { const d = WorldBuilder.buildAquariumDecor(id, textures), s = AQ_DECOR_SLOTS[i % AQ_DECOR_SLOTS.length]; d.position.set(s[0], 1.03, s[1]); dg.add(d); });
+        aq.decor.forEach((id, i) => { const d = WorldBuilder.buildAquariumDecor(id, textures), s = AQ_DECOR_SLOTS[i % AQ_DECOR_SLOTS.length]; d.position.set(s[0] * A.userData.w / 2, 1.03, s[1]); dg.add(d); });
       }
       function updateAquarium(dt) {
         const A = world && world.aquarium; if (!A || !state.aquarium) return;
@@ -11432,7 +11593,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         });
         A.userData.bubbles.forEach((b, i) => {
           b.position.y += dt * (0.3 + (i % 3) * 0.08);
-          if (b.position.y > 1.95) { b.position.y = 1.08; b.position.x = -0.95 + (Math.random() - 0.5) * 0.05; }
+          if (b.position.y > A.userData.bubbleTop) { b.position.y = 1.08; b.position.x = -A.userData.w / 2 + 0.25 + (Math.random() - 0.5) * 0.05; }
         });
         // plants sway
         A.userData.decorGroup.children.forEach(d => d.traverse(o => { if (o.userData.sway !== undefined) o.rotation.z = Math.sin(elapsed * 1.4 + o.userData.sway) * 0.1 + (o.userData.sway - 3) * 0.06; }));
@@ -11695,7 +11856,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         dive:     { title: '🤿 DIVE SHOP', stand: 'dive', tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns'], ['books', '📚 Book']] },
         fish:     { title: '🐟 FISH MARKET', stand: 'fish', list: 'fish', tabs: [['sell', '🐟 Sell'], ['books', '📚 Book']] },
         recycle:  { title: '♻️ RECYCLING', stand: 'recycle', list: 'junk', tabs: [['sell', '♻️ Recycle'], ['books', '📚 Book']] },
-        aqua:     { title: '🐠 AQUARIUM', stand: 'aquarium', list: 'aqua', tabs: [['fish', '🐠 Fish'], ['add', '➕ Add'], ['care', '🧽 Care'], ['shop', '🛒 Shop'], ['books', '📚 Book']] }
+        aqua:     { title: '🐠 AQUARIUM', stand: 'aquarium', list: 'aqua', tabs: [['fish', '🐠 Fish'], ['add', '➕ Add'], ['care', '🧽 Care'], ['decor', '🪸 Decor']] },
+        aquashop: { title: '🐠 AQUARIUM SHOP', stand: 'aquashop', tabs: [['tanks', '🐠 Tanks'], ['adecor', '🪸 Decor'], ['acare', '🍤 Care'], ['books', '📚 Book']] }
       };
       const shopBrowse = { active: false, kind: 'tackle', tab: 'rods', idx: 0, items: [], pending: null, armedAt: 0, viewOff: false, dir: 0 };
       const shopMoney = v => '$' + (+v).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -11826,6 +11988,30 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             desc: 'Fill the tank of the boat that is moored. The dock pump at the end of the mooring platform sells the same fuel.', price: none || topped ? null : (units > 0 ? cost : full), verb: 'Refuel',
             badge: topped ? 'TANK FULL' : none ? 'NO BOAT' : '', can: !none && !topped && units > 0, note: none ? 'Buy a boat first.' : topped ? 'Nothing to add.' : units <= 0 ? 'Not enough cash.' : units < missing ? 'All you can afford.' : '',
             confirm: `Add ${units.toFixed(0)} units of fuel for ${shopMoney(cost)}?`, act: refuelBoat });
+        } else if (tab === 'tanks') {
+          const aq = state.aquarium;
+          AQUARIUM_TANKS.forEach(t => {
+            const owned = aq.tier >= t.tier, cur = aq.tier === t.tier, locked = t.tier > aq.tier + 1;
+            add({ id: 'tank' + t.tier, key: 'tank', data: t, title: `🐠 ${t.name}`, stats: `Fish up to ${t.maxW} kg • Room ${t.cap} • ${t.decor} decor slots • ${t.w} m wide`,
+              desc: 'A bigger tank holds bigger fish, more of them and more decorations. Your fish and decorations move into the new tank.', price: t.cost || null,
+              badge: cur ? 'IN YOUR CABIN' : owned ? 'OWNED' : locked ? 'LOCKED' : '', can: !owned && !locked && afford(t.cost),
+              note: cur ? 'Your current tank.' : owned ? 'You have a bigger one.' : locked ? `Needs the ${AQUARIUM_TANKS[t.tier - 2].name} first.` : afford(t.cost) ? '' : shopNeed(t.cost),
+              confirm: `Buy the ${t.name} for ${shopMoney(t.cost)}?`, act: () => { pay(t.cost); aq.tier = t.tier; saveGame(); updateHUD(); showToast(`🐠 The ${t.name} is set up in your cabin.`); } });
+          });
+        } else if (tab === 'adecor') {
+          const aq = state.aquarium;
+          AQUARIUM_DECOR.forEach(d => {
+            const own = aquaDecorOwned(d.id), on = aq.decor.includes(d.id);
+            add({ id: 'decor_' + d.id, key: 'decor', data: d, title: `${d.icon} ${d.name}`, stats: `+${d.charm} charm`, desc: d.desc + ' Charm makes visitors happier and raises ticket income.',
+              price: d.cost, badge: own ? 'OWNED' : '', can: !own && afford(d.cost), note: own ? (on ? 'In your tank.' : 'Stored: place it from the tank.') : afford(d.cost) ? '' : shopNeed(d.cost),
+              confirm: `Buy the ${d.name} for ${shopMoney(d.cost)}?`, act: () => aquariumBuyDecor(d.id) });
+          });
+        } else if (tab === 'acare') {
+          const aq = state.aquarium;
+          add({ id: 'pellets', key: 'pellets', data: {}, title: '🥫 Premium pellets (5 feeds)', stats: `In stock at home: ${aq.pellets}`, desc: 'Each feed fills the food bar completely. Use them from the Care tab at your tank.',
+            price: 90, can: afford(90) && aq.pellets <= 994, note: afford(90) ? '' : shopNeed(90), confirm: 'Buy 5 premium pellet feeds for $90?', act: () => { pay(90); aq.pellets += 5; saveGame(); updateHUD(); showToast('🥫 5 premium feeds added to your stock.'); } });
+          add({ id: 'kit', key: 'kit', data: {}, title: '🧴 Deep-clean kit', stats: `In stock at home: ${aq.kits}`, desc: 'Leaves the tank spotless, and it stays clean twice as long for the next 3 days. Use it from the Care tab at your tank.',
+            price: 60, can: afford(60) && aq.kits <= 998, note: afford(60) ? '' : shopNeed(60), confirm: 'Buy a deep-clean kit for $60?', act: () => { pay(60); aq.kits += 1; saveGame(); updateHUD(); showToast('🧴 Deep-clean kit added to your stock.'); } });
         } else if (tab === 'dive' || tab === 'spear') {
           const isDive = tab === 'dive', list = (isDive ? DIVE_GEAR : SPEAR_GUNS).filter(g => g.tier > 0), have = isDive ? state.diveTier : state.spearTier;
           list.forEach(g => {
@@ -11882,6 +12068,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function updateShopBrowse(dt) {
         if (shopBrowse.active) {
+          if (shopBrowse.kind === 'aqua') aquaPan.phase += dt * Math.PI * 2 / 18;   // the tank view keeps sweeping under the sheet
           const w = window.innerWidth, h = window.innerHeight, off = h > 520 ? 0.2 : 0.08;
           camera.setViewOffset(w, h, 0, Math.round(h * off), w, h); shopBrowse.viewOff = true;
         } else if (shopBrowse.viewOff) { camera.clearViewOffset(); shopBrowse.viewOff = false; }
@@ -12045,21 +12232,20 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           });
         } else if (tab === 'care') {
           mk(`<span class="sl-n">🍤 Fish flakes<small>Free. Food +35.</small></span>`, [['Feed', '', () => { aquariumFeed(false); refreshShopBrowse(); }]]);
-          mk(`<span class="sl-n">🥫 Premium pellets<small>$20. Fills the food bar.</small></span>`, [['Feed', '', () => shopAsk({ confirm: 'Buy premium pellets for $20 and feed the fish?', price: 20, verb: 'Buy', can: state.cash >= 20, act: () => aquariumFeed(true) }), state.cash < 20]]);
-          mk(`<span class="sl-n">🧽 Clean the tank<small>Free. Scrubs the glass and the water.</small></span>`, [['Clean', '', () => { aquariumClean(); refreshShopBrowse(); }]]);
+          mk(`<span class="sl-n">🥫 Premium pellets<small>Fills the food bar. ${aq.pellets} left${aq.pellets ? '' : ' (sold at the Aquarium Shop)'}.</small></span>`, [['Feed', '', () => { aquariumFeed(true); refreshShopBrowse(); }, aq.pellets < 1]]);
+          mk(`<span class="sl-n">🧽 Clean the tank<small>Free. Scrubs the glass and the water.</small></span>`, [['Clean', '', () => { aquariumClean(false); refreshShopBrowse(); }]]);
+          mk(`<span class="sl-n">🧴 Deep clean<small>Spotless, and the tank stays clean twice as long for 3 days. ${aq.kits} kit${aq.kits === 1 ? '' : 's'} left${aq.cleanBoost ? ` • active: ${aq.cleanBoost} day${aq.cleanBoost === 1 ? '' : 's'}` : ''}.</small></span>`, [['Use', '', () => { aquariumClean(true); refreshShopBrowse(); }, aq.kits < 1]]);
           mk(`<span class="sl-n">🐣 Breeding<small>Two or more happy fish of one species can have fry now and then (maybe a rare colour). ${aq.bred} hatched, ${aq.forms.length} colour form${aq.forms.length === 1 ? '' : 's'} so far.</small></span>`);
           btn.style.display = ''; btn.disabled = aq.tickets < 1;
           btn.textContent = aq.tickets >= 1 ? `Collect ${shopMoney(aq.tickets)}` : 'Nothing to collect yet';
-        } else if (tab === 'shop') {
-          const nxt = AQUARIUM_TANKS[aq.tier];
-          if (nxt) mk(`<span class="sl-n">🐠 ${nxt.name}<small>Fish up to ${nxt.maxW} kg • room ${nxt.cap} • ${nxt.decor} decorations • ${shopMoney(nxt.cost)}</small></span>`,
-            [['Buy', '', () => shopAsk({ confirm: `Upgrade to the ${nxt.name} for ${shopMoney(nxt.cost)}?`, price: nxt.cost, verb: 'Buy', can: state.cash >= nxt.cost, act: aquariumBuyTank }), state.cash < nxt.cost]]);
-          else mk(`<span class="sl-n">🐠 ${t.name}<small>The biggest tank. Fish over ${AQUARIUM_MAX_W} kg never fit in any tank.</small></span>`);
-          AQUARIUM_DECOR.forEach(d => {
-            const have = aq.decor.includes(d.id), full = aq.decor.length >= t.decor;
-            mk(`<span class="sl-n">${d.icon} ${d.name}<small>${d.desc} +${d.charm} charm • ${shopMoney(d.cost)}${have ? ' • in the tank' : full ? ' • tank decor slots full' : ''}</small></span>`,
-              [have ? ['Remove', '', () => shopAsk({ confirm: `Take the ${d.name} out of your tank?`, price: null, verb: 'Remove', can: true, act: () => aquariumRemoveDecor(d.id) })]
-                : ['Buy', '', () => shopAsk({ confirm: `Add the ${d.name} to your tank for ${shopMoney(d.cost)}?`, price: d.cost, verb: 'Buy', can: true, act: () => aquariumBuyDecor(d.id) }), full || state.cash < d.cost]]);
+        } else if (tab === 'decor') {
+          const owned = AQUARIUM_DECOR.filter(d => aquaDecorOwned(d.id)), full = aq.decor.length >= t.decor;
+          msg(`${aq.decor.length} / ${t.decor} slots used.`);
+          if (!owned.length) msg('No decorations yet. The Aquarium Shop sells them.');
+          owned.forEach(d => {
+            const on = aq.decor.includes(d.id);
+            mk(`<span class="sl-n">${d.icon} ${d.name}<small>+${d.charm} charm • ${on ? 'in the tank' : 'stored'}</small></span>`,
+              [on ? ['Remove', '', () => { aquariumRemoveDecor(d.id); refreshShopBrowse(); }] : ['Place', '', () => { aquariumPlaceDecor(d.id); refreshShopBrowse(); }, full]]);
           });
         }
       }
@@ -12699,7 +12885,18 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       /* =========================================================================
          SECTION L: HUD & PRIMARY MOBILE ACTION BUTTON SYNCHRONIZATION
          ========================================================================= */
+      let actionIsMap = false;
       function updatePrimaryActionButton() {
+        updatePrimaryActionButtonInner();
+        actionIsMap = false;
+        if (primaryBtn.classList.contains('useless') && mode !== 'DIVING' && !dive.active) {
+          primaryBtn.classList.remove('useless'); primaryBtn.classList.add('map');
+          document.getElementById('primary-action-icon').textContent = '🗺️';
+          document.getElementById('primary-action-label').textContent = 'MAP';
+          actionIsMap = true;
+        }
+      }
+      function updatePrimaryActionButtonInner() {
         const iconEl = document.getElementById('primary-action-icon');
         const labelEl = document.getElementById('primary-action-label');
         const proxEl = document.getElementById('proximity-banner');
@@ -13039,7 +13236,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (fpBack > 0.001) _fpFwd.applyAxisAngle(_fpUp, Math.PI * fpBack * fpBack * (3 - 2 * fpBack));
 
         if (standFocus.stand && !onBoat) {
-          _fpGoal.set(standFocus.stand.cx, standFocus.stand.cy, standFocus.stand.cz);
+          if (standFocus.stand.pan) { standCameraPose(standFocus.stand); _fpGoal.copy(_standLook); }
+          else _fpGoal.set(standFocus.stand.cx, standFocus.stand.cy, standFocus.stand.cz);
           fpBlend = 1;
         } else {
           // dead level: same height as the eye, straight ahead
@@ -14535,6 +14733,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (here && !moving) {
               standFocus.idle += dt;
               if (standFocus.idle >= STAND_IDLE_DELAY) standFocus.stand = here;
+              if (standFocus.stand && standFocus.stand.pan) aquaPan.phase += dt * Math.PI * 2 / 18; else aquaPan.phase = 0;   // 9 s per sweep
             } else {
               standFocus.idle = 0;
               standFocus.stand = null;
@@ -15073,13 +15272,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (!onBoat) {
           const isPortrait = camera.aspect < 0.85;
           const lateralFollow = isPortrait ? 0.95 : 0.72;
+          // past 12 m from the pier the camera follows 1:1 so the far ends (Boatyard, Cabin) stay framed
+          const camFX = Math.sign(playerX) * (Math.min(Math.abs(playerX), 12) * lateralFollow + Math.max(0, Math.abs(playerX) - 12) * 0.97);
           const camZ = playerZ + (isPortrait ? 8.4 : 7.8);
           const targetCamPos = _camV1.set(
-            playerX * lateralFollow,
+            camFX,
             5.6 + Math.sin(elapsed * 1.4) * 0.06,
             camZ
           );
-          const lookGoal = _camV2.set(playerX * lateralFollow, 1.35, playerZ - 6.0);
+          const lookGoal = _camV2.set(camFX, 1.35, playerZ - 6.0);
           if (standFocus.stand) {
             standCameraPose(standFocus.stand);
             targetCamPos.copy(_standPos);
@@ -15117,7 +15318,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
 
         // zoomed on the bounty board: step the angler out of the picture so he never stands in front of the papers
-        if (!dive.active && mode !== 'DIVING') world.anglerGroup.visible = !(!onBoat && ((!settings.firstPerson && standFocus.stand && standFocus.stand.id === 'bounty') || (shopBrowse.active && shopBrowse.kind === 'aqua')));
+        if (!dive.active && mode !== 'DIVING') world.anglerGroup.visible = !(!onBoat && ((standFocus.stand && (standFocus.stand.id === 'aquarium' || (!settings.firstPerson && standFocus.stand.id === 'bounty'))) || (shopBrowse.active && shopBrowse.kind === 'aqua')));
         updateFirstPersonCamera(dt);
         updateDive(dt);
       }
