@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.1.0';
+    window.PF_VERSION = '5.1.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -986,6 +986,7 @@
       color: #ecfdf5;
     }
 
+    #btn-primary-action.useless { display: none; }
     #btn-primary-action:active,
     #btn-primary-action.pressed {
       transform: scale(0.94);
@@ -12591,7 +12592,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('spear');
           if (dive.emergency) { iconEl.textContent = '🆘'; labelEl.textContent = 'ASCENDING'; }
           else if (dive.nearChest) { iconEl.textContent = '🧰'; labelEl.textContent = 'OPEN CHEST'; }
-          else if (gun.tier === 0) { iconEl.textContent = '🚫'; labelEl.textContent = 'NO SPEAR'; }
+          else if (gun.tier === 0) { primaryBtn.classList.add('useless'); iconEl.textContent = '🚫'; labelEl.textContent = 'NO SPEAR'; }
           else if (harpoon.state === 'ready') { iconEl.textContent = '🔱'; labelEl.textContent = 'SPEAR!'; }
           else { primaryBtn.classList.add('reload'); iconEl.textContent = '🔄'; labelEl.textContent = harpoon.state === 'reload' ? 'RELOADING' : 'FIRED'; }
         } else if (mode === 'CASTING') {
@@ -12619,6 +12620,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('shop');
           iconEl.textContent = reading.id ? '📖' : '📚';
           labelEl.textContent = reading.id ? 'READING' : ownN ? 'READ' : 'NO BOOKS';
+          if (!reading.id && !ownN) primaryBtn.classList.add('useless');
           proxEl.style.borderColor = '#a78bfa';
           proxEl.style.color = '#ddd6fe';
           proxEl.textContent = reading.id ? '📖 READING' : ownN ? '📚 PRESS READ TO PICK A BOOK' : '📚 NO BOOKS YET';
@@ -12698,6 +12700,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('shop');
           iconEl.textContent = '⛽';
           labelEl.textContent = 'REFUEL';
+          if (state.boatTier <= 0) primaryBtn.classList.add('useless');
           proxEl.style.borderColor = '#dc2626';
           proxEl.style.color = '#fecaca';
           proxEl.textContent = state.boatTier > 0
@@ -12716,6 +12719,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('sail');
           iconEl.textContent = '⛵';
           labelEl.textContent = state.boatTier > 0 ? 'SAIL BOAT' : 'NO BOAT';
+          if (state.boatTier <= 0) primaryBtn.classList.add('useless');
           proxEl.textContent = state.boatTier > 0
             ? `⛵ ${getCurrentBoat().name.toUpperCase()} — PRESS BUTTON TO SAIL`
             : '⛵ BUY A BOAT AT THE TACKLE SHOP';

@@ -536,6 +536,9 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.1.1: no useless action button
+- The round action button is hidden when pressing it would do nothing (no books on a bench, no spear underwater, no boat moored, refuel pump with no boat). The banner still says why. Version bumped to **v5.1.1**.
+
 ### 2026-11-21, Version 5.1.0: skill books you read on a bench
 - **Six skill books**, one per shop (Boatyard, Tackle Shop, Dive Shop, Fish Market, Recycling, Aquarium), all driven by one `BOOKS` table: rare-fish odds from a boat, from the pier and while diving, breath capacity and a tighter underwater weight guess, fish prices, junk prices and aquarium tickets.
 - **Reading on benches:** sit on a bench and press *Read* to pick a book; progress is counted in in-game minutes. A session lasts 6 in-game hours, then the angler sits idle until you press Read again; standing up cancels it and keeps your progress.
