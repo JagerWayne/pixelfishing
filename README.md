@@ -538,6 +538,11 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.6.0: a real map you can drag and pinch
+- **The harbour map is now the actual world seen from straight above** (the paused scene is rendered once from overhead when you open it: the harbour in detail and the sea out to the lighthouse).
+- **Navigate it:** drag to move, pinch (or the mouse wheel) to zoom, **＋ / －** buttons, and **⌖** to centre on yourself. Tapping a place in the list below finds it on the map.
+- Your arrow and view cone, landmark icons and names, a north arrow and a scale bar are drawn on top. Version bumped to **v5.6.0**.
+
 ### 2026-11-21, Version 5.5.0: Aquarium Shop, bigger cabin, harbour map
 - **Aquarium Shop** on the boardwalk (between the Fish Market and the Cabin): tank upgrades, decorations, care goods (premium pellets and deep-clean kits) and The Aquarist's Handbook, in a catalogue like the Tackle Shop.
 - **The tank grows with each tier** (1.8 m to 4.3 m of glass) and is rebuilt in the Cabin when you upgrade. The **Cabin is wider** (8.4 m) and moved east; the boardwalk now runs to +-27 m.

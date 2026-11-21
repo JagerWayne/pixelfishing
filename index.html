@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.5.0';
+    window.PF_VERSION = '5.6.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -981,6 +981,13 @@
     }
 
     #btn-primary-action.map { background: radial-gradient(circle at 35% 30%, #fbbf24, #b45309); border-color: #fde68a; color: #fffbeb; }
+    #map-wrap { position: relative; }
+    #map-canvas { width: 100%; height: min(58dvh, 520px); display: block; border: 2px solid #334155; border-radius: 6px; background: #0b4a6f; touch-action: none; cursor: grab; }
+    #map-canvas.drag { cursor: grabbing; }
+    .map-tools { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .map-tools .pixel-btn { min-width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
+    .map-hint { position: absolute; left: 8px; bottom: 8px; font-size: 11px; color: #e2e8f0; background: rgba(7,11,20,0.6); padding: 3px 6px; border-radius: 4px; pointer-events: none; }
+    .map-row { cursor: pointer; }
     .map-row { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 2px solid #334155; background: var(--bg-card); margin-bottom: 5px; }
     .map-row .mi { font-size: 20px; width: 26px; text-align: center; }
     .map-row b { display: block; font-size: 13px; }
@@ -1926,7 +1933,15 @@
         <button class="pixel-btn red" data-close="modal-map" type="button">Close</button>
       </div>
       <div class="modal-body">
-        <canvas id="map-canvas" style="width:100%; display:block; border:2px solid #334155; border-radius:6px; background:#0b4a6f;"></canvas>
+        <div id="map-wrap">
+          <canvas id="map-canvas"></canvas>
+          <div class="map-tools">
+            <button class="pixel-btn" id="map-zoom-in" type="button" aria-label="Zoom in">＋</button>
+            <button class="pixel-btn" id="map-zoom-out" type="button" aria-label="Zoom out">－</button>
+            <button class="pixel-btn gold" id="map-me" type="button" aria-label="Centre on me">⌖</button>
+          </div>
+          <div class="map-hint">Drag to move • pinch to zoom</div>
+        </div>
         <div id="map-legend" style="margin-top:10px;"></div>
       </div>
     </div>
@@ -10701,59 +10716,130 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const a = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
         return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(a / 45) % 8];
       }
+      /* The map is the real world seen from straight above: on opening, the paused scene is rendered once through an
+         orthographic camera into two pictures (the harbour in detail, the sea out to the lighthouse wide), then the map
+         pans (drag) and zooms (pinch, wheel, buttons) over those pictures with the overlays drawn on top. */
+      const MAP_SNAPS = [
+        { x0: -90, x1: 90, z0: -175, z1: 35, ppm: 5.5 },     // wide: the sea out to the lighthouse
+        { x0: -32, x1: 32, z0: -14, z1: 10, ppm: 30 }        // detail: the harbour
+      ];
+      const mapView = { cx: 0, cz: 0, s: 14, snaps: null, ptrs: new Map(), raf: 0 };
+      function mapSnapshot() {
+        const maxT = Math.min(4096, renderer.capabilities.maxTextureSize || 2048);
+        const keep = { fog: scene.fog, bg: scene.background, sky: world.skyGroup.visible, isl: world.islandScenery ? world.islandScenery.visible : null, rt: renderer.getRenderTarget() };
+        scene.fog = null; scene.background = new THREE.Color(0x0b4a6f); world.skyGroup.visible = false;
+        if (world.islandScenery) world.islandScenery.visible = true;
+        const out = MAP_SNAPS.map(sn => {
+          const ww = sn.x1 - sn.x0, hh = sn.z1 - sn.z0, k = Math.min(1, maxT / (Math.max(ww, hh) * sn.ppm));
+          const W = Math.round(ww * sn.ppm * k), H = Math.round(hh * sn.ppm * k);
+          const cam = new THREE.OrthographicCamera(-ww / 2, ww / 2, hh / 2, -hh / 2, 1, 400);
+          cam.position.set((sn.x0 + sn.x1) / 2, 200, (sn.z0 + sn.z1) / 2); cam.up.set(0, 0, -1); cam.lookAt(cam.position.x, 0, cam.position.z);
+          const rt = new THREE.WebGLRenderTarget(W, H, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat });
+          renderer.setRenderTarget(rt); renderer.render(scene, cam);
+          const px = new Uint8Array(W * H * 4); renderer.readRenderTargetPixels(rt, 0, 0, W, H, px); rt.dispose();
+          const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+          const g = cv.getContext('2d'), img = g.createImageData(W, H);
+          for (let y = 0; y < H; y++) img.data.set(px.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4);   // GL rows run bottom-up
+          g.putImageData(img, 0, 0);
+          return { ...sn, cv };
+        });
+        renderer.setRenderTarget(keep.rt);
+        scene.fog = keep.fog; scene.background = keep.bg; world.skyGroup.visible = keep.sky;
+        if (world.islandScenery && keep.isl !== null) world.islandScenery.visible = keep.isl;
+        return out;
+      }
+      const mapYou = () => ({ x: onBoat ? boatPos.x : playerX, z: onBoat ? boatPos.z : playerZ, yaw: onBoat ? boatYaw : world.anglerGroup.rotation.y });
+      function mapSize() { const cv = document.getElementById('map-canvas'); return { cv, w: Math.max(200, cv.clientWidth || 360), h: Math.max(200, cv.clientHeight || 360) }; }
+      function mapClamp() {
+        const { w, h } = mapSize(), W = MAP_SNAPS[0];
+        const sMin = Math.min(w / (W.x1 - W.x0), h / (W.z1 - W.z0));
+        mapView.s = THREE.MathUtils.clamp(mapView.s, sMin, 60);
+        const hx = w / 2 / mapView.s, hz = h / 2 / mapView.s;
+        mapView.cx = (W.x1 - W.x0) / 2 <= hx ? (W.x0 + W.x1) / 2 : THREE.MathUtils.clamp(mapView.cx, W.x0 + hx, W.x1 - hx);
+        mapView.cz = (W.z1 - W.z0) / 2 <= hz ? (W.z0 + W.z1) / 2 : THREE.MathUtils.clamp(mapView.cz, W.z0 + hz, W.z1 - hz);
+      }
+      function mapRedraw() { if (mapView.raf) return; mapView.raf = requestAnimationFrame(() => { mapView.raf = 0; drawMap(); }); }
+      function mapZoomAt(sx, sy, f) {   // zoom by f keeping the world point under the screen point (sx, sy) in place
+        const { w, h } = mapSize(), wx = mapView.cx + (sx - w / 2) / mapView.s, wz = mapView.cz + (sy - h / 2) / mapView.s;
+        mapView.s *= f; mapClamp();
+        mapView.cx = wx - (sx - w / 2) / mapView.s; mapView.cz = wz - (sy - h / 2) / mapView.s; mapClamp(); mapRedraw();
+      }
+      function mapCentre(x, z) { mapView.cx = x; mapView.cz = z; mapClamp(); mapRedraw(); }
       function openMapModal() {
         document.getElementById('modal-map').classList.add('open');
-        requestAnimationFrame(drawMap);
+        requestAnimationFrame(() => {
+          try { mapView.snaps = mapSnapshot(); } catch (e) { mapView.snaps = null; }
+          const me = mapYou(); mapView.s = 14; mapCentre(me.x, me.z); drawMap();
+          mapLegend();
+        });
       }
+      (function wireMap() {
+        const cv = document.getElementById('map-canvas'), P = mapView.ptrs;
+        const local = e => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+        let last = null;
+        const pair = () => { const [a, b] = [...P.values()]; return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; };
+        cv.addEventListener('pointerdown', e => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (err) {} P.set(e.pointerId, local(e)); cv.classList.add('drag'); last = P.size === 2 ? pair() : null; });
+        cv.addEventListener('pointermove', e => {
+          if (!P.has(e.pointerId)) return;
+          const prev = P.get(e.pointerId), now = local(e); P.set(e.pointerId, now);
+          if (P.size === 1) { mapView.cx -= (now.x - prev.x) / mapView.s; mapView.cz -= (now.y - prev.y) / mapView.s; mapClamp(); mapRedraw(); }
+          else if (P.size === 2) {
+            const cur = pair();
+            if (last) { mapView.cx -= (cur.mx - last.mx) / mapView.s; mapView.cz -= (cur.my - last.my) / mapView.s; mapZoomAt(cur.mx, cur.my, cur.d / last.d); }
+            last = cur;
+          }
+        });
+        const up = e => { P.delete(e.pointerId); last = P.size === 2 ? pair() : null; if (!P.size) cv.classList.remove('drag'); };
+        cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+        cv.addEventListener('wheel', e => { e.preventDefault(); const p = local(e); mapZoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+        const mid = f => { const { w, h } = mapSize(); mapZoomAt(w / 2, h / 2, f); };
+        document.getElementById('map-zoom-in').addEventListener('click', () => mid(1.5));
+        document.getElementById('map-zoom-out').addEventListener('click', () => mid(1 / 1.5));
+        document.getElementById('map-me').addEventListener('click', () => { const me = mapYou(); mapCentre(me.x, me.z); });
+        document.getElementById('map-legend').addEventListener('click', e => { const r = e.target.closest('.map-row'); if (!r) return; mapCentre(+r.dataset.x, +r.dataset.z); if (mapView.s < 8) mid(8 / mapView.s); });
+      })();
       function drawMap() {
-        const cv = document.getElementById('map-canvas'), cw = Math.max(260, cv.clientWidth || 360);
-        const px = onBoat ? boatPos.x : playerX, pz = onBoat ? boatPos.z : playerZ;
-        const yaw = onBoat ? boatYaw : world.anglerGroup.rotation.y;
-        const viewW = THREE.MathUtils.clamp(cw / 11, 26, 2 * BW_HALF + 4), sc = cw / viewW;   // metres across, pixels per metre
-        const z0 = -12.5, z1 = 7.5, ch = Math.round((z1 - z0) * sc);
-        const half = viewW / 2, cx = THREE.MathUtils.clamp(px, -BW_HALF - 2 + half, BW_HALF + 2 - half);
-        const dpr = Math.min(2, window.devicePixelRatio || 1);
-        cv.width = cw * dpr; cv.height = ch * dpr; cv.style.height = ch + 'px';
+        const { cv, w, h } = mapSize(), dpr = Math.min(2, window.devicePixelRatio || 1);
+        if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
         const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-        const X = x => (x - cx + half) * sc, Y = z => (z - z0) * sc;
-        const rect = (x, z, w, d, col) => { g.fillStyle = col; g.fillRect(X(x - w / 2), Y(z - d / 2), w * sc, d * sc); };
-        g.fillStyle = '#0b4a6f'; g.fillRect(0, 0, cw, ch);                                  // sea
-        g.fillStyle = '#3f6212'; g.fillRect(0, Y(5.7), cw, ch - Y(5.7));                    // the island
-        rect(0, 2.85, 2 * BW_HALF, 5.7, '#8b5a2b');                                         // boardwalk
-        rect(0, -5.45, 2 * PIER_HW, 10.9, '#9a6a3a');                                       // pier
-        g.fillStyle = 'rgba(255,255,255,0.08)'; for (let x = -BW_HALF; x <= BW_HALF; x += 1.5) g.fillRect(X(x), Y(0), 1, 5.7 * sc);
+        const S = mapView.s, X = x => (x - mapView.cx) * S + w / 2, Y = z => (z - mapView.cz) * S + h / 2;
+        g.fillStyle = '#0b4a6f'; g.fillRect(0, 0, w, h);
+        g.imageSmoothingEnabled = true;
+        (mapView.snaps || []).forEach(sn => g.drawImage(sn.cv, X(sn.x0), Y(sn.z0), (sn.x1 - sn.x0) * S, (sn.z1 - sn.z0) * S));
+        // landmarks: icon and name on the spot, names only when zoomed in enough to read them
         const places = MAP_PLACES();
         g.textAlign = 'center'; g.textBaseline = 'middle';
         places.forEach(p => {
-          if (p.far) return;
-          rect(p.x, p.z, p.w, p.d, p.col);
-          if (p.also) rect(p.also[0], p.also[1], p.w, p.d, p.col);
-          g.font = `${Math.round(Math.max(13, sc * 0.9))}px sans-serif`;
-          g.fillText(p.icon, X(p.x), Y(p.z));
-          if (p.also) g.fillText(p.icon, X(p.also[0]), Y(p.also[1]));
-          g.font = `bold ${Math.round(Math.max(9, sc * 0.42))}px monospace`; g.fillStyle = '#f8fafc';
-          const ly = p.z < -1 ? Y(p.z - p.d / 2) - 7 : Y(p.z + p.d / 2) + 8;
-          g.fillText(p.name.toUpperCase(), X(p.x), ly);
+          const pts = [[p.x, p.z]].concat(p.also ? [p.also] : []);
+          pts.forEach(([x, z]) => {
+            const sx = X(x), sy = Y(z); if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) return;
+            g.font = '18px sans-serif'; g.fillStyle = '#fff'; g.fillText(p.icon, sx, sy);
+            if (S >= 7 || p.far) {
+              g.font = 'bold 11px monospace'; const t = p.name.toUpperCase(), tw = g.measureText(t).width + 8;
+              g.fillStyle = 'rgba(7,11,20,0.72)'; g.fillRect(sx - tw / 2, sy + 11, tw, 15);
+              g.fillStyle = '#f8fafc'; g.fillText(t, sx, sy + 19);
+            }
+          });
         });
-        if (state.boatTier > 0 && !onBoat) { g.fillStyle = '#e2e8f0'; g.beginPath(); g.ellipse(X(MOOR.boatX), Y(MOOR.z), 0.7 * sc, 2.0 * sc, 0, 0, Math.PI * 2); g.fill(); }
-        // the lighthouse: an arrow on the edge pointing toward it
-        { const lh = places.find(p => p.far), dx = lh.x - px, dz = lh.z - pz, d = Math.hypot(dx, dz), ax = THREE.MathUtils.clamp(X(px) + dx / d * 1e4, 16, cw - 16), ay = 14;
-          g.font = 'bold 12px monospace'; g.fillStyle = 'rgba(7,11,20,0.7)'; g.fillRect(4, 4, 150, 20); g.fillStyle = '#fde68a'; g.textAlign = 'left';
-          g.fillText(`🗼 Lighthouse ${Math.round(d)} m ${mapCompass(dx, dz)}`, 10, ay); g.textAlign = 'center'; }
-        // you: a marker with the way you face
-        const mx = THREE.MathUtils.clamp(X(px), 10, cw - 10), my = THREE.MathUtils.clamp(Y(pz), 10, ch - 10);
-        const fx = -Math.sin(yaw), fz = -Math.cos(yaw), r = Math.max(9, sc * 0.75);
-        g.fillStyle = 'rgba(253,224,71,0.25)'; g.beginPath(); g.moveTo(mx, my);
-        g.arc(mx, my, r * 3.2, Math.atan2(fz, fx) - 0.45, Math.atan2(fz, fx) + 0.45); g.closePath(); g.fill();
-        g.save(); g.translate(mx, my); g.rotate(Math.atan2(fz, fx) + Math.PI / 2);
-        g.fillStyle = '#facc15'; g.strokeStyle = '#111827'; g.lineWidth = 2;
-        g.beginPath(); g.moveTo(0, -r); g.lineTo(r * 0.7, r * 0.8); g.lineTo(0, r * 0.4); g.lineTo(-r * 0.7, r * 0.8); g.closePath(); g.fill(); g.stroke(); g.restore();
-        g.font = 'bold 11px monospace'; g.fillStyle = '#fef9c3'; g.fillText('YOU', mx, my + r + 9);
-        g.fillStyle = '#e2e8f0'; g.font = 'bold 12px monospace'; g.fillText('N ▲', cw - 22, ch - 12);
-        // the list: every landmark, what it is for, how far and which way
-        const rows = places.map(p => { const dx = p.x - px, dz = p.z - pz; return { p, d: Math.hypot(dx, dz), dir: mapCompass(dx, dz) }; }).sort((a, b) => a.d - b.d);
-        document.getElementById('map-legend').innerHTML = `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(yaw), -Math.cos(yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea.</div>` +
-          rows.map(({ p, d, dir }) => `<div class="map-row"><span class="mi">${p.icon}</span><span><b>${p.name}</b><small>${p.desc}</small></span><span class="md">${d < 2.5 ? 'Here' : `${Math.round(d)} m ${dir}`}</span></div>`).join('');
+        // you: an arrow with a view cone, always on screen (pinned to the edge when you are out of view)
+        const me = mapYou(), fx = -Math.sin(me.yaw), fz = -Math.cos(me.yaw), ang = Math.atan2(fz, fx), r = 11;
+        const mx = THREE.MathUtils.clamp(X(me.x), 14, w - 14), my = THREE.MathUtils.clamp(Y(me.z), 14, h - 14);
+        g.fillStyle = 'rgba(253,224,71,0.28)'; g.beginPath(); g.moveTo(mx, my); g.arc(mx, my, 46, ang - 0.45, ang + 0.45); g.closePath(); g.fill();
+        g.save(); g.translate(mx, my); g.rotate(ang + Math.PI / 2);
+        g.fillStyle = '#facc15'; g.strokeStyle = '#111827'; g.lineWidth = 2.5;
+        g.beginPath(); g.moveTo(0, -r); g.lineTo(r * 0.75, r * 0.85); g.lineTo(0, r * 0.4); g.lineTo(-r * 0.75, r * 0.85); g.closePath(); g.fill(); g.stroke(); g.restore();
+        g.font = 'bold 11px monospace'; g.fillStyle = '#111827'; g.fillRect(mx - 15, my + 14, 30, 14); g.fillStyle = '#fef9c3'; g.fillText('YOU', mx, my + 21);
+        // north arrow and scale bar
+        g.fillStyle = 'rgba(7,11,20,0.7)'; g.fillRect(8, 8, 34, 34); g.fillStyle = '#f87171'; g.font = 'bold 13px monospace'; g.fillText('N', 25, 18); g.fillText('▲', 25, 32);
+        const steps = [1, 2, 5, 10, 20, 50, 100], m = steps.find(v => v * S >= 60) || 100, bw = m * S;
+        g.fillStyle = 'rgba(7,11,20,0.7)'; g.fillRect(w - bw - 24, h - 28, bw + 16, 20);
+        g.fillStyle = '#f8fafc'; g.fillRect(w - bw - 16, h - 16, bw, 3); g.font = 'bold 10px monospace'; g.fillText(`${m} m`, w - bw / 2 - 16, h - 22);
+      }
+      function mapLegend() {
+        const me = mapYou(), places = MAP_PLACES();
+        const rows = places.map(p => { const dx = p.x - me.x, dz = p.z - me.z; return { p, d: Math.hypot(dx, dz), dir: mapCompass(dx, dz) }; }).sort((a, b) => a.d - b.d);
+        document.getElementById('map-legend').innerHTML = `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(me.yaw), -Math.cos(me.yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea. Tap a place to find it on the map.</div>` +
+          rows.map(({ p, d, dir }) => `<div class="map-row" data-x="${p.x}" data-z="${p.z}"><span class="mi">${p.icon}</span><span><b>${p.name}</b><small>${p.desc}</small></span><span class="md">${d < 2.5 ? 'Here' : `${Math.round(d)} m ${dir}`}</span></div>`).join('');
       }
 
       function handleActionPress() {
