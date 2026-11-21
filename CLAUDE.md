@@ -31,6 +31,7 @@ description of the game, its systems and its structure.
 - Where the angler stands on a boat is `BOAT_STATIONS[tier]` (and `LH_STATIONS` for the lighthouse jetty, `LH_J`); the casting direction always comes from the station (`boatCastYaw()`), never from `boatYaw` alone. The bounty board's papers are `world.bountyPapers`, redrawn by `refreshBountyPapers`; claim through `claimBounty(idx)`.
 - Bounties are chosen by `pickBounties` from what `bountyEligible(b, bountyReach(state))` allows (pier or boat zone, rod weight); a new contract type needs a case in `bountyEligible` and `bountyLevel`.
 - The aquarium (Cabin, back wall) is `state.aquarium`: what fits is decided only by `aquariumCanHold` against `AQUARIUM_TANKS` (no fish over `AQUARIUM_MAX_W`), daily upkeep and breeding run in `aquariumDay()` from the day-night tick, the fish in the world are `aquaSync`/`updateAquarium`, and its sheet is `aquaRender` (shop sheet kind `aqua`). The tank's `live` group is kept out of `mergeStatic`.
+- Skill books are the `BOOKS` table (one per shop, `SHOP_BOOK`); perks are read with `bookBonus(perkId)` (max x minutes read / 44,640) wherever they apply; reading time comes only from the in-game clock via `updateReading(dMinutes)`, never real timers; underwater weights are only ever shown through `diveWeightRange` / `fmtWeightRange` (a per-fish stored seed `estU`).
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
 - Deployment is GitHub Pages from `main`.
 

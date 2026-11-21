@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.0.0';
+    window.PF_VERSION = '5.1.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1433,6 +1433,7 @@
       box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold;
       color: #fde68a; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
+    #hud-read-pill { pointer-events: none; display: none; padding: 4px 10px; background: rgba(30, 20, 60, 0.9); border: 2px solid #a78bfa; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #ddd6fe; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .chip-row .pixel-btn { padding: 8px 12px; font-size: 12px; min-height: 44px; }
@@ -1668,6 +1669,7 @@
           Return Fuel: 0.0
         </div>
         <div id="hud-bounty-pill"></div>
+        <div id="hud-read-pill"></div>
         <div id="hud-event-pill"><span id="hud-event-text"></span></div>
         <div id="hud-sonar-pill">
           <span>📡 SONAR:</span>
@@ -1885,6 +1887,19 @@
         <div id="shop-confirm-title"></div>
         <div id="shop-confirm-sub"></div>
         <div class="sc-btns"><button type="button" id="shop-confirm-no">Cancel</button><button type="button" id="shop-confirm-yes">Buy</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKS: pick a book to read on a bench -->
+  <div class="modal-backdrop" id="modal-books">
+    <div class="pixel-box modal-window" style="width: min(96vw, 620px); border-color: #a78bfa;">
+      <div class="modal-header" style="background: #1e1b3a; border-bottom-color: #a78bfa;">
+        <span class="modal-title" style="color: #ddd6fe;">📚 YOUR BOOKS</span>
+        <button class="pixel-btn red" data-close="modal-books" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="upgrade-grid" id="books-list"></div>
       </div>
     </div>
   </div>
@@ -6460,6 +6475,14 @@
             [[-0.3, 0.34, 0.18], [0.3, 0.34, 0.2], [0.1, 0.35, -0.2]].forEach(([x, y, z]) => K.box(g, 0.08, 0.08, 0.08, M(0xffffff, 0.2, 0, { transparent: true, opacity: 0.7 }), x, y, z));
             [0, 1, 2].forEach(i => K.cyl(g, 0.07, 0.07, 0.025, M(0xfacc15, 0.25, 0.8), 0.52, 0.015 + i * 0.027, 0.25, 12));
             maxDim = 0.95;
+          } else if (key === 'book') {
+            const cover = M(d.color, 0.7);
+            g.rotation.x = 0.28;
+            K.box(g, 0.5, 0.03, 0.66, cover, 0, 0.015, 0); K.box(g, 0.46, 0.09, 0.62, M(0xf5ecd0, 0.9), 0.015, 0.075, 0);
+            K.box(g, 0.5, 0.03, 0.66, cover, 0, 0.135, 0); K.box(g, 0.045, 0.15, 0.66, cover, -0.26, 0.075, 0);
+            K.box(g, 0.3, 0.006, 0.2, M(0xfde68a, 0.5, 0.3), 0.02, 0.153, -0.08); K.cyl(g, 0.045, 0.045, 0.006, M(0xfacc15, 0.3, 0.7), 0.02, 0.158, 0.17, 10);
+            K.box(g, 0.02, 0.005, 0.5, M(0xdc2626, 0.7), 0.2, 0.155, 0.06);
+            maxDim = 0.8;
           } else if (key === 'fish') {
             const m = this.buildSculptedFishMesh(d.item, textures);
             m.scale.setScalar(THREE.MathUtils.clamp(0.4 + 0.1 * Math.cbrt(d.weight), 0.4, 1.0));
@@ -9030,7 +9053,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         const h = aquaHappy(aq);
         if (h < 35) return 0;
         const base = aq.fish.reduce((s, f) => s + (f.v || 1) * 0.12 * (AQUARIUM_FORMS[f.form] || AQUARIUM_FORMS.normal).mult, 0);
-        return +(base * (h / 100) * (1 + 0.03 * aq.kept.length)).toFixed(2);
+        return +(base * (h / 100) * (1 + 0.03 * aq.kept.length) * (1 + bookBonus('aquaTickets'))).toFixed(2);
       }
       const aquaBankCap = aq => Math.max(30, aquaIncome(aq) * 8);
       /* once per in-game day (from the day-night cycle): income, hunger and dirt, fry growing, breeding */
@@ -9136,6 +9159,120 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         aq.forms = [...new Set((Array.isArray(src.forms) ? src.forms : []).filter(f => AQUARIUM_FORMS[f] && f !== 'normal'))];
         return aq;
       }
+
+      /* =========================================================================
+         SKILL BOOKS (v5.1.0): one book per shop. Buy it, sit on a bench and read: 310 pages = 44,640 in-game minutes. Every minute read raises each of the book's perks at once, linearly: bonus = max x minutes / 44,640.
+         A reading session lasts at most 360 in-game minutes. All time comes from the in-game clock (timeOfDay).
+         Add a book by adding it to BOOKS (title, shop, price, perks) and calling bookBonus(perkId) where the perk applies.
+         ========================================================================= */
+      const BOOK_MINUTES = 31 * 24 * 60, BOOK_PAGES = 310, BOOK_SESSION_MIN = 6 * 60;
+      const WEIGHT_GUESS = { base: 0.35, min: 0.05 };      // the diving book narrows the underwater weight guess from +-35% to +-5%
+      const BOOKS = {
+        boat:     { id: 'boat', shop: 'boatyard', icon: '⛵', color: 0x1d4ed8, title: 'Offshore Angling Guide', cost: 650, desc: 'Reading the sea from a deck: where the big ones run, and what to put on the hook.',
+                    perks: [{ id: 'boatRare', label: 'Rare-fish odds when fishing from a boat', max: 0.40, kind: 'pct' }] },
+        pier:     { id: 'pier', shop: 'tackle', icon: '🎣', color: 0xb45309, title: 'Pier & Shore Mastery', cost: 400, desc: 'Casting from solid planks: tides, shadows and the patience that lands the rarer fish.',
+                    perks: [{ id: 'pierRare', label: 'Rare-fish odds when fishing from the pier', max: 0.40, kind: 'pct' }] },
+        dive:     { id: 'dive', shop: 'dive', icon: '🤿', color: 0x0f766e, title: 'Deep Water Freediving & Ichthyology', cost: 900, desc: 'Breathing, finning and fish: breath control, spotting the good ones, and judging a fish by eye.',
+                    perks: [{ id: 'breath', label: 'Underwater breath capacity', max: 0.40, kind: 'pct' }, { id: 'diveRare', label: 'Rare-fish odds when diving', max: 0.40, kind: 'pct' }, { id: 'weightEst', label: 'Weight guess accuracy', max: 1, kind: 'est' }] },
+        ledger:   { id: 'ledger', shop: 'fish', icon: '🐟', color: 0x0369a1, title: "The Fishmonger's Ledger", cost: 500, desc: 'Bargaining, grading and the market mood: how to get the best price for a catch.',
+                    perks: [{ id: 'fishPrice', label: 'Fish sale prices', max: 0.15, kind: 'pct' }] },
+        green:    { id: 'green', shop: 'recycle', icon: '♻️', color: 0x16a34a, title: 'Green Harbour Handbook', cost: 350, desc: "What the scrapyards pay for: sorting junk and seaweed so nothing is wasted.",
+                    perks: [{ id: 'junkPrice', label: 'Junk and seaweed recycling prices', max: 0.50, kind: 'pct' }] },
+        aquarist: { id: 'aquarist', shop: 'aqua', icon: '🐠', color: 0x7c3aed, title: "The Aquarist's Handbook", cost: 600, desc: 'Water, feed and display: what makes visitors pay to look at your tank.',
+                    perks: [{ id: 'aquaTickets', label: 'Aquarium visitor ticket income', max: 0.30, kind: 'pct' }] }
+      };
+      const SHOP_BOOK = { tackle: 'pier', boatyard: 'boat', dive: 'dive', fish: 'ledger', recycle: 'green', aqua: 'aquarist' };
+      const reading = { id: null, left: 0, saveT: 0, pillMin: -1 };
+      const bookOwned = id => !!(state.books && state.books[id] && state.books[id].owned);
+      const bookMinutes = id => (bookOwned(id) ? state.books[id].minutes : 0);
+      const bookProgress = id => Math.min(1, bookMinutes(id) / BOOK_MINUTES);
+      const bookPages = id => bookMinutes(id) * BOOK_PAGES / BOOK_MINUTES;
+      /* the active bonus of one perk right now: max x minutes read / 44,640 (0 if the book is not owned) */
+      function bookBonus(perkId) {
+        let v = 0;
+        for (const id in BOOKS) BOOKS[id].perks.forEach(p => { if (p.id === perkId) v += p.max * bookProgress(id); });
+        return v;
+      }
+      function bookPerkText(b, p) {
+        const cur = p.max * bookProgress(b.id);
+        if (p.kind === 'est') { const m = WEIGHT_GUESS.base - (WEIGHT_GUESS.base - WEIGHT_GUESS.min) * bookProgress(b.id); return `${p.label}: guess within +-${(m * 100).toFixed(1)}% (from +-${WEIGHT_GUESS.base * 100}% to +-${WEIGHT_GUESS.min * 100}%)`; }
+        return `${p.label}: +${(cur * 100).toFixed(1)}% (max +${(p.max * 100).toFixed(0)}%)`;
+      }
+      function buyBook(id) {
+        const b = BOOKS[id]; if (!b || bookOwned(id) || state.cash < b.cost) return false;
+        state.cash = +(state.cash - b.cost).toFixed(2);
+        if (!state.books) state.books = {};
+        state.books[id] = { owned: true, minutes: 0 };
+        sfx.playCoin(); saveGame(); updateHUD();
+        showToast(`📚 Bought ${b.title}`);
+        return true;
+      }
+      function sanitizeBooks(src) {
+        const out = {};
+        if (!src || typeof src !== 'object') return out;
+        Object.keys(BOOKS).forEach(id => {
+          const e = src[id]; if (!e || typeof e !== 'object' || !e.owned) return;
+          const m = Number(e.minutes);
+          out[id] = { owned: true, minutes: Number.isFinite(m) ? Math.min(BOOK_MINUTES, Math.max(0, m)) : 0 };
+        });
+        return out;
+      }
+      /* a spot on a bench, settled in */
+      const benchSeated = () => !onBoat && mode === 'PIER_IDLE' && !!restState.spot && restState.spot.kind === 'bench' && restState.w > 0.6;
+      const readingActive = () => !!reading.id;
+      let readProp = null;
+      function setReadProp(id) {
+        if (!id) { if (readProp) readProp.visible = false; return; }
+        if (!readProp) {
+          readProp = new THREE.Group();
+          const cv = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.34), new THREE.MeshStandardMaterial({ roughness: 0.7 })), pg = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.32), new THREE.MeshStandardMaterial({ color: 0xf5ecd0, roughness: 0.9 }));
+          pg.position.y = 0.04; readProp.add(cv, pg); readProp.userData.cover = cv; world.anglerGroup.add(readProp);
+        }
+        readProp.userData.cover.material.color.setHex(BOOKS[id].color);
+        readProp.position.set(0, 0.82, -0.34); readProp.rotation.set(-1.0, 0, 0); readProp.visible = true;
+      }
+      function startReading(id) {
+        if (!bookOwned(id) || bookProgress(id) >= 1 || !benchSeated()) return false;
+        setReadProp(id);
+        reading.id = id; reading.left = BOOK_SESSION_MIN; reading.saveT = 0; reading.pillMin = -1;
+        showToast(`📖 Reading ${BOOKS[id].title}`);
+        return true;
+      }
+      function stopReading(why) {
+        if (!reading.id) return;
+        const b = BOOKS[reading.id];
+        reading.id = null; reading.left = 0; setReadProp(null);
+        saveGame(); updateReadPill();
+        if (why) showToast(why.replace('{b}', b.title));
+      }
+      /* called with the in-game minutes that just passed (from the day-night clock, so it is 0 while paused) */
+      function updateReading(dMin) {
+        if (!reading.id) return;
+        if (!benchSeated() && !(restState.spot && restState.spot.kind === 'bench' && isAnyModalOpen())) { stopReading('📖 Stopped reading {b}.'); return; }
+        if (dMin <= 0) return;
+        const id = reading.id, e = state.books[id], step = Math.min(dMin, reading.left, BOOK_MINUTES - e.minutes);
+        e.minutes += step; reading.left -= step; reading.saveT += step;
+        if (reading.saveT >= 30) { reading.saveT = 0; saveGame(); }
+        if (e.minutes >= BOOK_MINUTES - 1e-6) { e.minutes = BOOK_MINUTES; stopReading('🎉 Finished {b}!'); sfx.playCatchFanfare(false); return; }
+        if (reading.left <= 1e-6) { stopReading('📖 Done reading for now. Press Read to continue.'); return; }
+        updateReadPill();
+      }
+      function updateReadPill() {
+        const el = document.getElementById('hud-read-pill'); if (!el) return;
+        if (!reading.id) { el.style.display = 'none'; reading.pillMin = -1; return; }
+        const b = BOOKS[reading.id], m = Math.floor(bookMinutes(reading.id)), left = Math.ceil(reading.left);
+        if (m === reading.pillMin) return; reading.pillMin = m;
+        el.style.display = 'block';
+        el.textContent = `📖 ${b.title}: ${bookPages(reading.id).toFixed(1)} / ${BOOK_PAGES} pages (${(bookProgress(reading.id) * 100).toFixed(1)}%) • ${Math.floor(left / 60)}h ${String(left % 60).padStart(2, '0')}m left`;
+      }
+      /* the diving book's weight guess: a fixed range per fish (a stored seed, never re-rolled), always shown as a range */
+      function diveWeightRange(f) {
+        const m = WEIGHT_GUESS.base - (WEIGHT_GUESS.base - WEIGHT_GUESS.min) * bookProgress('dive');
+        if (f.estU === undefined) f.estU = Math.random();
+        const w = f.weight;
+        return [w * (1 - m * (0.4 + 0.6 * f.estU)), w * (1 + m * (0.4 + 0.6 * (1 - f.estU)))];
+      }
+      function fmtWeightRange(r) { const d = (r[1] - r[0]) < 0.2 || r[1] < 2 ? 2 : 1; return `~${r[0].toFixed(d)} kg – ${r[1].toFixed(d)} kg`; }
 
       /* =========================================================================
          CAREER (XP, ranks, achievements) AND THE DAILY FISH MARKET
@@ -9286,7 +9423,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         return marketCache;
       }
       const marketMult = id => marketFor(state.dayCount || 0).mult[id] || 1;
-      const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id)));
+      const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id) * (1 + (entry.category === 'Fish' ? bookBonus('fishPrice') : (entry.category === 'Junk' || entry.category === 'Flora') ? bookBonus('junkPrice') : 0))));
 
       /* ---- Catch of the Day and the daily streak: both keyed on the real calendar date (local time) ---- */
       function todayNum() { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
@@ -9362,6 +9499,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           modules: [],
           bounties: generateBountyContracts(),
           aquarium: defaultAquarium(),
+          books: {},
           seenSpecies: [],
           look: AnglerFactory.defaultLook('male'),
           xp: 0,
@@ -9888,6 +10026,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         }
 
         out.aquarium = sanitizeAquarium(src.aquarium);
+        out.books = sanitizeBooks(src.books);
 
         // appearance: sanitised against the option lists; the look's gender is the source of truth
         out.look = AnglerFactory.sanitizeLook(src.look, out.anglerGender);
@@ -10419,6 +10558,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const prevCheatTaps = cheatTaps;
         cheatTaps = 0; // any action press that is not a counted "WALK EDGE" press beside the gull resets the count
         if (mode === 'PIER_IDLE') {
+          if (benchSeated()) {   // seated on a bench: the button reads
+            isHoldingAction = false;
+            actionPointerId = null;
+            primaryBtn.classList.remove('pressed');
+            if (reading.id) showToast(`📖 Reading ${BOOKS[reading.id].title}`);
+            else if (!Object.keys(BOOKS).some(bookOwned)) showToast('📚 No books yet. Every shop sells one.');
+            else openBooksModal();
+            return;
+          }
           if (isNearPierShop()) {
             isHoldingAction = false;
             actionPointerId = null;
@@ -10634,6 +10782,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (pool.length === 0) pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly);
 
         const frenzyRarityMult = (inFrenzy ? 2.1 : 1.0) * (cheats.luck ? 5 : 1);
+        const rb = bait.rarityBonus + bookBonus(onBoat ? 'boatRare' : 'pierRare');   // bait plus the pier or boat book
 
         const weightedPool = pool.map(item => {
           let w = 10;
@@ -10642,15 +10791,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           } else if (item.category === 'Junk' || item.category === 'Flora') {
             w = 7 * bait.trashMod * (inFrenzy ? 0.25 : 1.0) * (cheats.luck ? 0.15 : 1);
           } else if (item.stormOnly && isStorm) {
-            w = 13 * (1 + bait.rarityBonus * 1.8) * frenzyRarityMult;
+            w = 13 * (1 + rb * 1.8) * frenzyRarityMult;
           } else if (item.fullMoonOnly && fullMoon) {
-            w = 11 * (1 + bait.rarityBonus * 2.0) * frenzyRarityMult;
+            w = 11 * (1 + rb * 2.0) * frenzyRarityMult;
           } else {
             if (item.rarity === 'Common') w = 14;
-            if (item.rarity === 'Uncommon') w = 9 * (1 + bait.rarityBonus * 1.5);
-            if (item.rarity === 'Rare') w = 5 * (1 + bait.rarityBonus * 2.2) * frenzyRarityMult;
-            if (item.rarity === 'Epic') w = 2.5 * (1 + bait.rarityBonus * 3.0) * frenzyRarityMult;
-            if (item.rarity === 'Legendary') w = 1.2 * (1 + bait.rarityBonus * 3.5) * frenzyRarityMult;
+            if (item.rarity === 'Uncommon') w = 9 * (1 + rb * 1.5);
+            if (item.rarity === 'Rare') w = 5 * (1 + rb * 2.2) * frenzyRarityMult;
+            if (item.rarity === 'Epic') w = 2.5 * (1 + rb * 3.0) * frenzyRarityMult;
+            if (item.rarity === 'Legendary') w = 1.2 * (1 + rb * 3.5) * frenzyRarityMult;
           }
           return { item, weight: Math.max(0.2, w) };
         });
@@ -11425,12 +11574,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          once to small images. To add a good, add it to shopItems() and give buildShopItem() a model.
          ========================================================================= */
       const SHOP_KINDS = {
-        tackle:   { title: '🎣 TACKLE SHOP', stand: 'shop', tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['buckets', '🪣 Buckets']] },
-        boatyard: { title: '⚓ BOATYARD', stand: 'boatyard', tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel']] },
-        dive:     { title: '🤿 DIVE SHOP', stand: 'dive', tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns']] },
-        fish:     { title: '🐟 FISH MARKET', stand: 'fish', list: 'fish' },
-        recycle:  { title: '♻️ RECYCLING', stand: 'recycle', list: 'junk' },
-        aqua:     { title: '🐠 AQUARIUM', stand: 'aquarium', list: 'aqua', tabs: [['fish', '🐠 Fish'], ['add', '➕ Add'], ['care', '🧽 Care'], ['shop', '🛒 Shop']] }
+        tackle:   { title: '🎣 TACKLE SHOP', stand: 'shop', tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['buckets', '🪣 Buckets'], ['books', '📚 Book']] },
+        boatyard: { title: '⚓ BOATYARD', stand: 'boatyard', tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel'], ['books', '📚 Book']] },
+        dive:     { title: '🤿 DIVE SHOP', stand: 'dive', tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns'], ['books', '📚 Book']] },
+        fish:     { title: '🐟 FISH MARKET', stand: 'fish', list: 'fish', tabs: [['sell', '🐟 Sell'], ['books', '📚 Book']] },
+        recycle:  { title: '♻️ RECYCLING', stand: 'recycle', list: 'junk', tabs: [['sell', '♻️ Recycle'], ['books', '📚 Book']] },
+        aqua:     { title: '🐠 AQUARIUM', stand: 'aquarium', list: 'aqua', tabs: [['fish', '🐠 Fish'], ['add', '➕ Add'], ['care', '🧽 Care'], ['shop', '🛒 Shop'], ['books', '📚 Book']] }
       };
       const shopBrowse = { active: false, kind: 'tackle', tab: 'rods', idx: 0, items: [], pending: null, armedAt: 0, viewOff: false, dir: 0 };
       const shopMoney = v => '$' + (+v).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -11490,7 +11639,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const add = o => out.push(Object.assign({ badge: '', note: '', can: false, price: null, priceText: null, verb: 'Buy', stats: '', desc: '' }, o));
         const pay = c => { state.cash = +(state.cash - c).toFixed(2); sfx.playCoin(); };
         const afford = c => state.cash >= c;
-        if (tab === 'rods') {
+        if (tab === 'books') {
+          const b = BOOKS[SHOP_BOOK[kind]], own = bookOwned(b.id), fin = bookProgress(b.id) >= 1;
+          add({ id: 'book_' + b.id, key: 'book', data: b, title: b.title, stats: `${BOOK_PAGES} pages`,
+            desc: b.desc + ' ' + b.perks.map(p => p.kind === 'est' ? 'Perk: underwater weight guesses tighten from +-35% to +-5%.' : `Perk: ${p.label.toLowerCase()}, up to +${Math.round(p.max * 100)}%.`).join(' '),
+            price: b.cost, badge: own ? (fin ? 'FINISHED' : 'OWNED') : '', can: !own && afford(b.cost), note: own ? `${bookPages(b.id).toFixed(1)} / ${BOOK_PAGES} pages read.` : afford(b.cost) ? '' : shopNeed(b.cost),
+            confirm: `Buy "${b.title}" for ${shopMoney(b.cost)}?`, act: () => buyBook(b.id) });
+        } else if (tab === 'rods') {
           const hasCam = !!state.hasLiveBaitCam;
           add({ id: 'cam', key: 'cam', data: LIVE_CAM_UPGRADE, title: LIVE_CAM_UPGRADE.name, stats: 'Attachment: Picture-in-Picture subsea feed', desc: LIVE_CAM_UPGRADE.desc, price: LIVE_CAM_UPGRADE.cost,
             badge: hasCam ? 'INSTALLED' : '', can: !hasCam && afford(LIVE_CAM_UPGRADE.cost), note: hasCam ? 'Clipped to your rod.' : afford(LIVE_CAM_UPGRADE.cost) ? '' : shopNeed(LIVE_CAM_UPGRADE.cost),
@@ -11628,7 +11783,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           b.addEventListener('click', () => setShopTab(id)); tabs.appendChild(b);
         });
         tabs.style.display = (sk.tabs || []).length > 1 ? 'flex' : 'none';
-        if (sk.list === 'aqua') aquaRender(); else if (sk.list) shopListRender(); else shopPageRender();
+        if (sk.list) shopRenderList(); else shopPageRender();
       }
       function shopPageRender() {
         const it = shopBrowse.items[shopBrowse.idx], n = shopBrowse.items.length, buy = shopEl('shop-buy');
@@ -11694,7 +11849,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const aq = state.aquarium; if (aq.tickets < 1) return;
         shopAsk({ confirm: `Collect ${shopMoney(aq.tickets)} in visitor tickets?`, price: aq.tickets, verb: 'Sell', can: true, act: aquariumCollect });
       }
-      function shopAskPrimary() { if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') aquaAskCollect(); else shopAskAll(); }
+      function shopAskPrimary() { if (shopBrowse.tab === 'books') return; if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') aquaAskCollect(); else shopAskAll(); }
       function shopAskAll() {
         const sk = SHOP_KINDS[shopBrowse.kind], fish = sk.list === 'fish', L = shopListRows();
         if (!L.rows.length) return;
@@ -11702,6 +11857,45 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           act: () => sellBucketWhere(L.pred, fish ? 'Sold' : 'Recycled') });
       }
 
+
+
+      /* ---- books: the shelf in every shop, and the reading list on a bench ---- */
+      function shopRenderList() {
+        if (shopBrowse.tab === 'books') bookShelfRender();
+        else if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') aquaRender();
+        else shopListRender();
+      }
+      function bookShelfRender() {
+        const b = BOOKS[SHOP_BOOK[shopBrowse.kind]], host = shopEl('shop-rows'); if (!b) return;
+        shopEl('shop-sellall').style.display = 'none';
+        shopEl('shop-summary').innerHTML = `<b>📚 ${b.title}</b> • ${shopMoney(b.cost)}<br>${b.desc}`;
+        host.innerHTML = '';
+        b.perks.forEach(p => host.insertAdjacentHTML('beforeend', `<div class="sl-row"><span class="sl-n">${p.kind === 'est' ? 'Underwater weight guess' : p.label}<small>${bookPerkText(b, p)}</small></span></div>`));
+        const row = document.createElement('div'); row.className = 'sl-row';
+        const own = bookOwned(b.id);
+        row.innerHTML = `<span class="sl-n">${b.icon} ${b.title}<small>${own ? (bookProgress(b.id) >= 1 ? 'Finished' : `${bookPages(b.id).toFixed(1)} / ${BOOK_PAGES} pages read`) : 'Not owned'}</small></span>`;
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'sl-btn'; btn.disabled = own || state.cash < b.cost;
+        btn.textContent = own ? 'Owned' : `Buy ${shopMoney(b.cost)}`;
+        btn.addEventListener('click', () => shopAsk({ confirm: `Buy "${b.title}" for ${shopMoney(b.cost)}?`, price: b.cost, verb: 'Buy', can: true, act: () => buyBook(b.id) }));
+        row.appendChild(btn); host.appendChild(row);
+      }
+      function openBooksModal() {
+        const host = document.getElementById('books-list'); host.innerHTML = '';
+        const owned = Object.keys(BOOKS).filter(bookOwned);
+        if (!owned.length) host.innerHTML = '<p style="color:#94a3b8; text-align:center;">No books yet. Every shop sells one.</p>';
+        owned.forEach(id => {
+          const b = BOOKS[id], pr = bookProgress(id), done = pr >= 1, card = document.createElement('div');
+          card.className = `shop-card ${done ? 'equipped' : ''}`;
+          card.innerHTML = `<div><div class="card-title"><span>${b.icon} ${b.title}</span><span style="color:#ffd24c;">${(pr * 100).toFixed(1)}%</span></div>
+            <div class="card-stats"><b>${bookPages(id).toFixed(1)} / ${BOOK_PAGES} pages</b>${done ? ' • Finished' : ''}<br>${b.perks.map(p => bookPerkText(b, p)).join('<br>')}</div>
+            <div class="bar-wrap" style="height:8px; margin-top:6px;"><div class="bar-fill" style="width:${(pr * 100).toFixed(1)}%; background:#4ade80;"></div></div></div>`;
+          const btn = document.createElement('button'); btn.className = done ? 'pixel-btn' : 'pixel-btn green'; btn.disabled = done;
+          btn.textContent = done ? 'Finished' : 'Read';
+          btn.onclick = () => { document.getElementById('modal-books').classList.remove('open'); startReading(id); updateHUD(); };
+          card.appendChild(btn); host.appendChild(card);
+        });
+        document.getElementById('modal-books').classList.add('open');
+      }
 
       /* ---- the aquarium sheet: Fish | Add | Care | Shop (same paper sheet as the shop lists) ---- */
       function aquaRender() {
@@ -11762,7 +11956,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function setShopTab(tab) {
         if (shopBrowse.tab === tab) return;
-        if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') { shopBrowse.tab = tab; closeShopConfirm(); shopSheetRender(); sfx.playTick(); return; }
+        if (SHOP_KINDS[shopBrowse.kind].list) { shopBrowse.tab = tab; closeShopConfirm(); shopSheetRender(); sfx.playTick(); return; }
         shopBrowse.tab = tab; shopBrowse.idx = 0; shopBrowse.items = shopItems(shopBrowse.kind, tab);
         closeShopConfirm(); shopBrowse.dir = 1; shopSheetRender(); sfx.playTick();
       }
@@ -11789,7 +11983,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (!shopBrowse.active) return;
         const sk = SHOP_KINDS[shopBrowse.kind];
         if (sk.tabs && !sk.list) { shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab); shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1)); }
-        if (sk.list === 'aqua') aquaRender(); else if (sk.list) shopListRender(); else shopPageRender();
+        if (sk.list) shopRenderList(); else shopPageRender();
       }
       /* tapping the picture or the button: confirm first */
       function shopActivate() {
@@ -12420,6 +12614,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('reeling');
           iconEl.textContent = '🔄';
           labelEl.textContent = 'HOLD REEL';
+        } else if (benchSeated()) {
+          const ownN = Object.keys(BOOKS).filter(bookOwned).length;
+          primaryBtn.classList.add('shop');
+          iconEl.textContent = reading.id ? '📖' : '📚';
+          labelEl.textContent = reading.id ? 'READING' : ownN ? 'READ' : 'NO BOOKS';
+          proxEl.style.borderColor = '#a78bfa';
+          proxEl.style.color = '#ddd6fe';
+          proxEl.textContent = reading.id ? '📖 READING' : ownN ? '📚 PRESS READ TO PICK A BOOK' : '📚 NO BOOKS YET';
+          proxEl.style.display = 'block';
         } else if (isNearPierShop()) {
           primaryBtn.classList.add('shop');
           iconEl.textContent = '🏪';
@@ -12801,14 +13004,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         let pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && c.zones.includes(zoneId) && (!c.fullMoonOnly || fullMoon) && (!c.stormOnly || storm));
         if (forceRarity) { const fr = pool.filter(c => forceRarity.includes(c.rarity)); if (fr.length) pool = fr; }
         if (!pool.length) pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly);
-        const luck = cheats.luck ? 5 : 1;
+        const luck = cheats.luck ? 5 : 1, rb = bookBonus('diveRare');
         const wts = pool.map(it => {
           let w = 10;
           if (it.rarity === 'Common') w = 14;
-          else if (it.rarity === 'Uncommon') w = 9;
-          else if (it.rarity === 'Rare') w = 5 * luck;
-          else if (it.rarity === 'Epic') w = 2.5 * luck;
-          else if (it.rarity === 'Legendary') w = 1.2 * luck;
+          else if (it.rarity === 'Uncommon') w = 9 * (1 + rb * 1.5);
+          else if (it.rarity === 'Rare') w = 5 * luck * (1 + rb * 2.2);
+          else if (it.rarity === 'Epic') w = 2.5 * luck * (1 + rb * 3.0);
+          else if (it.rarity === 'Legendary') w = 1.2 * luck * (1 + rb * 3.5);
           return w;
         });
         let roll = Math.random() * wts.reduce((a, b) => a + b, 0);
@@ -13381,7 +13584,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const rare = ['Rare', 'Epic', 'Legendary'].includes(f.item.rarity);
         if (rare) sfx.playCatchFanfare(false); else sfx.playCoin();
         emitBubbles(dive.pos.x, dive.pos.y, dive.pos.z, 8, 0.6);
-        showToast(`🔱 ${f.item.name} • ${f.weight.toFixed(2)} kg • $${f.value}${isNewSpecies ? ' • 📖 NEW SPECIES!' : (isNewRecord ? ' • 🏆 new record!' : '')}`);
+        showToast(`🔱 ${f.item.name} • ${fmtWeightRange(diveWeightRange(f))} • $${f.value}${isNewSpecies ? ' • 📖 NEW SPECIES!' : (isNewRecord ? ' • 🏆 new record!' : '')}`);
         saveGame();
       }
 
@@ -13401,7 +13604,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const gun = spearGun();
         if (f.weight > gun.power && !cheats.autoHit) {
           sfx.playSpearBounce();
-          showToast(`💢 ${f.item.name} (${f.weight.toFixed(1)} kg) is too big for the ${gun.name} (max ${gun.power} kg)!`);
+          showToast(`💢 ${f.item.name} (${fmtWeightRange(diveWeightRange(f))}) is too big for the ${gun.name} (max ${gun.power} kg)!`);
           f.fleeT = 2.6; f.threat.copy(harpoon.pos);
           startHarpoonReturn();
         } else if (bagWeight() + f.weight > bagCapacity() + 0.001) {
@@ -13529,7 +13732,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         releaseAllInputs();
         dive.active = true; dive.fromBoat = onBoat; dive.t = 0; dive.surfacing = false; dive.emergency = false;
         dive.bag = []; dive.maxDepth = 0; dive.hudT = 0; dive.lock = null; dive.nearChest = null;
-        dive.airMax = gear.air; dive.air = gear.air; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
+        dive.airMax = gear.air * (1 + bookBonus('breath')); dive.air = dive.airMax; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
         dive.bubbleT = 2; dive.whaleT = 40 + Math.random() * 60; dive.depthWarnT = 0; dive.leashWarnT = 0;
         if (onBoat) { dive.startX = boatPos.x; dive.startZ = boatPos.z; dive.pos.set(boatPos.x, 0.25, boatPos.z); dive.yaw = boatYaw; boatVel = 0; boatSide = 0; }
         else { dive.startX = playerX; dive.startZ = playerZ; dive.pos.set(THREE.MathUtils.clamp(playerX, -PIER_WALK + 0.05, PIER_WALK - 0.05), 0.25, playerZ - 1.2); dive.yaw = 0; }
@@ -13772,7 +13975,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             lockEl.style.top = ((-_dvTmp.y * 0.5 + 0.5) * window.innerHeight) + 'px';
             const tooBig = dive.lock.weight > gun.power && !cheats.autoHit;
             lockEl.classList.toggle('bad', tooBig);
-            diveText('dive-lock-label', `${dive.lock.item.name} ${dive.lock.weight.toFixed(1)}kg${tooBig ? ' • TOO BIG' : ''}`);
+            diveText('dive-lock-label', `${dive.lock.item.name} ${fmtWeightRange(diveWeightRange(dive.lock))}${tooBig ? ' • TOO BIG' : ''}`);
           } else lockEl.style.display = 'none';
         } else lockEl.style.display = 'none';
 
@@ -13936,6 +14139,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         // Advance Day-Night Cycle
         const prevFullMoon = isFullMoonNight();
         state.timeOfDay += dt / 210;
+        updateReading(dt / 210 * 1440);   // in-game minutes that just passed (0 while paused)
         if (state.timeOfDay >= 1.0) {
           state.timeOfDay -= 1.0;
           state.dayCount = (state.dayCount || 0) + 1;
@@ -14180,7 +14384,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           // Rest spots: stand still for 2 s next to a bench seat or the railing and the angler sits down or leans on the rail.
           // Only the visual model moves toward the seat / rail; the walking position (and so every collision) stays put.
           {
-            const still = mode === 'PIER_IDLE' && !isAnyModalOpen() && walkSpeed < 0.002 && pierMoveInput < 0.15 && !isAtPierWaterEdge() && playerY > 1.5;
+            const still = mode === 'PIER_IDLE' && (!isAnyModalOpen() || (restState.spot && document.getElementById('modal-books').classList.contains('open'))) && walkSpeed < 0.002 && pierMoveInput < 0.15 && !isAtPierWaterEdge() && playerY > 1.5;
             if (!still) { restState.idle = 0; restState.spot = null; }
             else { restState.idle += dt; if (!restState.spot && restState.idle >= 2) restState.spot = findRestSpot(playerX, playerZ); }
             if (restState.spot) restState.last = restState.spot;
