@@ -536,6 +536,9 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.1.2: no Walk Edge button
+- The *Walk Edge* button is hidden everywhere (it did nothing); it only appears beside the seagull, where it still counts the secret-menu taps. Version bumped to **v5.1.2**.
+
 ### 2026-11-21, Version 5.1.1: no useless action button
 - The round action button is hidden when pressing it would do nothing (no books on a bench, no spear underwater, no boat moored, refuel pump with no boat). The banner still says why. Version bumped to **v5.1.1**.
 
