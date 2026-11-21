@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.3.0';
+    window.PF_VERSION = '5.4.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -8718,7 +8718,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         }
         return null;
       }
-      const WALK_SPEED = 3.0;   // m/s at full stick (was 6.5 before v4.0.1)
+      const WALK_SPEED = 4.2;   // m/s at full stick (3.0 until v5.4.0, 6.5 before v4.0.1)
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
       let bobberPos = new THREE.Vector3();
       let bobberVel = new THREE.Vector3();
@@ -8795,6 +8795,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         knobEl.style.transform = 'translate(0px, 0px)';
       }
 
+      /* after a fight ends (snap, escape, landing) the stick is usually still held to one side: ignore it until it is let go,
+         so the angler never walks off (or the boat drives off) on his own */
+      let moveLatch = false;
+      const MOVE_KEYS = ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+      const moveHeld = () => joyState.x !== 0 || joyState.y !== 0 || MOVE_KEYS.some(k => keys[k]);
+      function moveLatched() { if (moveLatch && !moveHeld()) moveLatch = false; return moveLatch || !!fightEnd; }
       function releaseAllInputs() {
         for (const k in keys) keys[k] = false;
         resetJoystick();
@@ -10434,6 +10440,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (keys['KeyA'] || keys['ArrowLeft']) steer -= 1;
         if (keys['KeyD'] || keys['ArrowRight']) steer += 1;
         throttle = THREE.MathUtils.clamp(throttle, -1, 1);
+        if (moveLatched()) { throttle = 0; steer = 0; }
         steer = THREE.MathUtils.clamp(steer, -1, 1);
         if (Math.abs(throttle) < 0.1) throttle = 0;
         if (Math.abs(steer) < 0.1) steer = 0;
@@ -10799,6 +10806,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (onBoat && seaEvents.bossAt(landingEstimate)) showToast('🐉 Your bait splashes into the giant shadow...');
 
         bobberVel.set(forward.x * dist * 1.15, 5.5 + power * 3.5, forward.z * dist * 1.15);
+        clearFightEnd();
         world.bobberGroup.position.copy(bobberPos);
         world.bobberGroup.visible = true;
         world.fishingLine.visible = true;
@@ -10941,12 +10949,65 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateHUD();
       }
 
-      function cancelFishing(reasonMsg) {
+      /* the end of a lost fight plays out for a moment instead of vanishing: 'snap' (the line breaks, the loose end falls
+         and the rod kicks back) or 'escape' (the fish darts off and the empty line is wound in) */
+      let fightEnd = null;
+      const FIGHT_END_T = 0.9;
+      function clearFightEnd() {
+        if (!fightEnd) return;
+        fightEnd = null;
+        world.fishingLine.material.opacity = 1; world.fishShadow.material.opacity = 0.62;
+        world.bobberGroup.visible = false; world.fishingLine.visible = false; world.fishShadow.visible = false;
+      }
+      function startFightEnd(kind) {
+        clearFightEnd();
+        const inWater = world.bobberGroup.visible && bobberInWater;
+        if (!inWater) return false;
+        const yaw = onBoat ? boatCastYaw() : playerYaw;
+        fightEnd = { t: 0, kind, from: bobberPos.clone(), loose: bobberPos.clone(), away: new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), shadow: world.fishShadow.visible };
+        world.fishingLine.material.transparent = true;
+        if (kind === 'snap') { world.rodPivot.rotation.x -= 0.7; vfx.spawnSplash(bobberPos, 10, 0xe0f2fe, 2.2); }
+        return true;
+      }
+      function updateFightEnd(dt, zone) {
+        if (!fightEnd) return;
+        if (mode !== 'PIER_IDLE' && mode !== 'BOAT_DRIVING') { fightEnd = null; world.fishingLine.material.opacity = 1; world.fishShadow.material.opacity = 0.62; return; }
+        const F = fightEnd; F.t += dt;
+        const k = Math.min(1, F.t / FIGHT_END_T), e = k * k * (3 - 2 * k);
+        const tip = _feTip; world.anglerGroup.updateMatrixWorld(true); world.rodTipAnchor.getWorldPosition(tip);
+        const waterAt = (x, z) => getWaveHeight(x, z, elapsed, zone);
+        // the bobber: after a snap it drifts and sinks where it was; after an escape it is wound back to the rod tip
+        if (F.kind === 'snap') { bobberPos.copy(F.from); bobberPos.y = waterAt(F.from.x, F.from.z) - e * 0.35; }
+        else { bobberPos.lerpVectors(F.from, tip, e); bobberPos.y = Math.max(bobberPos.y, waterAt(bobberPos.x, bobberPos.z)) + Math.sin(k * Math.PI) * 0.4; }
+        world.bobberGroup.position.copy(bobberPos);
+        // the line: a snapped line hangs from the tip and its loose end falls and curls back; an intact line stays slack to the bobber
+        const pos = world.fishingLine.geometry.attributes.position;
+        if (F.kind === 'snap') {
+          F.loose.lerp(tip, Math.min(1, dt * 2.2)); F.loose.y = Math.max(waterAt(F.loose.x, F.loose.z), F.loose.y - dt * 6);
+          for (let i = 0; i < 16; i++) { const t = i / 15; pos.setXYZ(i, THREE.MathUtils.lerp(tip.x, F.loose.x, t) + Math.sin(t * 9 + F.t * 6) * 0.05 * t, THREE.MathUtils.lerp(tip.y, F.loose.y, t) - Math.sin(t * Math.PI) * 0.5, THREE.MathUtils.lerp(tip.z, F.loose.z, t)); }
+        } else {
+          for (let i = 0; i < 16; i++) { const t = i / 15; pos.setXYZ(i, THREE.MathUtils.lerp(tip.x, bobberPos.x, t), THREE.MathUtils.lerp(tip.y, bobberPos.y, t) - Math.sin(t * Math.PI) * 0.6 * (1 - e), THREE.MathUtils.lerp(tip.z, bobberPos.z, t)); }
+        }
+        pos.needsUpdate = true;
+        world.fishingLine.material.opacity = F.kind === 'snap' ? 1 - e : 1;
+        // the fish darts away from the angler and fades into the deep
+        if (F.shadow) {
+          world.fishShadow.position.addScaledVector(F.away, dt * 7);
+          world.fishShadow.position.y -= dt * 0.5;
+          world.fishShadow.material.opacity = 0.62 * (1 - e);
+        }
+        if (chancePerSec(6, dt)) vfx.spawnRipple(F.kind === 'snap' ? bobberPos : world.fishShadow.position, 0xe0f2fe, 1.4);
+        if (k >= 1) clearFightEnd();
+      }
+      const _feTip = new THREE.Vector3();
+      function cancelFishing(reasonMsg, endKind) {
         endFightFx();
         mode = onBoat ? 'BOAT_DRIVING' : 'PIER_IDLE';
-        world.bobberGroup.visible = false;
-        world.fishingLine.visible = false;
-        world.fishShadow.visible = false;
+        if (!(endKind && startFightEnd(endKind))) {
+          world.bobberGroup.visible = false;
+          world.fishingLine.visible = false;
+          world.fishShadow.visible = false;
+        }
         document.getElementById('live-bait-pip').classList.remove('active');
         document.getElementById('bite-banner').style.display = 'none';
         document.getElementById('reel-meter-box').style.display = 'none';
@@ -10957,7 +11018,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       function snapLine() {
         sfx.playLineSnap();
-        cancelFishing('💥 LINE SNAPPED! Upgrade your rod at the Shop!');
+        cancelFishing('💥 LINE SNAPPED! Upgrade your rod at the Shop!', 'snap');
       }
 
       function advanceBountiesOnCatch(c) {
@@ -14343,12 +14404,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
             if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
             if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
+            if (moveLatched()) { moveX = 0; moveZ = 0; }
             moveX = THREE.MathUtils.clamp(moveX, -1, 1);
             moveZ = THREE.MathUtils.clamp(moveZ, -1, 1);
             pierMoveInput = Math.hypot(moveX, moveZ);
             if (settings.firstPerson) {
               // First-person controls: left / right turn on the spot, up / down walk forward / backward
-              playerYaw -= moveX * 2.3 * dt;
+              playerYaw -= moveX * 2.7 * dt;
               const walk = -moveZ;
               moveX = -Math.sin(playerYaw) * walk;
               moveZ = -Math.cos(playerYaw) * walk;
@@ -14709,7 +14771,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             } else if (mode === 'BITE_WINDOW') {
               biteTimer -= dt;
               if (biteTimer <= 0) {
-                cancelFishing('The fish nibbled the bait and got away!');
+                cancelFishing('The fish nibbled the bait and got away!', 'escape');
               }
             } else if (mode === 'REELING' && activeCatch && dt > 0) {
               const isPassiveItem = activeCatch.item.category === 'Junk' || activeCatch.item.category === 'Flora';
@@ -14880,6 +14942,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
           posAttr.needsUpdate = true;
         }
+
+        updateFightEnd(dt, zone);
 
         // Articulated Angler Animations & Folding Pier Chair Unfold / Sit Sequence
         const isWalkingPier = !onBoat && mode === 'PIER_IDLE' && Math.hypot(walkDX, walkDZ) > 0.001;
@@ -15381,6 +15445,7 @@ if (mode === 'REELING' && tension > 0.78) {
       }
       /* everything the fight switched on goes off again (snap, cancel, landing, pause) */
       function endFightFx() {
+        moveLatch = true;
         sfx.stopLineStrain();
         vignetteEl.style.opacity = '0';
         leapBanner.classList.remove('show');
