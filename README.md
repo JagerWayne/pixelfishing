@@ -536,6 +536,11 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.4.0: better pier fishing, faster walking
+- **No more walking off after a fight:** when the line snaps, the fish escapes or you land a catch while holding the stick (or A/D) to one side, the angler (or the boat) ignores it until you let go.
+- **Fights end properly:** a snapped line kicks the rod back, its loose end falls and fades and the bobber sinks; an escaped fish darts away and fades while the empty line is wound in (about a second; walking waits for it).
+- **Walking is faster:** 4.2 m/s at full stick (was 3.0), and first-person turning is a little quicker. Version bumped to **v5.4.0**.
+
 ### 2026-11-21, Version 5.3.0: rotate toggle, boat-only diving, full bucket
 - **Customise:** a *Stop / Rotate* button pauses and resumes the preview's spin (dragging still turns the model).
 - **No diving from the pier:** the Dive button only appears on a stopped boat or at the lighthouse jetty.
