@@ -536,6 +536,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.1.3: remove aquarium decorations, fewer idle buttons
+- **Aquarium decorations can be removed:** owned decorations show a *Remove* button in the Shop tab (with a confirm); the slot frees up. Buying one again costs full price.
+- The round action button is also hidden while reading, while ascending in an emergency and while the spear reloads. Version bumped to **v5.1.3**.
+
 ### 2026-11-21, Version 5.1.2: no Walk Edge button
 - The *Walk Edge* button is hidden everywhere (it did nothing); it only appears beside the seagull, where it still counts the secret-menu taps. Version bumped to **v5.1.2**.
 
