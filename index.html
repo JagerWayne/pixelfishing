@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '4.10.0';
+    window.PF_VERSION = '5.0.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -658,6 +658,11 @@
     .sl-n { flex: 1; font-size: 13px; font-weight: 900; line-height: 1.2; } .sl-n small { display: block; font-size: 11px; font-weight: 700; color: #92400e; }
     .sl-p { font-size: 15px; font-weight: 900; color: #166534; }
     .sl-head { font-size: 12px; font-weight: 900; padding: 3px 4px; border-bottom: 3px solid; display: flex; align-items: center; gap: 6px; margin-top: 4px; } .sl-head span { width: 12px; height: 12px; border-radius: 3px; }
+    .sl-btn { font: inherit; font-size: 12px; font-weight: 900; min-height: 40px; padding: 4px 11px; border-radius: 8px; background: #15803d; color: #fff; border: 2px solid #14532d; cursor: pointer; }
+    .sl-btn.red { background: #b91c1c; border-color: #7f1d1d; }
+    .sl-btn:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; cursor: default; }
+    .bar { display: inline-block; vertical-align: middle; width: 54px; height: 9px; border: 2px solid #5b3a1a; border-radius: 5px; background: #ecd9a0; overflow: hidden; margin-right: 4px; } .bar i { display: block; height: 100%; }
+    #shop-rows .sl-row > .sl-n { flex: 1; min-width: 0; }
     .sl-empty { font-size: 13px; color: #7c5a30; text-align: center; padding: 18px 8px; }
     #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.55); pointer-events: auto; z-index: 2; }
     #shop-confirm.open { display: flex; }
@@ -1787,7 +1792,7 @@
           <button class="menu-tile menu-dot" id="menu-log" data-closes-menu type="button">📖<span>Log</span></button>
           <button class="menu-tile" id="btn-open-settings" data-closes-menu type="button" aria-label="Settings">🎛️<span>Settings</span></button>
           <button class="menu-tile" id="menu-career" data-closes-menu type="button">🏅<span>Career</span></button>
-          <button class="menu-tile" id="menu-trophies" data-closes-menu type="button">🏆<span>Trophies</span></button>
+          <button class="menu-tile" id="menu-trophies" data-closes-menu type="button">🏆<span>Records</span></button>
           <button class="menu-tile" id="btn-drawer-customize" data-closes-menu type="button">🎨<span>Look</span></button>
           <button class="menu-tile" id="btn-toggle-audio" data-label="Sound" type="button" aria-label="Toggle sound">🔊</button>
           <button class="menu-tile" id="btn-toggle-view" data-label="View" data-closes-menu type="button" aria-label="Toggle first person view (V)">🎥</button>
@@ -1839,7 +1844,7 @@
   <div class="modal-backdrop" id="modal-trophies">
     <div class="pixel-box modal-window" style="border-color: #facc15;">
       <div class="modal-header" style="background: #2a2208; border-bottom-color: #facc15;">
-        <span class="modal-title">🏆 TROPHY CASE</span>
+        <span class="modal-title">🏆 RECORDS</span>
         <button class="pixel-btn red" data-close="modal-trophies" type="button">Close</button>
       </div>
       <div class="modal-body">
@@ -4349,7 +4354,7 @@
       /* Harbour order (v4.9.0), left to right looking from the island: Boatyard, Dive Shop, Tackle Shop, Bounty board,
          [pier], Recycling, Fish Market, Cabin (with the bottle gallery, trophy case and film camera inside). */
       const RECYCLE = { x: 6.8, w: 4.5, d: 1.3, frontZ: 1.3 };
-      const CABIN = { x: 16.9, w: 6.4, d: 3.6, doorW: 2.0, windowX: 0.55, galleryX: 15.25, trophyX: 19.06, camX: 15.0, camZ: 2.9 };
+      const CABIN = { x: 16.9, w: 6.4, d: 3.6, doorW: 2.0, windowX: 0.55, galleryX: 15.25, aquaX: 18.7, camX: 15.0, camZ: 2.9 };
 
       const Colliders = {
         list: [],
@@ -5855,35 +5860,67 @@
           return g;
         }
 
-        /* Trophy cabinet: glass-fronted case that shows the player's best species as mounted fish.
-           Origin at the base centre, front faces +Z. g.userData.fishGroup holds the mounts (rebuilt on demand). */
-        static buildTrophyCabinet(textures) {
-          const g = new THREE.Group();
-          const K = this.propKit(textures);
-          const felt = K.M(0x14532d, 0.95);
-          const glass = new THREE.MeshStandardMaterial({ color: 0x9bd8f5, transparent: true, opacity: 0.13, roughness: 0.05, metalness: 0.1, depthWrite: false });
-          K.box(g, 1.3, 0.55, 0.62, K.darkWood, 0, 0.275, 0);
-          K.box(g, 1.34, 0.05, 0.66, K.lightWood, 0, 0.575, 0);
-          K.box(g, 1.16, 1.9, 0.05, felt, 0, 1.55, -0.27);
-          [-0.62, 0.62].forEach(x => K.box(g, 0.08, 2.0, 0.6, K.darkWood, x, 1.58, 0));
-          K.box(g, 1.34, 0.1, 0.66, K.darkWood, 0, 2.58, 0);
-          K.box(g, 1.16, 0.26, 0.05, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('TROPHY CASE', 256, 64) }), 0, 2.8, 0.05);
-          [1.3, 1.82].forEach(y => K.box(g, 1.16, 0.03, 0.5, K.lightWood, 0, y, -0.02));
-          const gl = new THREE.Mesh(new THREE.BoxGeometry(1.16, 1.9, 0.02), glass); gl.position.set(0, 1.55, 0.29); g.add(gl);
-          K.box(g, 1.1, 0.03, 0.05, K.brass, 0, 0.62, 0.3);
-          // ---- v3.6 detail pass: cornice, turned feet, door frame with mullions, brass handle, interior light strip ----
-          K.box(g, 1.44, 0.06, 0.74, K.lightWood, 0, 2.66, 0.0);
-          K.box(g, 1.38, 0.05, 0.7, K.darkWood, 0, 0.02, 0.0);
-          [[-0.58, 0.24], [0.58, 0.24], [-0.58, -0.24], [0.58, -0.24]].forEach(([x, z]) => K.cyl(g, 0.045, 0.035, 0.06, K.brass, x, -0.01, z, 8));
-          [-0.58, 0.58].forEach(x => K.box(g, 0.05, 1.92, 0.05, K.darkWood, x, 1.55, 0.31));
-          [0.6, 2.5].forEach(y => K.box(g, 1.2, 0.05, 0.05, K.darkWood, 0, y, 0.31));
-          K.box(g, 0.025, 1.88, 0.03, K.darkWood, 0, 1.55, 0.31);
-          K.cyl(g, 0.012, 0.012, 0.22, K.brass, 0.08, 1.5, 0.35, 6);
-          K.box(g, 1.1, 0.025, 0.04, K.M(0xfef3c7, 0.4, 0, { emissive: new THREE.Color(0xfde68a), emissiveIntensity: 0.8 }), 0, 2.5, -0.1);
-          [[-0.29, 2.04], [0.29, 2.04], [-0.29, 1.46], [0.29, 1.46], [0, 0.86]].forEach(([x, y]) => K.box(g, 0.24, 0.06, 0.012, K.brass, x, y, -0.235));
-          g.userData.slots = [[-0.29, 2.2], [0.29, 2.2], [-0.29, 1.62], [0.29, 1.62], [0, 1.02]];
-          g.userData.fishGroup = new THREE.Group();
-          g.add(g.userData.fishGroup);
+        /* AQUARIUM (v5.0.0): a glass tank on a cabinet, 2.4 m wide. Origin: floor, centre of the footprint, front +Z.
+           userData.live holds everything that changes (water, fish, decor, bubbles) and stays out of mergeStatic;
+           the fish swim inside x +-1.1, y 1.05 to 1.85, z +-0.3 (tank-local). */
+        static buildAquariumTank(textures) {
+          const g = new THREE.Group(), K = this.propKit(textures);
+          const live = new THREE.Group(); g.add(live); g.userData.live = live;
+          // cabinet with two doors and brass handles
+          K.box(g, 2.5, 0.84, 0.86, K.darkWood, 0, 0.42, 0);
+          [-0.6, 0.6].forEach(x => { K.box(g, 1.1, 0.64, 0.03, K.wood, x, 0.42, 0.44); K.cyl(g, 0.02, 0.02, 0.1, K.brass, x * 0.2 + (x < 0 ? 0.35 : -0.35), 0.42, 0.47, 6); });
+          K.box(g, 2.58, 0.07, 0.94, K.lightWood, 0, 0.875, 0);
+          // glass (front and sides), corner posts, backdrop
+          const glassM = new THREE.MeshStandardMaterial({ color: 0x9bd8f5, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0.1, depthWrite: false });
+          const pane = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glassM); m.position.set(x, y, z); m.renderOrder = 6; g.add(m); };
+          pane(2.4, 1.14, 0.02, 0, 1.48, 0.41); pane(0.02, 1.14, 0.82, -1.2, 1.48, 0); pane(0.02, 1.14, 0.82, 1.2, 1.48, 0);
+          [[-1.2, -0.41], [1.2, -0.41], [-1.2, 0.41], [1.2, 0.41]].forEach(([x, z]) => K.box(g, 0.07, 1.18, 0.07, K.iron, x, 1.47, z));
+          const bc = document.createElement('canvas'); bc.width = 8; bc.height = 64; { const x = bc.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, '#0b3b5c'); gr.addColorStop(1, '#0e6f9b'); x.fillStyle = gr; x.fillRect(0, 0, 8, 64); }
+          const bt = new THREE.CanvasTexture(bc); if (THREE.sRGBEncoding) bt.encoding = THREE.sRGBEncoding;
+          const back = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.14), new THREE.MeshBasicMaterial({ map: bt })); back.position.set(0, 1.48, -0.4); g.add(back);
+          // hood with a light strip and the sign
+          K.box(g, 2.6, 0.3, 0.96, K.darkWood, 0, 2.2, 0);
+          K.box(g, 2.3, 0.04, 0.6, K.M(0xe0f2fe, 0.3, 0, { emissive: new THREE.Color(0x7dd3fc), emissiveIntensity: 1.0 }), 0, 2.03, 0);
+          K.box(g, 1.3, 0.22, 0.04, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🐠 AQUARIUM', 320, 64) }), 0, 2.2, 0.49);
+          // sand, gravel and the air stone with its pipe
+          K.box(g, 2.38, 0.1, 0.82, K.M(0xe8d5a0, 0.95), 0, 0.98, 0);
+          for (let i = 0; i < 26; i++) { const s = K.sph(g, 0.03 + (i % 3) * 0.012, K.M([0x9ca3af, 0xd6c08e, 0x78716c][i % 3], 0.9), -1.05 + (i * 0.37) % 2.1, 1.045, -0.32 + ((i * 0.53) % 0.64), 5, 4); s.scale.y = 0.6; }
+          K.cyl(g, 0.045, 0.05, 0.05, K.M(0x64748b, 0.8), -0.95, 1.06, -0.28, 8);
+          // water (tinted by cleanliness at run time), bubbles, fish, decor
+          const water = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.94, 0.8), new THREE.MeshBasicMaterial({ color: 0x5ec5ee, transparent: true, opacity: 0.2, depthWrite: false }));
+          water.position.set(0, 1.5, 0); water.renderOrder = 5; live.add(water); g.userData.water = water;
+          const bubbles = [];
+          for (let i = 0; i < 9; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.018 + (i % 3) * 0.006, 6, 5), new THREE.MeshBasicMaterial({ color: 0xe0f7ff, transparent: true, opacity: 0.7, depthWrite: false })); b.position.set(-0.95, 1.1 + i * 0.1, -0.28); b.renderOrder = 7; live.add(b); bubbles.push(b); }
+          g.userData.bubbles = bubbles;
+          g.userData.fishGroup = new THREE.Group(); live.add(g.userData.fishGroup);
+          g.userData.decorGroup = new THREE.Group(); live.add(g.userData.decorGroup);
+          g.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
+          return g;
+        }
+
+        /* decoration for the tank (origin on the sand, about 0.4 m wide at most) */
+        static buildAquariumDecor(id, textures) {
+          const g = new THREE.Group(), K = this.propKit(textures), M = K.M;
+          if (id === 'plants') {
+            for (let i = 0; i < 7; i++) { const h = 0.3 + (i % 3) * 0.14; const bl = K.cyl(g, 0.004, 0.03, h, M([0x16a34a, 0x22c55e, 0x15803d][i % 3], 0.8, 0, { side: THREE.DoubleSide }), -0.14 + i * 0.047, h / 2, (i % 2 ? 0.04 : -0.04), 5); bl.rotation.z = (i - 3) * 0.06; bl.userData.sway = i; }
+          } else if (id === 'rocks') {
+            [[0, 0.1, 0, 0.16], [0.16, 0.06, 0.05, 0.1], [-0.15, 0.05, 0.03, 0.09]].forEach(([x, y, z, r], i) => { const rk = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), M(i % 2 ? 0x78716c : 0x57534e, 0.95)); rk.position.set(x, y, z); rk.scale.y = 0.75; g.add(rk); });
+          } else if (id === 'driftwood') {
+            const a = K.cyl(g, 0.035, 0.05, 0.5, M(0x9a7b4f, 0.9), 0, 0.12, 0, 6); a.rotation.z = 1.2; const b = K.cyl(g, 0.02, 0.03, 0.26, M(0x9a7b4f, 0.9), 0.14, 0.26, 0, 6); b.rotation.z = -0.5;
+          } else if (id === 'coral') {
+            [[0, 0xf472b6], [-0.1, 0xfb7185], [0.11, 0xc084fc]].forEach(([x, c], i) => { const h = 0.18 + i * 0.05; K.cyl(g, 0.012, 0.03, h, M(c, 0.7), x, h / 2, 0, 6); [-0.05, 0.05].forEach(dx => { const br = K.cyl(g, 0.01, 0.018, 0.12, M(c, 0.7), x + dx, h * 0.8, 0, 5); br.rotation.z = dx * 7; K.sph(g, 0.022, M(c, 0.6), x + dx * 1.7, h * 0.8 + 0.07, 0, 6, 5); }); });
+          } else if (id === 'castle') {
+            K.box(g, 0.3, 0.14, 0.2, M(0xd6c08e, 0.9), 0, 0.07, 0); [-0.12, 0.12].forEach(x => { K.cyl(g, 0.045, 0.05, 0.26, M(0xd6c08e, 0.9), x, 0.13, 0.0, 8); K.cyl(g, 0.0, 0.06, 0.1, M(0xdc2626, 0.7), x, 0.31, 0, 8); });
+            K.box(g, 0.12, 0.2, 0.12, M(0xc8b27a, 0.9), 0, 0.2, 0);
+          } else if (id === 'chest') {
+            K.box(g, 0.24, 0.12, 0.15, M(0x7c4a1e, 0.85), 0, 0.06, 0); const lid = K.box(g, 0.24, 0.07, 0.15, M(0x92400e, 0.85), 0, 0.15, -0.03); lid.rotation.x = -0.5; K.box(g, 0.05, 0.05, 0.02, K.brass, 0, 0.1, 0.08);
+            K.sph(g, 0.03, M(0xfacc15, 0.3, 0.6, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.6 }), 0.0, 0.14, 0.0, 6, 5);
+          } else if (id === 'wreck') {
+            const h = K.box(g, 0.42, 0.12, 0.16, M(0x78350f, 0.9), 0, 0.1, 0); h.rotation.z = 0.35; K.cyl(g, 0.012, 0.012, 0.3, M(0x57534e, 0.9), -0.05, 0.28, 0, 5).rotation.z = 0.5; const sl = K.box(g, 0.14, 0.12, 0.014, M(0xe5e7eb, 0.8), 0.02, 0.3, 0); sl.rotation.z = 0.5;
+          } else if (id === 'lights') {
+            for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; K.sph(g, 0.03, new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(i / 8, 0.9, 0.6) }), Math.cos(a) * 0.15, 0.07, Math.sin(a) * 0.08, 6, 5); }
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.012, 5, 16), M(0x334155, 0.5)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.05; ring.scale.z = 0.55; g.add(ring);
+          }
           return g;
         }
 
@@ -6117,14 +6154,8 @@
           // floor, a step at the door
           K.box(g, W, 0.1, D + 0.2, K.lightWood, 0, 0.05, D / 2 - 0.05);
           K.box(g, C.doorW + 0.6, 0.08, 0.5, K.darkWood, 0, 0.04, D + 0.3);
-          // back wall with a window between the stands
-          const gx = C.windowX, ww = 1.2;
-          const seg = (x1, x2, y1, y2, parent, z, mat) => K.box(parent, x2 - x1, y2 - y1, T, mat(), (x1 + x2) / 2, (y1 + y2) / 2, z);
-          seg(-hw, gx - ww / 2, 0, H, g, -0.02, wallM); seg(gx + ww / 2, hw, 0, H, g, -0.02, wallM);
-          seg(gx - ww / 2, gx + ww / 2, 0.1, 1.0, g, -0.02, wallM); seg(gx - ww / 2, gx + ww / 2, 2.0, H, g, -0.02, wallM);
-          const pane = new THREE.Mesh(new THREE.PlaneGeometry(ww, 1.0), new THREE.MeshBasicMaterial({ color: 0x9bdcf2, transparent: true, opacity: 0.45 })); pane.position.set(gx, 1.5, 0.06); g.add(pane);
-          [[gx, 1.0, ww + 0.1, 0.07], [gx, 2.0, ww + 0.1, 0.07]].forEach(([x, y, w, h]) => K.box(g, w, h, 0.1, trimM(), x, y, 0.02));
-          [gx - ww / 2, gx + ww / 2, gx].forEach(x => K.box(g, 0.06, 1.0, 0.1, trimM(), x, 1.5, 0.02));
+          // back wall
+          K.box(g, W, H, T, wallM(), 0, H / 2, -0.02);
           // side walls
           [-1, 1].forEach(sd => K.box(g, T, H, D + 0.1, wallM(), sd * (hw - T / 2), H / 2, D / 2));
           // corner posts
@@ -6831,10 +6862,10 @@
           galleryStand.rotation.y = 0;
           pierGroup.add(galleryStand);
 
-          // Trophy cabinet in the gap between the gallery and the film camera (fronts face +Z)
-          const trophyCabinet = this.buildTrophyCabinet(textures);
-          trophyCabinet.position.set(CABIN.trophyX, 1.56, 0.8);
-          pierGroup.add(trophyCabinet);
+          // The aquarium on the cabin's back wall, right of the bottle gallery (front faces +Z)
+          const aquarium = this.buildAquariumTank(textures);
+          aquarium.position.set(CABIN.aquaX, 1.56, 0.5);
+          pierGroup.add(aquarium);
 
           // 3D Fourth-Wall Film Camera with Back to the Sea, Facing South (+Z)
           const filmCamera = this.buildFourthWallCamera();
@@ -6870,7 +6901,7 @@
           Colliders.box('tackle shop', -7.525, 1.275, 1.825, 1.275, W);
           Colliders.box('bounty board', -4.2, 0.825, 1.0, 0.825, W);
           Colliders.box('bottle gallery', CABIN.galleryX, 0.875, 1.3, 0.875, W);
-          Colliders.box('trophy cabinet', CABIN.trophyX, 0.725, 0.7, 0.725, W);
+          Colliders.box('aquarium', CABIN.aquaX, 0.5, 1.3, 0.5, W);
           Colliders.circle('film camera', CABIN.camX, CABIN.camZ, 0.6, W);
           Colliders.box('recycling', RECYCLE.x, 0.65, RECYCLE.w / 2, 0.65, W);
           {   // the cabin: side walls, the front wall with its door gap, the bunk bed
@@ -7157,8 +7188,8 @@
           }
 
           // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The film camera (it turns to
-          // face you), the trophy mounts (rebuilt when records change) and the secret seagull stay separate.
-          ModelKit.mergeStatic(pierGroup, [filmCamera, trophyCabinet.userData.fishGroup, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
+          // face you), the aquarium's water and fish (they change) and the secret seagull stay separate.
+          ModelKit.mergeStatic(pierGroup, [filmCamera, aquarium.userData.live, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
           scene.add(pierGroup);
 
           const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -7437,12 +7468,12 @@
             if (realLights) addLight(-4.2, 1.56 + 2.35, 0.8 + 0.9, LIGHT_TUNING.bounty.color, 7.5, LIGHT_TUNING.bounty.k);
             addPool(-4.2, 1.56, 0.8 + 1.0, 2.1, LIGHT_TUNING.bounty.pool, 0.9);
           }
-          // Cabin: a warm lamp in the middle, a teal light on the bottle gallery, a soft one over the trophy case
+          // Cabin: a warm lamp in the middle, a teal light on the bottle gallery, a cool glow at the aquarium
           if (realLights) addLight(CABIN.x, 1.56 + 2.1, 1.8, LIGHT_TUNING.shop.color, 9, LIGHT_TUNING.shop.k);
           if (realLights) addLight(CABIN.galleryX, 1.56 + 2.0, 0.8 + 0.9, LIGHT_TUNING.gallery.color, 6.5, LIGHT_TUNING.gallery.k);
           addPool(CABIN.galleryX, 1.56, 0.8 + 1.2, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
-          if (realLights) addLight(CABIN.trophyX, 1.56 + 2.2, 0.8 + 0.9, LIGHT_TUNING.trophy.color, 6, LIGHT_TUNING.trophy.k);
-          addPool(CABIN.trophyX, 1.56, 0.8 + 1.0, 1.9, LIGHT_TUNING.trophy.pool, 0.8);
+          if (realLights) addLight(CABIN.aquaX, 1.56 + 2.0, 1.4, 0x7dd3fc, 6, LIGHT_TUNING.trophy.k);
+          addPool(CABIN.aquaX, 1.56, 1.7, 2.4, LIGHT_TUNING.trophy.pool, 0.8);
           addPool(CABIN.x, 1.56, 2.0, 2.6, LIGHT_TUNING.shop.pool, 0.8);
           // Recycling stand: a lamp post by the skips
           buildHarborLamp(RECYCLE.x - RECYCLE.w / 2 - 0.4, 1.56, 1.7, realLights);
@@ -7717,7 +7748,7 @@
             lanternLights,
             standGlows,
             lighthouseBeacon,
-            trophyCabinet,
+            aquarium,
             cheatGull,
             anglerGroup,
             anglerRig,
@@ -8326,7 +8357,7 @@ const mainCanvas = document.getElementById('game-canvas');
         shadowMarkT -= dt;
         if (shadowMarkT <= 0) {
           shadowMarkT = 0.5;
-          [world.anglerGroup, playerBoatMesh, pierBucketMesh, world.filmCamera, world.trophyCabinet && world.trophyCabinet.userData.fishGroup].forEach(g => {
+          [world.anglerGroup, playerBoatMesh, pierBucketMesh, world.filmCamera, world.aquarium && world.aquarium.userData.decorGroup].forEach(g => {
             if (g) g.traverse(o => { if (o.isMesh && !o.castShadow && !(o.material && o.material.transparent)) { o.castShadow = true; o.receiveShadow = true; } });
           });
         }
@@ -8948,6 +8979,165 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function generateBountyContracts(src) { return pickBounties(src, 3, []); }
 
       /* =========================================================================
+         AQUARIUM (v5.0.0): a living tank in the Cabin. Only fish go in, and every tank has a largest fish it can hold
+         (AQUARIUM_MAX_W is the top tank's limit, so the big gamefish and deep monsters never fit in any tank) and a room
+         limit. Fish eat and foul the water over in-game days, keep visitors happy and pay a ticket income, and can breed.
+         ========================================================================= */
+      const AQUARIUM_TANKS = [
+        { tier: 1, name: 'Starter Tank', maxW: 1.5, cap: 8, cost: 0, decor: 3 },
+        { tier: 2, name: 'Reef Tank', maxW: 4, cap: 20, cost: 450, decor: 4 },
+        { tier: 3, name: 'Display Tank', maxW: 9, cap: 40, cost: 1800, decor: 5 },
+        { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6 }
+      ];
+      const AQUARIUM_MAX_W = AQUARIUM_TANKS[AQUARIUM_TANKS.length - 1].maxW;
+      const AQUARIUM_FORMS = {
+        normal: { name: '', mult: 1 }, golden: { name: 'Golden', mult: 2, tint: 0xffd24c },
+        albino: { name: 'Albino', mult: 2, tint: 0xfff3f0 }, midnight: { name: 'Midnight', mult: 3, tint: 0x3b4a8f }
+      };
+      const AQUARIUM_DECOR = [
+        { id: 'plants', name: 'Water Plants', icon: '🌿', cost: 60, charm: 4, desc: 'Swaying green plants.' },
+        { id: 'rocks', name: 'Rock Pile', icon: '🪨', cost: 80, charm: 3, desc: 'A pile of smooth rocks to hide behind.' },
+        { id: 'driftwood', name: 'Driftwood', icon: '🪵', cost: 120, charm: 4, desc: 'A bleached branch.' },
+        { id: 'coral', name: 'Coral Garden', icon: '🪸', cost: 260, charm: 8, desc: 'Branching pink coral.' },
+        { id: 'castle', name: 'Sand Castle', icon: '🏰', cost: 340, charm: 9, desc: 'A tiny castle with a flag.' },
+        { id: 'chest', name: 'Treasure Chest', icon: '🧰', cost: 420, charm: 10, desc: 'A chest that opens now and then.' },
+        { id: 'wreck', name: 'Mini Shipwreck', icon: '🚢', cost: 700, charm: 14, desc: 'A little wreck on its side.' },
+        { id: 'lights', name: 'Light Show', icon: '✨', cost: 900, charm: 12, desc: 'Colour-changing glow ring.' }
+      ];
+      const aquaLoad = w => Math.max(1, Math.pow(w, 0.8));      // how much room a fish takes
+      function defaultAquarium() { return { tier: 1, fish: [], food: 80, clean: 80, decor: [], tickets: 0, lastDay: 0, kept: [], bred: 0, forms: [] }; }
+      const aquaTankOf = aq => AQUARIUM_TANKS[Math.max(1, Math.min(AQUARIUM_TANKS.length, aq.tier || 1)) - 1];
+      const aquaUsed = aq => aq.fish.reduce((s, f) => s + aquaLoad(f.w), 0);
+      /* can this bucket fish (or { category, weight }) go into the tank? -> { ok, reason } */
+      function aquariumCanHold(entry, aq) {
+        aq = aq || state.aquarium;
+        if (!entry || entry.category !== 'Fish') return { ok: false, reason: 'Only fish go in an aquarium.' };
+        const w = Number(entry.weight !== undefined ? entry.weight : entry.w);
+        if (!(w > 0)) return { ok: false, reason: 'No weight.' };
+        if (w > AQUARIUM_MAX_W) return { ok: false, reason: `Too big for any tank (max ${AQUARIUM_MAX_W} kg).` };
+        const t = aquaTankOf(aq);
+        if (w > t.maxW) return { ok: false, reason: `Too big for this tank (max ${t.maxW} kg).` };
+        if (aquaUsed(aq) + aquaLoad(w) > t.cap + 1e-6) return { ok: false, reason: 'Tank full.' };
+        return { ok: true, reason: '' };
+      }
+      const aquaCharm = aq => Math.min(25, aq.decor.reduce((s, id) => s + ((AQUARIUM_DECOR.find(d => d.id === id) || {}).charm || 0), 0));
+      function aquaHappy(aq) {
+        const species = new Set(aq.fish.map(f => f.id)).size;
+        return Math.round(Math.max(0, Math.min(100, aq.food * 0.4 + aq.clean * 0.4 + aquaCharm(aq) * 0.6 + Math.min(10, species * 2))));
+      }
+      /* money earned per in-game day: the fishes' values x form x mood x a small collection bonus (0 while unhappy) */
+      function aquaIncome(aq) {
+        const h = aquaHappy(aq);
+        if (h < 35) return 0;
+        const base = aq.fish.reduce((s, f) => s + (f.v || 1) * 0.12 * (AQUARIUM_FORMS[f.form] || AQUARIUM_FORMS.normal).mult, 0);
+        return +(base * (h / 100) * (1 + 0.03 * aq.kept.length)).toFixed(2);
+      }
+      const aquaBankCap = aq => Math.max(30, aquaIncome(aq) * 8);
+      /* once per in-game day (from the day-night cycle): income, hunger and dirt, fry growing, breeding */
+      function aquariumDay() {
+        const aq = state.aquarium; if (!aq) return;
+        const tank = aquaTankOf(aq);
+        aq.tickets = +Math.min(aquaBankCap(aq), aq.tickets + aquaIncome(aq)).toFixed(2);
+        const load = aquaUsed(aq);
+        aq.food = Math.max(0, aq.food - (10 + load * 0.5));
+        aq.clean = Math.max(0, aq.clean - (7 + load * 0.45));
+        aq.fish.forEach(f => {   // fry grow up, never past what the tank can hold
+          if (!f.g) return;
+          const it = CATALOG_INDEX[f.id]; if (!it) { f.g = 0; return; }
+          const avg = (it.minW + it.maxW) / 2, tw = Math.min(avg, tank.maxW);
+          f.w = Math.min(tw, +(f.w * 1.3).toFixed(3));
+          f.v = Math.max(1, Math.round(it.value * Math.min(1, f.w / avg)));
+          if (f.w >= tw - 1e-6) f.g = 0;
+        });
+        if (aquaHappy(aq) >= 60) {   // two or more grown fish of a species, kept happy, may have fry
+          const groups = {};
+          aq.fish.forEach(f => { if (!f.g) (groups[f.id] = groups[f.id] || []).push(f); });
+          Object.keys(groups).forEach(id => {
+            const g = groups[id]; if (g.length < 2 || Math.random() > 0.4) return;
+            const it = CATALOG_INDEX[id], w = Math.max(0.05, +Math.min(0.1, it.minW * 0.2).toFixed(3));
+            if (aquaUsed(aq) + aquaLoad(w) > tank.cap + 1e-6) return;
+            const par = g[Math.floor(Math.random() * g.length)];
+            let form = 'normal';
+            if (par.form !== 'normal' && Math.random() < 0.5) form = par.form;
+            else if (Math.random() < 0.12) form = ['golden', 'albino', 'midnight'][Math.floor(Math.random() * 3)];
+            aq.fish.push({ id, w, v: Math.max(1, Math.round(it.value * 0.3)), form, born: state.dayCount || 0, g: 1 });
+            aq.bred++;
+            if (form !== 'normal' && !aq.forms.includes(form)) aq.forms.push(form);
+            showToast(`🐟 ${AQUARIUM_FORMS[form].name ? AQUARIUM_FORMS[form].name + ' ' : ''}${it.name} fry hatched in your aquarium!`);
+          });
+        }
+        aq.lastDay = state.dayCount || 0;
+        checkAchievements();
+      }
+      function aquariumAdd(entry) {
+        const aq = state.aquarium, i = state.bucket.indexOf(entry), c = aquariumCanHold(entry, aq);
+        if (i < 0 || !c.ok) return false;
+        state.bucket.splice(i, 1);
+        aq.fish.push({ id: entry.id, w: +Number(entry.weight).toFixed(3), v: Math.max(1, Math.floor(Number(entry.value) || 1)), form: 'normal', born: state.dayCount || 0, g: 0 });
+        if (!aq.kept.includes(entry.id)) aq.kept.push(entry.id);
+        sfx.playTick(); saveGame(); rebuildPierBucketVisual(); checkAchievements(); updateHUD();
+        showToast(`🐠 ${entry.name} is in your aquarium.`);
+        return true;
+      }
+      function aquariumTakeOut(i) {
+        const aq = state.aquarium, f = aq.fish[i]; if (!f) return false;
+        const it = CATALOG_INDEX[f.id];
+        if (getBucketWeight() + f.w > getBucketCapacity() + 0.001) { showToast('Not enough space in your bucket!'); return false; }
+        aq.fish.splice(i, 1);
+        state.bucket.push({ uid: Date.now() + Math.random(), id: f.id, name: it.name, category: 'Fish', rarity: it.rarity, zoneName: 'Aquarium', weight: f.w, value: f.v, bottleMessageId: null });
+        saveGame(); rebuildPierBucketVisual(); updateHUD();
+        return true;
+      }
+      function aquariumRelease(i) { const aq = state.aquarium; if (!aq.fish[i]) return false; aq.fish.splice(i, 1); saveGame(); return true; }
+      function aquariumFeed(premium) {
+        const aq = state.aquarium;
+        if (premium) { if (state.cash < 20) { showToast('Premium pellets cost $20.'); return false; } state.cash = +(state.cash - 20).toFixed(2); aq.food = 100; sfx.playCoin(); }
+        else aq.food = Math.min(100, aq.food + 35);
+        saveGame(); updateHUD(); return true;
+      }
+      function aquariumClean() { state.aquarium.clean = 100; saveGame(); return true; }
+      function aquariumCollect() {
+        const aq = state.aquarium, got = Math.floor(aq.tickets * 100) / 100; if (got < 1) return false;
+        state.cash = +(state.cash + got).toFixed(2); aq.tickets = 0; bumpStat('earned', got);
+        sfx.playCoin(); saveGame(); updateHUD(); showToast(`🎟️ Collected ${shopMoney(got)} in visitor tickets.`);
+        return true;
+      }
+      function aquariumBuyTank() {
+        const aq = state.aquarium, nxt = AQUARIUM_TANKS[aq.tier]; if (!nxt || state.cash < nxt.cost) return false;
+        state.cash = +(state.cash - nxt.cost).toFixed(2); aq.tier = nxt.tier; sfx.playCoin(); saveGame(); updateHUD();
+        showToast(`🐠 Upgraded to the ${nxt.name}: fish up to ${nxt.maxW} kg, room for ${nxt.cap}.`); return true;
+      }
+      function aquariumBuyDecor(id) {
+        const aq = state.aquarium, d = AQUARIUM_DECOR.find(x => x.id === id);
+        if (!d || aq.decor.includes(id) || aq.decor.length >= aquaTankOf(aq).decor || state.cash < d.cost) return false;
+        state.cash = +(state.cash - d.cost).toFixed(2); aq.decor.push(id); sfx.playCoin(); saveGame(); updateHUD();
+        showToast(`${d.icon} ${d.name} added to the tank.`); return true;
+      }
+      function sanitizeAquarium(src) {
+        const aq = defaultAquarium();
+        if (!src || typeof src !== 'object') return aq;
+        const num = (v, d, lo, hi) => { v = Number(v); return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d; };
+        aq.tier = Math.floor(num(src.tier, 1, 1, AQUARIUM_TANKS.length));
+        const tank = AQUARIUM_TANKS[aq.tier - 1];
+        let load = 0;
+        (Array.isArray(src.fish) ? src.fish : []).forEach(f => {
+          if (!f || typeof f !== 'object') return;
+          const it = CATALOG_INDEX[f.id]; if (!it || it.category !== 'Fish') return;
+          const w = num(f.w, 0, 0, 1e4);
+          if (w < 0.02 || w > tank.maxW + 1e-6 || load + aquaLoad(w) > tank.cap + 1e-6) return;   // too big or too many: dropped
+          load += aquaLoad(w);
+          aq.fish.push({ id: f.id, w: +w.toFixed(3), v: Math.floor(num(f.v, it.value, 0, 1e6)), form: AQUARIUM_FORMS[f.form] ? f.form : 'normal', born: Math.floor(num(f.born, 0, 0, 1e6)), g: f.g ? 1 : 0 });
+        });
+        aq.food = num(src.food, 80, 0, 100); aq.clean = num(src.clean, 80, 0, 100);
+        aq.decor = [...new Set((Array.isArray(src.decor) ? src.decor : []).filter(id => AQUARIUM_DECOR.some(d => d.id === id)))].slice(0, tank.decor);
+        aq.tickets = num(src.tickets, 0, 0, 1e6); aq.lastDay = Math.floor(num(src.lastDay, 0, 0, 1e6));
+        aq.kept = [...new Set((Array.isArray(src.kept) ? src.kept : []).filter(id => CATALOG_INDEX[id] && CATALOG_INDEX[id].category === 'Fish'))];
+        aq.bred = Math.floor(num(src.bred, 0, 0, 1e6));
+        aq.forms = [...new Set((Array.isArray(src.forms) ? src.forms : []).filter(f => AQUARIUM_FORMS[f] && f !== 'normal'))];
+        return aq;
+      }
+
+      /* =========================================================================
          CAREER (XP, ranks, achievements) AND THE DAILY FISH MARKET
          ========================================================================= */
       const STAT_KEYS = ['catches', 'fish', 'junk', 'legendary', 'nightCatches', 'stormCatches', 'frenzyCatches', 'treasures', 'bossCatches',
@@ -9005,6 +9195,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'treasure_10', icon: '🏴‍☠️', name: 'Pirate King', desc: 'Find 10 treasure chests.', goal: 10, prog: () => stat('treasures'), cash: 800 },
         { id: 'boss_1', icon: '🦑', name: 'Boss Slayer', desc: 'Land a boss fish.', goal: 1, prog: () => stat('bossCatches'), cash: 1000 },
         { id: 'trophy_10', icon: '🥇', name: 'Trophy Collector', desc: 'Hold silver or gold records for 10 species.', goal: 10, prog: () => medalCount('silver'), cash: 400 },
+        { id: 'aqua_1', icon: '🐠', name: 'Fish Keeper', desc: 'Put a fish in your aquarium.', goal: 1, prog: () => (state.aquarium ? state.aquarium.kept.length : 0), cash: 60 },
+        { id: 'aqua_5', icon: '🪸', name: 'Reef Keeper', desc: 'Keep 5 different species in your aquarium.', goal: 5, prog: () => (state.aquarium ? state.aquarium.kept.length : 0), cash: 250 },
+        { id: 'aqua_10', icon: '🐡', name: 'Aquarist', desc: 'Keep 10 different species in your aquarium.', goal: 10, prog: () => (state.aquarium ? state.aquarium.kept.length : 0), cash: 900 },
+        { id: 'aqua_full', icon: '🫧', name: 'Full House', desc: 'Fill your aquarium to 90% of its room.', goal: 1, prog: () => (state.aquarium && aquaUsed(state.aquarium) >= aquaTankOf(state.aquarium).cap * 0.9 ? 1 : 0), cash: 300 },
+        { id: 'aqua_fry', icon: '🐣', name: 'Fish Breeder', desc: 'Have fry hatch in your aquarium.', goal: 1, prog: () => (state.aquarium ? Math.min(1, state.aquarium.bred) : 0), cash: 200 },
+        { id: 'aqua_form', icon: '🌟', name: 'Rare Colour', desc: 'Breed a golden, albino or midnight fish.', goal: 1, prog: () => (state.aquarium ? Math.min(1, state.aquarium.forms.length) : 0), cash: 500 },
         { id: 'rank_6', icon: '🎖️', name: 'Seasoned', desc: 'Reach the rank of Trench Hunter.', goal: 6, prog: () => rankIndexFor(state.xp), cash: 250 },
         { id: 'rank_12', icon: '👑', name: 'Sea Legend', desc: 'Reach the top rank.', goal: 11, prog: () => rankIndexFor(state.xp), cash: 1500 },
         { id: 'dive_1', icon: '🤿', name: 'First Plunge', desc: 'Make your first dive.', goal: 1, prog: () => stat('dives'), cash: 40 },
@@ -9165,6 +9361,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           vfxShader: 'none',
           modules: [],
           bounties: generateBountyContracts(),
+          aquarium: defaultAquarium(),
           seenSpecies: [],
           look: AnglerFactory.defaultLook('male'),
           xp: 0,
@@ -9690,6 +9887,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           out.bounties = kept.concat(pickBounties(out, Math.max(0, want - kept.length), kept));
         }
 
+        out.aquarium = sanitizeAquarium(src.aquarium);
+
         // appearance: sanitised against the option lists; the look's gender is the source of truth
         out.look = AnglerFactory.sanitizeLook(src.look, out.anglerGender);
         if (!src.look) out.look.gender = out.anglerGender;
@@ -9788,7 +9987,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
         { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
         { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
-        { id: 'trophy',  near: () => isNearPierTrophies(), cx: CABIN.trophyX,  cy: 3.1, cz: 0.8, halfW: 0.85, halfH: 1.4, side: -1 },
+        { id: 'aquarium', near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.35, cz: 0.5, halfW: 1.5, halfH: 1.0, side: -1 },
         { id: 'camera',  near: () => isNearPierCamera(),   cx: CABIN.camX,     cy: 2.9, cz: CABIN.camZ, halfW: 1.0, halfH: 1.1, side: 1 },
         { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
         ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75 * sh.s, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55 * sh.s + 0.1, side: sh.x < 0 ? 1 : -1 }))
@@ -9818,7 +10017,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
       function isNearPierGallery() { return nearStandFront(CABIN.galleryX, 1.6, 1.75, 1.0); }
       function isNearRecycle() { return nearStandFront(RECYCLE.x, RECYCLE.w / 2 + 0.2, RECYCLE.frontZ, 1.0); }
-      function isNearPierTrophies() { return nearStandFront(CABIN.trophyX, 0.8, 1.45, 1.0); }
+      function isNearAquarium() { return nearStandFront(CABIN.aquaX, 1.35, 1.0, 1.0); }
       function isNearPierCamera() { return nearSpot(CABIN.camX, CABIN.camZ, 1.3); }
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(PIER_TOOLBOX_X, -7.6, 1.25); }
@@ -10256,11 +10455,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             openGalleryModal();
             return;
           }
-          if (isNearPierTrophies()) {
+          if (isNearAquarium()) {
             isHoldingAction = false;
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
-            openTrophiesModal();
+            enterShopBrowse('aqua');
             return;
           }
           if (isNearPierCamera()) {
@@ -10610,7 +10809,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (state.daily.codDay !== today) { state.daily.codDay = today; addXp(25); setTimeout(() => showToast('⭐ Catch of the Day landed! x3 value and +25 XP'), 700); }
           state.daily.codCount++;
         }
-        if (isNewSpecies || isNewRecord) rebuildTrophyCabinet();
         saveGame();
 
         vfx.spawnSparkles(world.anglerGroup.position.clone().add(new THREE.Vector3(0, 1.5, -0.6)), 20, 0xfef08a);
@@ -10897,37 +11095,84 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           return (RARITY_RANK[ib.rarity] - RARITY_RANK[ia.rarity]) || (state.speciesStats[b].maxWeight / ib.maxW - state.speciesStats[a].maxWeight / ia.maxW);
         });
       }
-      function rebuildTrophyCabinet() {
-        const cab = world.trophyCabinet;
-        if (!cab) return;
-        const fg = cab.userData.fishGroup;
-        while (fg.children.length) {
-          const c = fg.children.pop();
-          c.traverse(o => { if (o.geometry) o.geometry.dispose(); });
-        }
-        const ids = trophyRanking().slice(0, 5);
-        cab.userData.slots.forEach(([sx, sy], i) => {
-          const id = ids[i];
-          if (!id) { // empty slot: a dim brass cup waiting for a catch
-            const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.05, 0.14, 10), new THREE.MeshStandardMaterial({ color: 0x6b5a2a, metalness: 0.6, roughness: 0.5 }));
-            cup.position.set(sx, sy - 0.08, -0.15); fg.add(cup);
-            return;
-          }
-          const it = CATALOG_INDEX[id];
-          const fish = WorldBuilder.buildFishModel(it, textures);
-          const bb = new THREE.Box3().setFromObject(fish), size = bb.getSize(new THREE.Vector3());
-          const k = Math.min(0.5 / Math.max(size.x, size.z, 0.01), 0.36 / Math.max(size.y, 0.01));
-          fish.scale.multiplyScalar(k);
-          const bb2 = new THREE.Box3().setFromObject(fish), c2 = bb2.getCenter(new THREE.Vector3());
-          fish.position.set(sx - c2.x, sy - c2.y, -0.14 - c2.z);
-          fg.add(fish);
-          const plate = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.09, 0.02), new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture(it.name.toUpperCase().slice(0, 18), 192, 40) }));
-          plate.position.set(sx, sy - 0.27, -0.2); fg.add(plate);
-          const medal = medalFor(id);
-          const bead = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: medal === 'gold' ? 0xfacc15 : medal === 'silver' ? 0xe2e8f0 : 0xb45309 }));
-          bead.position.set(sx + 0.27, sy - 0.27, -0.19); fg.add(bead);
-        });
+      /* ---- the tank in the world: swimming fish, water that gets murky, bubbles ---- */
+      const aquaView = { sig: '', fish: [], tpl: {}, green: new THREE.Color(0x4d7c0f) };
+      const AQ_BOUNDS = { x: 1.08, y0: 1.1, y1: 1.82, z: 0.15 };
+      function aquaTemplate(id) {
+        if (aquaView.tpl[id]) return aquaView.tpl[id];
+        const m = WorldBuilder.buildSculptedFishMesh(CATALOG_INDEX[id], textures);
+        const bb = new THREE.Box3().setFromObject(m), len = Math.max(0.01, bb.max.x - bb.min.x), c = bb.getCenter(new THREE.Vector3());
+        m.position.sub(c);
+        const wrap = new THREE.Group(); wrap.add(m);
+        return (aquaView.tpl[id] = { mesh: wrap, len });
       }
+      function aquaMakeFish(f) {
+        const t = aquaTemplate(f.id), inst = t.mesh.clone(true), form = AQUARIUM_FORMS[f.form] || AQUARIUM_FORMS.normal;
+        if (form.tint) inst.traverse(o => {   // colour forms get their own tinted materials
+          if (!o.isMesh || !o.material) return;
+          o.material = Array.isArray(o.material) ? o.material.map(m => m.clone()) : o.material.clone();
+          (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.color) m.color.lerp(new THREE.Color(form.tint), 0.55); m.userData.own = true; });
+        });
+        const len = 0.14 + 0.34 * Math.sqrt(Math.min(1, f.w / AQUARIUM_MAX_W));
+        inst.scale.setScalar(len / t.len);
+        const p = new THREE.Group(); p.add(inst); p.rotation.order = 'YZX';
+        const hx = AQ_BOUNDS.x - len * 0.5;
+        p.position.set((Math.random() * 2 - 1) * hx, AQ_BOUNDS.y0 + Math.random() * (AQ_BOUNDS.y1 - AQ_BOUNDS.y0), (Math.random() * 2 - 1) * AQ_BOUNDS.z);
+        p.userData = { len, vel: new THREE.Vector3(), tgt: new THREE.Vector3().copy(p.position), t: Math.random() * 2, ph: Math.random() * 6.28, inst, form: !!form.tint };
+        return p;
+      }
+      function aquaDispose(obj) { obj.traverse(o => { if (o.geometry && o.userData.ownGeo) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.userData && m.userData.own) m.dispose(); }); }); }
+      const AQ_DECOR_SLOTS = [[-0.85, -0.08], [0.85, 0.06], [-0.3, 0.08], [0.35, -0.08], [0.0, 0.0], [-0.6, -0.12]];
+      /* rebuild the swimmers and the decoration when the tank's contents changed */
+      function aquaSync(force) {
+        const A = world && world.aquarium; if (!A || !state.aquarium) return;
+        const aq = state.aquarium, sig = aq.tier + '|' + aq.decor.join() + '|' + aq.fish.map(f => f.id + ':' + f.form + ':' + f.w.toFixed(2)).join(',');
+        if (!force && sig === aquaView.sig) return;
+        aquaView.sig = sig;
+        const fg = A.userData.fishGroup, dg = A.userData.decorGroup;
+        aquaView.fish.forEach(p => { fg.remove(p); aquaDispose(p); });
+        aquaView.fish = aq.fish.map(f => { const p = aquaMakeFish(f); fg.add(p); return p; });
+        while (dg.children.length) { const c = dg.children.pop(); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+        aq.decor.forEach((id, i) => { const d = WorldBuilder.buildAquariumDecor(id, textures), s = AQ_DECOR_SLOTS[i % AQ_DECOR_SLOTS.length]; d.position.set(s[0], 1.03, s[1]); dg.add(d); });
+      }
+      function updateAquarium(dt) {
+        const A = world && world.aquarium; if (!A || !state.aquarium) return;
+        const watching = shopBrowse.active && shopBrowse.kind === 'aqua';
+        const near = !onBoat && Math.abs(playerX - CABIN.aquaX) < 11 && playerZ < 9.5;
+        A.userData.live.visible = near || watching;
+        if (!(near || watching)) return;
+        aquaSync(false);
+        const aq = state.aquarium, dirt = Math.pow(1 - aq.clean / 100, 2), wm = A.userData.water.material;
+        wm.color.setHex(0x5ec5ee).lerp(aquaView.green, dirt); wm.opacity = 0.2 + 0.36 * dirt;
+        if (dt <= 0) return;
+        const sad = aquaHappy(aq) < 35, B = AQ_BOUNDS;
+        aquaView.fish.forEach(p => {
+          const u = p.userData, hx = B.x - u.len * 0.5;
+          u.t -= dt;
+          if (u.t <= 0) { u.t = 2 + Math.random() * 4; u.tgt.set((Math.random() * 2 - 1) * hx, B.y0 + Math.random() * (B.y1 - B.y0), (Math.random() * 2 - 1) * B.z); }
+          const dx = u.tgt.x - p.position.x, dy = u.tgt.y - p.position.y, dz = u.tgt.z - p.position.z, d = Math.hypot(dx, dy, dz) || 1;
+          if (d < 0.08) u.t = 0;
+          const sp = (0.1 + u.len * 0.9) * (sad ? 0.35 : 1), k = Math.min(1, dt * 1.6);
+          u.vel.x += (dx / d * sp - u.vel.x) * k; u.vel.y += (dy / d * sp * 0.6 - u.vel.y) * k; u.vel.z += (dz / d * sp * 0.4 - u.vel.z) * k;
+          p.position.x = THREE.MathUtils.clamp(p.position.x + u.vel.x * dt, -hx, hx);
+          p.position.y = THREE.MathUtils.clamp(p.position.y + u.vel.y * dt, B.y0, B.y1);
+          p.position.z = THREE.MathUtils.clamp(p.position.z + u.vel.z * dt, -B.z, B.z);
+          const hs = Math.hypot(u.vel.x, u.vel.z);
+          if (hs > 0.02) {
+            const ty = Math.atan2(-u.vel.z, u.vel.x), e = Math.atan2(Math.sin(ty - p.rotation.y), Math.cos(ty - p.rotation.y));
+            p.rotation.y += e * Math.min(1, dt * 4);
+            p.rotation.z += (THREE.MathUtils.clamp(Math.atan2(u.vel.y, hs), -0.4, 0.4) * 0.7 - p.rotation.z) * Math.min(1, dt * 3);
+          }
+          u.inst.rotation.y = Math.sin(elapsed * (4 + hs * 16) + u.ph) * 0.12;
+        });
+        A.userData.bubbles.forEach((b, i) => {
+          b.position.y += dt * (0.3 + (i % 3) * 0.08);
+          if (b.position.y > 1.95) { b.position.y = 1.08; b.position.x = -0.95 + (Math.random() - 0.5) * 0.05; }
+        });
+        // plants sway
+        A.userData.decorGroup.children.forEach(d => d.traverse(o => { if (o.userData.sway !== undefined) o.rotation.z = Math.sin(elapsed * 1.4 + o.userData.sway) * 0.1 + (o.userData.sway - 3) * 0.06; }));
+      }
+
       function openTrophiesModal() {
         const ids = trophyRanking();
         const counts = { gold: 0, silver: 0, bronze: 0 };
@@ -10935,7 +11180,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('trophy-summary').textContent = `${ids.length} / ${FISH_TOTAL} fish species   🥇 ${counts.gold}   🥈 ${counts.silver}   🥉 ${counts.bronze}`;
         const host = document.getElementById('trophy-list');
         host.innerHTML = '';
-        if (!ids.length) host.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:12px 0;">No fish yet. Land one and it will appear here, and the best five get mounted in the case.</div>';
+        if (!ids.length) host.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:12px 0;">No fish yet. Land one and its record will appear here.</div>';
         ids.forEach((id, i) => {
           const it = CATALOG_INDEX[id], st = state.speciesStats[id], m = medalFor(id);
           const row = document.createElement('div');
@@ -11184,7 +11429,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         boatyard: { title: '⚓ BOATYARD', stand: 'boatyard', tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel']] },
         dive:     { title: '🤿 DIVE SHOP', stand: 'dive', tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns']] },
         fish:     { title: '🐟 FISH MARKET', stand: 'fish', list: 'fish' },
-        recycle:  { title: '♻️ RECYCLING', stand: 'recycle', list: 'junk' }
+        recycle:  { title: '♻️ RECYCLING', stand: 'recycle', list: 'junk' },
+        aqua:     { title: '🐠 AQUARIUM', stand: 'aquarium', list: 'aqua', tabs: [['fish', '🐠 Fish'], ['add', '➕ Add'], ['care', '🧽 Care'], ['shop', '🛒 Shop']] }
       };
       const shopBrowse = { active: false, kind: 'tackle', tab: 'rods', idx: 0, items: [], pending: null, armedAt: 0, viewOff: false, dir: 0 };
       const shopMoney = v => '$' + (+v).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -11382,7 +11628,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           b.addEventListener('click', () => setShopTab(id)); tabs.appendChild(b);
         });
         tabs.style.display = (sk.tabs || []).length > 1 ? 'flex' : 'none';
-        if (sk.list) shopListRender(); else shopPageRender();
+        if (sk.list === 'aqua') aquaRender(); else if (sk.list) shopListRender(); else shopPageRender();
       }
       function shopPageRender() {
         const it = shopBrowse.items[shopBrowse.idx], n = shopBrowse.items.length, buy = shopEl('shop-buy');
@@ -11436,7 +11682,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const h = document.createElement('div'); h.className = 'sl-head'; h.style.borderColor = SKIPS[k][2]; h.innerHTML = `<span style="background:${SKIPS[k][2]}"></span>${SKIPS[k][1]} ${SKIPS[k][0]} skip (${g.length})`; host.appendChild(h);
           g.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(addRow);
         });
-        const all = shopEl('shop-sellall'); all.disabled = !L.rows.length;
+        const all = shopEl('shop-sellall'); all.style.display = ''; all.disabled = !L.rows.length;
         all.textContent = L.rows.length ? `${fish ? 'Sell all fish' : 'Recycle all'} for ${shopMoney(L.total)}` : (fish ? 'No fish to sell' : 'Nothing to recycle');
       }
       function shopAskSell(entry, fish) {
@@ -11444,11 +11690,67 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         shopAsk({ confirm: `${fish ? 'Sell' : 'Recycle'} ${entry.name} (${entry.weight.toFixed(2)} kg) for ${shopMoney(v)}?`, price: v, verb: 'Sell', can: true,
           act: () => { const i = state.bucket.indexOf(entry); if (i >= 0) { sellBucketEntry(i); showToast(`${fish ? 'Sold' : 'Recycled'} ${entry.name} for ${shopMoney(v)}`); } } });
       }
+      function aquaAskCollect() {
+        const aq = state.aquarium; if (aq.tickets < 1) return;
+        shopAsk({ confirm: `Collect ${shopMoney(aq.tickets)} in visitor tickets?`, price: aq.tickets, verb: 'Sell', can: true, act: aquariumCollect });
+      }
+      function shopAskPrimary() { if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') aquaAskCollect(); else shopAskAll(); }
       function shopAskAll() {
         const sk = SHOP_KINDS[shopBrowse.kind], fish = sk.list === 'fish', L = shopListRows();
         if (!L.rows.length) return;
         shopAsk({ confirm: `${fish ? 'Sell all' : 'Recycle all'} ${L.rows.length} ${fish ? 'fish' : 'pieces'} for ${shopMoney(L.total)}?`, price: L.total, verb: 'Sell', can: true,
           act: () => sellBucketWhere(L.pred, fish ? 'Sold' : 'Recycled') });
+      }
+
+
+      /* ---- the aquarium sheet: Fish | Add | Care | Shop (same paper sheet as the shop lists) ---- */
+      function aquaRender() {
+        const aq = state.aquarium, tab = shopBrowse.tab, host = shopEl('shop-rows'), btn = shopEl('shop-sellall');
+        const t = aquaTankOf(aq), used = aquaUsed(aq), happy = aquaHappy(aq), inc = aquaIncome(aq);
+        const bar = (v, c) => `<span class="bar"><i style="width:${Math.round(v)}%;background:${c}"></i></span>`;
+        shopEl('shop-summary').innerHTML = `<b>${t.name}</b> • ${aq.fish.length} fish • room ${used.toFixed(1)} / ${t.cap} • biggest fish ${t.maxW} kg<br>🍤 Food ${bar(aq.food, '#f59e0b')} 🧽 Clean ${bar(aq.clean, '#22d3ee')} 😊 Happy ${bar(happy, happy < 35 ? '#ef4444' : '#22c55e')}<br>🎟️ ${shopMoney(aq.tickets)} waiting • ${shopMoney(inc)} a day • the bank holds ${shopMoney(aquaBankCap(aq))}${happy < 35 ? '<br>😟 The fish are unhappy and earn nothing: feed them and clean the tank.' : ''}`;
+        host.innerHTML = ''; btn.style.display = 'none';
+        const mk = (html, buttons) => {
+          const r = document.createElement('div'); r.className = 'sl-row'; r.innerHTML = html;
+          (buttons || []).forEach(([label, cls, fn, dis]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sl-btn ' + (cls || ''); b.textContent = label; b.disabled = !!dis; b.addEventListener('click', fn); r.appendChild(b); });
+          host.appendChild(r);
+        };
+        const icon = id => `<img src="${ITEM_ICONS[id] || ''}" alt="">`;
+        const msg = t2 => { host.insertAdjacentHTML('beforeend', `<p class="sl-empty">${t2}</p>`); };
+        if (tab === 'fish') {
+          if (!aq.fish.length) msg('The tank is empty. Catch a small fish, keep it in your bucket and add it on the Add tab. Big fish will not fit.');
+          aq.fish.forEach((f, i) => {
+            const it = CATALOG_INDEX[f.id], form = AQUARIUM_FORMS[f.form] || AQUARIUM_FORMS.normal;
+            mk(`${icon(f.id)}<span class="sl-n">${form.name ? form.name + ' ' : ''}${it.name}<small>${f.w.toFixed(2)} kg • worth ${shopMoney(f.v)}${f.g ? ' • growing' : ''}${form.mult > 1 ? ' • x' + form.mult + ' tickets' : ''}</small></span>`,
+              [['Bucket', '', () => shopAsk({ confirm: `Take ${it.name} (${f.w.toFixed(2)} kg) out of the tank and back into your bucket?`, price: null, verb: 'Take out', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumTakeOut(j); } })],
+               ['Release', 'red', () => shopAsk({ confirm: `Release ${it.name} into the sea? It will not come back.`, price: null, verb: 'Release', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumRelease(j); } })]]);
+          });
+        } else if (tab === 'add') {
+          const fish = state.bucket.filter(e => e.category === 'Fish');
+          if (!fish.length) msg('No fish in your bucket. Small fish (up to ' + AQUARIUM_MAX_W + ' kg) can go in the tank.');
+          fish.forEach(e => {
+            const c = aquariumCanHold(e, aq);
+            mk(`${icon(e.id)}<span class="sl-n">${e.name}<small>${Number(e.weight).toFixed(2)} kg • ${c.ok ? 'fits the tank' : c.reason}</small></span>`,
+              [['Add', '', () => shopAsk({ confirm: `Put ${e.name} (${Number(e.weight).toFixed(2)} kg) in your aquarium?`, price: null, verb: 'Add', can: true, act: () => aquariumAdd(e) }), !c.ok]]);
+          });
+        } else if (tab === 'care') {
+          mk(`<span class="sl-n">🍤 Fish flakes<small>Free. Food +35.</small></span>`, [['Feed', '', () => { aquariumFeed(false); refreshShopBrowse(); }]]);
+          mk(`<span class="sl-n">🥫 Premium pellets<small>$20. Fills the food bar.</small></span>`, [['Feed', '', () => shopAsk({ confirm: 'Buy premium pellets for $20 and feed the fish?', price: 20, verb: 'Buy', can: state.cash >= 20, act: () => aquariumFeed(true) }), state.cash < 20]]);
+          mk(`<span class="sl-n">🧽 Clean the tank<small>Free. Scrubs the glass and the water.</small></span>`, [['Clean', '', () => { aquariumClean(); refreshShopBrowse(); }]]);
+          mk(`<span class="sl-n">🐣 Breeding<small>Two or more happy fish of one species can have fry now and then (maybe a rare colour). ${aq.bred} hatched, ${aq.forms.length} colour form${aq.forms.length === 1 ? '' : 's'} so far.</small></span>`);
+          btn.style.display = ''; btn.disabled = aq.tickets < 1;
+          btn.textContent = aq.tickets >= 1 ? `Collect ${shopMoney(aq.tickets)}` : 'Nothing to collect yet';
+        } else if (tab === 'shop') {
+          const nxt = AQUARIUM_TANKS[aq.tier];
+          if (nxt) mk(`<span class="sl-n">🐠 ${nxt.name}<small>Fish up to ${nxt.maxW} kg • room ${nxt.cap} • ${nxt.decor} decorations • ${shopMoney(nxt.cost)}</small></span>`,
+            [['Buy', '', () => shopAsk({ confirm: `Upgrade to the ${nxt.name} for ${shopMoney(nxt.cost)}?`, price: nxt.cost, verb: 'Buy', can: state.cash >= nxt.cost, act: aquariumBuyTank }), state.cash < nxt.cost]]);
+          else mk(`<span class="sl-n">🐠 ${t.name}<small>The biggest tank. Fish over ${AQUARIUM_MAX_W} kg never fit in any tank.</small></span>`);
+          AQUARIUM_DECOR.forEach(d => {
+            const have = aq.decor.includes(d.id), full = aq.decor.length >= t.decor;
+            mk(`<span class="sl-n">${d.icon} ${d.name}<small>${d.desc} +${d.charm} charm • ${shopMoney(d.cost)}${have ? ' • in the tank' : full ? ' • tank decor slots full' : ''}</small></span>`,
+              [[have ? 'Owned' : 'Buy', '', () => shopAsk({ confirm: `Add the ${d.name} to your tank for ${shopMoney(d.cost)}?`, price: d.cost, verb: 'Buy', can: true, act: () => aquariumBuyDecor(d.id) }), have || full || state.cash < d.cost]]);
+          });
+        }
       }
 
       /* ---- state changes ---- */
@@ -11460,6 +11762,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function setShopTab(tab) {
         if (shopBrowse.tab === tab) return;
+        if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') { shopBrowse.tab = tab; closeShopConfirm(); shopSheetRender(); sfx.playTick(); return; }
         shopBrowse.tab = tab; shopBrowse.idx = 0; shopBrowse.items = shopItems(shopBrowse.kind, tab);
         closeShopConfirm(); shopBrowse.dir = 1; shopSheetRender(); sfx.playTick();
       }
@@ -11467,7 +11770,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (!SHOP_KINDS[kind] || shopBrowse.active) return;
         const sk = SHOP_KINDS[kind];
         shopBrowse.active = true; shopBrowse.kind = kind; shopBrowse.tab = sk.tabs ? sk.tabs[0][0] : ''; shopBrowse.idx = 0; shopBrowse.dir = 0;
-        shopBrowse.items = sk.tabs ? shopItems(kind, shopBrowse.tab) : [];
+        shopBrowse.items = sk.tabs && !sk.list ? shopItems(kind, shopBrowse.tab) : [];
         mode = 'SHOP_BROWSE'; releaseAllInputs();
         document.body.dataset.shopping = '1';
         shopSheetRender(); sfx.playTick();
@@ -11485,8 +11788,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function refreshShopBrowse() {
         if (!shopBrowse.active) return;
         const sk = SHOP_KINDS[shopBrowse.kind];
-        if (sk.tabs) { shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab); shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1)); }
-        if (sk.list) shopListRender(); else shopPageRender();
+        if (sk.tabs && !sk.list) { shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab); shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1)); }
+        if (sk.list === 'aqua') aquaRender(); else if (sk.list) shopListRender(); else shopPageRender();
       }
       /* tapping the picture or the button: confirm first */
       function shopActivate() {
@@ -11515,7 +11818,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       shopEl('shop-next').addEventListener('click', () => shopSelect(shopBrowse.idx + 1, 1));
       shopEl('shop-pic').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
       shopEl('shop-buy').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
-      shopEl('shop-sellall').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopAskAll(); });
+      shopEl('shop-sellall').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopAskPrimary(); });
       shopEl('shop-leave').addEventListener('click', () => leaveShopBrowse());
       shopEl('shop-confirm-no').addEventListener('click', () => { if (performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
       shopEl('shop-confirm-yes').addEventListener('click', shopConfirmYes);
@@ -11541,7 +11844,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (e.code === 'Escape') { leaveShopBrowse(); e.stopImmediatePropagation(); }
         else if (book && (e.code === 'ArrowLeft' || e.code === 'KeyA')) { shopSelect(shopBrowse.idx - 1, -1); e.stopImmediatePropagation(); }
         else if (book && (e.code === 'ArrowRight' || e.code === 'KeyD')) { shopSelect(shopBrowse.idx + 1, 1); e.stopImmediatePropagation(); }
-        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); if (book) shopActivate(); else shopAskAll(); e.stopImmediatePropagation(); }
+        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); if (book) shopActivate(); else shopAskPrimary(); e.stopImmediatePropagation(); }
         else if (/^Digit[1-4]$/.test(e.code)) { const t = (SHOP_KINDS[shopBrowse.kind].tabs || [])[+e.code.slice(5) - 1]; if (t) setShopTab(t[0]); e.stopImmediatePropagation(); }
       }, true);
 
@@ -11726,7 +12029,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('catch-name').textContent = c.bottleMessage
           ? `📜 Bottle #${c.bottleMessage.id}: "${c.bottleMessage.title}"`
           : c.item.name;
-        document.getElementById('catch-zone').textContent = `Zone ${c.zoneObj.id}: ${c.zoneObj.name}`;
+        document.getElementById('catch-zone').textContent = `Zone ${c.zoneObj.id}: ${c.zoneObj.name}` + (c.item.category === 'Fish' && state.aquarium && aquariumCanHold({ category: 'Fish', weight: c.weight }).ok ? ' • 🐠 fits your aquarium' : '');
         document.getElementById('catch-weight').textContent = `${c.weight.toFixed(2)} kg`;
         document.getElementById('catch-value').textContent = `$${c.value}`;
         document.getElementById('catch-desc').innerHTML = c.bottleMessage
@@ -12140,13 +12443,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           proxEl.style.color = '#5eead4';
           proxEl.textContent = `📜 BOTTLE GALLERY (${(state.foundMessages || []).length}/${BOTTLE_MESSAGES.length}) — PRESS BUTTON TO VIEW`;
           proxEl.style.display = 'block';
-        } else if (isNearPierTrophies()) {
-          primaryBtn.classList.add('bounty');
-          iconEl.textContent = '🏆';
-          labelEl.textContent = 'TROPHIES';
-          proxEl.style.borderColor = '#facc15';
-          proxEl.style.color = '#fde68a';
-          proxEl.textContent = `🏆 TROPHY CASE (${Object.keys(state.speciesStats || {}).filter(id => medalFor(id)).length}/${FISH_TOTAL} SPECIES) — PRESS BUTTON TO VIEW`;
+        } else if (isNearAquarium()) {
+          const aqs = state.aquarium;
+          primaryBtn.classList.add('shop');
+          iconEl.textContent = '🐠';
+          labelEl.textContent = 'AQUARIUM';
+          proxEl.style.borderColor = '#38bdf8';
+          proxEl.style.color = '#bae6fd';
+          proxEl.textContent = `🐠 AQUARIUM (${aqs.fish.length} FISH, ${shopMoney(aqs.tickets)} TO COLLECT) — FEED, CLEAN, ADD FISH`;
           proxEl.style.display = 'block';
         } else if (isNearPierCamera()) {
           primaryBtn.classList.add('camera');
@@ -13067,7 +13371,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         bumpStat('speared');
         advanceBountiesOnCatch(c);
         recordCatchProgress(c, isNewSpecies, isNewRecord);
-        if (isNewSpecies || isNewRecord) rebuildTrophyCabinet();
         return { isNewSpecies, isNewRecord };
       }
 
@@ -13573,6 +13876,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateBountyPapers(dt);
         updateShopBrowse(dt);
         updateCabinFade(dt);
+        updateAquarium(dt);
         if (world.islandScenery) world.islandScenery.visible = !!settings.firstPerson;
         updateStationPicker(false);
         const zone = getCurrentZone();
@@ -13635,6 +13939,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (state.timeOfDay >= 1.0) {
           state.timeOfDay -= 1.0;
           state.dayCount = (state.dayCount || 0) + 1;
+          aquariumDay();
           saveGame();
           const newMoon = getMoonPhase();
           showToast(`🌅 Day ${state.dayCount + 1} • Tonight: ${newMoon.icon} ${newMoon.name}`);
@@ -13912,8 +14217,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             targetYaw = Math.atan2(-(-4.2 - playerX), -(0.8 - playerZ));
           } else if (isNearPierGallery()) {
             targetYaw = Math.atan2(-(CABIN.galleryX - playerX), -(0.8 - playerZ));
-          } else if (isNearPierTrophies()) {
-            targetYaw = Math.atan2(-(CABIN.trophyX - playerX), -(0.8 - playerZ));
+          } else if (isNearAquarium()) {
+            targetYaw = Math.atan2(-(CABIN.aquaX - playerX), -(0.5 - playerZ));
           } else if (isNearPierCamera()) {
             targetYaw = Math.atan2(-(CABIN.camX - playerX), -(CABIN.camZ - playerZ));
           } else if (isNearRecycle()) {
@@ -14471,7 +14776,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
 
         // zoomed on the bounty board: step the angler out of the picture so he never stands in front of the papers
-        if (!dive.active && mode !== 'DIVING') world.anglerGroup.visible = !(!onBoat && !settings.firstPerson && standFocus.stand && standFocus.stand.id === 'bounty');
+        if (!dive.active && mode !== 'DIVING') world.anglerGroup.visible = !(!onBoat && ((!settings.firstPerson && standFocus.stand && standFocus.stand.id === 'bounty') || (shopBrowse.active && shopBrowse.kind === 'aqua')));
         updateFirstPersonCamera(dt);
         updateDive(dt);
       }
@@ -14873,7 +15178,7 @@ if (mode === 'REELING' && tension > 0.78) {
       }
 
       applyVfxShader(state.vfxShader || 'none', false);
-      rebuildTrophyCabinet();
+      aquaSync(true);
       rebuildPlayerBoatVisual();
       updateHUD();
       requestAnimationFrame(animate);

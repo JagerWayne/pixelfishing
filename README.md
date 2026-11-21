@@ -25,7 +25,7 @@ Once installed it also works offline.
 10. [Diving and spearfishing](#diving-and-spearfishing)
 11. [Career: rank and achievements](#career-rank-and-achievements)
 12. [The fish market](#the-fish-market)
-13. [The Trophy Cabinet](#the-trophy-cabinet)
+13. [The Aquarium](#the-aquarium)
 14. [Sea events](#sea-events)
 15. [Character customisation](#character-customisation)
 16. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
@@ -63,7 +63,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Dive / surface | **🤿 DIVE** button (next to the action button) | `X` |
 | Swim up / down while diving | **▲ UP** / **▼ DOWN** buttons | `R` / `F` |
 | Switch **first person / third person** view | **☰ Menu → 🎥 View** tile (shows 👁️ in first person) | `V` |
-| Open the menu (Bag, Log, Career, Trophies, Settings, Look, Sound, gear info) | **☰** button, top right | none |
+| Open the menu (Bag, Log, Career, Records, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
 | **Pause** (world stops, sound toggle, controls help) | **⏸** button, top right | `P` or `Esc` (when no menu is open) |
 
@@ -92,7 +92,7 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 - **Lists (Fish Market, Recycling):** each row is one piece from your bucket (icon, name, kg, price, hot or glut marks); tap a row to sell just that one (after the confirm) or the big button at the bottom to sell or recycle them all. The bag screen's own *Sell* buttons work only in front of the matching stand.
 - The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
 
-**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **trophy case** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. The front wall and roof fade away while you are inside so the camera can see in.
+**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. The front wall and roof fade away while you are inside so the camera can see in.
 
 In **third person the island's palms, cottages and bushes are hidden** so the camera never gets stuck behind them; first person shows them again.
 
@@ -310,15 +310,33 @@ You can leave the surface and hunt fish by hand. You need **dive gear** (to go u
 
 ## Career: rank and achievements
 
-Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **39 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
+Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonus for a new species or a new record), bounties, message bottles, treasure and boss fish. There are **12 ranks** from Deckhand to Sea Legend; each rank-up pays cash and bait. Open **☰ Menu → 🏅 Career** for your rank, XP bar, counters (catches, night and storm catches, kilometres sailed, money earned and more) and the **45 achievements**, each with a progress bar and a cash reward that pays out automatically. Old saves get their counters and XP rebuilt from the species records.
 
 ## The fish market
 
 Prices move every in-game day (every 3.5 minutes). Each fish species gets a multiplier between **x0.75 and x1.35**; three species are **hot at x1.9** and three are in a **glut at x0.6**. The board in the Fish Market lists today's hot and glut fish and the time until the next prices; the bag and *Sell All* use the current prices, and ▲ ▼ mark fish that are selling well or badly. Junk and flora are unaffected. Prices come from the day number, so nothing extra is saved.
 
-## The Trophy Cabinet
+## The Aquarium
 
-A glass cabinet stands inside the Cabin, on the back wall to the right of the Bottle Gallery. It mounts your **five best species** (ranked by rarity, then how close your record is to the species' top weight) as small 3D fish with name plates. Walk up to it and press **TROPHIES** (or use **☰ Menu → 🏆 Trophies**) for the full list: every fish you have caught with its record weight, catch count and a medal: 🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below.
+Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the Trophy Case). Stand in front of it, press **AQUARIUM** and a paper sheet opens with four tabs:
+
+- **🐠 Fish:** what lives in the tank, with weight, value and mood; each can go back into your bucket or be released.
+- **➕ Add:** the fish in your bucket, each with an *Add* button, or the reason it cannot go in. **Only fish go in, and large fish never do.** Each tank has a largest fish it can hold and a limit on room (a fish takes about its weight to the power 0.8 of room, at least 1):
+
+| Tank | Largest fish | Room | Decorations | Price |
+|---|---|---|---|---|
+| Starter Tank | 1.5 kg | 8 | 3 | owned |
+| Reef Tank | 4 kg | 20 | 4 | $450 |
+| Display Tank | 9 kg | 40 | 5 | $1,800 |
+| Grand Aquarium | 18 kg | 80 | 6 | $6,000 |
+
+  Anything over 18 kg never fits in any tank, so marlin, sailfish, swordfish, sharks, oarfish, mola and every deep monster stay in the sea (27 species can never be kept).
+- **🧽 Care:** food, cleanliness and happiness bars. Fish eat and foul the water as in-game days pass (more fish, faster): *Fish flakes* are free (+35 food), *Premium pellets* cost $20 and fill the bar, *Clean the tank* is free. Visitors pay tickets while the fish are happy; the money banks up to about 8 days and **Collect** pays it out. Neglect never kills a fish: unhappy fish (happiness under 35) just earn nothing and swim slowly, and the water goes green.
+- **🛒 Shop:** tank upgrades and eight decorations (plants, rocks, driftwood, coral, castle, chest, shipwreck, light show) that add charm and show in the tank.
+
+**Breeding:** two or more grown fish of one species, kept happy (60%+), can have fry on any day (40% chance per species). Fry are tiny, grow up over a few days (never past the tank's limit) and may be a **colour form** (golden, albino or midnight: 2x, 2x, 3x tickets) that can pass on. Each new species you keep adds 3% to all tickets, and six new achievements cover it (*Fish Keeper*, *Reef Keeper*, *Aquarist*, *Full House*, *Fish Breeder*, *Rare Colour*). A catch that would fit the tank says so in its reveal.
+
+The fish swim in the tank in the world (their real models, sized by weight), the water clouds when it is dirty, and bubbles rise from the air stone. **Records:** the species medals (🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below), catch counts and record weights are under **☰ Menu → 🏆 Records**.
 
 ## Sea events
 
@@ -497,6 +515,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-21, Version 5.0.0: a working aquarium
+- **Aquarium instead of the Trophy Case:** a glass tank in the Cabin with swimming fish (their real models), decorations, bubbles and water that clouds when dirty. A paper sheet with *Fish*, *Add*, *Care* and *Shop* tabs runs it.
+- **Size rules:** only fish go in; each tank has a largest fish it can hold (1.5, 4, 9 and 18 kg) and a room limit, and fish over 18 kg never fit in any tank (`aquariumCanHold`). The Add tab says why a fish can't go in.
+- **Care and money:** food and cleanliness fall with in-game days, feeding and cleaning restore them, happy fish earn visitor tickets you collect (banked up to about 8 days). Neglect never kills a fish.
+- **Breeding and collection:** fry with a chance of golden, albino or midnight forms (more tickets), a small bonus per species kept, four tank tiers, eight decorations and six new achievements (45 in all).
+- **Records:** the old trophies list is now **Menu -> Records** (same medals and numbers, no progress lost). New save field `aquarium` (validated in `sanitizeSave`: unknown or oversized fish are dropped).
+- Version bumped to **v5.0.0**.
 
 ### 2026-11-20, Version 4.10.0: bounties you can actually do
 - **Possible contracts only:** the board no longer offers Trench or Rift contracts to a player on the pier, or a 100 kg fish to someone with a bamboo rod. What counts as possible comes from your boat's top zone (the pier is zone 1) and your rod's rated weight (`bountyReach`, `bountyEligible`).
