@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.1.2';
+    window.PF_VERSION = '5.1.3';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -9137,6 +9137,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         state.cash = +(state.cash - d.cost).toFixed(2); aq.decor.push(id); sfx.playCoin(); saveGame(); updateHUD();
         showToast(`${d.icon} ${d.name} added to the tank.`); return true;
       }
+      function aquariumRemoveDecor(id) {
+        const aq = state.aquarium, d = AQUARIUM_DECOR.find(x => x.id === id), i = aq.decor.indexOf(id);
+        if (!d || i < 0) return false;
+        aq.decor.splice(i, 1); sfx.playTick(); saveGame();
+        showToast(`${d.icon} ${d.name} removed from the tank.`); return true;
+      }
       function sanitizeAquarium(src) {
         const aq = defaultAquarium();
         if (!src || typeof src !== 'object') return aq;
@@ -11943,7 +11949,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           AQUARIUM_DECOR.forEach(d => {
             const have = aq.decor.includes(d.id), full = aq.decor.length >= t.decor;
             mk(`<span class="sl-n">${d.icon} ${d.name}<small>${d.desc} +${d.charm} charm • ${shopMoney(d.cost)}${have ? ' • in the tank' : full ? ' • tank decor slots full' : ''}</small></span>`,
-              [[have ? 'Owned' : 'Buy', '', () => shopAsk({ confirm: `Add the ${d.name} to your tank for ${shopMoney(d.cost)}?`, price: d.cost, verb: 'Buy', can: true, act: () => aquariumBuyDecor(d.id) }), have || full || state.cash < d.cost]]);
+              [have ? ['Remove', '', () => shopAsk({ confirm: `Take the ${d.name} out of your tank?`, price: null, verb: 'Remove', can: true, act: () => aquariumRemoveDecor(d.id) })]
+                : ['Buy', '', () => shopAsk({ confirm: `Add the ${d.name} to your tank for ${shopMoney(d.cost)}?`, price: d.cost, verb: 'Buy', can: true, act: () => aquariumBuyDecor(d.id) }), full || state.cash < d.cost]]);
           });
         }
       }
@@ -12590,11 +12597,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (mode === 'DIVING') {
           const gun = spearGun();
           primaryBtn.classList.add('spear');
-          if (dive.emergency) { iconEl.textContent = '🆘'; labelEl.textContent = 'ASCENDING'; }
+          if (dive.emergency) { primaryBtn.classList.add('useless'); iconEl.textContent = '🆘'; labelEl.textContent = 'ASCENDING'; }
           else if (dive.nearChest) { iconEl.textContent = '🧰'; labelEl.textContent = 'OPEN CHEST'; }
           else if (gun.tier === 0) { primaryBtn.classList.add('useless'); iconEl.textContent = '🚫'; labelEl.textContent = 'NO SPEAR'; }
           else if (harpoon.state === 'ready') { iconEl.textContent = '🔱'; labelEl.textContent = 'SPEAR!'; }
-          else { primaryBtn.classList.add('reload'); iconEl.textContent = '🔄'; labelEl.textContent = harpoon.state === 'reload' ? 'RELOADING' : 'FIRED'; }
+          else { primaryBtn.classList.add('reload', 'useless'); iconEl.textContent = '🔄'; labelEl.textContent = harpoon.state === 'reload' ? 'RELOADING' : 'FIRED'; }
         } else if (mode === 'CASTING') {
           primaryBtn.classList.add('casting');
           iconEl.textContent = '⚡';
@@ -12620,7 +12627,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('shop');
           iconEl.textContent = reading.id ? '📖' : '📚';
           labelEl.textContent = reading.id ? 'READING' : ownN ? 'READ' : 'NO BOOKS';
-          if (!reading.id && !ownN) primaryBtn.classList.add('useless');
+          if (reading.id || !ownN) primaryBtn.classList.add('useless');
           proxEl.style.borderColor = '#a78bfa';
           proxEl.style.color = '#ddd6fe';
           proxEl.textContent = reading.id ? '📖 READING' : ownN ? '📚 PRESS READ TO PICK A BOOK' : '📚 NO BOOKS YET';
