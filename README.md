@@ -26,6 +26,7 @@ Once installed it also works offline.
 11. [Career: rank and achievements](#career-rank-and-achievements)
 12. [The fish market](#the-fish-market)
 13. [The Aquarium](#the-aquarium)
+13a. [Harbour Town, its people and the story](#harbour-town-its-people-and-the-story)
 14. [Sea events](#sea-events)
 15. [Character customisation](#character-customisation)
 16. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
@@ -54,7 +55,10 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 
 | Action | Touch | Keyboard |
 |---|---|---|
-| Walk | Thumbstick | `W` `A` `S` `D` or arrow keys |
+| Walk / run | Thumbstick: it is **camera-relative** (up walks away from the camera); a light push walks, a **full push runs**. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `W` `A` `S` `D` or arrow keys; hold `Shift` to run |
+| Turn the camera | **Drag on the screen** to swing the camera around the angler (in first person: look around). Tap the **compass** to face the sea again | none |
+| Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
+| Quests | **☰ Menu → 📜 Quests** | none |
 | Sail the boat | Thumbstick: **up** is the throttle, **left / right** the helm, **down** brakes then reverses. The helm needs the boat moving (no spinning on the spot) | `W` `S` throttle and reverse, `A` `D` or arrow keys steer |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space`, `E` or `Enter` (all three are the action button: they do exactly what the button shows) |
 | Open bag / bucket | **☰ Menu → 🪣 Bag** | `B` |
@@ -69,7 +73,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 
 **First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself (Shop, Bounty Board, Gallery, Trophy Cabinet and Camera) and lets go as soon as you move.
 
-The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, *Read* (seated on a bench), and so on. Tapping empty screen does nothing; only the button acts.
+The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, *Read* (seated on a bench), and so on. Where there is nothing to do the button opens the **🗺️ Map**. A tap on the 3D view walks you to that spot (it never casts or buys).
 
 ## The pier
 
@@ -340,6 +344,14 @@ Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the
 
 The fish swim in the tank in the world (their real models, sized by weight), the water clouds when it is dirty, and bubbles rise from the air stone. **Records:** the species medals (🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below), catch counts and record weights are under **☰ Menu → 🏆 Records**.
 
+## Harbour Town, its people and the story
+
+Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **Lorenzo's** restaurant (opening soon) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
+
+**People.** Five townsfolk live here, each with a day routine (they walk between their spots through the gate and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist) and **👨‍🍳 Chef Lorenzo**. Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
+
+**Quests** (13, in 4 chapters): each has steps that advance on their own as you play (catch fish, from the pier or in a zone, by weight, rarity or at night; dive to a depth; find bottle messages; sail somewhere; own a boat; keep species in the aquarium; bring someone a fish from your bucket). When the steps are done, talk to the giver for the reward (cash and XP). The story runs from *Welcome to Harbour Town* through *The Keeper's Light* (repair and relight the lighthouse) and *Rook's Wager* to *The Legend of the Deep*: a Legendary fish landed at night in the Abyssal Trench. The current step shows in a blue pill under the top bar; the full list is in **☰ Menu → 📜 Quests**. Saved as `story` (active steps, completed quests, friendship, flags).
+
 ## Skill books
 
 Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market and Recycling sheets and the Aquarium Shop; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `index.html`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
@@ -537,6 +549,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-21, Version 6.0.0: Harbour Town, its people and a new way to move
+- **Harbour Town:** walk through the new gate behind the pier onto the island: a plaza with a well, lamps and a noticeboard, cottages, Marta's hut and Lorenzo's restaurant (opening soon). The island scenery is always shown now; whatever blocks the camera fades out.
+- **Five townsfolk** with day and night routines (Marta, Captain Rook, Pip, Ines, Chef Lorenzo). **💬 TALK** to them; a dialogue box with choices pauses the world.
+- **Quests:** a 13-quest story in 4 chapters (*Welcome to Harbour Town*, *The Keeper's Light*, *Rook's Wager*, *The Legend of the Deep*) plus side quests, with ❗ / ❓ markers, a HUD pill and a Quests list in the Menu. New save field `story`.
+- **Movement overhaul:** camera-relative thumbstick, smooth acceleration and braking, a light push walks (up to 3.3 m/s) and a full push or `Shift` runs (5.6 m/s), **tap the ground or a shop to walk there** (routed through the pier mouth, the stairs, the cabin door and the town gate), and **drag on the screen to orbit the camera** (or look around in first person); tap the compass to face the sea again.
+- The Map shows the town and where everyone is. Version bumped to **v6.0.0**.
 
 ### 2026-11-21, Version 5.6.0: a real map you can drag and pinch
 - **The harbour map is now the actual world seen from straight above** (the paused scene is rendered once from overhead when you open it: the harbour in detail and the sea out to the lighthouse).

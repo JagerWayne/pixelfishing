@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.6.0';
+    window.PF_VERSION = '6.0.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1453,6 +1453,18 @@
       color: #fde68a; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     #hud-read-pill { pointer-events: none; display: none; padding: 4px 10px; background: rgba(30, 20, 60, 0.9); border: 2px solid #a78bfa; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #ddd6fe; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #hud-quest-pill { pointer-events: none; display: none; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(12, 30, 48, 0.9); border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #bae6fd; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #hud-quest-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
+    #modal-talk { background: rgba(4, 8, 16, 0.25); align-items: flex-end; }
+    #talk-box { width: min(96vw, 560px); padding: 12px 14px calc(12px + var(--safe-bottom)); background: var(--bg-panel-solid); margin-bottom: 8px; cursor: pointer; }
+    .talk-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .talk-head #talk-icon { font-size: 34px; line-height: 1; }
+    .talk-head b { display: block; color: #fde68a; font-size: 15px; }
+    .talk-head small { display: block; color: #94a3b8; font-size: 12px; }
+    #talk-text { font-size: 14px; line-height: 1.45; color: #f8fafc; min-height: 3.2em; }
+    #talk-choices { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+    #talk-choices .pixel-btn { min-height: 44px; padding: 8px 14px; }
+    .ql-h { margin: 10px 0 6px; font-size: 13px; color: #fde68a; }
     #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .chip-row .pixel-btn { padding: 8px 12px; font-size: 12px; min-height: 44px; }
@@ -1688,6 +1700,7 @@
           Return Fuel: 0.0
         </div>
         <div id="hud-bounty-pill"></div>
+        <div id="hud-quest-pill"></div>
         <div id="hud-read-pill"></div>
         <div id="hud-event-pill"><span id="hud-event-text"></span></div>
         <div id="hud-sonar-pill">
@@ -1817,6 +1830,7 @@
           <button class="menu-tile" id="btn-drawer-customize" data-closes-menu type="button">🎨<span>Look</span></button>
           <button class="menu-tile" id="btn-toggle-audio" data-label="Sound" type="button" aria-label="Toggle sound">🔊</button>
           <button class="menu-tile" id="btn-toggle-view" data-label="View" data-closes-menu type="button" aria-label="Toggle first person view (V)">🎥</button>
+          <button class="menu-tile" id="menu-quests" data-closes-menu type="button">📜<span>Quests</span></button>
           <button class="menu-tile" id="menu-exit" type="button">🚪<span>Exit</span></button>
         </div>
         <div class="menu-info">
@@ -1925,6 +1939,22 @@
   </div>
 
   <!-- MODAL 2: BUCKET INVENTORY -->
+  <!-- TALK: a conversation with someone in town (pauses the world) -->
+  <div class="modal-backdrop" id="modal-talk">
+    <div class="pixel-box" id="talk-box">
+      <div class="talk-head"><span id="talk-icon"></span><span><b id="talk-name"></b><small id="talk-role"></small></span></div>
+      <div id="talk-text"></div>
+      <div id="talk-choices"></div>
+    </div>
+  </div>
+  <!-- QUESTS: the story so far -->
+  <div class="modal-backdrop" id="modal-quests">
+    <div class="pixel-box modal-window" style="width: min(96vw, 560px);">
+      <div class="modal-header"><span class="modal-title">📜 QUESTS</span><button class="pixel-btn red" data-close="modal-quests" type="button">Close</button></div>
+      <div class="modal-body"><div id="quest-list"></div></div>
+    </div>
+  </div>
+
   <!-- MAP: the harbour from above, where you are and which way you face, every landmark with what it is for -->
   <div class="modal-backdrop" id="modal-map">
     <div class="pixel-box modal-window" style="width: min(96vw, 640px);">
@@ -4421,6 +4451,98 @@
         { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6, w: 4.3, h: 1.35 }
       ];
       const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0, camZ: 2.9 };   // wide enough for the Grand Aquarium (v5.5.0)
+      /* Harbour Town on the island terrace (v6.0): through the gate in the seawall (x within +-gateHW) up to zMax.
+         The ground is y 1.5; the hills start behind z 14.5. */
+      const ISLAND = { gateHW: 1.3, zGate: 5.8, zIn: 6.8, zMax: 13.9, xMax: 26.2, plaza: { x: 0, z: 9.7, r: 2.6 } };
+      const TOWN = {
+        rook:  { x: -17.5, z: 11.6, w: 3.4, d: 2.8, name: "Rook's house" },
+        pip:   { x: -6.5,  z: 11.9, w: 3.0, d: 2.6, name: "Pip's home" },
+        ines:  { x: 7.0,   z: 11.9, w: 3.2, d: 2.6, name: "Ines' cottage" },
+        resto: { x: 17.5,  z: 11.5, w: 5.0, d: 3.0, name: "Lorenzo's" },
+        hut:   { x: -23.6, z: 12.1, w: 2.4, d: 2.0, name: "Marta's hut" },
+        board: { x: 3.4, z: 8.0 }, well: { x: 0, z: 9.7 }
+      };
+      const NPCS = {
+        marta: { name: 'Old Marta', icon: '👵', role: 'Lighthouse keeper',
+          look: { gender: 'female', skin: 1, hairStyle: 'bun', hairColor: 7, facial: 'none', glasses: 'round', top: 'slicker', topColor: 3, topAccent: 10, bottom: 'skirt', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 's', build: 'slim' },
+          home: { x: TOWN.hut.x + 0.5, z: TOWN.hut.z - 1.5 }, spots: [{ x: -21.6, z: 9.2 }, { x: -2.6, z: 8.9 }, { x: -11.5, z: 8.4 }],
+          chat: ['The sea gives, and the sea takes. Mostly it takes bait.', 'Forty years I kept that light. It still blinks at me every night, like an old friend.', 'Storms come from the north-west here. Watch the sky, not the clock.', 'If you hear singing from the deep at night, keep your line taut.'] },
+        rook: { name: 'Captain Rook', icon: '🧔', role: 'Boatyard owner',
+          look: { gender: 'male', skin: 2, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'sweater', topColor: 1, topAccent: 0, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 1, height: 'l', build: 'broad' },
+          home: { x: TOWN.rook.x, z: TOWN.rook.z - TOWN.rook.d / 2 - 0.7 }, spots: [{ x: -14.4, z: 4.9 }, { x: 1.9, z: 8.3 }, { x: -9.4, z: 4.9 }],
+          chat: ['A boat is only as good as the one steering it. Mine are better than that, mind you.', 'Fuel up before you head out. The tow fee hurts more than the fuel.', 'Bigger hulls ride the swell out in the Shelf. Small ones just bounce.', 'I once caught a marlin with a broom handle. Well. Nearly.'] },
+        pip: { name: 'Pip', icon: '🧒', role: 'Young angler',
+          look: { gender: 'male', skin: 0, hairStyle: 'wavy', hairColor: 4, facial: 'none', glasses: 'none', top: 'tee', topColor: 2, topAccent: 3, bottom: 'shorts', bottomColor: 1, shoes: 'sneakers', shoeColor: 2, hat: 'cap', hatColor: 3, height: 'xs', build: 'slim' },
+          home: { x: TOWN.pip.x, z: TOWN.pip.z - TOWN.pip.d / 2 - 0.7 }, spots: [{ x: 2.2, z: -5.0 }, { x: -1.9, z: 11.6 }, { x: 2.6, z: 4.9 }],
+          chat: ['When I grow up I will catch a fish bigger than Captain Rook!', 'Did you know some fish change colour? Ines told me.', 'I saw a shadow under the pier this big! Well, maybe this big.', 'Mum says I can go out on a boat when I am taller than the bounty board.'] },
+        ines: { name: 'Ines', icon: '👩‍🔬', role: 'Marine biologist',
+          look: { gender: 'female', skin: 3, hairStyle: 'ponytail', hairColor: 0, facial: 'none', glasses: 'round', top: 'vest', topColor: 5, topAccent: 0, bottom: 'jeans', bottomColor: 1, shoes: 'sneakers', shoeColor: 0, hat: 'bucket', hatColor: 5, height: 'm', build: 'average' },
+          home: { x: TOWN.ines.x, z: TOWN.ines.z - TOWN.ines.d / 2 - 0.7 }, spots: [{ x: 13.5, z: 4.9 }, { x: 7.0, z: 9.5 }, { x: 17.4, z: 4.9 }],
+          chat: ['Every species here has a story. Most of them involve eating something smaller.', 'Happy fish breed. Clean water, good food, a little coral.', 'The bottle messages are a record of the bay. I have been collecting copies.', 'Deep fish glow to talk to each other. Imagine what they are saying about us.'] },
+        lorenzo: { name: 'Chef Lorenzo', icon: '👨‍🍳', role: 'Chef',
+          look: { gender: 'male', skin: 1, hairStyle: 'short', hairColor: 0, facial: 'mustache', glasses: 'none', top: 'tee', topColor: 0, topAccent: 2, bottom: 'jeans', bottomColor: 9, shoes: 'sneakers', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'broad' },
+          home: { x: TOWN.resto.x, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.8 }, spots: [{ x: TOWN.resto.x, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.9 }, { x: 9.4, z: 4.9 }],
+          chat: ['My restaurant opens soon! The oven is still learning to behave.', 'Fresh fish, a little lemon, nothing else. The secret is: no secret.', 'You catch them, I cook them. A beautiful arrangement.', 'Bring me something rare one day and I will make you a dish to remember.'] }
+      };
+      const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+      const rarityAtLeast = (r, min) => RARITY_ORDER.indexOf(r) >= RARITY_ORDER.indexOf(min);
+      /* step types: catch {n, where pier|boat, zoneMin, minW, rarityMin, night, distinct}, deliver {rarityMin, minW},
+         visit {x, z, r, night, place}, far {m}, own {boat}, dive {depth}, bottle {n}, aquarium {species}, talk {npc} */
+      const QUESTS = [
+        { id: 'welcome', giver: 'marta', chapter: 1, title: 'Welcome to Harbour Town', needs: [],
+          intro: ['Ah, a new face on the pier! I am Marta. I kept the lighthouse for forty years.', 'Show me you can fish, dear. Three fish from the pier, that is all I ask.'],
+          steps: [{ t: 'catch', n: 3, where: 'pier', text: 'Catch 3 fish from the pier' }],
+          outro: ['Three fish! You have the knack. Take this, and go and meet Captain Rook at the Boatyard.'], reward: { cash: 60, xp: 40 } },
+        { id: 'pipfish', giver: 'pip', chapter: 1, title: "Pip's Big Fish", needs: ['welcome'],
+          intro: ['Hey! Are you the new angler? Can you catch me something special?', 'Not a boring one. An Uncommon fish or better! Bring it to me, please?'],
+          steps: [{ t: 'deliver', rarityMin: 'Uncommon', text: 'Bring Pip an Uncommon (or rarer) fish' }],
+          outro: ['WOW! Look at it! I am going to show everyone. Here, you can have my savings!'], reward: { cash: 80, xp: 50 } },
+        { id: 'firstboat', giver: 'rook', chapter: 1, title: "Rook's First Customer", needs: ['welcome'],
+          intro: ['Marta sent you, did she? Good. The best fish are out at sea, and you need a hull under you.', 'Buy a boat at my Boatyard. I will make it worth your while.'],
+          steps: [{ t: 'own', boat: 1, text: 'Own a boat (Boatyard)' }],
+          outro: ['There she floats! Here is a little something for fuel. Fair winds, friend.'], reward: { cash: 150, xp: 60 } },
+        { id: 'light1', giver: 'marta', chapter: 2, title: "The Keeper's Light I", needs: ['firstboat'],
+          intro: ['The lighthouse has been flickering. The new keeper never comes.', 'Sail out to the lighthouse and take a look for me, would you?'],
+          steps: [{ t: 'visit', x: 41.6, z: -147.3, r: 26, place: 'the lighthouse', text: 'Sail to the lighthouse' }],
+          outro: ['Cracked lens, you say? I feared so. The old lens parts went into the sea years ago.'], reward: { cash: 100, xp: 70 } },
+        { id: 'light2', giver: 'marta', chapter: 2, title: "The Keeper's Light II", needs: ['light1'],
+          intro: ['The parts lie on the sea floor. Brass, glass, old junk to anyone else.', 'Dive down at least 10 metres and haul up 3 pieces of junk. Something in there will fit.'],
+          steps: [{ t: 'dive', depth: 10, text: 'Dive to 10 m' }, { t: 'catch', n: 3, cat: 'Junk', text: 'Haul up 3 pieces of junk' }],
+          outro: ['Yes! This brass ring, this prism... I can fix it. Thank you, dear.'], reward: { cash: 250, xp: 120 } },
+        { id: 'light3', giver: 'marta', chapter: 2, title: "The Keeper's Light III", needs: ['light2'],
+          intro: ['The lens is mended. It needs to be lit at night, from the jetty.', 'Be at the lighthouse after dark and the light will shine for you.'],
+          steps: [{ t: 'visit', x: 41.6, z: -147.3, r: 26, night: true, place: 'the lighthouse at night', text: 'Be at the lighthouse at night' }],
+          outro: ['I saw it from my window. The old light, burning bright again. You have a good heart.'], reward: { cash: 300, xp: 150, flag: 'lit' } },
+        { id: 'reef', giver: 'rook', chapter: 3, title: "Rook's Wager I", needs: ['firstboat'],
+          intro: ['I bet you a hundred you cannot catch a fish out on the Coastal Reef.', 'Past 100 metres from the pier. Prove me wrong.'],
+          steps: [{ t: 'catch', n: 1, zoneMin: 2, text: 'Catch a fish in the Coastal Reef (100 m+)' }],
+          outro: ['Ha! I lose. Gladly. Here, double the wager.'], reward: { cash: 200, xp: 90 } },
+        { id: 'heavy', giver: 'rook', chapter: 3, title: "Rook's Wager II", needs: ['reef'],
+          intro: ['All right, a real one this time. A fish over 8 kilograms.', 'Land it and the drinks are on me. And some cash.'],
+          steps: [{ t: 'catch', n: 1, minW: 8, text: 'Land a fish over 8 kg' }],
+          outro: ['Look at the size of it! You are a proper angler now.'], reward: { cash: 400, xp: 160 } },
+        { id: 'faraway', giver: 'rook', chapter: 3, title: "Rook's Wager III", needs: ['heavy'],
+          intro: ['Last bet. Take your boat 400 metres out, onto the Open Shelf.', 'Bring her back in one piece and you have earned my respect.'],
+          steps: [{ t: 'far', m: 400, text: 'Sail 400 m from the pier' }],
+          outro: ['Back safe, and further out than most dare. You have my respect, captain.'], reward: { cash: 350, xp: 160 } },
+        { id: 'study', giver: 'ines', chapter: 4, title: 'Living Specimens', needs: ['welcome'],
+          intro: ['Hello! I study the fish of this bay. Your aquarium could help my research.', 'Keep three different species in your tank and I can observe them.'],
+          steps: [{ t: 'aquarium', species: 3, text: 'Keep 3 species in your aquarium' }],
+          outro: ['Wonderful specimens. My notes are already twice as long. Thank you!'], reward: { cash: 300, xp: 120 } },
+        { id: 'bottles', giver: 'ines', chapter: 4, title: 'Messages from the Deep', needs: ['study'],
+          intro: ['The bottle messages... they mention a creature that rises at night from the trench.', 'Find three bottle messages. I want to piece the story together.'],
+          steps: [{ t: 'bottle', n: 3, text: 'Find 3 bottle messages' }],
+          outro: ['It is real. They all describe it: the Moonlit One, a legend that only bites at night in the deep trench.'], reward: { cash: 300, xp: 140 } },
+        { id: 'collector', giver: 'pip', chapter: 4, title: "Pip's Collection", needs: ['pipfish'],
+          intro: ['I am making a fish book! Can you catch five different kinds of fish?'],
+          steps: [{ t: 'catch', n: 5, distinct: true, text: 'Catch 5 different species' }],
+          outro: ['Five! My book is the best book. You can have my shiny marble. And some coins.'], reward: { cash: 150, xp: 80 } },
+        { id: 'legend', giver: 'marta', chapter: 4, title: 'The Legend of the Deep', needs: ['bottles', 'light3', 'faraway'],
+          intro: ['Ines told me what the bottles say. I have seen it too, once, from the light.', 'At night, out in the Abyssal Trench, something enormous bites. Land a Legendary fish there, after dark.'],
+          steps: [{ t: 'catch', n: 1, rarityMin: 'Legendary', zoneMin: 4, night: true, text: 'Land a Legendary fish in the Trench at night' }],
+          outro: ['You did it. Forty years I watched for that shadow. Harbour Town will tell this story for a long time.'], reward: { cash: 2000, xp: 600, flag: 'legend' } }
+      ];
+      const QUEST_BY_ID = Object.fromEntries(QUESTS.map(q => [q.id, q]));
       CABIN.galleryX = CABIN.x - 2.75; CABIN.aquaX = CABIN.x + 1.0; CABIN.camX = CABIN.galleryX - 0.25;
 
       const Colliders = {
@@ -6626,6 +6748,74 @@
           return palm;
         }
         /* a small fisherman's cottage: whitewashed walls, gabled roof, door, shuttered windows and a chimney (front +Z) */
+        /* Harbour Town (v6.0): the gate through the seawall, hedges, the plaza with its well, lamps and noticeboard,
+           Marta's hut and Lorenzo's restaurant. Buildings are fade groups (userData.townFade). */
+        static buildHarbourTown(root, fade, textures) {
+          const K = this.propKit(textures), M = K.M, W = COL.WALK, G = ISLAND.gateHW;
+          const stone = M(0x9ca3af, 0.95), stoneD = M(0x6b7280, 0.95), hedgeM = M(0x2f6f2a, 0.9), hedgeL = M(0x3d8a35, 0.9);
+          // gate: steps over the seawall, two pillars and an arch with the town's name
+          for (let i = 0; i < 4; i++) K.box(root, 2 * G + 0.4, 0.06, 0.32, i % 2 ? stone : stoneD, 0, 1.52 + i * 0.015, 5.85 + i * 0.3);
+          [-1, 1].forEach(sx => { K.box(root, 0.5, 2.6, 0.5, stoneD, sx * (G + 0.3), 1.5 + 1.3, 6.3); K.box(root, 0.62, 0.14, 0.62, stone, sx * (G + 0.3), 2.86 + 1.3, 6.3); });
+          K.box(root, 2 * G + 1.3, 0.16, 0.36, K.darkWood, 0, 4.1, 6.3);
+          K.box(root, 2.4, 0.42, 0.06, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🏘️ HARBOUR TOWN', 320, 64) }), 0, 3.8, 6.1);
+          Colliders.box('gate pillar W', -(G + 0.3), 6.3, 0.25, 0.25, W); Colliders.box('gate pillar E', G + 0.3, 6.3, 0.25, 0.25, W);
+          // low hedges along the terrace front, broken by the gate
+          [-1, 1].forEach(sx => {
+            for (let x = G + 0.7; x < ISLAND.xMax + 0.6; x += 1.2) { const hb = K.box(root, 1.25, 0.6 + (Math.round(x * 3) % 3) * 0.06, 0.6, (Math.round(x) % 2) ? hedgeM : hedgeL, sx * (x + 0.55), 1.8, 6.85); hb.castShadow = true; }
+          });
+          // the plaza: round paving, a well, two lamps and the noticeboard
+          const P = ISLAND.plaza;
+          const pave = new THREE.Mesh(new THREE.CylinderGeometry(P.r, P.r, 0.06, 28), M(0xb8b0a2, 0.95)); pave.position.set(P.x, 1.52, P.z); pave.receiveShadow = true; root.add(pave);
+          for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; K.box(root, 0.5, 0.07, 0.24, stoneD, P.x + Math.cos(a) * (P.r - 0.15), 1.54, P.z + Math.sin(a) * (P.r - 0.15)).rotation.y = -a; }
+          {
+            const w = new THREE.Group(); w.position.set(TOWN.well.x, 1.5, TOWN.well.z); w.userData.townFade = true; root.add(w); fade.push(w);
+            const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.72, 16, 1, true), M(0x78716c, 0.95)); ring.position.y = 0.36; ring.material.side = THREE.DoubleSide; w.add(ring);
+            K.cyl(w, 0.6, 0.6, 0.05, M(0x1e3a5f, 0.2, 0.2), 0, 0.5, 0, 16);
+            [-1, 1].forEach(sx => K.box(w, 0.1, 1.3, 0.1, K.darkWood, sx * 0.55, 1.0, 0));
+            const roofW = K.box(w, 1.5, 0.08, 0.9, M(0x7f1d1d, 0.8), 0, 1.7, 0); roofW.rotation.z = 0;
+            K.cyl(w, 0.05, 0.05, 1.1, K.darkWood, 0, 1.45, 0, 6).rotation.z = Math.PI / 2;
+            K.cyl(w, 0.12, 0.1, 0.2, K.darkWood, 0, 1.15, 0, 8);
+            Colliders.circle('well', TOWN.well.x, TOWN.well.z, 0.72, W);
+          }
+          [[-2.9, 8.0], [2.9, 11.6]].forEach(([x, z]) => {
+            K.cyl(root, 0.06, 0.08, 2.6, K.iron, x, 1.5 + 1.3, z, 8);
+            K.sph(root, 0.16, new THREE.MeshBasicMaterial({ color: 0xfde68a }), x, 4.15, z, 8, 6);
+            K.box(root, 0.36, 0.06, 0.36, K.iron, x, 4.36, z);
+            Colliders.circle('town lamp', x, z, 0.12, W);
+          });
+          {
+            const b = new THREE.Group(); b.position.set(TOWN.board.x, 1.5, TOWN.board.z); b.rotation.y = Math.PI; root.add(b);
+            [-0.7, 0.7].forEach(x => K.box(b, 0.1, 1.9, 0.1, K.darkWood, x, 0.95, 0));
+            K.box(b, 1.6, 1.0, 0.08, K.wood, 0, 1.35, 0);
+            K.box(b, 1.4, 0.24, 0.02, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('📌 NOTICES', 256, 48) }), 0, 1.72, -0.05);
+            [[-0.4, 1.3, 0xfef3c7], [0.1, 1.25, 0xfde68a], [0.48, 1.35, 0xf8fafc]].forEach(([x, y, c]) => K.box(b, 0.34, 0.42, 0.01, M(c, 0.9), x, y, -0.05));
+            Colliders.box('noticeboard', TOWN.board.x, TOWN.board.z, 0.85, 0.15, W);
+          }
+          // Marta's hut: a small timber hut with a lantern, at the west end toward the lighthouse path
+          {
+            const t = TOWN.hut, h = new THREE.Group(); h.position.set(t.x, 1.5, t.z); h.rotation.y = Math.PI; h.userData.townFade = true; root.add(h); fade.push(h);
+            K.box(h, t.w, 0.2, t.d, stoneD, 0, 0.1, 0); K.box(h, t.w - 0.1, 2.0, t.d - 0.1, M(0x8b5e34, 0.9, 0, { map: textures.wood }), 0, 1.2, 0);
+            const r = K.box(h, t.w + 0.4, 0.1, t.d + 0.5, M(0x334155, 0.8), 0, 2.35, 0); r.rotation.x = 0.12;
+            K.box(h, 0.7, 1.3, 0.06, K.darkWood, -0.4, 0.85, t.d / 2); K.box(h, 0.5, 0.4, 0.05, M(0x1e3a5f, 0.3, 0, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0.5 }), 0.5, 1.4, t.d / 2);
+            K.cyl(h, 0.1, 0.12, 0.26, M(0xfacc15, 0.3, 0.4, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.9 }), 0.25, 1.95, t.d / 2 + 0.12, 8);
+            K.box(h, 1.4, 0.26, 0.04, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture("🗼 MARTA", 256, 48) }), 0, 2.15, t.d / 2 + 0.04);
+            Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, W);
+          }
+          // Lorenzo's restaurant: a wide house with a striped awning and a terrace (opens in v6.1)
+          {
+            const t = TOWN.resto, h = new THREE.Group(); h.position.set(t.x, 1.5, t.z); h.rotation.y = Math.PI; h.userData.townFade = true; root.add(h); fade.push(h);
+            K.box(h, t.w + 0.2, 0.25, t.d + 0.2, stoneD, 0, 0.12, 0); K.box(h, t.w, 2.5, t.d, M(0xfff7ed, 0.85), 0, 1.5, 0);
+            K.box(h, t.w + 0.5, 0.3, t.d + 0.5, M(0x9a3412, 0.8), 0, 2.9, 0);
+            const aw = K.box(h, t.w - 0.4, 0.06, 1.1, M(0xdc2626, 0.7), 0, 2.4, t.d / 2 + 0.5); aw.rotation.x = 0.25;
+            for (let i = 0; i < 6; i++) K.box(h, (t.w - 0.4) / 12, 0.065, 1.1, M(0xf8fafc, 0.7), -((t.w - 0.4) / 2) + (i * 2 + 1.5) * (t.w - 0.4) / 12, 2.41, t.d / 2 + 0.5).rotation.x = 0.25;
+            K.box(h, 0.9, 1.6, 0.06, K.darkWood, 0, 1.05, t.d / 2 + 0.01);
+            [-1.6, 1.6].forEach(x => K.box(h, 1.0, 0.8, 0.05, M(0x1e3a5f, 0.3, 0, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0.45 }), x, 1.5, t.d / 2 + 0.02));
+            K.box(h, 2.6, 0.42, 0.06, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture("🍝 LORENZO'S", 320, 64) }), 0, 3.25, t.d / 2 + 0.28);
+            h.userData.soonSign = K.box(h, 1.0, 0.5, 0.04, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('OPENING SOON', 192, 64) }), 1.6, 0.6, t.d / 2 + 0.6);
+            Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, W);
+          }
+        }
+
         static buildCottage(w, d, wallHex, roofHex, seed) {
           const g = new THREE.Group();
           const M = (c, r = 0.85, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r, flatShading: true }, extra));
@@ -6780,16 +6970,20 @@
             ].forEach(([tx, tz, h, lean], i) => {
               const palm = this.buildPalm(h, lean, i * 1.3, mats);
               palm.position.set(tx, 1.5, tz);
-              islandScenery.add(palm);
+              islandScenery.add(palm); palm.userData.fade = true;
+              if (Math.abs(tx) < ISLAND.xMax + 0.5 && tz < ISLAND.zMax + 0.5) Colliders.circle('palm', tx, tz, 0.32, COL.WALK);
             });
           }
 
           // Fishermen's cottages along the back of the harbour terrace
-          [[-17.5, 11.6, 3.4, 2.8, 0xf8fafc, 0xb91c1c, 0, 0.12], [-6.5, 11.9, 3.0, 2.6, 0xfef3c7, 0x1e3a8a, 1, -0.05],
-           [7.0, 11.9, 3.2, 2.6, 0xe0f2fe, 0xb45309, 2, 0.06], [17.5, 11.4, 3.6, 3.0, 0xfde68a, 0x1e3a8a, 3, -0.1]].forEach(([x, z, w, d, wall, roof, seed, rot]) => {
-            const ct = this.buildCottage(w, d, wall, roof, seed);
-            ct.position.set(x, 1.5, z); ct.rotation.y = rot; islandScenery.add(ct);
+          // (v6.0: they face the sea now, with walk colliders, and each is a fade group so it never blocks the camera)
+          const townFade = [];
+          [[TOWN.rook, 0xf8fafc, 0xb91c1c, 0], [TOWN.pip, 0xfef3c7, 0x1e3a8a, 1], [TOWN.ines, 0xe0f2fe, 0xb45309, 2]].forEach(([t, wall, roof, seed]) => {
+            const ct = this.buildCottage(t.w, t.d, wall, roof, seed);
+            ct.position.set(t.x, 1.5, t.z); ct.rotation.y = Math.PI; ct.userData.townFade = true; islandScenery.add(ct); townFade.push(ct);
+            Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, COL.WALK);
           });
+          this.buildHarbourTown(islandScenery, townFade, textures);
           // a stone path from the pier ramp across the terrace
           for (let i = 0; i < 9; i++) {
             const st = new THREE.Mesh(ModelKit.roundedBox(1.1 + (i % 2) * 0.3, 0.08, 0.8, 0.03), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xa8a29e : 0x9ca3af, roughness: 0.95, flatShading: true }));
@@ -7834,6 +8028,7 @@
             bountyPapers: bountyBoard.userData.papers,
             cabin,
             islandScenery,
+            townFade: islandScenery.children.filter(o => o.userData.fade || o.userData.townFade),
             skyGroup,
             sunOrb,
             moonGroup,
@@ -8778,7 +8973,13 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         }
         return null;
       }
-      const WALK_SPEED = 4.2;   // m/s at full stick (3.0 until v5.4.0, 6.5 before v4.0.1)
+      const WALK_SPEED = 4.2;   // reference speed (m/s) the walk step code scales by
+      /* Movement (v6.0): the stick is camera-relative, the angler speeds up and slows down smoothly, a light push walks
+         and a full push (or Shift) runs; a tap on the ground walks there by itself; dragging on the screen orbits the camera. */
+      const MOVE = { walk: 3.3, run: 5.6, auto: 3.8, runAt: 0.9, accel: 10, brake: 14 };
+      const walkVel = { x: 0, z: 0 };
+      const camOrbit = { yaw: 0 };           // third-person camera angle around the angler (0 = looking out to sea)
+      let autoWalk = null;                    // { pts: [{x, z}...], stuck, lastD } while walking to a tapped spot
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
       let bobberPos = new THREE.Vector3();
       let bobberVel = new THREE.Vector3();
@@ -9630,6 +9831,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           bounties: generateBountyContracts(),
           aquarium: defaultAquarium(),
           books: {},
+          story: defaultStory(),
           seenSpecies: [],
           look: AnglerFactory.defaultLook('male'),
           xp: 0,
@@ -10160,6 +10362,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
         out.aquarium = sanitizeAquarium(src.aquarium);
         out.books = sanitizeBooks(src.books);
+        out.story = sanitizeStory(src.story);
 
         // appearance: sanitised against the option lists; the look's gender is the source of truth
         out.look = AnglerFactory.sanitizeLook(src.look, out.anglerGender);
@@ -10697,6 +10900,344 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         return !onBoat && mode === 'PIER_IDLE' && Math.hypot(playerX - CHEAT_GULL.x, playerZ - CHEAT_GULL.z) <= CHEAT_GULL.radius;
       }
 
+      /* =========================================================================
+         HARBOUR TOWN PEOPLE AND STORY (v6.0)
+         NPCS: the townsfolk (fixed looks on the angler rig, a day routine of spots, home at night).
+         QUESTS: the story as data; steps advance from game events (questEvent) or from a regular check (questTick),
+         a finished quest is handed in to its giver. Everything lives in state.story (sanitizeStory).
+         ========================================================================= */
+      function defaultStory() { return { active: {}, done: [], friend: {}, flags: {} }; }
+      function sanitizeStory(src) {
+        const st = defaultStory();
+        if (!src || typeof src !== 'object') return st;
+        st.done = [...new Set((Array.isArray(src.done) ? src.done : []).filter(id => QUEST_BY_ID[id]))];
+        if (src.active && typeof src.active === 'object') Object.entries(src.active).forEach(([id, a]) => {
+          const q = QUEST_BY_ID[id]; if (!q || st.done.includes(id) || !a || typeof a !== 'object') return;
+          const s = Math.max(0, Math.min(q.steps.length, Math.floor(Number(a.s) || 0)));
+          st.active[id] = { s, n: Math.max(0, Math.floor(Number(a.n) || 0)), seen: Array.isArray(a.seen) ? a.seen.filter(x => CATALOG_INDEX[x]).slice(0, 50) : [] };
+        });
+        if (src.friend && typeof src.friend === 'object') Object.keys(NPCS).forEach(k => { const v = Number(src.friend[k]); if (Number.isFinite(v)) st.friend[k] = Math.max(0, Math.min(99, Math.floor(v))); });
+        if (src.flags && typeof src.flags === 'object') ['lit', 'legend'].forEach(f => { if (src.flags[f]) st.flags[f] = true; });
+        return st;
+      }
+      const story = () => state.story || (state.story = defaultStory());
+      const questReady = id => { const a = story().active[id]; return !!a && a.s >= QUEST_BY_ID[id].steps.length; };
+      const questAvailable = q => !story().done.includes(q.id) && !story().active[q.id] && q.needs.every(n => story().done.includes(n));
+      function questStepText(id) {
+        const q = QUEST_BY_ID[id], a = story().active[id]; if (!a) return '';
+        if (a.s >= q.steps.length) return `Return to ${NPCS[q.giver].name}`;
+        const st = q.steps[a.s], n = st.n || 0;
+        return st.text + (n > 1 ? ` (${a.n}/${n})` : '');
+      }
+      function questAdvance(id) {
+        const q = QUEST_BY_ID[id], a = story().active[id]; if (!a) return;
+        a.s++; a.n = 0; a.seen = [];
+        if (a.s >= q.steps.length) { showToast(`📜 ${q.title}: done! Return to ${NPCS[q.giver].name}.`); sfx.playCoin(); }
+        else showToast(`📜 ${q.title}: ${q.steps[a.s].text}`);
+        saveGame(); updateQuestPill();
+      }
+      function questEvent(type, data) {
+        const S = story();
+        Object.keys(S.active).forEach(id => {
+          const q = QUEST_BY_ID[id], a = S.active[id]; if (!q || a.s >= q.steps.length) return;
+          const st = q.steps[a.s];
+          if (type === 'catch' && st.t === 'catch') {
+            const it = data.item, cat = st.cat || 'Fish';
+            if (it.category !== cat) return;
+            if (st.where === 'pier' && data.onBoat) return;
+            if (st.where === 'boat' && !data.onBoat) return;
+            if (st.zoneMin && (data.zoneObj ? data.zoneObj.id : 1) < st.zoneMin) return;
+            if (st.minW && data.weight < st.minW) return;
+            if (st.rarityMin && !rarityAtLeast(it.rarity, st.rarityMin)) return;
+            if (st.night && !isNightTime()) return;
+            if (st.distinct) { if (a.seen.includes(it.id)) return; a.seen.push(it.id); }
+            a.n++; if (a.n >= (st.n || 1)) questAdvance(id); else { saveGame(); updateQuestPill(); }
+          } else if (type === 'dive' && st.t === 'dive' && data.depth >= st.depth) questAdvance(id);
+          else if (type === 'bottle' && st.t === 'bottle') { a.n++; if (a.n >= st.n) questAdvance(id); else { saveGame(); updateQuestPill(); } }
+          else if (type === 'talk' && st.t === 'talk' && data.npc === st.npc) questAdvance(id);
+        });
+      }
+      let questTickT = 0;
+      function questTick(dt) {
+        questTickT -= dt; if (questTickT > 0) return; questTickT = 0.5;
+        const S = story(), px = onBoat ? boatPos.x : playerX, pz = onBoat ? boatPos.z : playerZ;
+        Object.keys(S.active).forEach(id => {
+          const q = QUEST_BY_ID[id], a = S.active[id]; if (!q || a.s >= q.steps.length) return;
+          const st = q.steps[a.s];
+          if (st.t === 'visit' && Math.hypot(px - st.x, pz - st.z) <= st.r && (!st.night || isNightTime())) questAdvance(id);
+          else if (st.t === 'far' && getDistanceMeters() >= st.m) questAdvance(id);
+          else if (st.t === 'own' && (state.ownedBoats || []).length >= st.boat) questAdvance(id);
+          else if (st.t === 'aquarium' && new Set(state.aquarium.fish.map(f => f.id)).size >= st.species) questAdvance(id);
+        });
+      }
+      function questFinish(id) {
+        const q = QUEST_BY_ID[id], S = story(); if (!questReady(id)) return;
+        delete S.active[id]; S.done.push(id);
+        const r = q.reward || {};
+        if (r.cash) { state.cash = +(state.cash + r.cash).toFixed(2); bumpStat('earned', r.cash); }
+        if (r.xp) addXp(r.xp);
+        if (r.flag) S.flags[r.flag] = true;
+        S.friend[q.giver] = (S.friend[q.giver] || 0) + 1;
+        sfx.playCatchFanfare(false); saveGame(); updateHUD(); updateQuestPill();
+        showToast(`🏅 ${q.title} complete! +${shopMoney(r.cash || 0)}${r.xp ? `, +${r.xp} XP` : ''}`);
+      }
+
+      /* ---- the townsfolk in the world ---- */
+      const npcState = { built: false, list: [] };
+      const npcMarkerTex = {};
+      function npcMarker(ch, color) {
+        if (!npcMarkerTex[ch]) {
+          const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+          g.fillStyle = '#111827'; g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
+          g.fillStyle = color; g.beginPath(); g.arc(32, 32, 24, 0, Math.PI * 2); g.fill();
+          g.fillStyle = '#111827'; g.font = 'bold 40px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch, 32, 35);
+          npcMarkerTex[ch] = new THREE.CanvasTexture(c);
+        }
+        return npcMarkerTex[ch];
+      }
+      function buildNpcs() {
+        npcState.built = true;
+        Object.entries(NPCS).forEach(([id, d]) => {
+          const look = AnglerFactory.sanitizeLook(Object.assign(AnglerFactory.defaultLook(d.look.gender), d.look), d.look.gender);
+          const rig = AnglerFactory.createRig(); AnglerFactory.dress(rig, look);
+          const g = new THREE.Group(); g.add(rig.root); scene.add(g);
+          const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcMarker('!', '#facc15'), depthTest: false, transparent: true })); mk.scale.set(0.42, 0.42, 1); mk.renderOrder = 20; mk.visible = false; g.add(mk);
+          const start = npcSpotNow(d);
+          npcState.list.push({ id, d, rig, g, mk, anim: new AnglerAnimator(rig), x: start.x, z: start.z, yaw: Math.PI, pts: [], goal: null, hidden: false, talk: 0 });
+        });
+      }
+      function npcSpotNow(d) {
+        const t = state.timeOfDay;
+        if (t < 0.27 || t > 0.8) return d.home;
+        return d.spots[Math.floor((t - 0.27) / 0.12) % d.spots.length];
+      }
+      const npcGround = z => z > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((z - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
+      function updateNpcs(dt) {
+        if (!world || onBoat && !npcState.built) return;
+        if (!npcState.built) buildNpcs();
+        const night = state.timeOfDay < 0.27 || state.timeOfDay > 0.8;
+        npcState.list.forEach(n => {
+          const spot = npcSpotNow(n.d);
+          if (!n.goal || n.goal.x !== spot.x || n.goal.z !== spot.z) {   // a new place to be: plan the walk there (through the gate and the pier mouth)
+            n.goal = spot; n.pts = planRoute({ x: spot.x, z: spot.z }, { x: n.x, z: n.z }); n.hidden = false;
+          }
+          let speed = 0;
+          if (n.talk > 0) n.talk -= dt;
+          else if (n.pts.length && dt > 0) {
+            const p = n.pts[0], dx = p.x - n.x, dz = p.z - n.z, dd = Math.hypot(dx, dz), step = 1.35 * dt;
+            if (dd <= step) { n.x = p.x; n.z = p.z; n.pts.shift(); } else { n.x += dx / dd * step; n.z += dz / dd * step; n.yaw = Math.atan2(-dx, -dz); }
+            speed = 1.35;
+          }
+          if (!n.pts.length && night && Math.hypot(n.x - n.d.home.x, n.z - n.d.home.z) < 0.2) n.hidden = true;   // gone indoors for the night
+          // stand still facing the angler when close, otherwise face where you are going (or the sea)
+          const near = Math.hypot(playerX - n.x, playerZ - n.z);
+          if (!speed && near < 3.5 && !onBoat) n.yaw = Math.atan2(-(playerX - n.x), -(playerZ - n.z));
+          n.g.visible = !n.hidden;
+          n.g.position.set(n.x, npcGround(n.z), n.z);
+          const dy = Math.atan2(Math.sin(n.yaw - n.g.rotation.y), Math.cos(n.yaw - n.g.rotation.y));
+          n.g.rotation.y += dy * (dt > 0 ? 1 - Math.exp(-8 * dt) : 0);
+          const far = Math.hypot((onBoat ? boatPos.x : playerX) - n.x, (onBoat ? boatPos.z : playerZ) - n.z) > 40;
+          if (!n.hidden && !far) n.anim.update({ dt, elapsed, speed, idleAllowed: true });
+          // ! a quest to offer, ? a quest to hand in
+          const ready = Object.keys(story().active).some(id => QUEST_BY_ID[id].giver === n.id && questReady(id));
+          const offer = QUESTS.some(q => q.giver === n.id && questAvailable(q));
+          n.mk.visible = !n.hidden && (ready || offer);
+          if (n.mk.visible) { n.mk.material.map = npcMarker(ready ? '?' : '!', ready ? '#4ade80' : '#facc15'); n.mk.position.set(0, 2.25 + Math.sin(elapsed * 3) * 0.05, 0); }
+        });
+      }
+      function npcNear() {
+        if (onBoat || mode !== 'PIER_IDLE' || !npcState.built) return null;
+        let best = null, bd = 1.45;
+        npcState.list.forEach(n => { if (n.hidden) return; const d = Math.hypot(playerX - n.x, playerZ - n.z); if (d < bd) { bd = d; best = n; } });
+        return best;
+      }
+
+      /* ---- talking ---- */
+      const talk = { npc: null, lines: [], i: 0, choices: null };
+      function talkShow() {
+        const n = talk.npc, d = n.d;
+        document.getElementById('talk-icon').textContent = d.icon;
+        document.getElementById('talk-name').textContent = d.name;
+        document.getElementById('talk-role').textContent = d.role;
+        document.getElementById('talk-text').textContent = talk.lines[talk.i] || '';
+        const host = document.getElementById('talk-choices'); host.innerHTML = '';
+        const last = talk.i >= talk.lines.length - 1;
+        const opts = last && talk.choices ? talk.choices : [{ label: last ? 'Bye' : 'Next ▸', fn: last ? null : () => { talk.i++; talkShow(); } }];
+        opts.forEach(o => {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'pixel-btn ' + (o.cls || ''); b.textContent = o.label;
+          b.addEventListener('click', e => { e.stopPropagation(); if (o.fn) o.fn(); else talkClose(); });
+          host.appendChild(b);
+        });
+      }
+      function talkSay(lines, choices) { talk.lines = lines; talk.i = 0; talk.choices = choices || null; talkShow(); }
+      function talkClose() { document.getElementById('modal-talk').classList.remove('open'); talk.npc = null; updateQuestPill(); }
+      function openTalk(n) {
+        talk.npc = n; n.talk = 4;
+        document.getElementById('modal-talk').classList.add('open');
+        questEvent('talk', { npc: n.id });
+        talkMenu();
+      }
+      function talkMenu() {
+        const n = talk.npc, S = story();
+        // 1. a quest of theirs is ready to hand in
+        const ready = Object.keys(S.active).find(id => QUEST_BY_ID[id].giver === n.id && questReady(id));
+        if (ready) { const q = QUEST_BY_ID[ready]; talkSay(q.outro, [{ label: 'Thanks!', cls: 'green', fn: () => { questFinish(ready); talkMenu(); } }]); return; }
+        // 2. a delivery they are waiting for, and a matching fish in the bucket
+        const waiting = Object.keys(S.active).find(id => { const q = QUEST_BY_ID[id], a = S.active[id]; return q.giver === n.id && q.steps[a.s] && q.steps[a.s].t === 'deliver'; });
+        if (waiting) {
+          const q = QUEST_BY_ID[waiting], st = q.steps[S.active[waiting].s];
+          const fit = state.bucket.filter(e => e.category === 'Fish' && (!st.rarityMin || rarityAtLeast(e.rarity, st.rarityMin)) && (!st.minW || e.weight >= st.minW))
+            .sort((a, b) => sellValue(a) - sellValue(b))[0];
+          if (fit) { talkSay([`Is that ${/^[aeiou]/i.test(fit.name) ? 'an' : 'a'} ${fit.name} in your bucket?`], [{ label: `Give ${fit.name}`, cls: 'green', fn: () => { const i = state.bucket.indexOf(fit); if (i >= 0) { state.bucket.splice(i, 1); rebuildPierBucketVisual(); } questAdvance(waiting); talkMenu(); } }, { label: 'Not yet' }]); return; }
+          talkSay([`${st.text}. I will be right here!`]); return;
+        }
+        // 3. a new quest to offer
+        const offer = QUESTS.find(q => q.giver === n.id && questAvailable(q));
+        if (offer) {
+          talkSay(offer.intro, [{ label: 'I will do it', cls: 'green', fn: () => { S.active[offer.id] = { s: 0, n: 0, seen: [] }; saveGame(); showToast(`📜 New quest: ${offer.title}`); updateQuestPill(); questTickT = 0; talkSay([`Good luck! (${offer.steps[0].text})`]); } }, { label: 'Not now' }]);
+          return;
+        }
+        // 4. an active quest of theirs in progress, or small talk
+        const mine = Object.keys(S.active).find(id => QUEST_BY_ID[id].giver === n.id);
+        const day = state.dayCount || 0, chat = n.d.chat[(day + Object.keys(NPCS).indexOf(n.id)) % n.d.chat.length];
+        talkSay(mine ? [`How is it going? ${questStepText(mine)}.`, chat] : [chat]);
+      }
+      (function wireTalk() {
+        const box = document.getElementById('talk-box');
+        if (box) box.addEventListener('click', e => { if (e.target.closest('button')) return; if (talk.i < talk.lines.length - 1) { talk.i++; talkShow(); } });
+      })();
+
+      /* ---- the quest log and the HUD pill ---- */
+      function updateQuestPill() {
+        const pill = document.getElementById('hud-quest-pill'); if (!pill) return;
+        const S = story(), ids = Object.keys(S.active);
+        if (!ids.length || isAnyModalOpen()) { pill.style.display = 'none'; return; }
+        const id = ids.find(questReady) || ids[0], ready = questReady(id);
+        pill.classList.toggle('ready', ready);
+        pill.textContent = `${ready ? '✅' : '📜'} ${QUEST_BY_ID[id].title}: ${questStepText(id)}`;
+        pill.style.display = 'flex';
+      }
+      function openQuestLog() {
+        const S = story(), host = document.getElementById('quest-list'), row = (icon, title, sub, cls) => `<div class="map-row ${cls || ''}"><span class="mi">${icon}</span><span><b>${title}</b><small>${sub}</small></span></div>`;
+        const act = Object.keys(S.active).map(id => { const q = QUEST_BY_ID[id]; return row(questReady(id) ? '✅' : '📜', q.title, `${NPCS[q.giver].icon} ${NPCS[q.giver].name} • ${questStepText(id)}`); });
+        const avail = QUESTS.filter(questAvailable).map(q => row('❗', q.title, `Talk to ${NPCS[q.giver].name} (${NPCS[q.giver].role}) in Harbour Town or the harbour.`));
+        const done = S.done.map(id => row('🏅', QUEST_BY_ID[id].title, 'Complete'));
+        host.innerHTML = `<h4 class="ql-h">In progress</h4>${act.join('') || '<p class="sl-empty">Nothing yet. Look for people with a ! above their heads.</p>'}`
+          + (avail.length ? `<h4 class="ql-h">Waiting for you</h4>${avail.join('')}` : '')
+          + `<h4 class="ql-h">Completed (${S.done.length} / ${QUESTS.length})</h4>${done.join('') || '<p class="sl-empty">None yet.</p>'}`;
+        document.getElementById('modal-quests').classList.add('open');
+      }
+
+      /* ---- Harbour Town fades: a building or palm between the camera and the angler turns see-through ---- */
+      const townFadeState = { list: null };
+      const _fadeRay = new THREE.Ray(), _fadeV = new THREE.Vector3(), _fadeHead = new THREE.Vector3();
+      function updateTownFade(dt) {
+        if (!world || !world.townFade) return;
+        if (!townFadeState.list) {
+          townFadeState.list = world.townFade.map(g => {
+            const mats = [];
+            g.traverse(o => { if (o.isMesh && o.material) { o.material = o.material.clone(); o.material.userData.baseT = o.material.transparent; o.material.userData.baseO = o.material.opacity; mats.push(o.material); } });
+            g.updateMatrixWorld(true);
+            return { g, mats, box: new THREE.Box3().setFromObject(g).expandByScalar(0.15), t: 1 };
+          });
+        }
+        const fp = !!settings.firstPerson && !shopBrowse.active;
+        _fadeHead.copy(world.anglerGroup.position); _fadeHead.y += 1.2;
+        const len = camera.position.distanceTo(_fadeHead);
+        _fadeRay.origin.copy(camera.position); _fadeRay.direction.copy(_fadeHead).sub(camera.position).normalize();
+        townFadeState.list.forEach(f => {
+          let block = false;
+          if (!fp && !onBoat && !dive.active) {
+            if (f.box.containsPoint(camera.position)) block = true;
+            else { const hit = _fadeRay.intersectBox(f.box, _fadeV); block = !!hit && camera.position.distanceTo(_fadeV) < len - 0.3; }
+          }
+          const goal = block ? 0.2 : 1, prev = f.t;
+          f.t += (goal - f.t) * (dt > 0 ? 1 - Math.exp(-8 * dt) : 1);
+          if (Math.abs(f.t - goal) < 0.01) f.t = goal;
+          if (f.t === prev) return;
+          f.mats.forEach(m => { const o = f.t >= 1 ? m.userData.baseO : Math.min(m.userData.baseO, f.t); m.transparent = f.t < 1 || m.userData.baseT; m.opacity = o; m.depthWrite = f.t >= 1; m.needsUpdate = true; });
+        });
+      }
+
+      /* ---- touch / mouse on the 3D view: drag to orbit the camera (or look around in first person), tap to walk there ---- */
+      const camDrag = { on: false, id: null, x: 0, y: 0, sx: 0, sy: 0, t: 0, moved: false };
+      const tapMarker = (() => {
+        const m = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.32, 24), new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.85, depthWrite: false }));
+        m.rotation.x = -Math.PI / 2; m.visible = false; m.renderOrder = 8; scene.add(m); return m;
+      })();
+      const _tapRay = new THREE.Raycaster(), _tapNdc = new THREE.Vector2(), _tapPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.5), _tapHit = new THREE.Vector3();
+      const zoneOf = (x, z) => z < 0.45 ? (x < -PIER_WALK - 0.02 ? 'dock' : 'pier') : z > ISLAND.zGate ? 'town' : 'board';
+      function clampWalkable(x, z) {
+        if (z < 0.45 && x >= -PIER_WALK - 0.02) return { x: THREE.MathUtils.clamp(x, -PIER_WALK + 0.1, PIER_WALK - 0.1), z: THREE.MathUtils.clamp(z, -10.5, 0.4) };
+        if (z < 0.45) return { x: THREE.MathUtils.clamp(x, PLATFORM.xOut + 0.2, PLATFORM.xIn - 0.1), z: THREE.MathUtils.clamp(z, PLATFORM.zMin + 0.2, PLATFORM.zMax) };
+        if (z > ISLAND.zGate + 0.4) return { x: THREE.MathUtils.clamp(x, -ISLAND.xMax + 0.2, ISLAND.xMax - 0.2), z: THREE.MathUtils.clamp(z, ISLAND.zIn + 0.2, ISLAND.zMax - 0.1) };
+        return { x: THREE.MathUtils.clamp(x, -(BW_HALF - 0.8), BW_HALF - 0.8), z: THREE.MathUtils.clamp(z, 0.5, 5.7) };
+      }
+      /* where a tap leads: a shop or stand tapped on its building leads to the spot in front of it */
+      function tapDestination(x, z) {
+        for (const p of MAP_PLACES()) {
+          if (p.far || !p.w || ['Cabin', 'Pier end', 'Mooring platform', 'Benches', 'Harbour Town'].includes(p.name)) continue;
+          if (Math.abs(x - p.x) <= p.w / 2 + 0.3 && Math.abs(z - p.z) <= p.d / 2 + 0.3)
+            return { x: p.x, z: p.z > ISLAND.zGate ? p.z - p.d / 2 - 0.75 : p.z + p.d / 2 + 0.85 };   // town houses face the sea
+        }
+        return clampWalkable(x, z);
+      }
+      function planRoute(to, fromPt) {
+        const pts = [], from = fromPt ? { x: fromPt.x, z: fromPt.z } : { x: playerX, z: playerZ }, a0 = zoneOf(from.x, from.z), b0 = zoneOf(to.x, to.z);
+        const gateOut = { x: 0, z: ISLAND.zGate - 0.4 }, gateIn = { x: 0, z: ISLAND.zIn + 0.4 };
+        // the town joins everything else through the gate: route via the gate, then treat that side as the boardwalk
+        let a = a0, b = b0;
+        if (a0 === 'town' && b0 !== 'town') { pts.push(gateIn, gateOut); a = 'board'; from.x = 0; from.z = gateOut.z; }
+        if (b0 === 'town' && a0 !== 'town') b = 'board';
+        const pierMouth = x => ({ x: THREE.MathUtils.clamp(x, -PIER_WALK + 0.4, PIER_WALK - 0.4), z: 0.9 });
+        const stairTop = { x: -PIER_WALK + 0.2, z: -5.6 }, stairFoot = { x: PLATFORM.xIn - 0.3, z: -5.6 };
+        if (a === 'board' && b !== 'board') pts.push(pierMouth(from.x), { x: pierMouth(from.x).x, z: 0.2 });
+        if (a !== 'board' && b === 'board') pts.push({ x: THREE.MathUtils.clamp(from.x, -PIER_WALK + 0.4, PIER_WALK - 0.4), z: 0.2 }, pierMouth(to.x));
+        if (b === 'dock' && a !== 'dock') pts.push(stairTop, stairFoot);
+        if (a === 'dock' && b !== 'dock') pts.unshift(stairFoot, stairTop);
+        if (CABIN && Math.abs(to.x - CABIN.x) < CABIN.w / 2 && to.z < CABIN.d + 0.2 && !(Math.abs(from.x - CABIN.x) < CABIN.w / 2 && from.z < CABIN.d + 0.2)) pts.push({ x: CABIN.x, z: CABIN.d + 0.9 }, { x: CABIN.x, z: CABIN.d - 0.6 });
+        if (b0 === 'town' && a0 !== 'town') pts.push(gateOut, gateIn);
+        pts.push(to);
+        return pts;
+      }
+      function tapToWalk(clientX, clientY) {
+        if (mode !== 'PIER_IDLE' || onBoat || isAnyModalOpen() || shopBrowse.active || standFocus.stand || settings.firstPerson) return;
+        const r = renderer.domElement.getBoundingClientRect();
+        _tapNdc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+        _tapRay.setFromCamera(_tapNdc, camera);
+        if (!_tapRay.ray.intersectPlane(_tapPlane, _tapHit)) return;
+        const to = tapDestination(_tapHit.x, _tapHit.z);
+        if (Math.hypot(to.x - playerX, to.z - playerZ) < 0.3) return;
+        autoWalk = { pts: planRoute(to), stuck: 0, lastD: 1e9 };
+        tapMarker.position.set(to.x, 1.52, to.z); tapMarker.visible = true; tapMarker.material.opacity = 0.85;
+        sfx.playTick();
+      }
+      (function wireViewTouch() {
+        const cv = renderer.domElement;
+        cv.addEventListener('pointerdown', e => {
+          if (camDrag.id !== null || isAnyModalOpen() || shopBrowse.active || gamePause.on) return;
+          camDrag.id = e.pointerId; camDrag.x = camDrag.sx = e.clientX; camDrag.y = camDrag.sy = e.clientY; camDrag.t = performance.now(); camDrag.moved = false; camDrag.on = true;
+        });
+        cv.addEventListener('pointermove', e => {
+          if (e.pointerId !== camDrag.id) return;
+          const dx = e.clientX - camDrag.x; camDrag.x = e.clientX; camDrag.y = e.clientY;
+          if (!camDrag.moved && Math.hypot(e.clientX - camDrag.sx, e.clientY - camDrag.sy) > 9) camDrag.moved = true;
+          if (!camDrag.moved) return;
+          if (settings.firstPerson && !onBoat) playerYaw -= dx * 0.006;          // first person: look around
+          else if (!onBoat && !standFocus.stand) camOrbit.yaw -= dx * 0.008;     // third person: orbit the camera
+        });
+        const end = e => {
+          if (e.pointerId !== camDrag.id) return;
+          const tap = !camDrag.moved && performance.now() - camDrag.t < 350;
+          camDrag.id = null; camDrag.on = false;
+          if (tap) tapToWalk(e.clientX, e.clientY);
+        };
+        cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+        // the compass resets the camera to look out to sea
+        const cmp = document.getElementById('hud-compass');
+        if (cmp) { cmp.style.pointerEvents = 'auto'; cmp.addEventListener('click', () => { camOrbit.yaw = 0; sfx.playTick(); }); }
+      })();
+
       /* ---- the harbour map ---- */
       const MAP_PLACES = () => [
         { icon: '⚓', name: 'Boatyard', desc: 'Buy boats, boat modules and fuel.', x: SHORE_SHOPS.boatyard.x, z: SHORE_SHOPS.boatyard.z, w: SHORE_SHOPS.boatyard.w, d: SHORE_SHOPS.boatyard.d, col: SHORE_SHOPS.boatyard.color },
@@ -10710,6 +11251,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { icon: '🐠', name: 'Aquarium Shop', desc: 'Tanks, decorations, fish food and cleaning kits.', x: SHORE_SHOPS.aquashop.x, z: SHORE_SHOPS.aquashop.z, w: SHORE_SHOPS.aquashop.w, d: SHORE_SHOPS.aquashop.d, col: SHORE_SHOPS.aquashop.color },
         { icon: '🏠', name: 'Cabin', desc: 'Your home, with the bottle gallery, your aquarium and the film camera.', x: CABIN.x, z: CABIN.d / 2, w: CABIN.w, d: CABIN.d, col: '#b08a5a' },
         { icon: '📖', name: 'Benches', desc: 'Sit down to rest and read your skill books.', x: -4.6, z: 5.2, w: 1.4, d: 0.5, col: '#78350f', also: [4.6, 5.2] },
+        { icon: '🏘️', name: 'Harbour Town', desc: 'The village square behind the gate, with the well and the noticeboard.', x: ISLAND.plaza.x, z: ISLAND.plaza.z, w: 4.4, d: 4.4, col: '#a8a29e' },
+        { icon: '🏮', name: "Marta's hut", desc: 'Home of Marta, the old lighthouse keeper.', x: TOWN.hut.x, z: TOWN.hut.z, w: TOWN.hut.w, d: TOWN.hut.d, col: '#8b5e34' },
+        { icon: '⚓', name: "Rook's house", desc: 'Captain Rook lives here when he is not at the Boatyard.', x: TOWN.rook.x, z: TOWN.rook.z, w: TOWN.rook.w, d: TOWN.rook.d, col: '#f8fafc' },
+        { icon: '🧒', name: "Pip's home", desc: 'Pip lives here with the family.', x: TOWN.pip.x, z: TOWN.pip.z, w: TOWN.pip.w, d: TOWN.pip.d, col: '#fef3c7' },
+        { icon: '🔬', name: "Ines' cottage", desc: 'Ines, the marine biologist, studies the fish of the bay here.', x: TOWN.ines.x, z: TOWN.ines.z, w: TOWN.ines.w, d: TOWN.ines.d, col: '#e0f2fe' },
+        { icon: '🍝', name: "Lorenzo's", desc: "Lorenzo's seaside restaurant. Opening soon.", x: TOWN.resto.x, z: TOWN.resto.z, w: TOWN.resto.w, d: TOWN.resto.d, col: '#dc2626' },
         { icon: '🗼', name: 'Lighthouse', desc: 'Out at sea in the Coastal Reef, with a small jetty you can dock at and fish from.', x: 52, z: -150, far: true }
       ];
       function mapCompass(dx, dz) {
@@ -10721,7 +11268,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          pans (drag) and zooms (pinch, wheel, buttons) over those pictures with the overlays drawn on top. */
       const MAP_SNAPS = [
         { x0: -90, x1: 90, z0: -175, z1: 35, ppm: 5.5 },     // wide: the sea out to the lighthouse
-        { x0: -32, x1: 32, z0: -14, z1: 10, ppm: 30 }        // detail: the harbour
+        { x0: -32, x1: 32, z0: -14, z1: 17, ppm: 28 }        // detail: the harbour and Harbour Town
       ];
       const mapView = { cx: 0, cz: 0, s: 14, snaps: null, ptrs: new Map(), raf: 0 };
       function mapSnapshot() {
@@ -10821,6 +11368,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
           });
         });
+        // the townsfolk where they are right now
+        npcState.list.forEach(n => { if (n.hidden) return; const sx = X(n.x), sy = Y(n.z); if (sx < -20 || sx > w + 20 || sy < -20 || sy > h + 20) return; g.fillStyle = 'rgba(56,189,248,0.85)'; g.beginPath(); g.arc(sx, sy, 11, 0, Math.PI * 2); g.fill(); g.font = '14px sans-serif'; g.fillText(n.d.icon, sx, sy + 1); });
         // you: an arrow with a view cone, always on screen (pinned to the edge when you are out of view)
         const me = mapYou(), fx = -Math.sin(me.yaw), fz = -Math.cos(me.yaw), ang = Math.atan2(fz, fx), r = 11;
         const mx = THREE.MathUtils.clamp(X(me.x), 14, w - 14), my = THREE.MathUtils.clamp(Y(me.z), 14, h - 14);
@@ -10853,6 +11402,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const prevCheatTaps = cheatTaps;
         cheatTaps = 0; // any action press that is not a counted "WALK EDGE" press beside the gull resets the count
         if (mode === 'PIER_IDLE') {
+          { const n = npcNear(); if (n) { isHoldingAction = false; actionPointerId = null; primaryBtn.classList.remove('pressed'); openTalk(n); return; } }
           if (benchSeated()) {   // seated on a bench: the button reads
             isHoldingAction = false;
             actionPointerId = null;
@@ -11286,6 +11836,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         const c = activeCatch;
         sfx.playCatchFanfare(c.item.category === 'Junk' || c.item.category === 'Flora');
+        questEvent('catch', { item: c.item, weight: c.weight, zoneObj: c.zoneObj, onBoat });
 
         const isNewSpecies = !state.discovered.includes(c.item.id);
         if (isNewSpecies) {
@@ -11709,6 +12260,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('modal-trophies').classList.add('open');
       }
       document.getElementById('menu-trophies').addEventListener('click', () => openTrophiesModal());
+      document.getElementById('menu-quests').addEventListener('click', () => openQuestLog());
 
       function openToolboxModal() {
         renderToolbox();
@@ -12711,7 +13263,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (activeCatch.bottleMessage) {
           if (!state.foundMessages) state.foundMessages = [];
           if (!state.foundMessages.includes(activeCatch.bottleMessage.id)) {
-            state.foundMessages.push(activeCatch.bottleMessage.id);
+            state.foundMessages.push(activeCatch.bottleMessage.id); questEvent('bottle');
             addXp(15);
             extraMsg = ` (Archived ${state.foundMessages.length}/${BOTTLE_MESSAGES.length} in Gallery!)`;
             checkGalleryCompletionReward();
@@ -13019,6 +13571,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           primaryBtn.classList.add('reeling');
           iconEl.textContent = '🔄';
           labelEl.textContent = 'HOLD REEL';
+        } else if (npcNear()) {
+          const n = npcNear();
+          primaryBtn.classList.add('bounty');
+          iconEl.textContent = '💬';
+          labelEl.textContent = 'TALK';
+          proxEl.style.borderColor = '#38bdf8'; proxEl.style.color = '#bae6fd';
+          proxEl.textContent = `${n.d.icon} ${n.d.name.toUpperCase()} • ${n.d.role.toUpperCase()}`;
+          proxEl.style.display = 'block';
         } else if (benchSeated()) {
           const ownN = Object.keys(BOOKS).filter(bookOwned).length;
           primaryBtn.classList.add('shop');
@@ -13168,7 +13728,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function updateHUD() {
-        updateBountyPill();
+        updateBountyPill(); updateQuestPill();
         updateLogNewDot();
         document.getElementById('hud-cash').textContent = `$${state.cash.toFixed(2)}`;
         { const wl = getWeatherObj().label; const sp = wl.indexOf(' ');
@@ -14189,6 +14749,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function endDive(reason) {
         if (!dive.active) return;
+        questEvent('dive', { depth: dive.maxDepth });
         if (reason === 'air' && !cheats.infAir && dive.bag.length) {
           dive.bag.sort((a, b) => b.weight - a.weight);
           const half = bagWeight() / 2;
@@ -14495,7 +15056,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateShopBrowse(dt);
         updateCabinFade(dt);
         updateAquarium(dt);
-        if (world.islandScenery) world.islandScenery.visible = !!settings.firstPerson;
+        updateNpcs(dt); questTick(dt);
+        if (world.islandScenery) world.islandScenery.visible = true;   // v6.0: always shown; whatever blocks the camera fades (updateTownFade)
+        updateTownFade(dt);
         updateStationPicker(false);
         const zone = getCurrentZone();
         const weather = getWeatherObj();
@@ -14681,6 +15244,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
 
           pierMoveInput = 0;
+          if (!(mode === 'PIER_IDLE' && !isAnyModalOpen())) { walkVel.x = 0; walkVel.z = 0; if (autoWalk && mode !== 'PIER_IDLE') { autoWalk = null; tapMarker.visible = false; } }
           if (mode === 'PIER_IDLE' && !isAnyModalOpen()) {
             let moveX = joyState.x;
             let moveZ = joyState.y;
@@ -14691,24 +15255,57 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (moveLatched()) { moveX = 0; moveZ = 0; }
             moveX = THREE.MathUtils.clamp(moveX, -1, 1);
             moveZ = THREE.MathUtils.clamp(moveZ, -1, 1);
-            pierMoveInput = Math.hypot(moveX, moveZ);
+            const usingKeys = MOVE_KEYS.some(k => keys[k]);
+            let stickMag = Math.min(1, Math.hypot(moveX, moveZ));
+            if (stickMag > 0.08) autoWalk = null;   // any manual input takes over from tap-to-walk
+            pierMoveInput = stickMag;
+            let speedGoal = usingKeys ? (keys['ShiftLeft'] || keys['ShiftRight'] ? MOVE.run : MOVE.walk)
+              : (stickMag < MOVE.runAt ? MOVE.walk * stickMag / MOVE.runAt : MOVE.run);
             if (settings.firstPerson) {
               // First-person controls: left / right turn on the spot, up / down walk forward / backward
               playerYaw -= moveX * 2.7 * dt;
               const walk = -moveZ;
               moveX = -Math.sin(playerYaw) * walk;
               moveZ = -Math.cos(playerYaw) * walk;
+              stickMag = Math.abs(walk);
+              speedGoal = usingKeys ? speedGoal : (stickMag < MOVE.runAt ? MOVE.walk * stickMag / MOVE.runAt : MOVE.run);
+            } else if (stickMag > 0.001) {
+              // camera-relative: up on the stick walks away from the camera, whatever the orbit angle
+              const cy = Math.cos(camOrbit.yaw), sy = Math.sin(camOrbit.yaw), ix = moveX, iz = moveZ;
+              moveX = ix * cy + iz * sy; moveZ = -ix * sy + iz * cy;
+            }
+            if (autoWalk && stickMag <= 0.08) {   // tap-to-walk: head for the next point of the route
+              const tp = autoWalk.pts[0], dx = tp.x - playerX, dz = tp.z - playerZ, d = Math.hypot(dx, dz);
+              if (d < (autoWalk.pts.length > 1 ? 0.45 : 0.22)) { autoWalk.pts.shift(); if (!autoWalk.pts.length) { autoWalk = null; tapMarker.visible = false; } }
+              else {
+                moveX = dx / d; moveZ = dz / d; speedGoal = Math.min(MOVE.auto, d * 4 + 0.6); stickMag = 1;
+                autoWalk.stuck = (autoWalk.lastD - d < 0.02 * dt * 60) ? autoWalk.stuck + dt : 0; autoWalk.lastD = d;
+                if (autoWalk.stuck > 0.9) { autoWalk = null; tapMarker.visible = false; }
+              }
+              pierMoveInput = autoWalk ? 1 : 0;
+            }
+            { // smooth start and stop: the velocity eases toward the stick's direction and speed
+              const m = Math.hypot(moveX, moveZ), gx = m > 1e-4 ? moveX / m * speedGoal : 0, gz = m > 1e-4 ? moveZ / m * speedGoal : 0;
+              const speeding = gx * gx + gz * gz > walkVel.x * walkVel.x + walkVel.z * walkVel.z;
+              const k = 1 - Math.exp(-(speeding ? MOVE.accel : MOVE.brake) * dt);
+              walkVel.x += (gx - walkVel.x) * k; walkVel.z += (gz - walkVel.z) * k;
+              if (Math.abs(walkVel.x) < 0.01 && Math.abs(walkVel.z) < 0.01 && m < 1e-4) { walkVel.x = 0; walkVel.z = 0; }
+              moveX = walkVel.x / WALK_SPEED; moveZ = walkVel.z / WALK_SPEED;
             }
 
             const prevX = playerX;
             const prevZ = playerZ;
             // Small invisible border at the farthest end of the pier (Z = -10.59) so the fisherman doesn't step onto the very tip
             // walking pace: about 3 m/s at full stick (a brisk walk); diagonals are no faster than straight lines
-            { const mag = Math.hypot(moveX, moveZ); if (mag > 1) { moveX /= mag; moveZ /= mag; } }
-            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * WALK_SPEED * dt, -10.59, 5.8);
+            let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * WALK_SPEED * dt, -10.59, ISLAND.zMax);
+            // the boardwalk's back edge and the terrace's front hedge can only be crossed through the town gate
+            if (nextZ > ISLAND.zGate && playerZ <= ISLAND.zGate && Math.abs(playerX) > ISLAND.gateHW) nextZ = ISLAND.zGate;
+            if (nextZ < ISLAND.zIn && playerZ >= ISLAND.zIn && Math.abs(playerX) > ISLAND.gateHW) nextZ = ISLAND.zIn;
 
             const onDock = playerX < -PIER_WALK - 0.02 && playerZ < 0.4;   // on the stairs or the mooring platform
             const getPierXBounds = zVal => {
+              if (zVal > ISLAND.zIn - 1e-3) return [-ISLAND.xMax, ISLAND.xMax];                 // Harbour Town
+              if (zVal > ISLAND.zGate + 1e-3) return [-ISLAND.gateHW, ISLAND.gateHW];           // the gate
               if (zVal >= 0.45) return [-(BW_HALF - 0.7), BW_HALF - 0.7];
               // stairs and mooring platform (port side): past the foot of the stairs only the platform itself is walkable
               if (onDock) return zVal < -6.55 ? [PLATFORM.xOut, PLATFORM.xIn] : [PLATFORM.xOut, PIER_WALK];
@@ -14780,16 +15377,21 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
 
             const [finalMinX, finalMaxX] = getPierXBounds(nextZ);
-            playerZ = THREE.MathUtils.clamp(nextZ, -10.59, 5.8);
+            playerZ = THREE.MathUtils.clamp(nextZ, -10.59, ISLAND.zMax);
             playerX = THREE.MathUtils.clamp(nextX, finalMinX, finalMaxX);
 
             walkDX = playerX - prevX;
             walkDZ = playerZ - prevZ;
+            if (dt > 0) {   // blocked by a wall or rail: the velocity follows what really happened, so it does not pile up
+              const ax = walkDX / dt, az = walkDZ / dt;
+              if (Math.abs(ax) < Math.abs(walkVel.x)) walkVel.x = ax;
+              if (Math.abs(az) < Math.abs(walkVel.z)) walkVel.z = az;
+            }
             updatePrimaryActionButton();
           }
 
           // Smooth vertical elevation down the wooden boat stairs (-2.55 -> -3.85) onto the mooring platform (Y = 0.71)
-          let playerY = 1.55;
+          let playerY = playerZ > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((playerZ - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
           if (playerX < -2.55 - PIER_DX && playerZ <= -4.35 && playerZ >= PLATFORM.zEnd) {
             const stairT = THREE.MathUtils.clamp((-2.55 - PIER_DX - playerX) / 1.30, 0, 1);
             playerY = THREE.MathUtils.lerp(1.55, 0.71, stairT);
@@ -15360,13 +15962,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const lateralFollow = isPortrait ? 0.95 : 0.72;
           // past 12 m from the pier the camera follows 1:1 so the far ends (Boatyard, Cabin) stay framed
           const camFX = Math.sign(playerX) * (Math.min(Math.abs(playerX), 12) * lateralFollow + Math.max(0, Math.abs(playerX) - 12) * 0.97);
-          const camZ = playerZ + (isPortrait ? 8.4 : 7.8);
+          // orbit: the camera swings round the angler by camOrbit.yaw (drag on the screen); during a fight it eases back
+          if (!camDrag.on && mode !== 'PIER_IDLE' && mode !== 'SHOP_BROWSE') camOrbit.yaw *= Math.exp(-2.5 * dt);
+          const oy = camOrbit.yaw, ow = Math.min(1, Math.abs(Math.atan2(Math.sin(oy), Math.cos(oy))) / 0.35);
+          const isl = THREE.MathUtils.smoothstep(playerZ, ISLAND.zGate, ISLAND.zIn + 2.5);   // in town: higher and closer, above the hills
+          const pivX = THREE.MathUtils.lerp(camFX, playerX, Math.max(ow, isl)), back = (isPortrait ? 8.4 : 7.8) - isl * 2.2;
           const targetCamPos = _camV1.set(
-            camFX,
-            5.6 + Math.sin(elapsed * 1.4) * 0.06,
-            camZ
+            pivX + Math.sin(oy) * back,
+            5.6 + isl * 3.0 + Math.sin(elapsed * 1.4) * 0.06,
+            playerZ + Math.cos(oy) * back
           );
-          const lookGoal = _camV2.set(camFX, 1.35, playerZ - 6.0);
+          const lookGoal = _camV2.set(pivX - Math.sin(oy) * 6.0, 1.35, playerZ - Math.cos(oy) * 6.0);
           if (standFocus.stand) {
             standCameraPose(standFocus.stand);
             targetCamPos.copy(_standPos);
