@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '5.1.3';
+    window.PF_VERSION = '5.2.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -9228,15 +9228,48 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const benchSeated = () => !onBoat && mode === 'PIER_IDLE' && !!restState.spot && restState.spot.kind === 'bench' && restState.w > 0.6;
       const readingActive = () => !!reading.id;
       let readProp = null;
+      /* an open book held in both hands: two page stacks (thick on the right while unread, thick on the left once read)
+         and one leaf that flips over each time a page is finished */
+      function buildReadBook() {
+        const g = new THREE.Group(), U = g.userData;
+        const lines = document.createElement('canvas'); lines.width = lines.height = 64; { const c = lines.getContext('2d'); c.fillStyle = '#f6efd9'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#a89c80'; for (let y = 8; y < 60; y += 5) c.fillRect(8, y, 48, 1.5); }
+        const pageMat = new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(lines), roughness: 0.9 }), coverMat = new THREE.MeshStandardMaterial({ roughness: 0.7 });
+        const half = side => {
+          const h = new THREE.Group(); h.rotation.z = -side * 0.12; g.add(h);
+          const cv = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.008, 0.22), coverMat); cv.position.set(side * 0.07, -0.004, 0);
+          const pgs = new THREE.Mesh(new THREE.BoxGeometry(0.128, 1, 0.2), pageMat); pgs.position.x = side * 0.066;
+          h.add(cv, pgs); return pgs;
+        };
+        U.cover = coverMat; U.right = half(1); U.left = half(-1);
+        const spine = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.22), coverMat); spine.position.y = -0.006; g.add(spine);
+        const leaf = new THREE.Group(), s1 = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.0025, 0.196), pageMat), s2g = new THREE.Group(), s2 = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.0025, 0.196), pageMat);
+        s1.position.x = 0.033; s2.position.x = 0.033; s2g.position.x = 0.066; s2g.add(s2); leaf.add(s1, s2g); leaf.visible = false; g.add(leaf);
+        U.leaf = leaf; U.tip = s2g; U.flip = -1; U.lastPage = 0; U.pending = 0;
+        world.anglerGroup.add(g); return g;
+      }
       function setReadProp(id) {
         if (!id) { if (readProp) readProp.visible = false; return; }
-        if (!readProp) {
-          readProp = new THREE.Group();
-          const cv = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.34), new THREE.MeshStandardMaterial({ roughness: 0.7 })), pg = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.05, 0.32), new THREE.MeshStandardMaterial({ color: 0xf5ecd0, roughness: 0.9 }));
-          pg.position.y = 0.04; readProp.add(cv, pg); readProp.userData.cover = cv; world.anglerGroup.add(readProp);
+        if (!readProp) readProp = buildReadBook();
+        readProp.userData.cover.color.setHex(BOOKS[id].color);
+        readProp.userData.lastPage = Math.floor(bookPages(id)); readProp.userData.flip = 0; readProp.userData.pending = 0;   // opening the book turns a leaf too
+        readProp.visible = true;
+      }
+      /* per frame (dt is 0 while paused): place the book in front of the chest, update the stacks and the turning leaf */
+      function updateReadBook(dt, seatY) {
+        if (!readProp || !readProp.visible || !reading.id) return;
+        const U = readProp.userData, pr = bookProgress(reading.id), pg = Math.floor(bookPages(reading.id));
+        if (pg > U.lastPage) { U.pending += pg - U.lastPage; U.lastPage = pg; }
+        if (U.flip < 0 && U.pending > 0) { U.pending = Math.min(U.pending - 1, 1); U.flip = 0; }
+        readProp.position.set(0, seatY + 0.38, -0.6); readProp.rotation.set(1.17, 0, 0);
+        const rt = 0.004 + 0.034 * (1 - pr), lt = 0.004 + 0.034 * pr;
+        U.right.scale.y = rt; U.right.position.y = rt / 2; U.left.scale.y = lt; U.left.position.y = lt / 2;
+        if (U.flip >= 0) {
+          U.flip = Math.min(1, U.flip + dt / 0.9);
+          const e = U.flip * U.flip * (3 - 2 * U.flip), a = Math.PI * e;
+          U.leaf.visible = U.flip < 1; U.leaf.rotation.z = a; U.leaf.position.y = rt + (lt - rt) * e + 0.002;
+          U.tip.rotation.z = -0.7 * Math.sin(a);
+          if (U.flip >= 1) { U.flip = -1; U.leaf.visible = false; sfx.playTick(); }
         }
-        readProp.userData.cover.material.color.setHex(BOOKS[id].color);
-        readProp.position.set(0, 0.82, -0.34); readProp.rotation.set(-1.0, 0, 0); readProp.visible = true;
       }
       function startReading(id) {
         if (!bookOwned(id) || bookProgress(id) >= 1 || !benchSeated()) return false;
@@ -12631,7 +12664,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           proxEl.style.borderColor = '#a78bfa';
           proxEl.style.color = '#ddd6fe';
           proxEl.textContent = reading.id ? '📖 READING' : ownN ? '📚 PRESS READ TO PICK A BOOK' : '📚 NO BOOKS YET';
-          proxEl.style.display = 'block';
+          proxEl.style.display = reading.id ? 'none' : 'block';
         } else if (isNearPierShop()) {
           primaryBtn.classList.add('shop');
           iconEl.textContent = '🏪';
@@ -12897,12 +12930,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       /* First person: the camera sits in the player's head (head model hidden so it never blocks the view),
          looks where the player faces, follows the line while fishing, and looks at a stand once you idle in front of it. */
-      const _fpHead = new THREE.Vector3(), _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3(), _fpUp = new THREE.Vector3(0, 1, 0);
-      let fpBlend = 0, fpEyeY = null;
+      const _fpHead = new THREE.Vector3(), _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3(), _fpUp = new THREE.Vector3(0, 1, 0), _fpUp2 = new THREE.Vector3();
+      let fpBlend = 0, fpEyeY = null, fpReadW = 0;
       function updateFirstPersonCamera(dt) {
         const fp = !!settings.firstPerson && !shopBrowse.active;   // a shop shows the angler from outside, head and all
         if (world.headGroup.visible === fp) world.headGroup.visible = !fp;
-        if (!fp) { fpBlend = 0; return; }
+        if (!fp) { fpBlend = 0; fpReadW = 0; return; }
         world.anglerGroup.updateMatrixWorld(true);
         _fpFwd.set(0, 0, -1).applyQuaternion(world.anglerGroup.quaternion);
         _fpFwd.y = 0;
@@ -12917,6 +12950,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const eyeLocalY = fpEyeY;
         camera.position.copy(world.anglerGroup.position).addScaledVector(_fpFwd, 0.14);
         camera.position.y += eyeLocalY + 0.03;
+        // reading: the eyes drop and lean in over the book
+        fpReadW += (((reading.id && readProp && readProp.visible && restState.w > 0.5) ? 1 : 0) - fpReadW) * (1 - Math.exp(-5 * dt));
+        camera.position.y -= 0.2 * fpReadW;
         // going astern on a boat: turn the view round to look where the boat is going
         fpBack += ((onBoat && boatCamReverse ? 1 : 0) - fpBack) * (1 - Math.exp(-4 * dt));
         if (fpBack > 0.001) _fpFwd.applyAxisAngle(_fpUp, Math.PI * fpBack * fpBack * (3 - 2 * fpBack));
@@ -12929,8 +12965,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           _fpGoal.copy(camera.position).addScaledVector(_fpFwd, 10);
           fpBlend = Math.max(0, fpBlend - dt * 2.5);
         }
-        if (!camLookInit) { camLookCur.copy(_fpGoal); camLookInit = true; }
-        if (fpBlend > 0) camLookCur.lerp(_fpGoal, 1 - Math.exp(-8 * dt));
+        if (fpReadW > 0.002 && readProp) {   // eyes on the page
+          readProp.getWorldPosition(_fpUp2); _fpGoal.lerp(_fpUp2, fpReadW); camLookCur.copy(_fpGoal); camLookInit = true;
+        } else if (!camLookInit) { camLookCur.copy(_fpGoal); camLookInit = true; }
+        else if (fpBlend > 0) camLookCur.lerp(_fpGoal, 1 - Math.exp(-8 * dt));
         else camLookCur.copy(_fpGoal);   // no smoothing while turning: the horizon stays put and the view tracks the stick exactly
         camera.up.set(0, 1, 0);
         camera.lookAt(camLookCur);
@@ -14900,7 +14938,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             handBlend = Math.min(1, rodVisProgress);
           } else if (restW > 0.001 && restSp) {
             const ag = world.anglerGroup;
-            if (restSp.kind === 'bench') {   // hands rest on the thighs
+            if (restSp.kind === 'bench' && reading.id && readProp && readProp.visible) {   // both hands hold the book
+              updateReadBook(dt, seatH * hs); readProp.updateMatrixWorld(true);
+              hands = { L: readProp.localToWorld(new THREE.Vector3(-0.13, -0.02, 0.07)), R: readProp.localToWorld(new THREE.Vector3(0.13, -0.02, 0.07)) };
+            } else if (restSp.kind === 'bench') {   // hands rest on the thighs
               hands = { L: ag.localToWorld(new THREE.Vector3(-0.13, seatH * hs + 0.1, -0.32)), R: ag.localToWorld(new THREE.Vector3(0.13, seatH * hs + 0.1, -0.32)) };
             } else {                         // forearms on the top rail
               const y = ag.position.y + 0.99;

@@ -536,6 +536,11 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.2.0: an open book in your hands
+- **Reading shows a real open book** held in both hands in front of the chest: cover in the book's colour, page stacks that shift from the right (unread) to the left (read) as you progress.
+- **A page turns every time a page is finished** (and once when you open the book): a leaf lifts off the right stack, curls over the spine and settles on the left.
+- **First person looks down at the book** while you read, lowered and leaning in over the pages; the view returns to the sea when you stop. Version bumped to **v5.2.0**.
+
 ### 2026-11-21, Version 5.1.3: remove aquarium decorations, fewer idle buttons
 - **Aquarium decorations can be removed:** owned decorations show a *Remove* button in the Shop tab (with a confirm); the slot frees up. Buying one again costs full price.
 - The round action button is also hidden while reading, while ascending in an emergency and while the spear reloads. Version bumped to **v5.1.3**.
