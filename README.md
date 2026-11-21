@@ -69,7 +69,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 
 **First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself (Shop, Bounty Board, Gallery, Trophy Cabinet and Camera) and lets go as soon as you move.
 
-The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, and so on. Tapping empty screen does nothing; only the button acts.
+The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, *Read* (seated on a bench), and so on. Tapping empty screen does nothing; only the button acts.
 
 ## The pier
 
@@ -338,6 +338,26 @@ Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the
 
 The fish swim in the tank in the world (their real models, sized by weight), the water clouds when it is dirty, and bubbles rise from the air stone. **Records:** the species medals (🥇 gold at 90% of the species' top weight, 🥈 silver at 70%, 🥉 bronze below), catch counts and record weights are under **☰ Menu → 🏆 Records**.
 
+## Skill books
+
+Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market, Recycling and Aquarium sheets; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `index.html`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
+
+| Book | Shop | Price | Perk at 310 / 310 pages |
+|---|---|---|---|
+| ⛵ Offshore Angling Guide | Boatyard | $650 | +40% rare-fish odds when fishing from a boat (added to the bait's rarity bonus) |
+| 🎣 Pier & Shore Mastery | Tackle Shop | $400 | +40% rare-fish odds when fishing from the pier |
+| 🤿 Deep Water Freediving & Ichthyology | Dive Shop | $900 | +40% underwater breath capacity, +40% rare-fish odds when diving, and the underwater weight guess tightens from +-35% to +-5% |
+| 🐟 The Fishmonger's Ledger | Fish Market | $500 | +15% fish sale prices |
+| ♻️ Green Harbour Handbook | Recycling | $350 | +50% junk and seaweed recycling prices |
+| 🐠 The Aquarist's Handbook | Aquarium (Book tab) | $600 | +30% aquarium visitor ticket income |
+
+**Reading:** sit on a bench (stand still in front of one for two seconds) and the action button says **READ** (or *No books* if you own none). It opens your books with pages read (e.g. *155 / 310 pages*), the percentage and every perk's current and maximum value; finished books can't be chosen. Pick one and the angler reads, with the book in his lap and a purple pill under the top bar showing pages, percent and the time left in the session.
+- **310 pages = 44,640 in-game minutes.** Progress is counted in in-game minutes from the day-night clock (`timeOfDay`), never in real seconds, so it follows game speed and stops while the game is paused.
+- **Perks grow every minute:** `bonus = max x minutes read / 44,640`, so 155 / 310 pages gives half the maximum straight away.
+- **A session lasts 6 in-game hours** (360 minutes, 2.5 pages) and then the angler goes back to sitting; press **READ** again for another block. Standing up at any time ends the session and keeps every page read.
+- **Weight guess:** a diving target's label shows a range like `~0.9 kg – 1.0 kg`, never an exact weight, even with the finished book. Each fish gets a fixed random offset when it appears, so the range never flickers and the true weight is always inside it. Without the book the margin is +-35%; at 100% it is +-5%.
+- **Saved:** each owned book and its minutes read are in the save (`books`), validated on load.
+
 ## Sea events
 
 While you are out on a boat, two things can appear (they are never saved):
@@ -515,6 +535,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-21, Version 5.1.0: skill books you read on a bench
+- **Six skill books**, one per shop (Boatyard, Tackle Shop, Dive Shop, Fish Market, Recycling, Aquarium), all driven by one `BOOKS` table: rare-fish odds from a boat, from the pier and while diving, breath capacity and a tighter underwater weight guess, fish prices, junk prices and aquarium tickets.
+- **Reading on benches:** sit on a bench and press *Read* to pick a book; progress is counted in in-game minutes. A session lasts 6 in-game hours, then the angler sits idle until you press Read again; standing up cancels it and keeps your progress.
+- **Perks grow every in-game minute** (bonus = max x minutes read / 44,640), not at the end.
+- **Diving targets now show a weight range** (`~0.7 kg – 1.2 kg`) instead of exact numbers, fixed per fish so it never flickers; the Diving book narrows it from +-35% to +-5%.
+- New save field `books`. Version bumped to **v5.1.0**.
 
 ### 2026-11-21, Version 5.0.0: a working aquarium
 - **Aquarium instead of the Trophy Case:** a glass tank in the Cabin with swimming fish (their real models), decorations, bubbles and water that clouds when dirty. A paper sheet with *Fish*, *Add*, *Care* and *Shop* tabs runs it.
