@@ -106,7 +106,7 @@ In **third person the island's palms, cottages and bushes are hidden** so the ca
 | ⛽ **Dock fuel pump** (sea end of the mooring platform, right by the boat) | Fills the moored boat's tank at $0.50 a unit (as much as you can afford). |
 | 🪑 **Benches** (back of the boardwalk) | Stand still in front of one for two seconds and the angler sits down, leans back and now and then crosses his legs. Move to get up. |
 | 🌊 **Railing** | Stand still at the pier rails or the free parts of the boardwalk rail for two seconds and the angler leans his forearms on the rail and gazes out to sea. |
-| 🪑 **Pier tip** | Where you sit and fish from the pier, and where you can start a dive (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
+| 🪑 **Pier tip** | Where you sit and fish from the pier (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
 
 Railings run down both sides of the pier. The only gap is the stair opening to the mooring platform. The deck has boards with grain along their length and dark timber underneath, and the lamp posts and every stand are lit at night.
 
@@ -536,6 +536,13 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-21, Version 5.3.0: rotate toggle, boat-only diving, full bucket
+- **Customise:** a *Stop / Rotate* button pauses and resumes the preview's spin (dragging still turns the model).
+- **No diving from the pier:** the Dive button only appears on a stopped boat or at the lighthouse jetty.
+- **Bag list is compact** (smaller rows, sticky sort bar, two columns on wide screens, fish count in the title) so many more fish fit on screen.
+- **Installed app:** the manifest now uses `standalone` instead of `fullscreen`, so the phone's bottom navigation stays available, and the Menu has an **Exit** tile (saves, then closes the window where the browser allows it).
+- **Every fish in the bucket is shown:** the pier bucket now holds one mini fish per fish you carry (up to 24), coloured by rarity and sized by weight, in a grid over the opening. Version bumped to **v5.3.0**.
+
 ### 2026-11-21, Version 5.2.0: an open book in your hands
 - **Reading shows a real open book** held in both hands in front of the chest: cover in the book's colour, page stacks that shift from the right (unread) to the left (read) as you progress.
 - **A page turns every time a page is finished** (and once when you open the book): a leaf lifts off the right stack, curls over the spine and settles on the left.
@@ -722,7 +729,7 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ### 2026-11-20, Version 3.5.0: diving and spearfishing
 Made by hand in `index.html` and documented here.
-- **Diving:** a **🤿 DIVE** button (and `X`) takes you underwater from the pier tip or a slow boat. Swim in first person, with air that drains faster with depth, a rated depth per gear tier, a headlamp, a catch bag and an auto-ascent. Running out of air means an emergency ascent and a lost half-bag.
+- **Diving:** a **🤿 DIVE** button (and `X`) takes you underwater from a slow or stopped boat or the lighthouse jetty (not from the pier). Swim in first person, with air that drains faster with depth, a rated depth per gear tier, a headlamp, a catch bag and an auto-ascent. Running out of air means an emergency ascent and a lost half-bag.
 - **Spearfishing:** a spear gun with auto-aim lock-on fires at schooling, fleeing fish from the normal catalogue; heavier fish than the gun's power are not landed. Speared fish register like normal catches (encyclopedia, trophies, bounties, XP).
 - **Gear:** five dive gear tiers ($140 to $9,800) and five spear guns ($60 to $6,200), in new **🤿 Dive** and **🔱 Spear** shop tabs. Saved as `diveTier` and `spearTier` (validated, old saves default to none).
 - **Underwater world:** a sea floor with depth-based colour, props, wrecks and sunken chests with cash, light shafts, marine snow, bubbles, a passing whale, and new underwater sounds.
