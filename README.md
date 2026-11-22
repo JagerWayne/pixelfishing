@@ -657,6 +657,10 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-22, Version 6.7.2: duplicates merged
+- **Code:** `recipeFish` is now `recipeFishN(r, 1)`; the Fish Market and Catch of the Day share one seeded random generator (`mulberry32`, the same numbers as before); the dock pump and the Boatyard's fuel tab share one `buyFuel()` (their messages are unchanged).
+- **CSS:** `.hud-top`, `.modal-window`, `.modal-header`, `.map-row` and `.sh-summary` were each defined twice; each is now one rule with the same result. No behaviour change. Version bumped to **v6.7.2**.
+
 ### 2026-11-22, Version 6.7.1: dead code removed
 - Removed code that nothing used:
   - an unused aquarium tank-purchase function (`aquariumBuyTank`);
