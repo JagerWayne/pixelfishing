@@ -657,6 +657,16 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-22, Version 6.7.1: dead code removed
+- Removed code that nothing used:
+  - an unused aquarium tank-purchase function (`aquariumBuyTank`);
+  - unused helpers `buffOn`, `frontOf` and `readingActive`;
+  - unused variables `rideVec`, `_fpHead`, `bowPts`, `prevFwdY`, `ringCount`, `stripeCol` and `setResetBtn`;
+  - nine unused variable names on model-builder calls (the calls still run);
+  - the CSS rules `.howto` and `#hud-buff-pill`;
+  - the sonar pill element, its style, and the line that hid it every frame (it has been empty since the v6.2.1 one-line radar).
+- No behaviour change. Version bumped to **v6.7.1**.
+
 ### 2026-11-22, Version 6.7.0: a new shop sheet
 - **Rewritten shop UI:** one data-driven sheet (`ShopUI`) for every shop, stand and town counter. Render functions only describe content (summary, cards, notes, a main button); the sheet builds it. Catalogues now show every good of a department as a scrollable card (picture, badge, stats, full description, price, one clear button) instead of one page at a time; lists, the aquarium, the restaurant and the town counters use the same cards.
 - **Sleek and readable:** a dark glass sheet in the shop's colour, your cash in the header, pill tabs, larger text and 44 px buttons.
