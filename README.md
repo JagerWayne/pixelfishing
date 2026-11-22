@@ -97,7 +97,7 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 - **Lists (Fish Market, Recycling):** each row is one piece from your bucket (icon, name, kg, price, hot or glut marks); tap a row to sell just that one (after the confirm) or the big button at the bottom to sell or recycle them all. The bag screen's own *Sell* buttons work only in front of the matching stand.
 - The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
 
-**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. The front wall and roof fade away while you are inside so the camera can see in.
+**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: from 18:00 you turn in, the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
 
 In **third person the island's palms, cottages and bushes are hidden** so the camera never gets stuck behind them; first person shows them again.
 
@@ -319,7 +319,7 @@ Everything you do earns **XP**: catches (more for rarer and heavier fish, a bonu
 
 ## The fish market
 
-Prices move every in-game day (every 3.5 minutes). Each fish species gets a multiplier between **x0.75 and x1.35**; three species are **hot at x1.9** and three are in a **glut at x0.6**. The board in the Fish Market lists today's hot and glut fish and the time until the next prices; the bag and *Sell All* use the current prices, and ▲ ▼ mark fish that are selling well or badly. Junk and flora are unaffected. Prices come from the day number, so nothing extra is saved.
+Prices move every in-game day (every 7 real minutes since v6.2.0). Each fish species gets a multiplier between **x0.75 and x1.35**; three species are **hot at x1.9** and three are in a **glut at x0.6**. The board in the Fish Market lists today's hot and glut fish and the time until the next prices; the bag and *Sell All* use the current prices, and ▲ ▼ mark fish that are selling well or badly. Junk and flora are unaffected. Prices come from the day number, so nothing extra is saved.
 
 ## The Aquarium
 
@@ -358,7 +358,8 @@ Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (
 The restaurant at the east end of Harbour Town is **yours**, named after you (*Wayne's Restaurant*, or *Fisherman's Restaurant* without a name). It opens once you do Chef Lorenzo's first quest (bring him any fish). Stand at its door and press **🍝 KITCHEN**: a sheet opens with four tabs.
 
 - **🍳 Cook:** every recipe with what it needs; *Cook* uses the cheapest matching fish from your bucket and the pantry items. Cooking is a short mini-game: **chop** (tap three times when the knife is over a green mark), **sear** (hold the button and let go when the heat is in the green) and **plate** (tap when the arrow points up). It gives 1 to 3 ⭐ (Rare or better fish help). The dish goes in the fridge (up to 30).
-- **🧊 Fridge:** your dishes and what guests pay for them; **Eat** one for a 6-hour buff (*faster bites*: bites come 30% sooner; *steadier line*: line tension builds 15% slower; *longer breath*: 20% more air when diving). **Collect** the takings here.
+- **🧊 Fridge:** your dishes and what guests pay for them; **Eat** one for a meal buff counted in **charges**, shown in a small orange pill under the top bar (eating another dish replaces it): *faster bites* (bites come 30% sooner) lasts the **next 8 casts**, *steadier line* (line tension builds 15% slower) the **next 5 fish fights**, *longer breath* (20% more air) the **next dive**.
+- **☕ Harbour Espresso** (Pantry tab, $25): you read **twice as fast** on a bench for 12 in-game hours (shown in the same pill). **Collect** the takings here.
 - **🧺 Pantry:** bread $4, lemon $3, rice $5, potato $3, spices $6, bought 5 at a time.
 - **⭐ Upgrades:** *Extra waiters* (more guests per service: $400, then $1,200), *Pro stove* (wider green zones, $800), *Terrace lights* (higher rating, $600).
 
@@ -387,7 +388,7 @@ The restaurant at the east end of Harbour Town is **yours**, named after you (*W
 | 👑 Golden Feast | an Epic+ fish | rice, spices, lemon | $650 | 40 |
 | 🌟 Legend's Banquet | a Legendary fish | rice, spices, lemon, bread, potato | $1800 | 40 |
 
-**Lorenzo's quests:** *Lorenzo's Kitchen* (bring him a fish: the restaurant opens), *First Service* (cook 3 dishes), *A Full House* (serve 10 guests) and *Master Chef* (a 3-star dish of a recipe worth 150 or more). Saved as `kitchen` (pantry, fridge, counters, takings, upgrades, buff) and `playerName`.
+**Lorenzo's quests:** *Lorenzo's Kitchen* (bring him a fish: the restaurant opens), *First Service* (cook 3 dishes), *A Full House* (serve 10 guests) and *Master Chef* (a 3-star dish of a recipe worth 150 or more). Saved as `kitchen` (pantry, fridge, counters, takings, upgrades, meal charges, espresso) and `playerName`.
 
 ## Skill books
 
@@ -403,9 +404,10 @@ Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boaty
 | 🐠 The Aquarist's Handbook | Aquarium Shop | $600 | +30% aquarium visitor ticket income |
 
 **Reading:** sit on a bench (stand still in front of one for two seconds) and the action button says **READ** (or *No books* if you own none). It opens your books with pages read (e.g. *155 / 310 pages*), the percentage and every perk's current and maximum value; finished books can't be chosen. Pick one and the angler reads, with the book in his lap and a purple pill under the top bar showing pages, percent and the time left in the session.
-- **310 pages = 44,640 in-game minutes.** Progress is counted in in-game minutes from the day-night clock (`timeOfDay`), never in real seconds, so it follows game speed and stops while the game is paused.
-- **Perks grow every minute:** `bonus = max x minutes read / 44,640`, so 155 / 310 pages gives half the maximum straight away.
-- **A session lasts 6 in-game hours** (360 minutes, 2.5 pages) and then the angler goes back to sitting; press **READ** again for another block. Standing up at any time ends the session and keeps every page read.
+- **310 pages = 21,600 in-game minutes (15 in-game days, since v6.2.0; 44,640 before, and older saves keep the same percentage).** Progress is counted in in-game minutes from the day-night clock (`timeOfDay`), never in real seconds, so it follows game speed and stops while the game is paused.
+- **Perks grow every minute:** `bonus = max x minutes read / 21,600`, so 155 / 310 pages gives half the maximum straight away.
+- **Harbour Espresso** from your restaurant's pantry doubles the reading speed for 12 in-game hours, and **sleeping in the cabin bunk** reads 30 pages of the selected book.
+- **A session lasts 6 in-game hours** (360 minutes, about 5 pages) and then the angler goes back to sitting; press **READ** again for another block. Standing up at any time ends the session and keeps every page read.
 - **Weight guess:** a diving target's label shows a range like `~0.9 kg – 1.0 kg`, never an exact weight, even with the finished book. Each fish gets a fixed random offset when it appears, so the range never flickers and the true weight is always inside it. Without the book the margin is +-35%; at 100% it is +-5%.
 - **Saved:** each owned book and its minutes read are in the save (`books`), validated on load.
 
@@ -587,6 +589,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.2.0: a slower day, meal charges, the bunk
+- **A slower clock:** one in-game day now lasts **7 real minutes** (`DAY_SECONDS = 420`, was 3.5 minutes): an in-game hour is 17.5 seconds. Only the time of day slows down; walking, boats, casting and fights run as before. Sun, sky, NPC routines, restaurant service, aquarium care and reading all follow the one clock.
+- **Meal buffs use charges** instead of 6 hours: *faster bites* for the next 8 casts, *steadier line* for the next 5 fights, *longer breath* for the next dive, shown in a compact orange pill. A running meal from an older save becomes a full set of charges.
+- **🛏️ Sleep** in the cabin bunk from 18:00: fade out, wake at 06:00 on a new day, and read 30 pages of your selected book.
+- **Skill books take 15 in-game days** (21,600 minutes, was 44,640); saved progress keeps its percentage. **☕ Harbour Espresso** ($25, restaurant pantry) doubles reading speed for 12 hours.
+- New save fields `booksV`, `bookSel`, `kitchen.espresso` and meal charges (`kitchen.buff.n`), all defaulted on load. Version bumped to **v6.2.0**.
 
 ### 2026-11-22, Version 6.1.1: steer like a car
 - **New on-foot controls** (both views): left / right on the stick turns the angler on the spot to any angle, up / down walks forward / back, and the **camera stays behind him and turns with him**. Dragging on the screen looks around and swings back when you walk; tap-to-walk turns him toward each point first.
