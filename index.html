@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.1.1';
+    window.PF_VERSION = '6.2.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1454,6 +1454,9 @@
     }
     #hud-read-pill { pointer-events: none; display: none; padding: 4px 10px; background: rgba(30, 20, 60, 0.9); border: 2px solid #a78bfa; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #ddd6fe; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #hud-quest-pill { pointer-events: none; display: none; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(12, 30, 48, 0.9); border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #bae6fd; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #hud-buff-pill { pointer-events: none; display: none; padding: 3px 8px; background: rgba(48, 22, 12, 0.88); border: 2px solid #fb923c; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 11px; font-weight: bold; color: #fed7aa; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #sleep-fade { position: fixed; inset: 0; background: #020617; opacity: 0; pointer-events: none; transition: opacity 0.9s ease; z-index: 900; display: flex; align-items: center; justify-content: center; color: #e2e8f0; font: bold 18px monospace; letter-spacing: 2px; }
+    #sleep-fade.on { opacity: 1; pointer-events: auto; }
     #hud-quest-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     #modal-talk { background: rgba(4, 8, 16, 0.25); align-items: flex-end; }
     #talk-box { width: min(96vw, 560px); padding: 12px 14px calc(12px + var(--safe-bottom)); background: var(--bg-panel-solid); margin-bottom: 8px; cursor: pointer; }
@@ -1713,6 +1716,7 @@
         <div id="hud-bounty-pill"></div>
         <div id="hud-quest-pill"></div>
         <div id="hud-read-pill"></div>
+        <div id="hud-buff-pill"></div>
         <div id="hud-event-pill"><span id="hud-event-text"></span></div>
         <div id="hud-sonar-pill">
           <span>📡 SONAR:</span>
@@ -4456,6 +4460,7 @@
          (root x/z, deck height y, length, half width). A boat berths along its south side, bow to the west. */
       const LH_J = { x: 41.6, y: 1.15, z: -147.3, len: 9.5, hw: 0.85, berthX: 32.5, yaw: Math.PI / 2, reach: 11 };
       function lhBerthPose() { return { x: LH_J.berthX, z: LH_J.z + LH_J.hw + 0.15 + boatHalfWid, yaw: LH_J.yaw }; }
+      const DAY_SECONDS = 420;   // one in-game day lasts 7 real minutes (v6.2.0; 210 s before): 1 in-game hour = 17.5 s. Only the clock uses it, never movement or physics.
       const BW_HALF = 27;   // the waterfront boardwalk runs from x -27 to +27 (v5.5.0; 21 since v4.6.0, 10.5 before)
       /* Shops on the waterfront boardwalk (v4.6.0): backs on the sea rail, fronts facing south (+Z) like the Tackle Shop.
          Centre x/z, width w and depth d of the building; extra = room for the props beside it. */
@@ -4612,7 +4617,12 @@
         { id: 'banquet', name: "Legend's Banquet", icon: '🌟', fish: [{ rarityMin: 'Legendary' }], pantry: { rice: 1, spices: 1, lemon: 1, bread: 1, potato: 1 }, value: 1800, at: 40, buff: 'breath' }
       ];
       const RECIPE_BY_ID = Object.fromEntries(RECIPES.map(r => [r.id, r]));
-      const BUFFS = { bite: { name: 'Well fed: faster bites', icon: '⚡' }, line: { name: 'Well fed: steadier line', icon: '🧵' }, breath: { name: 'Well fed: longer breath', icon: '🫧' } };
+      /* a meal gives charges, used up by actions (v6.2.0): casts for bites, fights for the line, a dive for breath */
+      const BUFFS = { bite: { name: 'Faster bites', icon: '⚡', n: 8, unit: ['cast', 'casts'], what: '+30% bite speed' },
+        line: { name: 'Steadier line', icon: '🧵', n: 5, unit: ['fight', 'fights'], what: '-15% line tension' },
+        breath: { name: 'Longer breath', icon: '🫧', n: 1, unit: ['dive', 'dives'], what: '+20% air' } };
+      const buffLabel = (t, n) => `${BUFFS[t].icon} ${BUFFS[t].name}: ${n} ${BUFFS[t].unit[n === 1 ? 0 : 1]}`;
+      const ESPRESSO = { cost: 25, minutes: 720 };   // Harbour Espresso: 2x reading speed for 12 in-game hours
       const RESTO_UP = [
         { id: 'tables', name: 'Extra waiters', icon: '🧑‍🍳', levels: [{ v: 2, cost: 0 }, { v: 4, cost: 400 }, { v: 6, cost: 1200 }], desc: 'More waiters serve more guests at each service.' },
         { id: 'stove', name: 'Pro stove', icon: '🔥', levels: [{ v: 0, cost: 0 }, { v: 1, cost: 800 }], desc: 'Wider sweet spots in the kitchen: better dishes come easier.' },
@@ -9090,6 +9100,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let biteTimer = 0;
       let activeCatch = null;
       let tension = 0.32;
+      let fightFed = false;   // this fight uses a charge of a 'steadier line' meal
       let reelProgress = 0;
       let initialLineDist = 14;
       let underpoweredTimer = 0;
@@ -9556,11 +9567,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       }
 
       /* =========================================================================
-         SKILL BOOKS (v5.1.0): one book per shop. Buy it, sit on a bench and read: 310 pages = 44,640 in-game minutes. Every minute read raises each of the book's perks at once, linearly: bonus = max x minutes / 44,640.
+         SKILL BOOKS (v5.1.0): one book per shop. Buy it, sit on a bench and read: 310 pages = 21,600 in-game minutes (15 days, v6.2.0). Every minute read raises each of the book's perks at once, linearly: bonus = max x minutes / 21,600.
+         Harbour Espresso (restaurant pantry) doubles the reading speed for 12 in-game hours; sleeping in the cabin bunk reads 30 pages of the selected book (state.bookSel).
          A reading session lasts at most 360 in-game minutes. All time comes from the in-game clock (timeOfDay).
          Add a book by adding it to BOOKS (title, shop, price, perks) and calling bookBonus(perkId) where the perk applies.
          ========================================================================= */
-      const BOOK_MINUTES = 31 * 24 * 60, BOOK_PAGES = 310, BOOK_SESSION_MIN = 6 * 60;
+      const BOOK_MINUTES = 15 * 24 * 60, BOOK_PAGES = 310, BOOK_SESSION_MIN = 6 * 60, BOOKS_V = 2;   // v6.2.0: 21,600 minutes (44,640 before; older saves are scaled in sanitizeBooks)
       const WEIGHT_GUESS = { base: 0.35, min: 0.05 };      // the diving book narrows the underwater weight guess from +-35% to +-5%
       const BOOKS = {
         boat:     { id: 'boat', shop: 'boatyard', icon: '⛵', color: 0x1d4ed8, title: 'Offshore Angling Guide', cost: 650, desc: 'Reading the sea from a deck: where the big ones run, and what to put on the hook.',
@@ -9582,7 +9594,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const bookMinutes = id => (bookOwned(id) ? state.books[id].minutes : 0);
       const bookProgress = id => Math.min(1, bookMinutes(id) / BOOK_MINUTES);
       const bookPages = id => bookMinutes(id) * BOOK_PAGES / BOOK_MINUTES;
-      /* the active bonus of one perk right now: max x minutes read / 44,640 (0 if the book is not owned) */
+      /* the active bonus of one perk right now: max x minutes read / 21,600 (0 if the book is not owned) */
       function bookBonus(perkId) {
         let v = 0;
         for (const id in BOOKS) BOOKS[id].perks.forEach(p => { if (p.id === perkId) v += p.max * bookProgress(id); });
@@ -9602,12 +9614,13 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         showToast(`📚 Bought ${b.title}`);
         return true;
       }
-      function sanitizeBooks(src) {
+      function sanitizeBooks(src, ver) {
         const out = {};
         if (!src || typeof src !== 'object') return out;
+        const k = ver === BOOKS_V ? 1 : BOOK_MINUTES / 44640;   // saves before v6.2.0 counted 44,640 minutes per book: keep the same progress
         Object.keys(BOOKS).forEach(id => {
           const e = src[id]; if (!e || typeof e !== 'object' || !e.owned) return;
-          const m = Number(e.minutes);
+          const m = Number(e.minutes) * k;
           out[id] = { owned: true, minutes: Number.isFinite(m) ? Math.min(BOOK_MINUTES, Math.max(0, m)) : 0 };
         });
         return out;
@@ -9662,7 +9675,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function startReading(id) {
         if (!bookOwned(id) || bookProgress(id) >= 1 || !benchSeated()) return false;
         setReadProp(id);
-        reading.id = id; reading.left = BOOK_SESSION_MIN; reading.saveT = 0; reading.pillMin = -1;
+        reading.id = id; reading.left = BOOK_SESSION_MIN; reading.saveT = 0; reading.pillMin = -1; state.bookSel = id;
         showToast(`📖 Reading ${BOOKS[id].title}`);
         return true;
       }
@@ -9678,8 +9691,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         if (!reading.id) return;
         if (!benchSeated() && !(restState.spot && restState.spot.kind === 'bench' && isAnyModalOpen())) { stopReading('📖 Stopped reading {b}.'); return; }
         if (dMin <= 0) return;
-        const id = reading.id, e = state.books[id], step = Math.min(dMin, reading.left, BOOK_MINUTES - e.minutes);
-        e.minutes += step; reading.left -= step; reading.saveT += step;
+        const id = reading.id, e = state.books[id], clock = Math.min(dMin, reading.left);
+        e.minutes = Math.min(BOOK_MINUTES, e.minutes + clock * readSpeed()); reading.left -= clock; reading.saveT += clock;
         if (reading.saveT >= 30) { reading.saveT = 0; saveGame(); }
         if (e.minutes >= BOOK_MINUTES - 1e-6) { e.minutes = BOOK_MINUTES; stopReading('🎉 Finished {b}!'); sfx.playCatchFanfare(false); return; }
         if (reading.left <= 1e-6) { stopReading('📖 Done reading for now. Press Read to continue.'); return; }
@@ -9691,7 +9704,21 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         const b = BOOKS[reading.id], m = Math.floor(bookMinutes(reading.id)), left = Math.ceil(reading.left);
         if (m === reading.pillMin) return; reading.pillMin = m;
         el.style.display = 'block';
-        el.textContent = `📖 ${b.title}: ${bookPages(reading.id).toFixed(1)} / ${BOOK_PAGES} pages (${(bookProgress(reading.id) * 100).toFixed(1)}%) • ${Math.floor(left / 60)}h ${String(left % 60).padStart(2, '0')}m left`;
+        el.textContent = `📖 ${readSpeed() > 1 ? '☕ ' : ''}${b.title}: ${bookPages(reading.id).toFixed(1)} / ${BOOK_PAGES} pages (${(bookProgress(reading.id) * 100).toFixed(1)}%) • ${Math.floor(left / 60)}h ${String(left % 60).padStart(2, '0')}m left`;
+      }
+      /* Harbour Espresso: twice the reading speed while it lasts (in-game minutes in state.kitchen.espresso) */
+      const readSpeed = () => (state.kitchen && state.kitchen.espresso > 0 ? 2 : 1);
+      /* the book the bunk reads at night: the one last opened on a bench, else the first unfinished one */
+      function selectedBook() {
+        if (state.bookSel && bookOwned(state.bookSel) && bookProgress(state.bookSel) < 1) return state.bookSel;
+        return Object.keys(BOOKS).find(id => bookOwned(id) && bookProgress(id) < 1) || null;
+      }
+      /* read pages without a bench (the bunk): returns the pages actually read */
+      function readPages(id, pages) {
+        if (!id || !bookOwned(id)) return 0;
+        const e = state.books[id], before = e.minutes;
+        e.minutes = Math.min(BOOK_MINUTES, e.minutes + pages * BOOK_MINUTES / BOOK_PAGES);
+        return (e.minutes - before) * BOOK_PAGES / BOOK_MINUTES;
       }
       /* the diving book's weight guess: a fixed range per fish (a stored seed, never re-rolled), always shown as a range */
       function diveWeightRange(f) {
@@ -9928,6 +9955,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           bounties: generateBountyContracts(),
           aquarium: defaultAquarium(),
           books: {},
+          booksV: BOOKS_V,
+          bookSel: null,
           story: defaultStory(),
           kitchen: defaultKitchen(),
           playerName: '',
@@ -10467,7 +10496,9 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         }
 
         out.aquarium = sanitizeAquarium(src.aquarium);
-        out.books = sanitizeBooks(src.books);
+        out.books = sanitizeBooks(src.books, src.booksV);
+        out.booksV = BOOKS_V;
+        out.bookSel = typeof src.bookSel === 'string' && BOOKS[src.bookSel] ? src.bookSel : null;
         out.story = sanitizeStory(src.story);
         out.kitchen = sanitizeKitchen(src.kitchen);
         out.playerName = cleanName(src.playerName);
@@ -10615,6 +10646,55 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearRecycle() { return nearStandFront(RECYCLE.x, RECYCLE.w / 2 + 0.2, RECYCLE.frontZ, 1.0); }
       function isNearAquarium() { return nearStandFront(CABIN.aquaX, Math.min(2.2, aquaTankOf(state.aquarium || {}).w / 2 + 0.15), 1.0, 1.1); }
       function isNearPierCamera() { return nearSpot(CABIN.camX, CABIN.camZ, 1.3); }
+
+      /* ---- interaction spots (v6.2.0): places the action button can use, checked after TALK and the kitchen.
+         Each entry: icon, label, cls (button style), color [border, text], near(), prox() (banner text), press(), optional useless(). ---- */
+      const SPOTS = [];
+      function spotNear() { if (onBoat || mode !== 'PIER_IDLE') return null; return SPOTS.find(sp => sp.near()) || null; }
+      function spotLabel(sp) { return typeof sp.label === 'function' ? sp.label() : sp.label; }
+
+      /* a new day: the day count, the aquarium's daily care and a save (the market, moon and weather follow the day number) */
+      function dayRollover(quiet) {
+        state.dayCount = (state.dayCount || 0) + 1;
+        aquariumDay();
+        saveGame();
+        if (!quiet) { const newMoon = getMoonPhase(); showToast(`🌅 Day ${state.dayCount + 1} • Tonight: ${newMoon.icon} ${newMoon.name}`); }
+      }
+
+      /* ---- the cabin bunk: turn in for the night (from 18:00), wake at 06:00 having read 30 pages ---- */
+      const BED = { x: CABIN.x + CABIN.w / 2 - 0.62, z: 2.55, from: 0.75, wake: 0.25, pages: 30 };
+      const sleepState = { on: false };
+      const bedTime = () => state.timeOfDay >= BED.from || state.timeOfDay < BED.wake - 0.02;
+      function sleepTillMorning() {
+        if (sleepState.on) return;
+        if (!bedTime()) { showToast('🛏️ Too early to sleep. Turn in after 18:00.'); return; }
+        const skip = Math.round(((BED.wake - state.timeOfDay + 1) % 1) * 1440);
+        sleepState.on = true; stopReading(); releaseAllInputs();
+        const fade = document.getElementById('sleep-fade'); fade.textContent = '💤'; fade.classList.add('on');
+        setTimeout(() => {
+          let left = skip;   // let the clock run in 10-minute steps so the restaurant and the day change behave as if awake
+          while (left > 0) {
+            const m = Math.min(10, left); left -= m;
+            state.timeOfDay += m / 1440;
+            if (state.timeOfDay >= 1) { state.timeOfDay -= 1; dayRollover(true); }
+            updateRestaurant(m);
+          }
+          state.timeOfDay = BED.wake;
+          weatherTimer = 0;   // the morning brings its own weather
+          const id = selectedBook(), pages = readPages(id, BED.pages);
+          npcSnap();
+          saveGame(); updateHUD();
+          setTimeout(() => {
+            fade.classList.remove('on'); sleepState.on = false;
+            const moon = getMoonPhase();
+            showToast(`🌅 Good morning! Day ${state.dayCount + 1}, 06:00 • Tonight: ${moon.icon} ${moon.name}` + (pages > 0.01 ? ` • Read ${Math.round(pages)} pages of ${BOOKS[id].title}` : ''));
+          }, 700);
+        }, 950);
+      }
+      SPOTS.push({ id: 'bed', icon: '🛏️', label: 'SLEEP', cls: 'shop', color: ['#818cf8', '#c7d2fe'],
+        near: () => playerX > BED.x - 1.7 && playerX < BED.x - 0.35 && playerZ > 1.95 && playerZ < 3.5,
+        prox: () => bedTime() ? `🛏️ BUNK • SLEEP UNTIL 06:00${selectedBook() ? ' AND READ ' + BED.pages + ' PAGES' : ''}` : '🛏️ BUNK • TURN IN AFTER 18:00',
+        press: () => sleepTillMorning() });
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(PIER_TOOLBOX_X, -7.6, 1.25); }
       function isNearMooredBoat() { return nearSpot(MOOR.boardX, -5.6, 1.4) && !isNearBoatTerminal(); }
@@ -11156,6 +11236,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (n.mk.visible) { n.mk.material.map = npcMarker(ready ? '?' : '!', ready ? '#4ade80' : '#facc15'); n.mk.position.set(0, 2.25 + Math.sin(elapsed * 3) * 0.05, 0); }
         });
       }
+      /* after a long skip (sleeping) everyone is simply where the clock says */
+      function npcSnap() {
+        npcState.list.forEach(n => { const sp = npcSpotNow(n.d); n.x = sp.x; n.z = sp.z; n.pts = []; n.goal = sp; });
+      }
       function npcNear() {
         if (onBoat || mode !== 'PIER_IDLE' || !npcState.built) return null;
         let best = null, bd = 1.45;
@@ -11243,7 +11327,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          LORENZO'S RESTAURANT (v6.1): cook catches into dishes (a three-step timing mini-game), keep them in the fridge,
          and guests buy them at lunch and dinner (in-game time). Everything lives in state.kitchen (sanitizeKitchen).
          ========================================================================= */
-      function defaultKitchen() { return { pantry: { bread: 0, lemon: 0, rice: 0, potato: 0, spices: 0 }, dishes: [], cooked: 0, served: 0, bank: 0, tables: 0, stove: 0, lights: 0, buff: null, acc: 0 }; }
+      function defaultKitchen() { return { pantry: { bread: 0, lemon: 0, rice: 0, potato: 0, spices: 0 }, dishes: [], cooked: 0, served: 0, bank: 0, tables: 0, stove: 0, lights: 0, buff: null, acc: 0, espresso: 0 }; }
       function sanitizeKitchen(src) {
         const k = defaultKitchen(); if (!src || typeof src !== 'object') return k;
         const num = (v, lo, hi) => { v = Math.floor(Number(v)); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
@@ -11252,7 +11336,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         k.cooked = num(src.cooked, 0, 1e6); k.served = num(src.served, 0, 1e6);
         k.bank = Math.max(0, Math.min(1e6, Number(src.bank) || 0));
         k.tables = num(src.tables, 0, 2); k.stove = num(src.stove, 0, 1); k.lights = num(src.lights, 0, 1);
-        if (src.buff && BUFFS[src.buff.type]) k.buff = { type: src.buff.type, left: Math.max(0, Math.min(720, Number(src.buff.left) || 0)) };
+        if (src.buff && BUFFS[src.buff.type]) {   // charges since v6.2.0; an older timed meal still running becomes a full set of charges
+          const b = BUFFS[src.buff.type], n = src.buff.n !== undefined ? num(src.buff.n, 0, b.n) : (Number(src.buff.left) > 0 ? b.n : 0);
+          if (n > 0) k.buff = { type: src.buff.type, n };
+        }
+        k.espresso = Math.max(0, Math.min(ESPRESSO.minutes, Number(src.espresso) || 0));
         return k;
       }
       const kitchen = () => state.kitchen || (state.kitchen = defaultKitchen());
@@ -11265,7 +11353,28 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       const restoOpen = () => !!(story().flags && story().flags.resto);
       const recipeUnlocked = r => kitchen().cooked >= r.at;
-      const buffOn = t => { const b = kitchen().buff; return !!b && b.type === t && b.left > 0; };
+      const buffOn = t => { const b = kitchen().buff; return !!b && b.type === t && b.n > 0; };
+      /* use one charge of the meal (a cast, a fight, a dive) */
+      function useBuff(t) {
+        const k = kitchen(), b = k.buff; if (!b || b.type !== t || b.n <= 0) return false;
+        b.n--; if (b.n <= 0) { k.buff = null; showToast('🍽️ The meal has worn off.'); }
+        updateBuffPill(); return true;
+      }
+      function eatDish(type) {
+        const k = kitchen(); k.buff = { type, n: BUFFS[type].n };
+        showToast(`${BUFFS[type].icon} ${BUFFS[type].name} (${BUFFS[type].what}) for the next ${BUFFS[type].n === 1 ? BUFFS[type].unit[0] : BUFFS[type].n + ' ' + BUFFS[type].unit[1]}.`);
+        updateBuffPill();
+      }
+      /* the small pill under the HUD: the meal's charges left and the espresso */
+      function updateBuffPill() {
+        const el = document.getElementById('hud-buff-pill'); if (!el) return;
+        const k = state.kitchen, parts = [];
+        if (k && k.buff) parts.push(buffLabel(k.buff.type, k.buff.n));
+        if (k && k.espresso > 0) parts.push(`☕ ${Math.ceil(k.espresso / 60)} h`);
+        const txt = parts.join(' • ');
+        if (el.textContent !== txt) el.textContent = txt;
+        el.style.display = txt ? 'block' : 'none';
+      }
       /* the restaurant's rating (1 to 5 stars): average quality of what is in the fridge, variety, and the terrace lights */
       function restoRating() {
         const k = kitchen(), d = k.dishes;
@@ -11291,7 +11400,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const inService = t => (t >= 0.458 && t < 0.583) || (t >= 0.729 && t < 0.875);
       function updateRestaurant(dMin) {
         const k = state.kitchen; if (!k || dMin <= 0) return;
-        if (k.buff) { k.buff.left -= dMin; if (k.buff.left <= 0) { k.buff = null; showToast('🍽️ The meal has worn off.'); } }
+        if (k.espresso > 0) { const h = Math.ceil(k.espresso / 60); k.espresso = Math.max(0, k.espresso - dMin); if (Math.ceil(k.espresso / 60) !== h) { updateBuffPill(); if (k.espresso <= 0) showToast('☕ The espresso has worn off.'); } }
         if (!restoOpen() || !inService(state.timeOfDay) || !k.dishes.length) { restoView.busy = Math.max(0, restoView.busy - dMin / 30); return; }
         const rating = restoRating();
         k.acc += dMin * restoTables() * (0.006 + rating * 0.004);   // guests per in-game minute
@@ -11391,7 +11500,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function restoRender() {
         const k = kitchen(), tab = shopBrowse.tab, host = shopEl('shop-rows'), btn = shopEl('shop-sellall');
         const rating = restoRating(), t = state.timeOfDay;
-        shopEl('shop-summary').innerHTML = `<b>Rating ${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))} ${rating}</b> • ${restoTables()} tables • ${k.dishes.length} / ${DISH_MAX} dishes ready • served ${k.served}<br>${inService(t) ? '🔔 Service is on: guests are eating.' : 'Lunch 11:00 to 14:00, dinner 17:30 to 21:00.'}${k.buff ? ` • ${BUFFS[k.buff.type].icon} ${BUFFS[k.buff.type].name} (${Math.ceil(k.buff.left / 60)} h)` : ''}`;
+        shopEl('shop-summary').innerHTML = `<b>Rating ${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))} ${rating}</b> • ${restoTables()} tables • ${k.dishes.length} / ${DISH_MAX} dishes ready • served ${k.served}<br>${inService(t) ? '🔔 Service is on: guests are eating.' : 'Lunch 11:00 to 14:00, dinner 17:30 to 21:00.'}${k.buff ? ` • ${buffLabel(k.buff.type, k.buff.n)}` : ''}${k.espresso > 0 ? ` • ☕ ${Math.ceil(k.espresso / 60)} h` : ''}`;
         host.innerHTML = ''; btn.style.display = 'none';
         const mk = (html, buttons) => {
           const r = document.createElement('div'); r.className = 'sl-row'; r.innerHTML = html;
@@ -11411,12 +11520,14 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const groups = {}; k.dishes.forEach(d => { const key = d.id + ':' + d.stars; (groups[key] = groups[key] || { d, n: 0 }).n++; });
           Object.values(groups).forEach(({ d, n }) => {
             const r = RECIPE_BY_ID[d.id];
-            mk(`<span class="sl-n">${r.icon} ${r.name} ${'⭐'.repeat(d.stars)}<small>x${n} • guests pay about ${shopMoney(dishPrice(d, rating))} • eat it: ${BUFFS[r.buff].name.replace('Well fed: ', '')} for 6 h</small></span>`,
-              [['Eat', '', () => { const i = k.dishes.findIndex(x => x.id === d.id && x.stars === d.stars); if (i < 0) return; k.dishes.splice(i, 1); k.buff = { type: r.buff, left: 360 }; saveGame(); showToast(`${BUFFS[r.buff].icon} ${BUFFS[r.buff].name} for 6 hours.`); refreshShopBrowse(); }]]);
+            mk(`<span class="sl-n">${r.icon} ${r.name} ${'⭐'.repeat(d.stars)}<small>x${n} • guests pay about ${shopMoney(dishPrice(d, rating))} • eat it: ${BUFFS[r.buff].what}, ${BUFFS[r.buff].n} ${BUFFS[r.buff].unit[BUFFS[r.buff].n === 1 ? 0 : 1]}</small></span>`,
+              [['Eat', '', () => { const i = k.dishes.findIndex(x => x.id === d.id && x.stars === d.stars); if (i < 0) return; k.dishes.splice(i, 1); eatDish(r.buff); saveGame(); refreshShopBrowse(); }]]);
           });
           btn.style.display = ''; btn.disabled = k.bank < 1;
           btn.textContent = k.bank >= 1 ? `Collect ${shopMoney(k.bank)}` : 'No takings yet';
         } else if (tab === 'pantry') {
+          mk(`<span class="sl-n">☕ Harbour Espresso<small>Read twice as fast on a bench for 12 hours${k.espresso > 0 ? ` • ${Math.ceil(k.espresso / 60)} h left` : ''} • ${shopMoney(ESPRESSO.cost)}</small></span>`,
+            [['Drink', '', () => shopAsk({ confirm: `Drink a Harbour Espresso for ${shopMoney(ESPRESSO.cost)}?`, price: ESPRESSO.cost, verb: 'Buy', can: state.cash >= ESPRESSO.cost, act: () => { state.cash = +(state.cash - ESPRESSO.cost).toFixed(2); k.espresso = ESPRESSO.minutes; sfx.playCoin(); saveGame(); updateHUD(); updateBuffPill(); updateReadPill(); showToast('☕ Harbour Espresso: you read twice as fast for 12 hours.'); } }), state.cash < ESPRESSO.cost]]);
           Object.entries(PANTRY).forEach(([id, p]) => mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id]} in stock • ${shopMoney(p.cost)} each</small></span>`,
             [['+5', '', () => shopAsk({ confirm: `Buy 5 ${p.name.toLowerCase()} for ${shopMoney(p.cost * 5)}?`, price: p.cost * 5, verb: 'Buy', can: state.cash >= p.cost * 5, act: () => { state.cash = +(state.cash - p.cost * 5).toFixed(2); k.pantry[id] += 5; sfx.playCoin(); saveGame(); updateHUD(); } }), state.cash < p.cost * 5]]));
         } else if (tab === 'upgrades') {
@@ -11725,6 +11836,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (mode === 'PIER_IDLE') {
           { const n = npcNear(); if (n) { isHoldingAction = false; actionPointerId = null; primaryBtn.classList.remove('pressed'); openTalk(n); return; } }
           if (isNearResto() && restoOpen()) { isHoldingAction = false; actionPointerId = null; primaryBtn.classList.remove('pressed'); enterShopBrowse('resto'); return; }
+          { const sp = spotNear(); if (sp) { isHoldingAction = false; actionPointerId = null; primaryBtn.classList.remove('pressed'); sp.press(); return; } }
           if (benchSeated()) {   // seated on a bench: the button reads
             isHoldingAction = false;
             actionPointerId = null;
@@ -11916,7 +12028,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         world.bobberGroup.visible = true;
         world.fishingLine.visible = true;
         waitTimer = cheats.fastBites ? 0.35 : (inFrenzy ? (0.9 + Math.random() * 1.1) : (1.8 + Math.random() * 2.4));
-        if (buffOn('bite')) waitTimer *= 0.7;   // a meal from the restaurant
+        if (useBuff('bite')) waitTimer *= 0.7;   // a meal from the restaurant: one charge per cast
         if (inFrenzy) {
           showToast('🔥 Landed in a Feeding Frenzy! Fast bites & rare odds!');
         }
@@ -12021,6 +12133,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           activeCatch.isCOD = true;
         }
         startFight(activeCatch);
+        fightFed = useBuff('line');   // a meal from the restaurant: one charge per fight
         mode = 'REELING';
         tension = 0.28;
         reelProgress = 0.05;
@@ -13912,6 +14025,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           proxEl.style.borderColor = '#dc2626'; proxEl.style.color = '#fecaca';
           proxEl.textContent = restoOpen() ? `🍝 ${restoName().toUpperCase()} • ${kitchen().dishes.length} DISHES READY${kitchen().bank >= 1 ? ` • ${shopMoney(kitchen().bank)} TO COLLECT` : ''}` : `🍝 ${restoName().toUpperCase()} • OPENING SOON (TALK TO LORENZO)`;
           proxEl.style.display = 'block';
+        } else if (spotNear()) {
+          const sp = spotNear();
+          primaryBtn.classList.add(sp.cls || 'shop');
+          iconEl.textContent = sp.icon;
+          labelEl.textContent = spotLabel(sp);
+          if (sp.useless && sp.useless()) primaryBtn.classList.add('useless');
+          proxEl.style.borderColor = sp.color[0]; proxEl.style.color = sp.color[1];
+          proxEl.textContent = sp.prox();
+          proxEl.style.display = 'block';
         } else if (benchSeated()) {
           const ownN = Object.keys(BOOKS).filter(bookOwned).length;
           primaryBtn.classList.add('shop');
@@ -14061,7 +14183,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
 
       function updateHUD() {
-        updateBountyPill(); updateQuestPill();
+        updateBountyPill(); updateQuestPill(); updateBuffPill();
         updateLogNewDot();
         document.getElementById('hud-cash').textContent = `$${state.cash.toFixed(2)}`;
         { const wl = getWeatherObj().label; const sp = wl.indexOf(' ');
@@ -15040,7 +15162,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         releaseAllInputs();
         dive.active = true; dive.fromBoat = onBoat; dive.t = 0; dive.surfacing = false; dive.emergency = false;
         dive.bag = []; dive.maxDepth = 0; dive.hudT = 0; dive.lock = null; dive.nearChest = null;
-        dive.airMax = gear.air * (1 + bookBonus('breath')) * (buffOn('breath') ? 1.2 : 1); dive.air = dive.airMax; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
+        dive.airMax = gear.air * (1 + bookBonus('breath')) * (useBuff('breath') ? 1.2 : 1); dive.air = dive.airMax; dive.warned25 = dive.warned10 = false; dive.airBeep = 0;
         dive.bubbleT = 2; dive.whaleT = 40 + Math.random() * 60; dive.depthWarnT = 0; dive.leashWarnT = 0;
         if (onBoat) { dive.startX = boatPos.x; dive.startZ = boatPos.z; dive.pos.set(boatPos.x, 0.25, boatPos.z); dive.yaw = boatYaw; boatVel = 0; boatSide = 0; }
         else { dive.startX = playerX; dive.startZ = playerZ; dive.pos.set(THREE.MathUtils.clamp(playerX, -PIER_WALK + 0.05, PIER_WALK - 0.05), 0.25, playerZ - 1.2); dive.yaw = 0; }
@@ -15449,17 +15571,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         // Advance Day-Night Cycle
         const prevFullMoon = isFullMoonNight();
-        state.timeOfDay += dt / 210;
-        updateReading(dt / 210 * 1440);   // in-game minutes that just passed (0 while paused)
-        updateRestaurant(dt / 210 * 1440);
-        if (state.timeOfDay >= 1.0) {
-          state.timeOfDay -= 1.0;
-          state.dayCount = (state.dayCount || 0) + 1;
-          aquariumDay();
-          saveGame();
-          const newMoon = getMoonPhase();
-          showToast(`🌅 Day ${state.dayCount + 1} • Tonight: ${newMoon.icon} ${newMoon.name}`);
-        }
+        state.timeOfDay += dt / DAY_SECONDS;
+        updateReading(dt / DAY_SECONDS * 1440);   // in-game minutes that just passed (0 while paused)
+        updateRestaurant(dt / DAY_SECONDS * 1440);
+        if (state.timeOfDay >= 1.0) { state.timeOfDay -= 1.0; dayRollover(); }
         if (!prevFullMoon && isFullMoonNight()) {
           showToast('🌕 FULL MOON RISEN! Rare Glowing Fish are now active!');
           sfx.playCatchFanfare(false);
@@ -16039,7 +16154,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                   : (isCounterPulling ? (0.34 + rod.forgiveness * 0.28) : (isPullingSameWay ? -0.18 : 0.08));
 
                 if (isHoldingAction) {
-                  const rawDelta = fishDragForce - dragRelief + 0.11, netTensionDelta = rawDelta > 0 && buffOn('line') ? rawDelta * 0.85 : rawDelta;
+                  const rawDelta = fishDragForce - dragRelief + 0.11, netTensionDelta = rawDelta > 0 && fightFed ? rawDelta * 0.85 : rawDelta;
                   tension += netTensionDelta * dt;
                   const reelEfficiency = isPassiveItem
                     ? 0.26
@@ -16730,5 +16845,6 @@ if (mode === 'REELING' && tension > 0.78) {
       requestAnimationFrame(animate);
     };
   </script>
+  <div id="sleep-fade"></div>
 </body>
 </html>
