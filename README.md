@@ -349,9 +349,32 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 
 Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
 
-**People.** Five townsfolk live here, each with a day routine (they walk between their spots through the gate and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist) and **👨‍🍳 Chef Lorenzo**. Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
+**Districts (v6.3.0).** The terrace now runs from x -37.6 to +37.6 and climbs a gentle ramp (from 14 to 17 m back) to an **upper terrace** 1.2 m higher. Tap-to-walk finds its way around every building (waypoints joined wherever nothing solid is in the way).
+- **Market Square & Artisan Quarter (east):** a paved square with a fish stall, the **📮 Post Office** (Maren) and **🔨 Barnaby's Workshop**; up the lane, the **🦀 tide pool** and the **🍺 Sailors' Rest** tavern on the upper terrace.
+- **Lighthouse Hill (west):** a cobbled path past Marta's hut up to **🌿 Talia's greenhouse**, her **herb garden** and the **🔭 Lookout Pavilion** with a telescope and a reading bench.
+- **Street lanterns** along the hill path, the upper terrace and the market, and **Rook's winch** on the boardwalk west of the Boatyard.
 
-**Quests** (17, in 4 chapters): each has steps that advance on their own as you play (catch fish, from the pier or in a zone, by weight, rarity or at night; dive to a depth; find bottle messages; sail somewhere; own a boat; keep species in the aquarium; bring someone a fish from your bucket). When the steps are done, talk to the giver for the reward (cash and XP). The story runs from *Welcome to Harbour Town* through *The Keeper's Light* (repair and relight the lighthouse) and *Rook's Wager* to *The Legend of the Deep*: a Legendary fish landed at night in the Abyssal Trench. The current step shows in a blue pill under the top bar; the full list is in **☰ Menu → 📜 Quests**. Saved as `story` (active steps, completed quests, friendship, flags).
+**Places and what the action button does there:**
+| Place | Button | What it does |
+|---|---|---|
+| 📌 Noticeboard (plaza) | **JOBS** | Today's 3 town jobs, your town reputation |
+| 📮 Post Office | **POST** | The same jobs, a **treasure map** ($150, one a day: marks a chest on the Coastal Reef on your Map) and **bottle stamps** ($100 and 30 XP for every 6 bottle messages, up to 6) |
+| 🍺 Sailors' Rest | **DICE** (16:00 to 02:00) | *Ship, Captain & Crew* against Rook, Maren or Old Salty, for bait or $10 / $50 / $100 |
+| 🦀 Tide pool | **TRAPS** | Up to 3 crab traps ($8 bait each), haul them up from the next day: shore crabs, blue crabs and lobsters become **shellfish** in your restaurant pantry, pearls sell for $80 to $160 |
+| 🔨 Workshop | **PAINT** | Hull, trim and pennant colours (12 colours, $40 a coat) for every boat you own |
+| 🌿 Greenhouse | **HERBS** | Brew a herbal lure (3 herbs → 5 Garden Worms) and sell sea plants for 25% more than Recycling |
+| 🔭 Telescope | **LOOK** | A zoomed view over the sea: drag (or hold ◀ ▶) to pan; keep the view on a feeding frenzy, treasure beam or boss shadow and it is **marked on your Map**. The first look each day can reveal a chest out on the reef and sometimes a boss on the Open Shelf. |
+
+**Town jobs** (3 a day, one at a time; cash, XP and +1 **town reputation**, from *Newcomer* to *Harbour hero*):
+- **📦 Cargo & mail runner:** collect a parcel at the Post Office and bring it to the mooring platform, the restaurant, the cabin, Sailors' Rest or (with a boat, +$60) the lighthouse jetty, within 4 in-game hours (10 for the jetty).
+- **🧹 Harbour cleanup crew:** pick up 5 pieces of litter (yellow rings) on the boardwalk and the east terrace (**✋ PICK UP**).
+- **🏮 Night watch:** light the 6 street lanterns (**🔥 LIGHT**) between 18:00 and 22:00; they glow until morning.
+- **🌿 Herb & shell foraging:** gather 5 herbs on Lighthouse Hill or 5 shells around the tide pool; herbs go to Talia's greenhouse.
+- **🏗️ Dockhand winch assist:** at the winch, hoist 5 crates: press **HOIST** when the swinging hook is over the green (3 good ones pass; the green shrinks each crate).
+
+**People.** Nine townsfolk live here, each with a day routine (they walk between their spots through the gate and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
+
+**Quests** (25, in 6 chapters; chapter 5 *New Neighbours*: Maren's *Letters for the Harbour* and *Messages in Bottles*, Barnaby's *A Fresh Coat* and *Timber from the Tide*; chapter 6 *Tides & Tales*: Talia's *Life in the Tide Pool* and *Herbs of the Hill*, Old Salty's *A Roll of the Dice* and *The Shadow Rumour*, with steps for town jobs, crab traps, dice, boat paint and the telescope): each has steps that advance on their own as you play (catch fish, from the pier or in a zone, by weight, rarity or at night; dive to a depth; find bottle messages; sail somewhere; own a boat; keep species in the aquarium; bring someone a fish from your bucket). When the steps are done, talk to the giver for the reward (cash and XP). The story runs from *Welcome to Harbour Town* through *The Keeper's Light* (repair and relight the lighthouse) and *Rook's Wager* to *The Legend of the Deep*: a Legendary fish landed at night in the Abyssal Trench. The current step shows in a blue pill under the top bar; the full list is in **☰ Menu → 📜 Quests**. Saved as `story` (active steps, completed quests, friendship, flags).
 
 ## Your restaurant and cooking
 
@@ -365,7 +388,7 @@ The restaurant at the east end of Harbour Town is **yours**, named after you (*W
 
 **Service:** at lunch (11:00 to 14:00) and dinner (17:30 to 21:00), in-game time, guests sit at the three terrace tables and buy dishes from your fridge (best first). Each pays the dish's value x its stars x your rating; the money banks until you collect it. The **rating** (1 to 5) grows with the quality and variety of your dishes, the terrace lights and the number of guests served.
 
-**Recipes** (18) unlock as you cook (after 0, 3, 8, 15, 25 and 40 dishes):
+**Recipes** (19) unlock as you cook (after 0, 3, 8, 15, 25 and 40 dishes):
 
 | Dish | Fish | Pantry | Value | Unlocks after |
 |---|---|---|---|---|
@@ -378,6 +401,7 @@ The restaurant at the east end of Harbour Town is **yours**, named after you (*W
 | 🧆 Fishcakes | 2 fish | potato, bread | $58 | 3 |
 | 🍢 Spiced Kebab | a fish over 2 kg | spices, bread | $70 | 8 |
 | 🍣 Sushi Platter | an Uncommon+ fish over 0.5 kg | rice | $95 | 8 |
+| 🦞 Crab & Lobster Bisque | a fish | 2 shellfish (from the crab traps), bread | $140 | 8 |
 | 🥧 Fish Pie | 2 fish | 2 potato, bread | $80 | 8 |
 | 🍽️ Baked Whole Fish | a fish over 3 kg | lemon, spices | $120 | 15 |
 | 🥘 Seafood Paella | an Uncommon+ fish and another | 2 rice, spices | $150 | 15 |
@@ -589,6 +613,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.3.0: a bigger Harbour Town
+- **Expanded town:** the terrace is wider (to +-37.6 m) with a ramp up to an upper terrace. New **Market Square & Artisan Quarter** (Post Office, Barnaby's Workshop, tide pool, Sailors' Rest) and **Lighthouse Hill** (Talia's greenhouse, herb garden, Lookout Pavilion with telescope and reading bench), street lanterns and Rook's winch. Every new building fades when it blocks the camera and has walk colliders; tap-to-walk now routes around buildings through town waypoints (`townPath`). All places are on the Map.
+- **Four new townsfolk:** Maren, Barnaby, Talia and Old Salty, with routines and **8 new quests** (chapters 5 and 6, 25 in all).
+- **Town jobs** (3 a day): mail runner, cleanup crew, night watch lanterns, herb & shell foraging, dockhand winch; pay, XP and town reputation.
+- **Things to do:** the lookout **telescope** marks frenzies, treasure and boss shadows on the Map; **dice** at Sailors' Rest; **crab traps** in the tide pool (shellfish for the new **Crab & Lobster Bisque**, pearls); **boat paint** (hull, trim, pennant); Talia's herbal lures; the Post Office's treasure maps and bottle stamps.
+- New save field `town` (jobs, reputation, traps, paint, herbs, dice record, lanterns), validated on load. Version bumped to **v6.3.0**.
 
 ### 2026-11-22, Version 6.2.1: a tidier HUD
 - **Less text on screen:** the pills under the top bar are now at most three short lines. The zone line also carries the return fuel (`⛽ 8.2 back`, shown as a separate warning only when fuel is getting low) and the meal charges and espresso as icons (`⚡6 ☕5h`). **One objective pill:** a finished quest first, then a finished bounty, a bounty that just moved (for 6 seconds), otherwise the current quest. **One radar pill:** treasure or boss and the sonar's frenzy as distance and arrow (`🪙 98m ▶ · 📡 34m ▼`). Smaller pill text. Version bumped to **v6.2.1**.
