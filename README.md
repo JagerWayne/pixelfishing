@@ -59,7 +59,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Walk / run | Thumbstick, **steered like a car**: left / right turns the angler on the spot (any angle), up walks forward, **down turns him round** (the camera swings round behind him) and he walks that way. A light push walks (up to 2.4 m/s), a **full push runs** (3.8 m/s). The camera stays behind him and turns with him. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `A` `D` turn, `W` forward, `S` turn round and walk; hold `Shift` to run |
 | Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** to look straight ahead again | none |
 | Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
-| Open the menu | **☰** (top right): a **side drawer** with Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Quests and Exit | none |
+| Open the menu | **☰** (top right): a **side drawer** with Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Filter (camera filters and postcards), Quests and Exit | none |
 | Harbour map | **☰ → 🗺️ Map** (📍 on the map drops buoys) | `M` |
 | Tip a chum bucket | **🪣 CHUM** beside the action button on a stopped boat | `C` |
 | Quests | **☰ Menu → 📜 Quests** | none |
@@ -75,9 +75,9 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Close a menu | **Close** button | `Esc` |
 | **Pause** (world stops, sound toggle, controls help) | **⏸** button, top right | `P` or `Esc` (when no menu is open) |
 
-**First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself (Shop, Bounty Board, Gallery, Trophy Cabinet and Camera) and lets go as soon as you move.
+**First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself, but only at the **Bounty Board** (to tap its papers) and the **Aquarium** (its slow sweep along the tank) since v6.6.2; it lets go as soon as you move. Shops only frame themselves while their sheet is open.
 
-The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, *Read* (seated on a bench), and so on. Where there is nothing to do the button opens the **🗺️ Map**. A tap on the 3D view walks you to that spot (it never casts or buys).
+The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bounties*, *Gallery*, *Board / Dock*, *Read* (seated on a bench), and so on. Where there is nothing to do the button hides (the **🗺️ Map** is in the side drawer and on `M`). A tap on the 3D view walks you to that spot (it never casts or buys).
 
 ## The pier
 
@@ -100,13 +100,13 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 - **Lists (Fish Market, Recycling):** each row is one piece from your bucket (icon, name, kg, price, hot or glut marks); tap a row to sell just that one (after the confirm) or the big button at the bottom to sell or recycle them all. The bag screen's own *Sell* buttons work only in front of the matching stand.
 - The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
 
-**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: it opens the bunk sheet with the **🏆 Trophy Wall** (mount your heaviest fish over 18 kg, or a boss you landed, on a plaque above the bunk: a 3D replica with species, weight, zone and day) and, from 18:00, **Sleep**: the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
+**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: it opens the bunk sheet with the **🏆 Trophy Wall** (mount your heaviest fish over 18 kg, or a boss you landed, on a plaque above the bunk: a 3D replica with species, weight, zone and day) and, from 18:00, **Sleep**: the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
 
 In **third person the island's palms, cottages and bushes are hidden** so the camera never gets stuck behind them; first person shows them again.
 
 | 📋 **Bounty Board** | Your three open contracts are written on papers pinned to the board (title, task, reward, progress). Tap a finished paper (marked READY) or press the action button to claim it. |
 | 📜 **Bottle Gallery** (cabin, back wall left) | Browse the message-in-a-bottle collection. |
-| 🎬 **Director's Camera** (cabin, by the door) | Change the camera lens (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
+| 🎬 **Camera filters** (side drawer → **🎬 Filter**, since v6.6.2; the cabin's film camera is gone) | Change the camera filter (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
 | ⚓ **Moored boat** (down the stairs on the port side, beside the low mooring platform, which is 4.5 m long since v4.6.0) | Board your boat once you own one. |
@@ -655,6 +655,11 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.6.2: less camera zoom, filters in the drawer, bigger text
+- **Stand zoom only where it is used:** standing still near a shop no longer zooms the camera onto it; only the **Bounty Board** (its papers) and the **Aquarium** (its sweep) still do. Shops still frame themselves while their sheet is open.
+- **The Director's camera is gone** from the cabin: the camera filters (Normal, 8-Bit CRT, Pixelate, Pocket DMG-01) and **📸 Snap postcard** are now **☰ → 🎬 Filter**.
+- **Bigger text** in the shop brochures, the Fish Market / Recycling / restaurant lists and the town sheets (item text about 20% larger; the item picture is a little smaller on short screens to make room). Version bumped to **v6.6.2**.
 
 ### 2026-11-22, Version 6.6.1: an open town front, turn round with the stick
 - **No more hedges** between the boardwalk and Harbour Town: walk up into town anywhere along the boardwalk (a paved strip and a flush seawall join them). The stone gate stays as a landmark. Tap-to-walk and the townsfolk cross the front near where they are going.

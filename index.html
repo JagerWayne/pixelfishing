@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.6.1';
+    window.PF_VERSION = '6.6.2';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -625,9 +625,9 @@
     #shop-sheet { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 720px; max-height: 64vh; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px calc(var(--safe-bottom, 0px) + 10px);
       background: linear-gradient(#f7ebc6, #ecd9a0); border-top: 4px solid #8a5a2b; border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55); color: #3b2410; pointer-events: auto; font-family: "Courier New", monospace; }
     #shop-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    #shop-name { font-size: 14px; font-weight: 900; color: #7c2d12; letter-spacing: 0.5px; margin-right: auto; }
+    #shop-name { font-size: 16px; font-weight: 900; color: #7c2d12; letter-spacing: 0.5px; margin-right: auto; }
     #shop-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
-    #shop-tabs button { font: inherit; font-size: 12px; font-weight: 900; padding: 5px 10px; min-height: 36px; border-radius: 6px; background: #f2e2b0; color: #5b3a1a; border: 2px solid #b08a50; cursor: pointer; }
+    #shop-tabs button { font: inherit; font-size: 14px; font-weight: 900; padding: 5px 10px; min-height: 36px; border-radius: 6px; background: #f2e2b0; color: #5b3a1a; border: 2px solid #b08a50; cursor: pointer; }
     #shop-tabs button.on { background: #b45309; color: #fff; border-color: #7c2d12; }
     #shop-leave { font: inherit; font-size: 18px; font-weight: 900; width: 40px; min-height: 36px; border-radius: 6px; background: #b91c1c; color: #fff; border: 2px solid #7f1d1d; cursor: pointer; }
     #shop-book { display: flex; align-items: stretch; gap: 6px; min-height: 0; flex: 1 1 auto; overflow: hidden; }
@@ -640,35 +640,36 @@
     @keyframes pageInL { from { transform: perspective(800px) rotateY(60deg) translateX(-34px); opacity: 0; } to { transform: none; opacity: 1; } }
     #shop-pic { position: relative; flex: 0 0 auto; width: min(44vw, 27vh); aspect-ratio: 1; padding: 0; border: 3px solid #8a5a2b; border-radius: 10px; background: #f4e6bf; box-shadow: 3px 3px 0 rgba(60, 36, 16, 0.35); cursor: pointer; overflow: hidden; }
     #shop-pic img { width: 100%; height: 100%; display: block; image-rendering: auto; }
-    #shop-badge { position: absolute; left: 6px; top: 6px; padding: 2px 7px; font-size: 11px; font-weight: 900; background: #166534; color: #fff; border-radius: 4px; }
+    @media (max-height: 700px) { #shop-pic { width: min(36vw, 19vh); } }   /* v6.6.2: bigger text needs the room on short screens */
+    #shop-badge { position: absolute; left: 6px; top: 6px; padding: 2px 7px; font-size: 13px; font-weight: 900; background: #166534; color: #fff; border-radius: 4px; }
     #shop-info { width: 100%; text-align: center; overflow: auto; min-height: 0; }
-    #shop-title { font-size: 16px; font-weight: 900; color: #3b2410; line-height: 1.2; }
-    #shop-stats { font-size: 11.5px; color: #92400e; margin-top: 2px; line-height: 1.25; }
-    #shop-desc { font-size: 12.5px; color: #4a3220; margin-top: 4px; line-height: 1.3; }
+    #shop-title { font-size: 19px; font-weight: 900; color: #3b2410; line-height: 1.2; }
+    #shop-stats { font-size: 14px; color: #92400e; margin-top: 2px; line-height: 1.25; }
+    #shop-desc { font-size: 15px; color: #4a3220; margin-top: 4px; line-height: 1.35; }
     #shop-book-foot { display: flex; align-items: center; gap: 10px; }
-    #shop-count { font-size: 11px; color: #7c5a30; white-space: nowrap; }
-    #shop-price { font-size: 20px; font-weight: 900; color: #166534; margin-right: auto; }
-    #shop-buy, #shop-sellall { font: inherit; font-size: 16px; font-weight: 900; min-height: 52px; padding: 6px 16px; border-radius: 10px; background: #15803d; color: #fff; border: 3px solid #14532d; cursor: pointer; box-shadow: 0 3px 0 #14532d; }
+    #shop-count { font-size: 13px; color: #7c5a30; white-space: nowrap; }
+    #shop-price { font-size: 22px; font-weight: 900; color: #166534; margin-right: auto; }
+    #shop-buy, #shop-sellall { font: inherit; font-size: 17px; font-weight: 900; min-height: 52px; padding: 6px 16px; border-radius: 10px; background: #15803d; color: #fff; border: 3px solid #14532d; cursor: pointer; box-shadow: 0 3px 0 #14532d; }
     #shop-buy { flex: 1 1 auto; }
     #shop-buy.sell, #shop-sellall { background: #b45309; border-color: #7c2d12; box-shadow: 0 3px 0 #7c2d12; }
-    #shop-buy:disabled, #shop-sellall:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; box-shadow: none; cursor: default; font-size: 13px; }
+    #shop-buy:disabled, #shop-sellall:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; box-shadow: none; cursor: default; font-size: 15px; }
     #shop-sheet[data-mode="book"] #shop-listwrap, #shop-sheet[data-mode="list"] #shop-book, #shop-sheet[data-mode="list"] #shop-book-foot { display: none; }
     #shop-listwrap { display: flex; flex-direction: column; gap: 6px; min-height: 0; flex: 1 1 auto; }
-    #shop-summary { font-size: 12px; line-height: 1.4; color: #4a3220; background: #f7efd2; border: 2px solid #c9a867; border-radius: 8px; padding: 6px 9px; }
+    #shop-summary { font-size: 14px; line-height: 1.4; color: #4a3220; background: #f7efd2; border: 2px solid #c9a867; border-radius: 8px; padding: 6px 9px; }
     #shop-summary .eco { height: 9px; margin-top: 5px; border: 2px solid #3f6212; background: #ecfccb; border-radius: 5px; overflow: hidden; }
     #shop-summary .eco i { display: block; height: 100%; background: #16a34a; }
     #shop-rows { flex: 1 1 auto; min-height: 90px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; -webkit-overflow-scrolling: touch; }
     .sl-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 5px 9px; font: inherit; text-align: left; border-radius: 8px; background: #fbf3d8; border: 2px solid #c9a867; color: #3b2410; cursor: pointer; }
     .sl-row img { width: 34px; height: 34px; image-rendering: pixelated; }
-    .sl-n { flex: 1; font-size: 13px; font-weight: 900; line-height: 1.2; } .sl-n small { display: block; font-size: 11px; font-weight: 700; color: #92400e; }
-    .sl-p { font-size: 15px; font-weight: 900; color: #166534; }
-    .sl-head { font-size: 12px; font-weight: 900; padding: 3px 4px; border-bottom: 3px solid; display: flex; align-items: center; gap: 6px; margin-top: 4px; } .sl-head span { width: 12px; height: 12px; border-radius: 3px; }
-    .sl-btn { font: inherit; font-size: 12px; font-weight: 900; min-height: 40px; padding: 4px 11px; border-radius: 8px; background: #15803d; color: #fff; border: 2px solid #14532d; cursor: pointer; }
+    .sl-n { flex: 1; font-size: 15px; font-weight: 900; line-height: 1.25; } .sl-n small { display: block; font-size: 13px; font-weight: 700; color: #92400e; }
+    .sl-p { font-size: 17px; font-weight: 900; color: #166534; }
+    .sl-head { font-size: 14px; font-weight: 900; padding: 3px 4px; border-bottom: 3px solid; display: flex; align-items: center; gap: 6px; margin-top: 4px; } .sl-head span { width: 12px; height: 12px; border-radius: 3px; }
+    .sl-btn { font: inherit; font-size: 14px; font-weight: 900; min-height: 40px; padding: 4px 11px; border-radius: 8px; background: #15803d; color: #fff; border: 2px solid #14532d; cursor: pointer; }
     .sl-btn.red { background: #b91c1c; border-color: #7f1d1d; }
     .sl-btn:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; cursor: default; }
     .bar { display: inline-block; vertical-align: middle; width: 54px; height: 9px; border: 2px solid #5b3a1a; border-radius: 5px; background: #ecd9a0; overflow: hidden; margin-right: 4px; } .bar i { display: block; height: 100%; }
     #shop-rows .sl-row > .sl-n { flex: 1; min-width: 0; }
-    .sl-empty { font-size: 13px; color: #7c5a30; text-align: center; padding: 18px 8px; }
+    .sl-empty { font-size: 15px; color: #7c5a30; text-align: center; padding: 18px 8px; }
     #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.55); pointer-events: auto; z-index: 2; }
     #shop-confirm.open { display: flex; }
     #shop-confirm .sc-box { width: min(92vw, 380px); padding: 16px; border-radius: 10px; background: #0f172a; border: 3px solid #fbbf24; box-shadow: 0 0 0 3px #070c14, 0 10px 30px rgba(0, 0, 0, 0.7); text-align: center; font-family: inherit; }
@@ -1476,7 +1477,7 @@
     .town-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 6px; border: 2px solid #c9a867; background: #fffbeb; color: #3b2410; resize: vertical; }
     #town-body { display: flex; flex-direction: column; gap: 6px; }
     #town-body .sl-row { flex-wrap: wrap; cursor: default; }
-    .town-note { font-size: 12px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
+    .town-note { font-size: 14px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
     .paint-row .sl-btn.swatch { min-width: 30px; min-height: 30px; padding: 0; border: 2px solid #1f2937; color: #fff; text-shadow: 0 0 3px #000; }
     .dice-row { display: flex; gap: 8px; justify-content: center; margin: 4px 0; }
     .die { display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center; background: #fef3c7; color: #7c2d12; border: 3px solid #92400e; border-radius: 8px; font-size: 22px; font-weight: 900; }
@@ -1508,7 +1509,7 @@
     .ck-plate::before { content: '▼'; position: absolute; margin-top: -170px; color: #4ade80; font-size: 20px; }
     .ck-arrow { font-size: 64px; display: block; color: #dc2626; }
     .ck-done { font-size: 90px; }
-    .ql-h { margin: 10px 0 6px; font-size: 13px; color: #fde68a; }
+    .ql-h { margin: 10px 0 6px; font-size: 15px; color: #fde68a; }
     #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .chip-row .pixel-btn { padding: 8px 12px; font-size: 12px; min-height: 44px; }
@@ -1885,6 +1886,7 @@
           <button class="menu-tile" id="btn-drawer-customize" data-closes-menu type="button">🎨<span>Look</span></button>
           <button class="menu-tile" id="btn-toggle-audio" data-label="Sound" type="button" aria-label="Toggle sound">🔊</button>
           <button class="menu-tile" id="btn-toggle-view" data-label="View" data-closes-menu type="button" aria-label="Toggle first person view (V)">🎥</button>
+          <button class="menu-tile" id="menu-filter" data-closes-menu type="button">🎬<span>Filter</span></button>
           <button class="menu-tile" id="menu-quests" data-closes-menu type="button">📜<span>Quests</span></button>
           <button class="menu-tile" id="menu-exit" type="button">🚪<span>Exit</span></button>
         </div>
@@ -2297,7 +2299,7 @@
   <div class="modal-backdrop" id="modal-camera">
     <div class="pixel-box modal-window" style="width: min(96vw, 620px); border-color: #e879f9;">
       <div class="modal-header" style="background: #2b1433; border-bottom-color: #e879f9;">
-        <span class="modal-title" style="color: #f5d0fe;">🎬 DIRECTOR'S CAMERA — LIVE VFX LENSES</span>
+        <span class="modal-title" style="color: #f5d0fe;">🎬 CAMERA FILTERS</span>
         <button class="pixel-btn red" data-close="modal-camera">Close</button>
       </div>
       <div class="modal-body">
@@ -3020,7 +3022,7 @@
         { id: 14, zones: [2], title: 'Stranded Skiff', text: 'Ran out of fuel at 240m! Always check your return fuel gauge before chasing snapper schools.' },
         { id: 15, zones: [2], title: 'Sunken Bell', text: 'On calm nights over the Coastal Reef, you can still hear the old ferry bell chiming below.' },
         { id: 16, zones: [2], title: 'Pirate’s P.S.', text: 'Left my favorite tricorne hat somewhere on this reef. If you hook it, wear it with pride.' },
-        { id: 17, zones: [2], title: 'Reef Photographer', text: 'The colors beneath the waves here look best through the Director’s Golden Hour lens on the pier.' },
+        { id: 17, zones: [2], title: 'Reef Photographer', text: 'The colors beneath the waves here look best through one of the camera filters.' },
         { id: 18, zones: [2], title: 'Grouper’s Cavern', text: 'Weighed a Tiger Grouper at 10.4 kilograms right beside the second orange channel buoy!' },
 
         // Zone 3: Open Shelf (19 - 27)
@@ -4526,7 +4528,7 @@
       };
       const shopFrontZ = sh => sh.z + sh.d / 2 + (sh.front || 0);
       /* Harbour order (v4.9.0), left to right looking from the island: Boatyard, Dive Shop, Tackle Shop, Bounty board,
-         [pier], Recycling, Fish Market, Aquarium Shop, Cabin (with the bottle gallery, aquarium and film camera inside; v5.5.0). */
+         [pier], Recycling, Fish Market, Aquarium Shop, Cabin (with the bottle gallery, aquarium and bunk inside; v5.5.0). */
       const RECYCLE = { x: 6.8, w: 4.5, d: 1.3, frontZ: 1.3 };
       /* aquarium tanks (v5.0.0; w / h = glass size in metres since v5.5.0); defined early because the world build uses them */
       const AQUARIUM_TANKS = [
@@ -7577,10 +7579,7 @@
           pierGroup.add(aquarium);
 
           // 3D Fourth-Wall Film Camera with Back to the Sea, Facing South (+Z)
-          const filmCamera = this.buildFourthWallCamera();
-          filmCamera.position.set(CABIN.camX, 1.56, CABIN.camZ);
-          filmCamera.rotation.y = Math.PI + 0.18;
-          pierGroup.add(filmCamera);
+          const filmCamera = null;   // v6.6.2: the Director's camera is gone; filters are in the side drawer (🎬 Filter)
 
           // Recycling stand (three skips) and the walk-in cabin
           const recycleStand = this.buildRecycleStand(textures);
@@ -7611,7 +7610,6 @@
           Colliders.box('bounty board', -4.2, 0.825, 1.0, 0.825, W);
           Colliders.box('bottle gallery', CABIN.galleryX, 0.875, 1.3, 0.875, W);
           aquarium.userData.collider = Colliders.box('aquarium', CABIN.aquaX, 0.5, AQUARIUM_TANKS[0].w / 2 + 0.1, 0.5, W);
-          Colliders.circle('film camera', CABIN.camX, CABIN.camZ, 0.6, W);
           Colliders.box('recycling', RECYCLE.x, 0.65, RECYCLE.w / 2, 0.65, W);
           {   // the cabin: side walls, the front wall with its door gap, the bunk bed
             const hw = CABIN.w / 2, dz = CABIN.d + 0.05, dw = CABIN.doorW / 2;
@@ -10955,16 +10953,15 @@ function replaceSceneMesh(parent, oldObj, newObj) {
          screen, side = which side the camera swings to (+1 = towards +X) so the player never blocks the view. */
       const STAND_VIEWS = [
         { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
-        { id: 'bounty',  near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
+        { id: 'bounty',  focus: true, near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
         { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
-        { id: 'aquarium', near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.45, cz: 0.5, halfW: 0.9, halfH: 0.82, side: 1, pan: true },
+        { id: 'aquarium', focus: true, near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.45, cz: 0.5, halfW: 0.9, halfH: 0.82, side: 1, pan: true },
         { id: 'resto',   near: () => isNearResto(),       cx: TOWN.resto.x, cy: 1.5 + 1.7, cz: TOWN.resto.z - TOWN.resto.d / 2, halfW: 2.8, halfH: 1.6, side: 1, flip: true },
-        { id: 'camera',  near: () => isNearPierCamera(),   cx: CABIN.camX,     cy: 2.9, cz: CABIN.camZ, halfW: 1.0, halfH: 1.1, side: 1 },
         { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
         ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75 * sh.s, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55 * sh.s + 0.1, side: sh.x < 0 ? 1 : -1 }))
       ];
       function currentStandView() {
-        for (const st of STAND_VIEWS) if (st.near()) return st;
+        for (const st of STAND_VIEWS) if (st.focus && st.near()) return st;   // v6.6.2: only the bounty board and the aquarium zoom in; shops just frame themselves under their sheet
         return null;
       }
       const _standPos = new THREE.Vector3(), _standLook = new THREE.Vector3();
@@ -11001,7 +10998,6 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearPierGallery() { return nearStandFront(CABIN.galleryX, 1.6, 1.75, 1.0); }
       function isNearRecycle() { return nearStandFront(RECYCLE.x, RECYCLE.w / 2 + 0.2, RECYCLE.frontZ, 1.0); }
       function isNearAquarium() { return nearStandFront(CABIN.aquaX, Math.min(2.2, aquaTankOf(state.aquarium || {}).w / 2 + 0.15), 1.0, 1.1); }
-      function isNearPierCamera() { return nearSpot(CABIN.camX, CABIN.camZ, 1.3); }
 
       /* ---- interaction spots (v6.2.0): places the action button can use, checked after TALK and the kitchen.
          Each entry: icon, label, cls (button style), color [border, text], near(), prox() (banner text), press(), optional useless(). ---- */
@@ -12871,7 +12867,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { icon: '♻️', name: 'Recycling', desc: 'Sell the junk and seaweed you reel in.', x: RECYCLE.x, z: RECYCLE.d / 2, w: RECYCLE.w, d: RECYCLE.d, col: '#22c55e' },
         { icon: '🐟', name: 'Fish Market', desc: 'Sell your fish.', x: SHORE_SHOPS.fish.x, z: SHORE_SHOPS.fish.z, w: SHORE_SHOPS.fish.w, d: SHORE_SHOPS.fish.d, col: SHORE_SHOPS.fish.color },
         { icon: '🐠', name: 'Aquarium Shop', desc: 'Tanks, decorations, fish food and cleaning kits.', x: SHORE_SHOPS.aquashop.x, z: SHORE_SHOPS.aquashop.z, w: SHORE_SHOPS.aquashop.w, d: SHORE_SHOPS.aquashop.d, col: SHORE_SHOPS.aquashop.color },
-        { icon: '🏠', name: 'Cabin', desc: 'Your home, with the bottle gallery, your aquarium and the film camera.', x: CABIN.x, z: CABIN.d / 2, w: CABIN.w, d: CABIN.d, col: '#b08a5a' },
+        { icon: '🏠', name: 'Cabin', desc: 'Your home, with the bottle gallery, your aquarium and the bunk with the Trophy Wall.', x: CABIN.x, z: CABIN.d / 2, w: CABIN.w, d: CABIN.d, col: '#b08a5a' },
         { icon: '📖', name: 'Benches', desc: 'Sit down to rest and read your skill books.', x: -4.6, z: 5.2, w: 1.4, d: 0.5, col: '#78350f', also: [4.6, 5.2] },
         { icon: '🏘️', name: 'Harbour Town', desc: 'The village square behind the gate, with the well and the noticeboard.', x: ISLAND.plaza.x, z: ISLAND.plaza.z, w: 4.4, d: 4.4, col: '#a8a29e' },
         { icon: '🏮', name: "Marta's hut", desc: 'Home of Marta, the old lighthouse keeper.', x: TOWN.hut.x, z: TOWN.hut.z, w: TOWN.hut.w, d: TOWN.hut.d, col: '#8b5e34' },
@@ -13109,13 +13105,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             actionPointerId = null;
             primaryBtn.classList.remove('pressed');
             enterShopBrowse('aqua');
-            return;
-          }
-          if (isNearPierCamera()) {
-            isHoldingAction = false;
-            actionPointerId = null;
-            primaryBtn.classList.remove('pressed');
-            openCameraModal();
             return;
           }
           if (isNearPierToolbox()) {
@@ -15118,6 +15107,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       });
       document.getElementById('menu-bag').addEventListener('click', () => openBucketModal());
       document.getElementById('menu-map').addEventListener('click', () => openMapModal());
+      document.getElementById('menu-filter').addEventListener('click', () => openCameraModal());
       document.getElementById('menu-log').addEventListener('click', () => openLogModal());
       const audioBtn = document.getElementById('btn-toggle-audio');
       const setSoundBtn = document.getElementById('set-sound');
@@ -15339,14 +15329,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           proxEl.style.borderColor = '#38bdf8';
           proxEl.style.color = '#bae6fd';
           proxEl.textContent = `🐠 AQUARIUM (${aqs.fish.length} FISH, ${shopMoney(aqs.tickets)} TO COLLECT) — FEED, CLEAN, ADD FISH`;
-          proxEl.style.display = 'block';
-        } else if (isNearPierCamera()) {
-          primaryBtn.classList.add('camera');
-          iconEl.textContent = '🎬';
-          labelEl.textContent = 'VFX LENS';
-          proxEl.style.borderColor = '#e879f9';
-          proxEl.style.color = '#f5d0fe';
-          proxEl.textContent = '🎬 DIRECTOR CAMERA — CHANGE LIVE VFX LENS';
           proxEl.style.display = 'block';
         } else if (isNearPierToolbox()) {
           primaryBtn.classList.add('shop');
