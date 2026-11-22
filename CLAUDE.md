@@ -2,7 +2,7 @@
 
 This is a static browser game with no build step (since v10.0.0 split into files): a short `index.html` (head, stylesheet links,
 loading screen, start card), stylesheets in `css/` and ES modules in `js/` (`main.js` entry, `boot/` loader, `dom.js` + `ui/markup-*.js`
-for the page markup, `game.js` the game). Three.js r187 is bundled as one ES module in `vendor/three.r187.module.min.js` and exposed as a
+for the page markup, `start.js` + about 150 game modules in folders by system since v10.1.0). Three.js r187 is bundled as one ES module in `vendor/three.r187.module.min.js` and exposed as a
 plain global `THREE` by the loader. See `README.md` for the full description of the game, its systems and its structure.
 
 ## Always do this with every update
@@ -15,7 +15,7 @@ plain global `THREE` by the loader. See `README.md` for the full description of 
    `index.html`, in cascade order). Bump `PF_VERSION` (`js/boot/version.js`) for every release: it is shown on the start screen and
    names the offline cache (there is no `CACHE_VERSION` any more).
 3. Keep numbers in the README accurate (species counts, bounty pool, option counts, prices). Re-read them from the
-   data tables in `js/game.js` rather than from memory.
+   data tables in the modules (`js/data/`, `js/world/layout.js`, `js/town/`…) rather than from memory.
 
 ## Conventions
 
@@ -70,9 +70,16 @@ plain global `THREE` by the loader. See `README.md` for the full description of 
   `index.html` holds no `<style>`, no inline script, no `style=""` and no `on…=` attributes: styles go in the matching `css/` file
   (new UI in `tide-glass-*.css`, tokens only), markup in `js/ui/markup-*.js` (mounted by `mountMarkup()` in `js/dom.js` before the game
   starts; keep the ids), behaviour in modules with `addEventListener`. Runtime `style=` written by the game's JavaScript (per-value
-  widths, colours from tokens) is fine. The game script is one module, `js/game.js`, in strict mode; its `start()` is called by the
-  loader once three.js and Rapier are ready. Keep files near 100 lines and never split a function between files. `file://` does not load
-  modules: test through a local server.
+  widths, colours from tokens) is fine. `file://` does not load modules: test through a local server.
+- Modules (v10.1.0): every function, constant and class named in these notes is exported by one module; find it with
+  `grep -rn "export .*\bname\b" js/`. Keep files near 100 lines (70–130) and never split a function between files; a function longer
+  than that gets a file to itself. Import exactly what you use, with relative paths. Module loading must only declare things: any
+  top-level work (DOM lookups, building meshes, listeners, tables computed from other modules, `Math.random`) goes in the module's
+  `export function init()`, and a new module with an `init()` is added to `ORDER` in `js/start.js` after everything it needs (the order is
+  the old script's top-to-bottom order). A variable that another module must reassign lives on `shared` (`js/state.js`) and is written
+  `shared.name` everywhere; imported bindings are read-only. The big classes are split by method: the class file declares the class,
+  method files export objects of whole methods (`export const wbTownStatics = { … }`) joined with `addMethods(Class, proto, statics)` in
+  the class file's `init()`, so add a method to the group file it belongs to (or a new group, registered in the class file).
 
 ## Checking a change
 

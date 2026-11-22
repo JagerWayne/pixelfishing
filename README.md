@@ -84,7 +84,7 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) and a **42 m waterfront boardwalk** (twice as long since v4.6.0) with every shop along its sea edge, backs to the sea and fronts facing south (toward the island), like the Tackle Shop. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Stop in front of a shop and the camera zooms in on it.
 
-**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Cabin. All fronts face south and every back is on the sea rail. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `CABIN` in `js/game.js`.
+**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Cabin. All fronts face south and every back is on the sea rail. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `CABIN` in `js/world/layout.js`.
 
 **Shops (each has its own trade; none is a menu):**
 
@@ -163,7 +163,7 @@ Your hands stay on the wheel or tiller and the wheel turns as you steer.
 | Deep-Sea Trawler | Port, Starboard (the stern has the trawl gear, the bow the winch) |
 | Expedition Yacht | Stern, Port, Starboard (the bow is a railed foredeck) |
 
-The numbers live in `BOAT_STATIONS` in `js/game.js` (boat-local position and casting direction per station).
+The numbers live in `BOAT_STATIONS` in `js/boat/stations.js` (boat-local position and casting direction per station).
 
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
@@ -460,7 +460,7 @@ The restaurant at the east end of Harbour Town is **yours**, named after you (*W
 
 ## Skill books
 
-Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market and Recycling sheets and the Aquarium Shop; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `js/game.js`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
+Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market and Recycling sheets and the Aquarium Shop; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `js/town/books.js`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
 
 | Book | Shop | Price | Perk at 310 / 310 pages |
 |---|---|---|---|
@@ -625,8 +625,11 @@ The game is a Progressive Web App: it has a web manifest, icons, and a service w
 The game is a plain static site with **no build step and no dependencies**: a short `index.html` (head, the loading screen and the start card), stylesheets in `css/` and ES modules in `js/`, all linked with relative `./` paths so it runs from a GitHub Pages project subpath (`https://<user>.github.io/<repo>/`). Since v10.0.0 (see the changelog) the old single file is split up:
 
 - `js/main.js` is the only script the page loads. It sets the build numbers (`js/boot/version.js`) and starts the loader (`js/boot/loader.js`, `progress.js`, `engines.js`), which downloads three.js and Rapier and then imports the game.
-- `js/dom.js` mounts the game's markup (HUD layer, overlays, every modal and sheet, kept as template strings in `js/ui/markup-*.js`) right after the start card, with every id unchanged, before `js/game.js` starts.
-- `js/game.js` is the game itself; its `start()` builds the world and starts the frame loop.
+- `js/dom.js` mounts the game's markup (HUD layer, overlays, every modal and sheet, kept as template strings in `js/ui/markup-*.js`) right after the start card, with every id unchanged, before the game starts.
+- **The game is about 150 ES modules of about 100 lines each** (since v10.1.0), grouped in folders by system (table below). Each module imports exactly what it uses with relative paths (`import { ZONES } from '../data/catalog.js'`) and exports what others use.
+- **Start order:** a module's top-level code that does something (builds a mesh, reads the DOM, wires a listener, computes a table from other tables) sits in its `export function init()`. `js/start.js` imports every module and then calls their `init()` functions in `ORDER`, which is the order the old single script ran its top-level code in. Module loading itself only declares functions and plain constants, so nothing runs before its inputs exist.
+- **Shared state:** variables that more than one module reassigns (the mode, position and heading, the boat's motion, the fight, the save object `state`…) live on the `shared` object in `js/state.js` and are written as `shared.playerX`; everything else stays a normal module variable.
+- **Big classes** (`WorldBuilder`, `AnglerFactory`, `AudioEngine`, `AnglerAnimator`, `VFXManager`, `PixelTextureFactory`) are split by method: the class file (e.g. `js/world/world-builder.js`) declares the class with its first methods, the other files (`wb-*.js`, `angler-*.js`, `audio-*.js`…) export objects of whole methods, and `addMethods` (`js/utils.js`) joins them to the class in its `init()`. No function or method is ever cut in two; the few that are longer than 130 lines (`buildWorld`, `dress`, `updateSimulation`, `buildFishModel`…) have a file to themselves.
 - The stylesheets load in cascade order from `index.html`; the TIDE GLASS theme files come after the component files, and `utilities-*.css` (the former inline `style=""` attributes, scoped under their element ids so they keep their old precedence) come last.
 
 **Engine (v8.0.0):** three.js **r187** (`three@0.187.0`), loaded by the loader (`js/boot/engines.js`) with a progress count and imported as an ES module from the downloaded bytes; the module is copied into a plain global `THREE` so the game code reads it as before. `legacyLook()` keeps the look the game was tuned for on r128: colour management off, linear output (`outputColorSpace = LinearSRGBColorSpace` on every renderer), textures marked `SRGBColorSpace`, and the light shader chunk patched back to the legacy light maths (intensities x π and the old distance fall-off), so no light needed retuning. WebGL 2 is required (every current phone and browser has it).
@@ -644,7 +647,12 @@ css/                       16 stylesheets in cascade order (layout, hud, hud-ind
                            drawer, cards, screens, settings, customise-dive, tide-glass-1..3, utilities-1..2)
 js/main.js                 entry point: build numbers, loader, then the game
 js/dom.js                  mounts the game's markup after the start card
-js/game.js                 the game (world, angler, fishing, boats, town, shops, diving, frame loop)
+js/start.js                imports the game modules and runs their init() in the original order
+js/state.js                the shared object (state that several modules reassign)
+js/utils.js                small helpers and addMethods (joins a class's method groups)
+js/events.js               the action button, keyboard and canvas listeners
+js/engine/                 three.js hand-off (three.js) and the Rapier physics mirror (physics.js)
+js/<system>/               the game modules, see the table below
 js/boot/                   version.js (PF_VERSION), loader.js, progress.js, engines.js, files.js (every static file),
                            nomodule.js (message for browsers without ES modules)
 js/ui/markup-*.js          the HUD, overlays, modals and sheets as template strings
@@ -658,23 +666,24 @@ README.md                  this file
 CLAUDE.md                  working notes for AI-assisted changes
 ```
 
-The game script (`js/game.js`) is organised in labelled sections:
+The game modules, by folder (every file starts with a one- or two-line comment saying what it holds; to find a name, search for `export function name` or `export const name`):
 
-| Section | Contents |
+| Folder | Contents |
 |---|---|
-| A | Web Audio engine (soft synthesised sounds, ambience, haptics) |
-| B | Game data tables: rods, boats, modules, bait, buckets, zones, weather, the catch catalog, bottle messages, bounties |
-| C | Procedural pixel-art texture and icon factory |
-| D | 3D model builders: the lofted fish generator, junk models, boats, pier props, the pier and island, and the **AnglerFactory** (customisable character) |
-| E2 | Pooled particles and ripples, feeding frenzies, weather and jumping fish; sea events (treasure and boss) are in the UI section |
-| F | Three.js rendering pipeline and screen shaders |
-| G | Runtime state and multi-touch controls |
-| H | Career (XP, ranks, achievements), the daily market, save state, validation and helper queries |
-| I | Boarding, docking and the rescue loop |
-| J | Fishing mechanics and the context-sensitive action button |
-| K | UI: the shop sheet (`ShopUI` cards, tabs, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera filters, bounties, settings, customise |
-| L | HUD and button synchronisation (`updateHUD`, the objective tracker `syncTracker`) |
-| M | Main animation and physics loop |
+| `js/core/` | Player settings |
+| `js/audio/` | The Web Audio engine (`AudioEngine`) and its sound groups: ambience and diving, fishing, the fight |
+| `js/data/` | Data tables: equipment (boats, modules, rods, bait, buckets), the catch catalogue, zones and weather, bottles and bounties, townsfolk, quests, recipes; the `Colliders` registry |
+| `js/render/` | Renderer, scene, camera, screen shader, lights and shadows, textures and icons, `ModelKit`, particles (`VFXManager`), the catch and live-bait previews |
+| `js/world/` | World layout constants and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
+| `js/angler/` | The character: look options, `AnglerFactory` (proportions, faces, rig, skinned geometry, `dress`) and `AnglerAnimator` |
+| `js/sim/` | Runtime state, the stick and controls state, interaction spots, tap-to-walk, the sky and first-person camera, `updateSimulation` and the frame loop (`animate`) |
+| `js/boat/` | Fishing stations, boat handling and hull motion, boarding, the boat terminal |
+| `js/fishing/` | The action button's press, casting, choosing and hooking a catch, the fight and its game feel, completing a catch, bounties and the bounty board, the market, rigs and buoys, sea events |
+| `js/town/` | The story, the townsfolk and talking, the restaurant and cooking, town state and jobs, telescope and dice, traps and workshop, the Post Office, the aquarium, books and reading, the Trophy Wall and share codes |
+| `js/shop/` | Shop kinds, `shopItems`, pictures, `ShopUI`, the shop sheet, browse mode and the confirm dialog |
+| `js/save/` | Save defaults, `sanitizeSave`, loading and saving, career (XP, ranks, achievements) and helper queries |
+| `js/dive/` | Diving and spearfishing: state, seabed, props and cells, fish, gear, the harpoon, start and end, the per-frame dive |
+| `js/ui/` | The page markup, HUD, tracker, action button, toasts, map, customise screen, secret menu, career, trophies, toolbox, bucket, catch and log modals, settings, install prompt and the pause screen |
 
 Notes on the models:
 
@@ -711,6 +720,7 @@ There is no test framework in the repository. Changes are checked with headless 
 - the fight (each style, the jump prompt, pause and the 3-2-1 resume, menu keys blocked mid-fight, the landing moment) and the boat handling numbers (top speed, no spin at rest, turn rates, coasting, slams per zone),
 - the action button only responds to the button, not the canvas,
 - every one of the 69 catch models builds,
+- every game module resolves all its names (a scope check: the only free names left are browser globals), and the computed-style parity and gameplay checks (fishing, catch, shop, boarding, diving, saving) run through a test-only hook that is never committed,
 - the site is served from a subpath (as on GitHub Pages) and a script checks that no `href`, `src`, `import` or `url()` starts with `/`, that every import names a file that exists with the same letter case, and that `index.html` has no `<style>`, inline script or `style=""`,
 - the app registers its service worker and reloads and runs offline,
 - contact-sheet renders of fish, boats, props and characters are reviewed by eye,
@@ -724,11 +734,20 @@ There is no test framework in the repository. Changes are checked with headless 
 2. Add an entry at the top of the [Changelog](#changelog) with the date and a short summary.
 3. If counts changed (species, bounties, options), update the numbers above.
 
-For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed file (stylesheet, module, icon) goes into `js/boot/files.js` (and a stylesheet also gets its `<link>` in `index.html`, in cascade order). Use relative `./` paths with the `.js` extension in every import, and lowercase file names: GitHub Pages is case-sensitive.
+For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed file (stylesheet, module, icon) goes into `js/boot/files.js` (and a stylesheet also gets its `<link>` in `index.html`, in cascade order). A new game module that has start-up work exports an `init()` and is added to `ORDER` in `js/start.js` at the right place; a variable that another module must reassign goes on `shared` (`js/state.js`). Use relative `./` paths with the `.js` extension in every import, and lowercase file names: GitHub Pages is case-sensitive.
 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 10.1.0: the game split into files, part 2 (ES modules)
+
+The 16,400-line game script (`js/game.js`) is now **149 ES modules** in 15 folders (`js/angler/`, `js/audio/`, `js/boat/`, `js/core/`, `js/data/`, `js/dive/`, `js/engine/`, `js/fishing/`, `js/render/`, `js/save/`, `js/shop/`, `js/sim/`, `js/town/`, `js/ui/`, `js/world/`), most of them 70–130 lines, each with a header comment and explicit relative imports and exports. Nothing changes in play: the computed-style comparison with v10.0.0 matches on every screen (only loading-screen timing differs), and fishing, catches, shops, boarding, diving, customising, saving, a corrupted save, walking with Rapier and offline play all behave as before.
+
+- **Start order kept exactly:** module loading only declares functions and constants; every top-level action moved into the module's `init()`, and `js/start.js` runs them in the original order.
+- **Shared state:** the 83 variables that more than one module reassigns are properties of `shared` (`js/state.js`).
+- **Classes split by method:** `WorldBuilder` (21 files), `AnglerFactory` (7), `AudioEngine` (4), `VFXManager` (3), `AnglerAnimator` (3) and `PixelTextureFactory` (3) keep one class each, put together with `addMethods` (`js/utils.js`). No function is split: of the 20 modules over 130 lines, 18 hold one long function, method or closure kept whole (for example `buildWorld`, `updateSimulation`, `dress`, `buildFishModel`), and two (`dive-start.js`, `post-office.js`) are a few lines over.
+- `js/game.js` is gone; `js/main.js` imports `js/start.js` once three.js is ready.
 
 ### 2026-11-22, Version 10.0.0: the game split into files, part 1 (CSS, markup, loader)
 
