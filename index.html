@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '8.2.0';
+    window.PF_VERSION = '9.0.0';
     window.PF_THREE_REV = '187';
     window.PF_THREE_BYTES = 748803; /* decoded size of vendor/three.r187.module.min.js */
     window.PF_RAPIER_VER = '0.21.0';
@@ -3603,23 +3603,72 @@
            (lofted torso and limbs with weights blended across every joint), the head, hands, shoes,
            hats and glasses are rigid meshes riding on their bones. Front is -Z, the right side is +X.
            ===================================================================== */
+        /* Harbour Chibi proportions (v9.0.0): about 3.5 heads tall, a big round head on a short, chunky body. The body
+           builders were written for adult proportions, so two factors carry the change through them: `torso` scales every
+           height between the hips and the neck, `legs` the boot and skirt lengths. Widths stay adult, which makes the body
+           read chunky. Total height is about 1.5 m (the bench, rod and camera heights still fit). */
         static dims(look) {
           const female = look && look.gender === 'female';
           const build = (look && look.build) || 'average';
-          const w = build === 'slim' ? 0.88 : build === 'broad' ? 1.14 : 1.0;
-          const hScale = ({ xs: 0.92, s: 0.96, m: 1.0, l: 1.04, xl: 1.08 })[(look && look.height) || 'm'] || 1;
+          const w = build === 'slim' ? 0.9 : build === 'broad' ? 1.16 : 1.04;
+          const hScale = (({ xs: 0.92, s: 0.96, m: 1.0, l: 1.04, xl: 1.08 })[(look && look.height) || 'm'] || 1) * 1.08;
+          const torso = 0.72, thigh = 0.20, shin = 0.19, ankle = 0.08;
           return {
-            female, w, hScale,
-            hipY: 0.88, thigh: 0.40, shin: 0.40, ankle: 0.08, legX: female ? 0.092 : 0.098,
-            spine: 0.10, chest: 0.18, neck: 0.25, headB: 0.07,
-            clavX: female ? 0.028 : 0.032, clavY: 0.20, shoulderX: female ? 0.142 : 0.158,
-            upper: 0.285, fore: 0.25, hand: 0.17,
-            headScale: 0.78, headLift: 0.165,
-            // bust: mound centre (x from the midline, y above the chest joint) and its pivot on the chest wall
-            bustX: 0.08, bustY: 0.03, bustZ: -0.098 * (0.94 + 0.06 * w),
-            // how firmly the top holds the bust (1 = loose, higher = stiffer and more damped)
+            female, w, hScale, torso, legs: (thigh + shin) / 0.8,
+            hipY: thigh + shin + ankle, thigh, shin, ankle, legX: female ? 0.09 : 0.096,
+            spine: 0.10 * torso, chest: 0.18 * torso, neck: 0.25 * torso, headB: 0.05,
+            clavX: female ? 0.028 : 0.032, clavY: 0.20 * torso, shoulderX: female ? 0.146 : 0.16,
+            upper: 0.2, fore: 0.17, hand: 0.13,
+            headScale: 1.38, headLift: 0.2,
+            // bust: smaller and higher on the short chibi chest
+            bustX: 0.078, bustY: 0.03 * torso, bustZ: -0.098 * (0.94 + 0.06 * w), bustAmt: 0.042,
             support: ({ sweater: 1.5, hoodie: 1.7, slicker: 1.8, vest: 1.4, tee: 1.15, tank: 1.05, bikini: 1.0, none: 0.9 })[(look && look.top) || 'tee'] || 1.2
           };
+        }
+
+        /* the shared three-step light ramp for toon shading (soft shadow, mid, lit) */
+        static toonRamp() {
+          if (!this._ramp) { const t = new THREE.DataTexture(new Uint8Array([118, 118, 118, 255, 172, 172, 172, 255, 214, 214, 214, 255]), 3, 1); t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; t.userData.shared = true; this._ramp = t; }
+          return this._ramp;
+        }
+        /* the face patch on the head sphere: 116 degrees across the front, 50..134 degrees down from the top */
+        static get FACE_PATCH() { return { phi0: Math.PI * 1.178, phiLen: Math.PI * 0.644, th0: Math.PI * 0.28, thLen: Math.PI * 0.466 }; }
+        /* Paint the chibi face (v9.0.0) on a 256x256 canvas. Positions are given in degrees on the head: ax across from
+           the middle (+ = the character's left), ay down from the top. Eyes, brows (hair colour), lashes, cheeks and mouth. */
+        static paintFace(look) {
+          const W = 256, cv = document.createElement('canvas'); cv.width = cv.height = W;
+          const g = cv.getContext('2d'), FP = this.FACE_PATCH;
+          const spanX = FP.phiLen * 180 / Math.PI, top = FP.th0 * 180 / Math.PI, spanY = FP.thLen * 180 / Math.PI;
+          const X = ax => W / 2 + ax / spanX * W, Y = ay => (ay - top) / spanY * W, SX = d => d / spanX * W, SY = d => d / spanY * W;
+          const female = look.gender === 'female';
+          const eyeCol = ANGLER_OPTS.eyes[look.eyes] || '#3b2314', hairCol = ANGLER_OPTS.hairColor[look.hairColor] || '#3b2314';
+          const ell = (cx, cy, rx, ry, fill) => { g.beginPath(); g.ellipse(cx, cy, Math.max(0.5, rx), Math.max(0.5, ry), 0, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); };
+          [-1, 1].forEach(s => {
+            const cx = X(s * 22.5), cy = Y(92), rx = SX(6.4), ry = SY(9.2);
+            // eye: dark outline, iris gradient, pupil, two highlights
+            ell(cx, cy, rx + 2, ry + 2, '#1a1410');
+            const gr = g.createLinearGradient(0, cy - ry, 0, cy + ry); gr.addColorStop(0, '#120c08'); gr.addColorStop(0.55, eyeCol); gr.addColorStop(1, eyeCol);
+            ell(cx, cy, rx, ry, gr);
+            ell(cx, cy + ry * 0.12, rx * 0.5, ry * 0.52, '#0b0705');
+            ell(cx - s * rx * 0.28, cy - ry * 0.4, rx * 0.36, ry * 0.26, '#ffffff');
+            ell(cx + s * rx * 0.3, cy + ry * 0.36, rx * 0.16, ry * 0.12, 'rgba(255,255,255,0.85)');
+            if (female) {   // three little lashes at the outer corner
+              g.strokeStyle = '#1a1410'; g.lineWidth = 2.6; g.lineCap = 'round';
+              for (let k = 0; k < 3; k++) { const a = -0.5 - k * 0.38; g.beginPath(); g.moveTo(cx + s * rx * Math.cos(a) * 0.95, cy + ry * Math.sin(a) * 0.95); g.lineTo(cx + s * (rx * Math.cos(a) + 6 + k), cy + ry * Math.sin(a) - 3 - k * 1.5); g.stroke(); }
+            }
+            // brow: a soft arc in the hair colour, thickness from the brows option
+            const bt = ({ thin: 2.4, normal: 4, bushy: 6.4 })[look.brows] || 4;
+            g.strokeStyle = hairCol; g.lineWidth = bt; g.lineCap = 'round';
+            g.beginPath(); g.moveTo(X(s * 15.5), Y(78.5)); g.quadraticCurveTo(X(s * 22.5), Y(75.5), X(s * 29.5), Y(78.8)); g.stroke();
+            // cheek: a soft blush
+            const bg = g.createRadialGradient(X(s * 33), Y(103), 0, X(s * 33), Y(103), SX(7));
+            bg.addColorStop(0, female ? 'rgba(251,113,133,0.42)' : 'rgba(248,113,113,0.26)'); bg.addColorStop(1, 'rgba(251,113,133,0)');
+            g.fillStyle = bg; g.fillRect(X(s * 33) - SX(8), Y(103) - SX(8), SX(16), SX(16));
+          });
+          // mouth: a small smile
+          g.strokeStyle = female ? '#9f1239' : '#4a2a1a'; g.lineWidth = 3.2; g.lineCap = 'round';
+          g.beginPath(); g.moveTo(X(-6), Y(113.5)); g.quadraticCurveTo(X(0), Y(118.5), X(6), Y(113.5)); g.stroke();
+          return cv;
         }
 
         static createRig(look) {
@@ -3780,10 +3829,10 @@
         /* Teardrop bust profile (0..1) for one side at rest-space (x, y): a long, gentle upper slope from the chest,
            a fuller rounded lower pole that ends in a soft underbust crease, a little wider and further out at the bottom. */
         static bustMound(d, x, y, sx) {
-          const yb = d.hipY + d.spine + d.chest + 0.035, dy = y - yb;
-          const low = THREE.MathUtils.clamp(-dy / 0.055, 0, 1);
+          const T = d.torso || 1, yb = d.hipY + d.spine + d.chest + 0.035 * T, dy = y - yb;
+          const low = THREE.MathUtils.clamp(-dy / (0.055 * T), 0, 1);
           const cx = sx * (d.bustX + 0.008 * low), wx = 0.047 + 0.012 * low, dx = x - cx;
-          const vert = dy >= 0 ? Math.pow(Math.max(0, 1 - dy / 0.13), 1.7) : Math.exp(-Math.pow(-dy / 0.052, 4));
+          const vert = dy >= 0 ? Math.pow(Math.max(0, 1 - dy / (0.13 * T)), 1.7) : Math.exp(-Math.pow(-dy / (0.052 * T), 4));
           return vert * Math.exp(-(dx * dx) / (wx * wx));
         }
 
@@ -3791,15 +3840,15 @@
            opt: { y0, y1, off, seg, colFn, keep(angle, y) for openings (vest front, armholes), bust } */
         static torsoGeo(d, idxOf, prof, opt = {}) {
           const y0 = opt.y0, y1 = opt.y1, off = opt.off || 0, seg = opt.seg || (opt.bust ? 32 : 24);
-          const pos = [], idx = [], si = [], sw = [], col = [];
+          const pos = [], idx = [], si = [], sw = [], col = [], TS = d.torso || 1;
           const c = new THREE.Color();
           const ySpine = d.hipY + d.spine, yChest = ySpine + d.chest, yNeck = yChest + d.neck;
           // ring heights: every 2.5 cm, finer (1.4 cm) through the bust so its curve reads smoothly
           const ys = [y0];
           if (!opt.bust) { const nr = Math.max(2, Math.ceil((y1 - y0) / 0.025)); for (let i = 1; i <= nr; i++) ys.push(y0 + (y1 - y0) * (i / nr)); }
           while (ys[ys.length - 1] < y1 - 1e-4) {
-            const yy = ys[ys.length - 1], inBust = opt.bust && yy > yChest - 0.06 && yy < yChest + 0.17;
-            ys.push(Math.min(y1, yy + (inBust ? 0.014 : 0.025)));
+            const yy = ys[ys.length - 1], inBust = opt.bust && yy > yChest - 0.06 * TS && yy < yChest + 0.17 * TS;
+            ys.push(Math.min(y1, yy + (inBust ? 0.014 : 0.025) * TS));
           }
           if (ys.length < 3) ys.splice(1, 0, (y0 + y1) / 2);
           const rings = ys.length - 1;
@@ -3808,9 +3857,9 @@
             const y = ys[i];
             const p = prof(y);
             // vertical weights: hips -> spine -> chest -> neck
-            const wSpine = THREE.MathUtils.smoothstep(y, d.hipY + 0.02, ySpine + 0.06);
-            const wChest = THREE.MathUtils.smoothstep(y, ySpine + 0.04, yChest + 0.06);
-            const wNeck = THREE.MathUtils.smoothstep(y, yNeck - 0.05, yNeck + 0.03);
+            const wSpine = THREE.MathUtils.smoothstep(y, d.hipY + 0.02 * TS, ySpine + 0.06 * TS);
+            const wChest = THREE.MathUtils.smoothstep(y, ySpine + 0.04 * TS, yChest + 0.06 * TS);
+            const wNeck = THREE.MathUtils.smoothstep(y, yNeck - 0.05 * TS, yNeck + 0.03 * TS);
             for (let j = 0; j <= seg; j++) {
               const a = (j / seg) * Math.PI * 2;           // a = 3pi/2 is the front (-Z)
               const ca = Math.cos(a), sa = Math.sin(a);
@@ -3824,10 +3873,10 @@
                 mL = this.bustMound(d, x, y, -1) * fr; mR = this.bustMound(d, x, y, 1) * fr;
                 z -= opt.bust * (mL + mR);
               }
-              if (sa > 0 && y < d.hipY + 0.05 && y > d.hipY - 0.12) z += 0.025 * Math.exp(-((y - d.hipY + 0.03) ** 2) / 0.003) * sa; // seat
+              if (sa > 0 && y < d.hipY + 0.05 * TS && y > d.hipY - 0.12 * TS) z += 0.025 * Math.exp(-((y - d.hipY + 0.03 * TS) ** 2) / 0.003) * sa; // seat
               pos.push(x, y, z);
               // shoulders: the sides of the upper chest follow the clavicles a little
-              const shoulderW = THREE.MathUtils.smoothstep(Math.abs(x), 0.09, 0.17) * THREE.MathUtils.smoothstep(y, yChest + 0.08, yChest + 0.2) * (1 - wNeck);
+              const shoulderW = THREE.MathUtils.smoothstep(Math.abs(x), 0.09, 0.17) * THREE.MathUtils.smoothstep(y, yChest + 0.08 * TS, yChest + 0.2 * TS) * (1 - wNeck);
               const clavIdx = x < 0 ? idxOf.clavL : idxOf.clavR;
               let wH = 1 - wSpine, wS = wSpine * (1 - wChest), wC = wChest * (1 - wNeck), wN = wNeck;
               const wCl = wC * shoulderW * 0.6; wC -= wCl;
@@ -3871,7 +3920,10 @@
           const add = (parent, obj) => { parent.add(obj); rig.parts.push(obj); return obj; };
 
           const C = i => new THREE.Color(ANGLER_OPTS.colors[i]);
-          const mat = (color, rough = 0.8, metal = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra));
+          // v9.0.0: skin, hair and cloth use soft three-step toon shading; shiny and metal parts stay standard
+          const mat = (color, rough = 0.8, metal = 0, extra = {}) => (metal > 0.3 || rough < 0.4)
+            ? new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra))
+            : new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: AnglerFactory.toonRamp() }, extra));
           const skinCol = new THREE.Color(ANGLER_OPTS.skin[look.skin]);
           const skinMat = mat(skinCol, 0.7, 0, { side: THREE.DoubleSide });
           const hairMat = mat(ANGLER_OPTS.hairColor[look.hairColor], 0.65);
@@ -3899,7 +3951,7 @@
           // torso profile (half width, half depth, z centre) by height
           const fw = female ? 1 : 0;
           const prof = y => {
-            const t = y - d.hipY;
+            const t = (y - d.hipY) / d.torso;   // the profile is keyed in adult heights
             const keys = [
               [-0.12, 0.118 + 0.012 * fw, 0.098], [-0.02, 0.158 + 0.024 * fw, 0.112], [0.08, 0.150 + 0.016 * fw, 0.108],
               [0.18, 0.140 - 0.014 * fw, 0.100], [0.30, 0.152 - 0.010 * fw, 0.108], [0.42, 0.174 - 0.016 * fw, 0.118],
@@ -3909,11 +3961,12 @@
             const [ta, xa, za] = keys[k], [tb, xb, zb] = keys[k + 1];
             const f = THREE.MathUtils.clamp((t - ta) / (tb - ta), 0, 1), s = f * f * (3 - 2 * f);
             const neckish = t > 0.57;
-            return { wx: (xa + (xb - xa) * s) * (neckish ? 1 : W), wz: (za + (zb - za) * s) * (neckish ? 1 : (0.94 + 0.06 * W)), cz: t > 0.5 ? (t - 0.5) * 0.12 : 0 };
+            return { wx: (xa + (xb - xa) * s) * (neckish ? 1 : W), wz: (za + (zb - za) * s) * (neckish ? 1 : (0.94 + 0.06 * W)), cz: t > 0.5 ? (t - 0.5) * 0.12 * d.torso : 0 };
           };
-          const T0 = d.hipY - 0.115, T1 = yNeck + 0.06;
+          const TS = d.torso, BL = (d.shin + d.ankle) / 0.48;   // height factors for the torso and for boots
+          const T0 = d.hipY - 0.115 * TS, T1 = yNeck + 0.06 * TS;
           const bodyGeos = [];
-          bodyGeos.push(this.torsoGeo(d, idxOf, prof, { y0: T0, y1: T1, bust: female ? 0.062 : 0, capBottom: true }));
+          bodyGeos.push(this.torsoGeo(d, idxOf, prof, { y0: T0, y1: T1, bust: female ? d.bustAmt : 0, capBottom: true }));
           // limb profiles
           const armR = (u, s) => { // u 0 shoulder .. 1 wrist
             const k = u < 0.53 ? 0.052 - u * 0.022 + 0.008 * Math.sin(Math.PI * Math.min(1, u / 0.5)) : 0.04 + 0.006 * Math.sin(Math.PI * Math.min(1, (u - 0.53) / 0.3)) - (u - 0.53) * 0.03;
@@ -3952,16 +4005,17 @@
             S.handGroup = hg; S.fingers = [];
             const hs = (female ? 0.9 : 1) * (0.94 + 0.06 * W);
             hg.scale.setScalar(hs);
-            rbox(hg, 0.03, 0.085, 0.075, skinMat, 0, -0.05, 0, 0.014);                 // palm (palms face the thigh)
-            for (let f = 0; f < 4; f++) {                                              // fingers, two joints each
-              const fg = new THREE.Group(); fg.position.set(0, -0.092, -0.028 + f * 0.019); hg.add(fg);
-              rbox(fg, 0.022, 0.042, 0.016, skinMat, 0, -0.02, 0, 0.007);
-              const tip = new THREE.Group(); tip.position.set(0, -0.04, 0); fg.add(tip);
-              rbox(tip, 0.02, 0.034, 0.015, skinMat, 0, -0.016, 0, 0.007);
+            // v9.0.0 chibi mitten: a soft palm and one rounded finger block with a tip joint (the grip still curls it)
+            sph(hg, 0.05, skinMat, 0, -0.045, 0, 0.72, 1.0, 0.95, 16);                    // palm (palms face the thigh)
+            {
+              const fg = new THREE.Group(); fg.position.set(0, -0.085, 0); hg.add(fg);
+              sph(fg, 0.042, skinMat, 0, -0.018, 0, 0.66, 0.85, 1.05, 14);
+              const tip = new THREE.Group(); tip.position.set(0, -0.035, 0); fg.add(tip);
+              sph(tip, 0.035, skinMat, 0, -0.012, 0, 0.62, 0.75, 1.0, 12);
               S.fingers.push(fg, tip);
             }
             const th = new THREE.Group(); th.position.set(-sx * 0.012, -0.03, -0.035); hg.add(th);
-            const tm = rbox(th, 0.022, 0.05, 0.02, skinMat, 0, -0.02, -0.012, 0.008); tm.rotation.x = -0.5;
+            const tm = sph(th, 0.022, skinMat, 0, -0.02, -0.012, 0.9, 1.45, 0.9, 10); tm.rotation.x = -0.5;
             S.thumb = th;
 
             const fgp = add(S.foot, new THREE.Group());
@@ -3993,11 +4047,11 @@
               sph(fgp, 0.04, soleMat, 0, g0 + 0.035, fz - 0.105, 1.35, 0.7, 0.9, 12);
               for (let l = 0; l < 3; l++) [-1, 1].forEach(sd => { const lace = put(fgp, new THREE.CylinderGeometry(0.004, 0.004, 0.05, 4), mat(0xf8fafc, 0.5), 0, g0 + 0.088 - l * 0.008, fz - 0.015 - l * 0.022); lace.rotation.set(Math.PI / 2 - 0.6, 0, sd * 0.6); });
             } else { // rubber boots: shaft up the shin, rounded toe
-              lathe(fgp, [[0.062, g0 + 0.3], [0.066, g0 + 0.28], [0.06, g0 + 0.16], [0.064, g0 + 0.05]], shoeMat, 20);
-              put(fgp, new THREE.TorusGeometry(0.063, 0.009, 6, 18), mat(0x111827, 0.4), 0, g0 + 0.3, 0).rotation.x = Math.PI / 2;
+              lathe(fgp, [[0.062, g0 + 0.3 * BL], [0.066, g0 + 0.28 * BL], [0.06, g0 + 0.16 * BL], [0.064, g0 + 0.05]], shoeMat, 20);
+              put(fgp, new THREE.TorusGeometry(0.063, 0.009, 6, 18), mat(0x111827, 0.4), 0, g0 + 0.3 * BL, 0).rotation.x = Math.PI / 2;
               sph(fgp, 0.064, shoeMat, 0, g0 + 0.05, fz, 1.0, 0.78, 2.15, 18);
               soleFn(0.12, footLen + 0.035, g0 + 0.012, fz, soleMat);
-              rbox(fgp, 0.035, 0.026, 0.01, brass, 0, g0 + 0.2, -0.066, 0.004);
+              rbox(fgp, 0.035, 0.026, 0.01, brass, 0, g0 + 0.2 * BL, -0.066, 0.004);
             }
           });
 
@@ -4005,7 +4059,7 @@
           const top = look.top, bottom = look.bottom;
           const clothGeos = new Map();
           const pushCloth = (m, g) => { if (!clothGeos.has(m)) clothGeos.set(m, []); clothGeos.get(m).push(g); };
-          const tAt = o => this.torsoGeo(d, idxOf, prof, Object.assign({ bust: female ? 0.062 : 0 }, o));   // clothes follow the body's bust
+          const tAt = o => this.torsoGeo(d, idxOf, prof, Object.assign({ bust: female ? d.bustAmt : 0 }, o));   // clothes follow the body's bust
           const topBase = C(look.topColor), topAcc = C(look.topAccent);
           const vcol = m => { const k = m.clone(); k.vertexColors = true; k.color.set(0xffffff); return k; };
           const armCloth = (m, uEnd, off, colFn) => limbs.forEach(({ s, sh, el, wr }) => {
@@ -4017,78 +4071,77 @@
             pushCloth(m, this.limbGeo(top0, kn, an, [bi['thigh' + s], bi['shin' + s], bi['foot' + s]], (u, ss) => legR(u, ss) + flare * u, { s1: L1 * uEnd, off, capTop: true, topBone: bi.hips, ez: 0.95, seg: 14 }));
           });
           const front = a => Math.abs(a - Math.PI * 1.5);   // angular distance from the front
-          const shirtTop = yNeck - 0.035;
-          const stripes = (yy, a, out) => out.copy((Math.floor((yy - d.hipY + 0.02) / 0.06) % 2 === 0) ? topAcc : topBase);
+          const shirtTop = yNeck - 0.035 * TS;
+          const stripes = (yy, a, out) => out.copy((Math.floor((yy - d.hipY + 0.02 * TS) / 0.06) % 2 === 0) ? topAcc : topBase);
           if (top === 'sweater') {
             const m = vcol(topMat);
-            pushCloth(m, tAt({ y0: d.hipY - 0.03, y1: shirtTop, off: 0.016, colFn: stripes }));
+            pushCloth(m, tAt({ y0: d.hipY - 0.03 * TS, y1: shirtTop, off: 0.016, colFn: stripes }));
             armCloth(m, 0.9, 0.012, (u, a, out) => out.copy((Math.floor(u * 9) % 2 === 0) ? topBase : topAcc));
           } else if (top === 'tee' || top === 'vest') {
-            pushCloth(topMat, tAt({ y0: d.hipY - 0.02, y1: shirtTop, off: 0.012 }));
+            pushCloth(topMat, tAt({ y0: d.hipY - 0.02 * TS, y1: shirtTop, off: 0.012 }));
             armCloth(topMat, 0.3, 0.012);
             if (top === 'vest') { // fishing vest: open front, no sleeves, lots of pockets
               const vm = mat(C(look.topAccent), 0.85, 0, { side: THREE.DoubleSide });
-              pushCloth(vm, tAt({ y0: d.hipY + 0.02, y1: yChest + 0.17, off: 0.03, keep: (a, y, x) => front(a) > 0.32 && !(Math.abs(x) > 0.13 && y > yChest + 0.08) }));
+              pushCloth(vm, tAt({ y0: d.hipY + 0.02 * TS, y1: yChest + 0.17 * TS, off: 0.03, keep: (a, y, x) => front(a) > 0.32 && !(Math.abs(x) > 0.13 && y > yChest + 0.08 * TS) }));
             }
           } else if (top === 'tank') {
-            pushCloth(topMat, tAt({ y0: d.hipY - 0.02, y1: yChest + 0.15, off: 0.012, keep: (a, y, x) => !(Math.abs(x) > 0.11 && y > yChest + 0.06) }));
+            pushCloth(topMat, tAt({ y0: d.hipY - 0.02 * TS, y1: yChest + 0.15 * TS, off: 0.012, keep: (a, y, x) => !(Math.abs(x) > 0.11 && y > yChest + 0.06 * TS) }));
           } else if (top === 'hoodie' || top === 'slicker') {
             const off = top === 'slicker' ? 0.026 : 0.02;
-            pushCloth(topMat, tAt({ y0: top === 'slicker' ? d.hipY - 0.11 : d.hipY - 0.03, y1: shirtTop, off }));
+            pushCloth(topMat, tAt({ y0: top === 'slicker' ? d.hipY - 0.11 * TS : d.hipY - 0.03 * TS, y1: shirtTop, off }));
             armCloth(topMat, 0.88, off * 0.8);
           } else if (top === 'bikini') {
-            pushCloth(topMat, tAt({ y0: yChest - 0.02, y1: yChest + 0.09, off: 0.008, bust: female ? 0.068 : 0 }));
+            pushCloth(topMat, tAt({ y0: yChest - 0.02 * TS, y1: yChest + 0.09 * TS, off: 0.008, bust: female ? d.bustAmt * 1.1 : 0 }));
           }
           if (bottom === 'jeans' || bottom === 'overalls') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.115, y1: d.hipY + 0.17, off: 0.012, capBottom: true }));
+            pushCloth(botMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY + 0.17 * TS, off: 0.012, capBottom: true }));
             legCloth(botMat, look.shoes === 'boots' ? 0.86 : 0.95, 0.012, 0.008);
-            if (bottom === 'overalls') pushCloth(botMat, tAt({ y0: d.hipY + 0.15, y1: yChest + 0.12, off: 0.03, keep: a => front(a) < 1.05 }));
+            if (bottom === 'overalls') pushCloth(botMat, tAt({ y0: d.hipY + 0.15 * TS, y1: yChest + 0.12 * TS, off: 0.03, keep: a => front(a) < 1.05 }));
           } else if (bottom === 'shorts' || bottom === 'swim') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.115, y1: d.hipY + 0.16, off: 0.013, capBottom: true }));
+            pushCloth(botMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY + 0.16 * TS, off: 0.013, capBottom: true }));
             legCloth(botMat, bottom === 'swim' ? 0.24 : 0.38, 0.016, 0.01);
           } else if (bottom === 'bikini') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.115, y1: d.hipY - 0.0, off: 0.008, capBottom: true }));
+            pushCloth(botMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY - 0.0 * TS, off: 0.008, capBottom: true }));
           } else if (bottom === 'skirt') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.04, y1: d.hipY + 0.16, off: 0.014 }));
+            pushCloth(botMat, tAt({ y0: d.hipY - 0.04 * TS, y1: d.hipY + 0.16 * TS, off: 0.014 }));
           }
           clothGeos.forEach((gs, m) => skinMesh(this.mergeSkin(gs), m));
 
           // rigid clothing details on the bones
           if (bottom === 'skirt') { // a flared skirt hanging from the hips
-            const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.17 * W + 0.03 * fw + t * 0.11 + Math.sin(t * Math.PI * 4) * 0.006, -0.02 - t * 0.36]); }
+            const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.17 * W + 0.03 * fw + t * 0.11 + Math.sin(t * Math.PI * 4) * 0.006, -0.02 - t * 0.36 * d.legs * 1.3]); }
             const sk = lathe(rig.hips, pts, botMat, 34, 0.86); rig.parts.push(sk);
           }
           if (top === 'hoodie' || top === 'slicker') {
-            const hood = sph(rig.chest, 0.13, topMat, 0, d.neck - 0.02, 0.1, 1.1, 0.75, 0.75, 14); hood.geometry = new THREE.SphereGeometry(0.13, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55); hood.rotation.x = 1.9;
+            const hood = sph(rig.chest, 0.13, topMat, 0, d.neck - 0.02 * TS, 0.1, 1.1, 0.75, 0.75, 14); hood.geometry = new THREE.SphereGeometry(0.13, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55); hood.rotation.x = 1.9;
             if (top === 'hoodie') {
-              rbox(rig.spine, 0.2, 0.09, 0.02, topMat, 0, 0.06, -(prof(ySpine + 0.06).wz + 0.03), 0.01);
-              [-0.04, 0.04].forEach(x => put(rig.chest, new THREE.CylinderGeometry(0.004, 0.004, 0.12, 4), accMat, x, d.chest + 0.02, -(prof(yChest + 0.2).wz + 0.03)));
+              rbox(rig.spine, 0.2, 0.09 * TS, 0.02, topMat, 0, 0.06 * TS, -(prof(ySpine + 0.06 * TS).wz + 0.03), 0.01);
+              [-0.04, 0.04].forEach(x => put(rig.chest, new THREE.CylinderGeometry(0.004, 0.004, 0.12, 4), accMat, x, d.chest + 0.02 * TS, -(prof(yChest + 0.2 * TS).wz + 0.03)));
             } else {
-              for (let k = 0; k < 4; k++) rbox(rig.spine, 0.03, 0.012, 0.012, accMat, 0, -0.02 + k * 0.09, -(prof(ySpine + k * 0.09).wz + 0.03), 0.004);
+              for (let k = 0; k < 4; k++) rbox(rig.spine, 0.03, 0.012, 0.012, accMat, 0, (-0.02 + k * 0.09) * TS, -(prof(ySpine + k * 0.09 * TS).wz + 0.03), 0.004);
             }
           }
           if (top === 'tee' || top === 'sweater' || top === 'vest') {
-            const collar = put(rig.chest, new THREE.TorusGeometry(0.062, 0.014, 8, 20), top === 'sweater' ? accMat : topMat, 0, d.neck - 0.03, 0.005); collar.rotation.x = Math.PI / 2;
+            const collar = put(rig.chest, new THREE.TorusGeometry(0.062, 0.014, 8, 20), top === 'sweater' ? accMat : topMat, 0, d.neck - 0.03 * TS, 0.005); collar.rotation.x = Math.PI / 2;
           }
           if (top === 'vest') {
-            [[-1, 0.0], [1, 0.0], [-1, 0.1], [1, 0.1]].forEach(([sx, dy]) => rbox(rig.chest, 0.07, 0.06, 0.02, mat(C(look.topAccent).multiplyScalar(0.8), 0.85), sx * 0.085, dy - 0.02, -(prof(yChest + dy).wz + 0.045), 0.006));
+            [[-1, 0.0], [1, 0.0], [-1, 0.1 * TS], [1, 0.1 * TS]].forEach(([sx, dy]) => rbox(rig.chest, 0.07, 0.06 * TS, 0.02, mat(C(look.topAccent).multiplyScalar(0.8), 0.85), sx * 0.085, dy - 0.02 * TS, -(prof(yChest + dy).wz + 0.045), 0.006));
           }
           if (top === 'tank' || top === 'bikini') {
-            [-1, 1].forEach(sx => { const st = put(rig.chest, new THREE.CylinderGeometry(0.006, 0.006, 0.22, 4), top === 'bikini' ? topMat : topMat, sx * 0.085, d.chest + 0.08, 0); st.rotation.x = 0.0; });
+            [-1, 1].forEach(sx => { const st = put(rig.chest, new THREE.CylinderGeometry(0.006, 0.006, 0.22 * TS, 4), top === 'bikini' ? topMat : topMat, sx * 0.085, d.chest + 0.08 * TS, 0); st.rotation.x = 0.0; });
           }
           if (bottom === 'overalls') {
-            [-1, 1].forEach(sx => { rbox(rig.chest, 0.04, 0.012, 0.26, botMat, sx * 0.085, d.chest + 0.14, 0.0, 0.005); rbox(rig.chest, 0.03, 0.03, 0.012, brass, sx * 0.085, d.chest + 0.1, -(prof(yChest + 0.1).wz + 0.035), 0.005); });
-            rbox(rig.spine, 0.12, 0.08, 0.012, mat(C(look.bottomColor).multiplyScalar(0.8), 0.85), 0, d.chest * 0.5, -(prof(ySpine + 0.1).wz + 0.04), 0.006);
+            [-1, 1].forEach(sx => { rbox(rig.chest, 0.04, 0.012, 0.26 * TS, botMat, sx * 0.085, d.chest + 0.14 * TS, 0.0, 0.005); rbox(rig.chest, 0.03, 0.03, 0.012, brass, sx * 0.085, d.chest + 0.1 * TS, -(prof(yChest + 0.1 * TS).wz + 0.035), 0.005); });
+            rbox(rig.spine, 0.12, 0.08 * TS, 0.012, mat(C(look.bottomColor).multiplyScalar(0.8), 0.85), 0, d.chest * 0.5, -(prof(ySpine + 0.1 * TS).wz + 0.04), 0.006);
           }
           if (bottom === 'jeans' || bottom === 'shorts') {
-            const belt = put(rig.hips, new THREE.TorusGeometry(1, 0.02, 6, 28), mat(0x3b2314, 0.6), 0, 0.15, 0); belt.rotation.x = Math.PI / 2; belt.scale.set(prof(d.hipY + 0.15).wx + 0.014, prof(d.hipY + 0.15).wz + 0.014, 1);
-            rbox(rig.hips, 0.045, 0.035, 0.012, brass, 0, 0.15, -(prof(d.hipY + 0.15).wz + 0.03), 0.005);
+            const belt = put(rig.hips, new THREE.TorusGeometry(1, 0.02, 6, 28), mat(0x3b2314, 0.6), 0, 0.15 * TS, 0); belt.rotation.x = Math.PI / 2; belt.scale.set(prof(d.hipY + 0.15 * TS).wx + 0.014, prof(d.hipY + 0.15 * TS).wz + 0.014, 1);
+            rbox(rig.hips, 0.045, 0.035, 0.012, brass, 0, 0.15 * TS, -(prof(d.hipY + 0.15 * TS).wz + 0.03), 0.005);
           }
 
           // ---------- head (rigid on the head bone; the face builders from v2 with face, nose and brow options) ----------
           const H = rig.headGroup;
-          {
-            const hg = new THREE.SphereGeometry(0.205, 48, 34);
+          const shapeHead = hg => {
             const hp = hg.attributes.position;
             for (let i = 0; i < hp.count; i++) {
               let x = hp.getX(i), y = hp.getY(i) * 1.06, z = hp.getZ(i) * 0.99;
@@ -4102,48 +4155,35 @@
               hp.setXYZ(i, x, y, z);
             }
             hg.computeVertexNormals();
-            put(H, hg, skinMat);
-          }
-          [-1, 1].forEach(s => {
-            sph(H, 0.042, skinMat, s * 0.2, 0.0, 0.01, 0.55, 1, 0.8, 12);
-            sph(H, 0.036, mat(0xffffff, 0.3), s * 0.075, 0.03, -0.178, 1, 1, 0.9, 14);
-            sph(H, 0.023, mat(ANGLER_OPTS.eyes[look.eyes], 0.3), s * 0.075, 0.03, -0.2, 1, 1, 0.6, 12);
-            sph(H, 0.012, darkMat, s * 0.075, 0.03, -0.209, 1, 1, 0.5, 8);
-            sph(H, 0.006, new THREE.MeshBasicMaterial({ color: 0xffffff }), s * 0.082, 0.04, -0.213, 1, 1, 0.5, 6);
-            const browH = ({ thin: 0.6, normal: 1, bushy: 1.6 })[look.brows] || 1; const brow = put(H, new THREE.BoxGeometry((female ? 0.07 : 0.085) * (look.brows === 'bushy' ? 1.1 : 1), (female ? 0.012 : 0.02) * browH, 0.016 * (look.brows === 'bushy' ? 1.3 : 1)), hairMat.clone(), s * 0.075, female ? 0.088 : 0.082, -0.192); brow.rotation.z = s * -0.12;
-            if (female) { const lash = put(H, new THREE.BoxGeometry(0.05, 0.007, 0.01), darkMat, s * 0.075, 0.062, -0.205); lash.rotation.z = s * -0.18; sph(H, 0.03, new THREE.MeshBasicMaterial({ color: 0xfb7185, transparent: true, opacity: 0.35 }), s * 0.11, -0.04, -0.175, 1, 0.7, 0.4, 10); }
-          });
+            return hg;
+          };
+          put(H, shapeHead(new THREE.SphereGeometry(0.205, 48, 34)), skinMat);
+          // v9.0.0: the painted face, a front patch of the same head 1% further out (its UVs span FACE_PATCH)
           {
-            const noseMat = mat(new THREE.Color(ANGLER_OPTS.skin[look.skin]).multiplyScalar(0.94), 0.7);
-            const ns = look.nose;
-            if (ns === 'small') sph(H, 0.03, noseMat, 0, -0.02, -0.203, 0.9, 1.0, 0.8, 12);
-            else if (ns === 'button') { sph(H, 0.036, noseMat, 0, -0.03, -0.21, 1.05, 0.9, 0.95, 14); }
-            else if (ns === 'broad') { sph(H, 0.042, noseMat, 0, -0.022, -0.205, 1.35, 1.0, 0.9, 14); [-1, 1].forEach(sx => sph(H, 0.016, noseMat, sx * 0.03, -0.04, -0.2, 1, 1, 1, 8)); }
-            else { const br = sph(H, 0.022, noseMat, 0, 0.005, -0.205, 0.8, 1.9, 0.9, 12); sph(H, 0.032, noseMat, 0, -0.03, -0.212, 1.05, 0.9, 0.95, 12); }
+            const FP = AnglerFactory.FACE_PATCH;
+            const fg = shapeHead(new THREE.SphereGeometry(0.207, 36, 28, FP.phi0, FP.phiLen, FP.th0, FP.thLen));
+            const tex = new THREE.CanvasTexture(AnglerFactory.paintFace(look)); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+            const fm = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+            const face = put(H, fg, fm); face.renderOrder = 1; face.userData.noMerge = true; rig.faceTex = tex;
           }
-          {
-            // mouth: toned-down lips (female) and a soft smile line, sitting on the face surface
-            const lipCol = new THREE.Color(ANGLER_OPTS.skin[look.skin]).lerp(new THREE.Color('#b4425a'), 0.55);
-            const arcLen = female ? Math.PI * 0.6 : Math.PI * 0.55, R = female ? 0.05 : 0.06;
-            if (female) {
-              sph(H, 0.036, mat(lipCol.clone().multiplyScalar(0.92), 0.4), 0, -0.066, -0.187, 1.35, 0.27, 0.42, 16);
-              sph(H, 0.038, mat(lipCol, 0.35), 0, -0.082, -0.188, 1.2, 0.34, 0.44, 16);
-            }
-            const smile = put(H, new THREE.TorusGeometry(R, female ? 0.0042 : 0.006, 4, 18, arcLen), female ? mat(lipCol.clone().multiplyScalar(0.5), 0.6) : darkMat, 0, (female ? -0.0735 : -0.068) + R, -0.193);
-            smile.rotation.z = -Math.PI / 2 - arcLen / 2;
+          [-1, 1].forEach(s => sph(H, 0.042, skinMat, s * 0.2, 0.0, 0.01, 0.55, 1, 0.8, 12));   // ears
+          {   // a small button nose (the eyes, brows, cheeks and mouth are painted on the face)
+            const noseMat = mat(new THREE.Color(ANGLER_OPTS.skin[look.skin]).multiplyScalar(0.93), 0.7);
+            const k = ({ small: 0.8, button: 1.05, broad: 1.2, straight: 0.95 })[look.nose] || 1;
+            sph(H, 0.021 * k, noseMat, 0, -0.03, -0.206, look.nose === 'broad' ? 1.4 : 1.1, 0.85, 0.75, 12);
           }
 
           // facial hair
           const fh = look.facial;
           if (fh === 'stubble') {
-            const g = sph(H, 0.215, mat(ANGLER_OPTS.hairColor[look.hairColor], 0.9, 0, { transparent: true, opacity: 0.32 }), 0, -0.03, -0.005, 1, 1, 1, 26);
-            g.geometry.dispose(); g.geometry = new THREE.SphereGeometry(0.212, 28, 14, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5);
+            const g = sph(H, 0.215, mat(ANGLER_OPTS.hairColor[look.hairColor], 0.9, 0, { transparent: true, opacity: 0.16 }), 0, -0.03, -0.005, 1, 1, 1, 26);
+            g.geometry.dispose(); g.geometry = new THREE.SphereGeometry(0.212, 28, 14, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.38);   // jaw only: the painted smile stays visible
           }
           if (fh === 'mustache' || fh === 'beard' || fh === 'goatee') [-1, 1].forEach(s => { const m = sph(H, 0.038, hairMat, s * 0.032, -0.066, -0.19, 1.25, 0.55, 0.7, 12); m.rotation.z = s * -0.2; });
           if (fh === 'goatee') sph(H, 0.04, hairMat, 0, -0.14, -0.15, 0.9, 1.3, 0.8, 12);
           if (fh === 'beard') {
-            const b = put(H, new THREE.SphereGeometry(0.222, 32, 16, 0, Math.PI * 2, Math.PI * 0.52, Math.PI * 0.48), hairMat); b.scale.set(1.0, 1.1, 1.04); b.position.set(0, -0.03, -0.01);
-            sph(H, 0.07, hairMat, 0, -0.17, -0.12, 1.2, 0.9, 0.8, 14);
+            const b = put(H, new THREE.SphereGeometry(0.22, 32, 16, 0, Math.PI * 2, Math.PI * 0.6, Math.PI * 0.4), hairMat); b.scale.set(0.98, 1.0, 1.02); b.position.set(0, -0.035, -0.008);   // a neat chibi beard below the smile
+            sph(H, 0.06, hairMat, 0, -0.165, -0.12, 1.15, 0.8, 0.75, 14);
           }
 
           // hair (front cap + back cap cover the scalp; styles add volume)
@@ -4155,35 +4195,35 @@
             if (hs === 'short' && look.hat === 'none') { [-1, 1].forEach(s => sph(H, 0.07, hairMat, s * 0.1, 0.17, -0.12, 1, 0.6, 0.7, 12)); sph(H, 0.09, hairMat, 0, 0.19, -0.1, 1.3, 0.6, 0.7, 12); }
             if (hs === 'wavy') { for (let i = 0; i < 8; i++) { const a = (i / 7) * Math.PI; sph(H, 0.07, hairMat, Math.cos(a) * 0.17, 0.13 + Math.sin(i * 2.1) * 0.03, Math.sin(a) * 0.17 + 0.03, 1, 0.85, 1, 10); } [-0.1, 0, 0.1].forEach((x, i) => sph(H, 0.065, hairMat, x, 0.2, -0.06 + (i % 2) * 0.03, 1, 0.8, 1, 10)); }
             if (hs === 'ponytail') {
-              const pts = [new THREE.Vector3(0, 0.1, 0.2), new THREE.Vector3(0, 0.0, 0.34), new THREE.Vector3(0, -0.14, 0.38), new THREE.Vector3(0, -0.3, 0.33)];
+              const pts = [new THREE.Vector3(0, 0.1, 0.2), new THREE.Vector3(0, 0.02, 0.32), new THREE.Vector3(0, -0.09, 0.35), new THREE.Vector3(0, -0.2, 0.31)];   // shorter on the chibi head
               put(H, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.055, 10, false), hairMat);
-              sph(H, 0.06, hairMat, 0, -0.31, 0.33, 0.8, 1.4, 0.8, 10);
+              sph(H, 0.06, hairMat, 0, -0.21, 0.31, 0.85, 1.2, 0.85, 10);
               const tie = put(H, new THREE.TorusGeometry(0.058, 0.014, 6, 12), mat(C(look.hatColor), 0.5), 0, 0.09, 0.205); tie.rotation.x = 0.9;
               [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.17, 0.06, -0.08, 0.7, 1.2, 0.7, 10));
             }
             if (hs === 'long') {
-              const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.215 + 0.03 * Math.sin(t * 2.4), 0.04 - t * 0.5]); }
-              const mesh = lathe(H, pts, new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65, side: THREE.DoubleSide }), 28, 1.0);
+              const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.215 + 0.03 * Math.sin(t * 2.4), 0.04 - t * 0.3]); }   // shoulder length on the big head
+              const mesh = lathe(H, pts, mat(hairMat.color, 0.65, 0, { side: THREE.DoubleSide }), 28, 1.0);
               mesh.geometry.dispose(); mesh.geometry = new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 28, 0, Math.PI); mesh.position.z = 0.02; mesh.rotation.y = -Math.PI / 2;
-              [-1, 1].forEach(s => { const lock = sph(H, 0.055, hairMat, s * 0.19, -0.12, -0.03, 0.8, 3.2, 0.9, 12); });
+              [-1, 1].forEach(s => { const lock = sph(H, 0.055, hairMat, s * 0.19, -0.1, -0.03, 0.8, 2.3, 0.9, 12); });
             }
-            if (hs === 'bob') { const bobM = put(H, new THREE.SphereGeometry(0.235, 30, 18, 0, Math.PI, 0, Math.PI * 0.78), new THREE.MeshStandardMaterial({ color: hairMat.color, roughness: 0.65 })); bobM.scale.set(1.04, 0.85, 1.02); bobM.position.set(0, -0.04, 0.02); [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.2, -0.05, -0.04, 0.8, 1.6, 0.8, 10)); }
+            if (hs === 'bob') { const bobM = put(H, new THREE.SphereGeometry(0.235, 30, 18, 0, Math.PI, 0, Math.PI * 0.78), mat(hairMat.color, 0.65)); bobM.scale.set(1.04, 0.85, 1.02); bobM.position.set(0, -0.04, 0.02); [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.2, -0.05, -0.04, 0.8, 1.6, 0.8, 10)); }
             if (hs === 'bun') { sph(H, 0.085, hairMat, 0, 0.24, 0.07, 1, 0.9, 1, 16); const t = put(H, new THREE.TorusGeometry(0.07, 0.014, 6, 14), mat(C(look.hatColor), 0.5), 0, 0.2, 0.07); t.rotation.x = Math.PI / 2; }
             if (hs === 'braid') {
-              for (let i = 0; i < 8; i++) sph(H, 0.045 - i * 0.002, hairMat, 0.17 + i * 0.012, -0.03 - i * 0.075, -0.02 + (i % 2 ? 0.012 : -0.012), 1, 1.2, 1, 10);
-              sph(H, 0.03, mat(C(look.hatColor), 0.5), 0.26, -0.65, -0.02, 1, 1, 1, 8);
+              for (let i = 0; i < 6; i++) sph(H, 0.045 - i * 0.002, hairMat, 0.17 + i * 0.012, -0.03 - i * 0.055, -0.02 + (i % 2 ? 0.012 : -0.012), 1, 1.2, 1, 10);
+              sph(H, 0.03, mat(C(look.hatColor), 0.5), 0.24, -0.33, -0.02, 1, 1, 1, 8);
             }
           }
 
           // glasses
           if (look.glasses === 'sun') {
-            [-1, 1].forEach(s => sph(H, 0.052, mat(0x0b1020, 0.15, 0.4), s * 0.075, 0.03, -0.195, 1.1, 0.78, 0.35, 16));
-            put(H, new THREE.BoxGeometry(0.05, 0.012, 0.012), darkMat, 0, 0.04, -0.2);
-            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.012, 0.012, 0.19), darkMat, s * 0.14, 0.04, -0.1));
+            [-1, 1].forEach(s => sph(H, 0.052, mat(0x0b1020, 0.15, 0.4), s * 0.08, -0.006, -0.197, 1.15, 0.86, 0.35, 16));
+            put(H, new THREE.BoxGeometry(0.05, 0.012, 0.012), darkMat, 0, 0.004, -0.203);
+            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.012, 0.012, 0.19), darkMat, s * 0.145, 0.004, -0.1));
           } else if (look.glasses === 'round') {
-            [-1, 1].forEach(s => put(H, new THREE.TorusGeometry(0.042, 0.007, 6, 20), brass, s * 0.075, 0.03, -0.205));
-            put(H, new THREE.BoxGeometry(0.04, 0.008, 0.008), brass, 0, 0.04, -0.205);
-            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.008, 0.008, 0.18), brass, s * 0.123, 0.04, -0.12));
+            [-1, 1].forEach(s => put(H, new THREE.TorusGeometry(0.042, 0.007, 6, 20), brass, s * 0.08, -0.006, -0.205));
+            put(H, new THREE.BoxGeometry(0.04, 0.008, 0.008), brass, 0, 0.004, -0.207);
+            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.008, 0.008, 0.18), brass, s * 0.128, 0.004, -0.12));
           }
 
           // hats
@@ -4221,7 +4261,7 @@
           }
           // v8.0.0: the head, hair, face and hat are rigid on the head bone, so they are baked into one mesh per material
           // (about 28 draw calls down to a handful for the angler and every townsperson); dress() rebuilds them anyway
-          ModelKit.mergeStatic(rig.headGroup, [], { keepShadow: true });
+          ModelKit.mergeStatic(rig.headGroup, [], { keepShadow: true, bakeColor: true });
 
           return look;
         }
@@ -4267,7 +4307,7 @@
           this.still = speed > 0.25 ? 0 : this.still + dt;
 
           // ---- gait: the phase follows the distance walked, so each step matches the ground speed ----
-          const stride = 1.75 + 0.75 * run;   // metres per full gait cycle: long, calm steps at walking pace
+          const legK = d.legs || 1, stride = (1.75 + 0.75 * run) * (0.35 + 0.65 * legK);   // metres per full gait cycle (v9.0.0: shorter, quicker steps on chibi legs)
           this.phase = (this.phase + (speed * dt / stride) * Math.PI * 2) % (Math.PI * 2);
           const ph = this.phase;
           if (walk > 0.001) {
@@ -4283,7 +4323,7 @@
               arm.upper.rotation.x += (0.36 + 0.34 * run) * walk * Math.sin(p);
               arm.fore.rotation.x += (0.28 + 1.05 * run) * walk + 0.22 * walk * Math.max(0, Math.sin(p));
             });
-            const bob = (0.025 + 0.035 * run) * walk;
+            const bob = (0.025 + 0.035 * run) * walk * (0.6 + 0.4 * legK) * (legK < 1 ? 1.25 : 1);   // a little bouncier on short legs
             r.hips.position.y -= bob * Math.pow(Math.sin(ph), 2) + 0.02 * run * walk;
             r.hips.rotation.y -= 0.11 * walk * Math.sin(ph);
             r.hips.rotation.z += 0.035 * walk * Math.cos(ph);
@@ -9504,7 +9544,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       }
       /* open it (k 0..1) in the left hand of a figure of height scale hs; returns the hand's world target */
       function placeUmbrella(u, owner, hs) {
-        u.g.visible = true; u.g.position.set(-0.17 * hs, 1.0 * hs, -0.2 * hs); u.g.rotation.set(0.21, 0, -0.18);   // the shaft leans in so the canopy is over the head
+        u.g.visible = true; u.g.position.set(-0.17 * hs, 0.9 * hs, -0.2 * hs);   // v9.0.0: a little lower for the shorter chibi arms u.g.rotation.set(0.21, 0, -0.18);   // the shaft leans in so the canopy is over the head
         const k = u.w; u.canopy.scale.set(0.12 + 0.88 * k, 0.55 + 0.45 * k, 0.12 + 0.88 * k);
         return owner.localToWorld(u.v.copy(u.g.position));
       }
@@ -15982,7 +16022,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         // never tilt or bob the horizon.
         // low-pass the eye height: it follows sitting down / standing up but ignores the walking bounce
         world.anglerRig.head.getWorldPosition(_fpGoal);
-        const eyeGoal = (_fpGoal.y - world.anglerGroup.position.y) + 0.1 * world.anglerRig.dims.hScale;
+        const eyeGoal = (_fpGoal.y - world.anglerGroup.position.y) + (world.anglerRig.dims.headLift || 0.1) * world.anglerRig.dims.hScale;   // v9.0.0: the chibi eyes sit higher above the head bone
         fpEyeY = fpEyeY === null ? eyeGoal : fpEyeY + (eyeGoal - fpEyeY) * (1 - Math.exp(-3 * dt));
         const eyeLocalY = fpEyeY;
         camera.position.copy(world.anglerGroup.position).addScaledVector(_fpFwd, 0.14);
