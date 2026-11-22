@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.1.0';
+    window.PF_VERSION = '6.1.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -9073,9 +9073,9 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const WALK_SPEED = 4.2;   // reference speed (m/s) the walk step code scales by
       /* Movement (v6.0): the stick is camera-relative, the angler speeds up and slows down smoothly, a light push walks
          and a full push (or Shift) runs; a tap on the ground walks there by itself; dragging on the screen orbits the camera. */
-      const MOVE = { walk: 3.3, run: 5.6, auto: 3.8, runAt: 0.9, accel: 10, brake: 14 };
+      const MOVE = { walk: 2.4, run: 3.8, auto: 2.8, back: 0.6, turn: 2.4, runAt: 0.9, accel: 10, brake: 14 };   // v6.1.1: steer like a car, slower
       const walkVel = { x: 0, z: 0 };
-      const camOrbit = { yaw: 0 };           // third-person camera angle around the angler (0 = looking out to sea)
+      const camOrbit = { yaw: 0, look: 0, steerT: 0 };   // camera angle (follows the angler's facing) + a look-around offset from dragging
       let autoWalk = null;                    // { pts: [{x, z}...], stuck, lastD } while walking to a tapped spot
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
       let bobberPos = new THREE.Vector3();
@@ -11545,7 +11545,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (!camDrag.moved && Math.hypot(e.clientX - camDrag.sx, e.clientY - camDrag.sy) > 9) camDrag.moved = true;
           if (!camDrag.moved) return;
           if (settings.firstPerson && !onBoat) playerYaw -= dx * 0.006;          // first person: look around
-          else if (!onBoat && !standFocus.stand) camOrbit.yaw -= dx * 0.008;     // third person: orbit the camera
+          else if (!onBoat && !standFocus.stand) camOrbit.look = THREE.MathUtils.clamp(camOrbit.look - dx * 0.008, -Math.PI, Math.PI);   // third person: look around
         });
         const end = e => {
           if (e.pointerId !== camDrag.id) return;
@@ -11556,7 +11556,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
         // the compass resets the camera to look out to sea
         const cmp = document.getElementById('hud-compass');
-        if (cmp) { cmp.style.pointerEvents = 'auto'; cmp.addEventListener('click', () => { camOrbit.yaw = 0; sfx.playTick(); }); }
+        if (cmp) { cmp.style.pointerEvents = 'auto'; cmp.addEventListener('click', () => { camOrbit.look = 0; sfx.playTick(); }); }
       })();
 
       /* ---- the harbour map ---- */
@@ -15595,24 +15595,28 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             pierMoveInput = stickMag;
             let speedGoal = usingKeys ? (keys['ShiftLeft'] || keys['ShiftRight'] ? MOVE.run : MOVE.walk)
               : (stickMag < MOVE.runAt ? MOVE.walk * stickMag / MOVE.runAt : MOVE.run);
-            if (settings.firstPerson) {
-              // First-person controls: left / right turn on the spot, up / down walk forward / backward
-              playerYaw -= moveX * 2.7 * dt;
+            {
+              // steer like a car (both views): left / right turns on the spot, up / down walks forward / backward
+              const turnIn = Math.sign(moveX) * Math.pow(Math.abs(moveX), 1.4);
+              playerYaw -= turnIn * MOVE.turn * dt;
+              if (Math.abs(turnIn) > 0.05) camOrbit.steerT = 0.6;
               const walk = -moveZ;
               moveX = -Math.sin(playerYaw) * walk;
               moveZ = -Math.cos(playerYaw) * walk;
               stickMag = Math.abs(walk);
               speedGoal = usingKeys ? speedGoal : (stickMag < MOVE.runAt ? MOVE.walk * stickMag / MOVE.runAt : MOVE.run);
-            } else if (stickMag > 0.001) {
-              // camera-relative: up on the stick walks away from the camera, whatever the orbit angle
-              const cy = Math.cos(camOrbit.yaw), sy = Math.sin(camOrbit.yaw), ix = moveX, iz = moveZ;
-              moveX = ix * cy + iz * sy; moveZ = -ix * sy + iz * cy;
+              if (walk < 0) speedGoal *= MOVE.back;   // backing up is slower
             }
+            camOrbit.steerT = Math.max(0, camOrbit.steerT - dt);
             if (autoWalk && stickMag <= 0.08) {   // tap-to-walk: head for the next point of the route
               const tp = autoWalk.pts[0], dx = tp.x - playerX, dz = tp.z - playerZ, d = Math.hypot(dx, dz);
               if (d < (autoWalk.pts.length > 1 ? 0.45 : 0.22)) { autoWalk.pts.shift(); if (!autoWalk.pts.length) { autoWalk = null; tapMarker.visible = false; } }
               else {
-                moveX = dx / d; moveZ = dz / d; speedGoal = Math.min(MOVE.auto, d * 4 + 0.6); stickMag = 1;
+                // turn toward the point (on the spot if it is behind), then walk forward
+                const diff = Math.atan2(Math.sin(Math.atan2(-dx, -dz) - playerYaw), Math.cos(Math.atan2(-dx, -dz) - playerYaw));
+                playerYaw += THREE.MathUtils.clamp(diff, -5 * dt, 5 * dt);
+                const fwd = Math.max(0, (Math.cos(diff) - 0.4) / 0.6);
+                moveX = -Math.sin(playerYaw) * fwd; moveZ = -Math.cos(playerYaw) * fwd; speedGoal = Math.min(MOVE.auto, d * 4 + 0.6) * fwd; stickMag = 1;
                 autoWalk.stuck = (autoWalk.lastD - d < 0.02 * dt * 60) ? autoWalk.stuck + dt : 0; autoWalk.lastD = d;
                 if (autoWalk.stuck > 0.9) { autoWalk = null; tapMarker.visible = false; }
               }
@@ -15764,37 +15768,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           let targetYaw = playerYaw;
           if (restState.spot) {
             targetYaw = restState.spot.yaw;   // face the sea from the bench or over the rail
-          } else if (settings.firstPerson) {
-            targetYaw = playerYaw; // facing is controlled by the stick, not by the walking direction
-          } else if (walkSpeed > 0.001) {
-            targetYaw = Math.atan2(-walkDX, -walkDZ);
-          } else if (isNearPierShop()) {
-            targetYaw = Math.atan2(-(-7.6 - playerX), -(1.0 - playerZ));
-          } else if (isNearPierBounty()) {
-            targetYaw = Math.atan2(-(-4.2 - playerX), -(0.8 - playerZ));
-          } else if (isNearPierGallery()) {
-            targetYaw = Math.atan2(-(CABIN.galleryX - playerX), -(0.8 - playerZ));
-          } else if (isNearAquarium()) {
-            targetYaw = Math.atan2(-(CABIN.aquaX - playerX), -(0.5 - playerZ));
-          } else if (isNearPierCamera()) {
-            targetYaw = Math.atan2(-(CABIN.camX - playerX), -(CABIN.camZ - playerZ));
-          } else if (isNearRecycle()) {
-            targetYaw = Math.atan2(-(RECYCLE.x - playerX), -(0.8 - playerZ));
-          } else if (isNearPierToolbox()) {
-            targetYaw = Math.atan2(-(PIER_TOOLBOX_X - playerX), -(-7.6 - playerZ));
-          } else if (isNearPierBucket()) {
-            targetYaw = Math.atan2(-(PIER_BUCKET_X - playerX), -(-7.6 - playerZ));
-          } else if (shoreShopHere()) {
-            const sh = SHORE_SHOPS[shoreShopHere()];
-            targetYaw = Math.atan2(-(sh.x - playerX), -(sh.z - playerZ));
-          } else if (isNearDockPump()) {
-            targetYaw = Math.atan2(-(DOCK_PUMP.x - playerX), -(DOCK_PUMP.z - playerZ));
-          } else if (isNearBoatTerminal()) {
-            targetYaw = Math.atan2(-(BOAT_TERMINAL.x - playerX), -(BOAT_TERMINAL.z - playerZ));
-          } else if (isNearMooredBoat()) {
-            targetYaw = Math.atan2(-(MOOR.boatX - playerX), -(-5.6 - playerZ));
-          } else if (isAtPierWaterEdge()) {
-            targetYaw = 0;
+          } else if (isAtPierWaterEdge() && camOrbit.steerT <= 0 && walkSpeed < 0.001) {
+            targetYaw = 0;   // at the pier tip, face the sea while you are not steering
           }
           const angleDiff = Math.atan2(Math.sin(targetYaw - playerYaw), Math.cos(targetYaw - playerYaw));
           playerYaw += angleDiff * Math.min(1, dt * 12);
@@ -16297,7 +16272,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           // past 12 m from the pier the camera follows 1:1 so the far ends (Boatyard, Cabin) stay framed
           const camFX = Math.sign(playerX) * (Math.min(Math.abs(playerX), 12) * lateralFollow + Math.max(0, Math.abs(playerX) - 12) * 0.97);
           // orbit: the camera swings round the angler by camOrbit.yaw (drag on the screen); during a fight it eases back
-          if (!camDrag.on && mode !== 'PIER_IDLE' && mode !== 'SHOP_BROWSE') camOrbit.yaw *= Math.exp(-2.5 * dt);
+          // the camera stays behind the angler and turns with him (plus a look-around offset that eases back as you walk)
+          if (!camDrag.on && (pierMoveInput > 0.1 || mode !== 'PIER_IDLE')) camOrbit.look *= Math.exp(-3 * dt);
+          { const goal = playerYaw + camOrbit.look, d = Math.atan2(Math.sin(goal - camOrbit.yaw), Math.cos(goal - camOrbit.yaw)); camOrbit.yaw += d * (dt > 0 ? 1 - Math.exp(-7 * dt) : 0); }
           const oy = camOrbit.yaw, ow = Math.min(1, Math.abs(Math.atan2(Math.sin(oy), Math.cos(oy))) / 0.35);
           const isl = THREE.MathUtils.smoothstep(playerZ, ISLAND.zGate, ISLAND.zIn + 2.5);   // in town: higher and closer, above the hills
           const pivX = THREE.MathUtils.lerp(camFX, playerX, Math.max(ow, isl)), back = (isPortrait ? 8.4 : 7.8) - isl * 2.2;
