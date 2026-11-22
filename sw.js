@@ -15,6 +15,7 @@ const PRECACHE = [
   'index.html',
   'manifest.webmanifest',
   'vendor/three.r187.module.min.js',
+  'vendor/rapier3d-compat.0.21.0.min.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-192.png',
