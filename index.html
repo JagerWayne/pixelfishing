@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '7.0.0';
+    window.PF_VERSION = '7.1.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1861,6 +1861,97 @@
       #hud-tracker .trk { max-width: 44vw; }
     }
     @media (max-height: 480px) { .hud-stack { right: 0; } }
+
+    /* =========================================================================
+       TIDE GLASS, part 2 (v7.1.0): drawer, sheets, talk box, toasts, shop sheet
+       ========================================================================= */
+    /* round close button in every sheet header */
+    .modal-header .g-close, .modal-header .pixel-btn.g-close { width: 40px; min-width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid transparent; color: var(--text-2); font-size: 18px; }
+    .modal-header .g-close:hover { color: var(--text); background: rgba(255, 255, 255, 0.14); }
+    .modal-header { min-height: 60px; }
+    .modal-body { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent; }
+
+    /* side drawer: profile header, a 3-column tile grid, a compact stats list */
+    #modal-menu .modal-window { width: min(88vw, 360px); border-radius: var(--r-lg) 0 0 var(--r-lg); border-right: 0; }
+    #modal-menu .modal-header { position: sticky; top: 0; z-index: 2; background: var(--glass-strong); }
+    #modal-menu .modal-header .modal-title { flex: 1; }
+    #modal-menu #btn-pause { min-height: 40px; padding: 6px 14px; border-radius: var(--r-pill); }
+    .menu-profile { display: flex; gap: 12px; align-items: center; padding: 14px; margin-bottom: 14px; border-radius: var(--r-md);
+      background: linear-gradient(135deg, rgba(45, 212, 191, 0.16), rgba(96, 165, 250, 0.08)); border: 1px solid rgba(45, 212, 191, 0.3); }
+    .mp-avatar { flex: 0 0 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px;
+      background: radial-gradient(circle at 35% 30%, #99f6e4, var(--sea-deep)); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12); }
+    .mp-main { flex: 1; min-width: 0; }
+    .mp-name { font-size: 17px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mp-rank { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+    .mp-badge { font-size: 12px; font-weight: 800; color: #99f6e4; background: rgba(45, 212, 191, 0.16); padding: 2px 8px; border-radius: var(--r-pill); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mp-cash { font-size: 14px; font-weight: 800; color: var(--gold); white-space: nowrap; }
+    .mp-xp { height: 6px; margin-top: 8px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+    .mp-xp i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--sea), var(--info)); transition: width 0.3s var(--ease-out); }
+    .mp-next { margin-top: 4px; font-size: 12px; color: var(--text-2); }
+    #modal-menu .menu-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    #modal-menu .menu-tile { min-height: 78px; flex-direction: column; justify-content: center; gap: 6px; padding: 8px 4px; font-size: 24px; text-align: center; }
+    #modal-menu .menu-tile span, #modal-menu .menu-tile[data-label]::after { font-size: 12.5px; line-height: 1.2; color: var(--text-2); }
+    .menu-info { gap: 0 14px; padding: 4px 12px; border-radius: var(--r-md); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-line); font-size: 13px; }
+    .menu-info .drawer-item { padding: 8px 0; border-bottom: 1px solid var(--glass-line); }
+    .menu-info .drawer-item:nth-last-child(-n+2) { border-bottom: 0; }
+    .drawer-label { color: var(--text-3); font-weight: 700; font-size: 12px; }
+    .drawer-val { color: var(--text); font-weight: 700; }
+    .menu-info .angler-row .sleek-menu-btn { padding: 0 14px; }
+
+    /* toasts: coloured edge by kind */
+    .toast.t-warn { border-left-color: var(--warn); }
+    .toast.t-gold { border-left-color: var(--gold); }
+    .toast.t-ok { border-left-color: var(--ok); }
+
+    /* talk box: a glass speech panel docked at the bottom, choices as full-width rows */
+    #modal-talk { background: linear-gradient(180deg, transparent 40%, rgba(4, 10, 20, 0.45)); }
+    #talk-box { border-radius: var(--r-lg); padding: 16px 16px calc(14px + var(--safe-bottom)); margin-bottom: 10px; }
+    .talk-head { gap: 12px; margin-bottom: 10px; }
+    .talk-head #talk-icon { flex: 0 0 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px;
+      background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 2px rgba(252, 211, 77, 0.45); }
+    .talk-head b { color: var(--gold); font-size: 16px; font-weight: 800; }
+    .talk-head small { color: var(--text-2); font-size: 13px; }
+    #talk-text { font-size: 15.5px; line-height: 1.5; color: var(--text); }
+    #talk-choices { flex-direction: column; align-items: stretch; gap: 8px; }
+    #talk-choices .pixel-btn { width: 100%; justify-content: flex-start; text-align: left; min-height: 48px; padding: 10px 16px; border-radius: var(--r-md); font-size: 15px; }
+    #talk-choices .pixel-btn.gold, #talk-choices .pixel-btn.green { justify-content: center; }
+
+    /* the shop and town sheets on the same tokens */
+    #shop-sheet { border-top: 0; box-shadow: inset 0 3px 0 var(--sh-accent), 0 -1px 0 var(--glass-line), var(--shadow-2); padding-top: 14px; }
+    .sh-name { font-weight: 800; color: var(--text); }
+    .sh-close { flex: 0 0 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.08); color: var(--text-2); }
+    .sh-cash { background: rgba(252, 211, 77, 0.12); border-color: rgba(252, 211, 77, 0.35); color: var(--gold); }
+    .sh-tabs [role="tab"] { border-color: var(--glass-line); background: rgba(255, 255, 255, 0.06); color: var(--text-2); }
+    .sh-tabs [role="tab"][aria-selected="true"] { background: var(--sh-accent); color: var(--ink-900); }
+    .sh-summary { color: var(--text-2); border-radius: var(--r-md); }
+    .sh-summary b, .sh-title, .sh-row .sl-n { color: var(--text); }
+    .sh-row { border-radius: var(--r-md); }
+    .sh-desc { color: var(--text-2); }
+    .sh-row .sl-n small, .sh-note, .sl-empty { color: var(--text-2); }
+    .sh-price, .sh-row .sl-p { color: var(--gold); }
+    .sh-btn { border-radius: var(--r-sm); font-family: var(--font-ui); font-weight: 800; }
+    .sh-btn.buy, .sh-primary.buy, #shop-confirm-yes { background: linear-gradient(180deg, var(--coral), var(--coral-deep)); border-color: transparent; color: #fff; }
+    .sh-btn.sell, .sh-primary, #shop-confirm-yes.sell { background: linear-gradient(180deg, #fcd34d, #f59e0b); border-color: transparent; color: #241500; }
+    .sh-btn.danger { background: rgba(248, 113, 113, 0.18); border-color: rgba(248, 113, 113, 0.55); color: #fecaca; }
+    .sh-btn.ghost { background: rgba(255, 255, 255, 0.08); border-color: var(--glass-line); color: var(--text); }
+    .sh-btn:disabled, .sh-primary:disabled { background: rgba(255, 255, 255, 0.05); border-color: transparent; color: var(--text-3); }
+    .sh-primary { border-radius: var(--r-md); font-family: var(--font-ui); font-weight: 800; }
+    #shop-confirm { background: rgba(4, 10, 20, 0.55); }
+    #shop-confirm .sc-box { background: var(--glass-strong); border: 1px solid var(--glass-line); border-radius: var(--r-lg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+    #shop-confirm-title { color: var(--text); }
+    #shop-confirm-sub { color: var(--text-2); }
+    .sc-btns button { border-radius: var(--r-md); border-color: var(--glass-line); background: rgba(255, 255, 255, 0.08); color: var(--text); font-family: var(--font-ui); }
+    #shop-sheet :focus-visible, #shop-confirm :focus-visible, #town-body :focus-visible { outline-color: var(--gold); }
+    .town-note { color: var(--text); }
+
+    /* start, loading and pause cards */
+    .start-kicker { font-size: 12px; color: var(--sea); font-weight: 800; letter-spacing: 2px; }
+    .start-logo { margin: 6px 0 4px; color: var(--gold); font-family: var(--font-num); font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+    .start-card, #loading-screen .pixel-box, .pause-card { border-radius: var(--r-lg); }
+    .pause-title { color: var(--text); text-shadow: none; font-family: var(--font-num); font-weight: 800; }
+    .pause-help { border-top-color: var(--glass-line); color: var(--text-2); }
+    #pause-count { color: var(--gold); text-shadow: 0 6px 30px rgba(0, 0, 0, 0.5); font-family: var(--font-num); }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
       :root { --glass: rgba(12, 22, 38, 0.9); --glass-strong: var(--ink-800); }
     }
@@ -1881,8 +1972,8 @@
   </svg>
   <div id="loading-screen" role="status" aria-live="polite">
     <div class="pixel-box">
-      <div style="font-size: 12px; color: #38bdf8; font-weight: bold; letter-spacing: 1px;">3D RETRO ADVENTURE</div>
-      <h1 style="margin: 6px 0 0; color: #ffd24c; font-size: 24px; text-shadow: 2px 2px 0 #000;">PIXEL FISHING</h1>
+      <div class="start-kicker">3D RETRO ADVENTURE</div>
+      <h1 class="start-logo">PIXEL FISHING</h1>
       <div id="loading-bar"><div id="loading-bar-fill"></div></div>
       <div id="loading-text">Loading... Please Wait!</div>
     </div>
@@ -1894,15 +1985,15 @@
   <!-- Start screen: title, save summary, angler choice, Continue / New game -->
   <div id="start-overlay" class="open">
     <div class="pixel-box start-card">
-      <div style="font-size: 12px; color: #38bdf8; font-weight: bold; letter-spacing: 1px;">3D RETRO ADVENTURE</div>
-      <h1 style="margin: 6px 0 4px; color: #ffd24c; font-size: 26px; text-shadow: 2px 2px 0 #000;">🎣 PIXEL FISHING</h1>
-      <div id="start-version" style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;"></div>
-      <p style="font-size: 13px; line-height: 1.5; color: #cbd5e1; margin: 0 0 12px;">
+      <div class="start-kicker">3D RETRO ADVENTURE</div>
+      <h1 class="start-logo">🎣 PIXEL FISHING</h1>
+      <div id="start-version" style="font-size: 12px; color: var(--text-3); margin-bottom: 12px;"></div>
+      <p style="font-size: 14px; line-height: 1.55; color: var(--text-2); margin: 0 0 14px;">
         Sail out, cast your line, fill your bucket and sell your catch at the pier. Upgrade your boat, rod and bucket to reach deeper waters and rarer fish.
       </p>
-      <div id="start-save-summary" style="display: none; font-size: 13px; color: #4ade80; font-weight: bold; margin-bottom: 12px;"></div>
+      <div id="start-save-summary" style="display: none; font-size: 13px; color: var(--ok); font-weight: bold; margin-bottom: 12px;"></div>
       <div id="start-daily" class="start-daily"></div>
-      <div style="font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 6px;">CHOOSE YOUR ANGLER</div>
+      <div style="font-size: 12px; color: var(--text-3); font-weight: 800; letter-spacing: 1px; margin-bottom: 8px;">CHOOSE YOUR ANGLER</div>
       <div style="display: flex; gap: 8px; margin-bottom: 8px;">
         <button class="pixel-btn green" id="btn-start-male" type="button" style="flex: 1;">🧔 Male</button>
         <button class="pixel-btn" id="btn-start-female" type="button" style="flex: 1;">👩 Female</button>
@@ -2105,6 +2196,16 @@
         <button class="pixel-btn red" data-close="modal-menu" type="button">Close</button>
       </div>
       <div class="modal-body">
+        <!-- Profile (v7.1.0): who you are, your rank and how far to the next, and your cash -->
+        <div class="menu-profile" id="menu-profile">
+          <div class="mp-avatar" aria-hidden="true">🎣</div>
+          <div class="mp-main">
+            <div class="mp-name" id="mp-name">Angler</div>
+            <div class="mp-rank"><span class="mp-badge" id="mp-rank">1. Deckhand</span><span class="mp-cash num" id="mp-cash">$0.00</span></div>
+            <div class="mp-xp" role="progressbar" aria-label="Progress to the next rank" aria-valuemin="0" aria-valuemax="100" id="mp-xp"><i id="mp-xp-bar"></i></div>
+            <div class="mp-next" id="mp-next"></div>
+          </div>
+        </div>
         <div class="menu-tiles">
           <button class="menu-tile" id="menu-map" data-closes-menu type="button">🗺️<span>Map</span></button>
           <button class="menu-tile" id="menu-bag" data-closes-menu type="button">🪣<span>Bag</span></button>
@@ -11407,6 +11508,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       // Toast queue: up to 3 stacked, repeats refresh the existing toast, duration grows with length.
       const toastStack = document.getElementById('toast-stack');
+      /* toast colour by what it says (v7.1.0): warnings amber, money gold, wins green, the rest teal */
+      function toastKind(t) {
+        if (/⚠️|⛈️|🚫|❌|⛔|Not enough|not enough|can't|cannot|Finish the fight|too heavy|snapped|broke|Out of|out of fuel|full!/i.test(t)) return 't-warn';
+        if (/💰|🪙|💵|\$\d|Sold|sold|Paid|paid|Earned|earned/.test(t)) return 't-gold';
+        if (/✅|🎉|🏅|🏆|⭐|🎊|Unlocked|unlocked|New record|NEW/.test(t)) return 't-ok';
+        return 't-info';
+      }
       function showToast(msg) {
         const text = String(msg);
         const dup = [...toastStack.children].find(t => t.textContent === text && !t.dataset.closing);
@@ -11417,7 +11525,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           return;
         }
         const el = document.createElement('div');
-        el.className = 'toast';
+        el.className = 'toast ' + toastKind(text);
         el.textContent = text;
         toastStack.appendChild(el);
         const live = () => [...toastStack.children].filter(t => !t.dataset.closing);
@@ -13924,6 +14032,23 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       })();
 
       /* Modal behaviour shared by every sheet: dialog roles, tap outside, swipe down, focus return */
+      /* Keyboard navigation (v7.1.0): Tab stays inside the open sheet, and closing a sheet returns focus to what opened it */
+      const kbNav = { on: false };
+      window.addEventListener('keydown', e => { if (e.key === 'Tab' || e.key === 'Enter') kbNav.on = true; }, true);
+      window.addEventListener('pointerdown', () => { kbNav.on = false; }, true);
+      const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      window.addEventListener('keydown', e => {
+        if (e.key !== 'Tab') return;
+        const open = [...document.querySelectorAll('.modal-backdrop.open')].pop();
+        if (!open) return;
+        const box = open.querySelector('.modal-window, #talk-box') || open;
+        const f = [...box.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+        if (!f.length) { e.preventDefault(); box.focus && box.focus(); return; }
+        const first = f[0], last = f[f.length - 1], cur = document.activeElement;
+        if (!box.contains(cur)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+        else if (e.shiftKey && cur === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && cur === last) { e.preventDefault(); first.focus(); }
+      }, true);
       (function enhanceModals() {
         let n = 0;
         document.querySelectorAll('.modal-backdrop').forEach(back => {
@@ -13933,6 +14058,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (!win) return;
           const title = back.querySelector('.modal-title');
           if (title && !title.id) title.id = 'mt-' + (++n);
+          // v7.1.0: one close pattern, a round × that names what it closes
+          if (closeBtn && closeBtn.closest('.modal-header') && /^\s*close\s*$/i.test(closeBtn.textContent)) {
+            closeBtn.classList.add('g-close');
+            closeBtn.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-close"/></svg>';
+            closeBtn.setAttribute('aria-label', 'Close ' + (title ? title.textContent.replace(/[^\p{L}\p{N} '&-]/gu, '').trim().toLowerCase() : 'menu'));
+          }
           win.setAttribute('role', 'dialog');
           win.setAttribute('aria-modal', 'true');
           if (title) win.setAttribute('aria-labelledby', title.id);
@@ -13968,7 +14099,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           new MutationObserver(() => {
             const open = back.classList.contains('open');
             if (open && !wasOpen) { opener = document.activeElement; setTimeout(() => win.focus({ preventScroll: true }), 30); }
-            if (!open && wasOpen) { win.style.transform = ''; if (opener && opener.focus && document.contains(opener)) { try { opener.blur(); } catch {} } opener = null; }
+            if (!open && wasOpen) {
+              win.style.transform = '';
+              // keyboard users get their place back; on touch the opener just loses focus (Space is the action key)
+              if (opener && opener.focus && document.contains(opener)) { try { if (kbNav.on && opener.offsetParent && !document.querySelector('.modal-backdrop.open')) opener.focus({ preventScroll: true }); else opener.blur(); } catch {} }
+              opener = null;
+            }
             wasOpen = open;
           }).observe(back, { attributes: true, attributeFilter: ['class'] });
         });
@@ -15836,6 +15972,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         syncTracker();
 
         document.getElementById('hud-rank').textContent = RANKS[rankIndexFor(state.xp || 0)].name;
+        { // the drawer's profile header (v7.1.0)
+          const ri = rankIndexFor(state.xp || 0), cur = RANKS[ri], nxt = RANKS[ri + 1], xp = state.xp || 0;
+          const pct = nxt ? Math.max(0, Math.min(100, (xp - cur.xp) / (nxt.xp - cur.xp) * 100)) : 100;
+          document.getElementById('mp-name').textContent = cleanName(state.playerName) || 'Angler';
+          document.getElementById('mp-rank').textContent = `${ri + 1}. ${cur.name}`;
+          document.getElementById('mp-cash').textContent = `$${state.cash.toFixed(2)}`;
+          document.getElementById('mp-xp-bar').style.width = `${pct}%`;
+          document.getElementById('mp-xp').setAttribute('aria-valuenow', String(Math.round(pct)));
+          document.getElementById('mp-next').textContent = nxt ? `${Math.max(0, Math.ceil(nxt.xp - xp)).toLocaleString()} XP to ${nxt.name}` : 'Top rank reached';
+        }
         const rod = getCurrentRod();
         document.getElementById('hud-rod').textContent = `${rod.name} (${rod.maxWeight}kg)${state.hasLiveBaitCam ? ' 📹' : ''}`;
 

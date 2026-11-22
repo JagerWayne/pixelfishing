@@ -539,6 +539,11 @@ Since v7.0.0 the whole interface uses one frosted-glass look built for phones he
 - **Compass** (under the bar, right): a small heading tape; tap it to look ahead again.
 - **Centre:** the bite and leap banners, the station picker and the "press to open" banner, and the **meter dock** with the cast power and the fight's drag and tension meters, all **just above your thumbs** where your eyes already are.
 - **Thumb zones:** the thumbstick is bottom left. The big round **action button** is bottom right, coloured by what it does: coral by default, amber to cast or shop, red on a bite, teal while reeling or diving, blue to sail, green for the map and bounties. Its small round helpers (dive, up, down, chum) stack beside it on the inside. **Handedness: Left** mirrors all of it.
+- **Menu drawer** (☰): a **profile card** at the top (your name, rank, cash and a bar to the next rank), the **Pause** button, a grid of twelve tiles (Map, Bag, Log, Settings, Career, Records, Look, Sound, View, Filter, Quests, Exit) and a short list of your gear, moon and lens.
+- **Sheets:** every menu is a glass bottom sheet on phones (a centred card on wider screens) with the same header and a round **×** close button. Swipe the header down or tap outside to close.
+- **Chats:** the speaker's portrait, name and role sit above their words; answers are full-width buttons.
+- **Toasts:** a coloured edge says what kind of news it is: amber for warnings, gold for money, green for wins, teal for the rest.
+- **Keyboard:** `Tab` stays inside the open sheet, and closing it puts the focus back on the button that opened it.
 - **Colours:** deep navy glass panels, teal for "you" and progress, coral for the main action, gold for money, green, amber and red for good, careful and danger.
 
 ## Settings
@@ -673,6 +678,15 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 7.1.0: Tide Glass sheets, drawer and chats
+
+- **Drawer:** a profile card (name, rank badge, cash, XP bar and how much XP to the next rank), the twelve buttons as a 3-column tile grid, and a tidier gear list.
+- **Sheets:** every menu sheet has the same glass header with a round **×** close button that names what it closes for screen readers.
+- **Keyboard:** `Tab` is kept inside the open sheet (focus trap), and focus returns to the button that opened it. On touch the button just loses focus, because `Space` stays the action key.
+- **Chats:** a glass speech panel with a round portrait, a gold name and full-width answer rows.
+- **Toasts:** coloured by kind (warning, money, win, info).
+- **Shop and town sheets, start, loading and pause screens:** the same tokens. Buy buttons are coral, sell buttons gold, and the shop's own colour lines the top of its sheet.
 
 ### 2026-11-22, Version 7.0.0: Tide Glass, a new interface for phones
 
