@@ -56,8 +56,8 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 
 | Action | Touch | Keyboard |
 |---|---|---|
-| Walk / run | Thumbstick: it is **camera-relative** (up walks away from the camera); a light push walks, a **full push runs**. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `W` `A` `S` `D` or arrow keys; hold `Shift` to run |
-| Turn the camera | **Drag on the screen** to swing the camera around the angler (in first person: look around). Tap the **compass** to face the sea again | none |
+| Walk / run | Thumbstick, **steered like a car**: left / right turns the angler on the spot (any angle), up walks forward, down backs up slowly. A light push walks (up to 2.4 m/s), a **full push runs** (3.8 m/s). The camera stays behind him and turns with him. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `A` `D` turn, `W` `S` forward / back; hold `Shift` to run |
+| Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** to look straight ahead again | none |
 | Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
 | Quests | **☰ Menu → 📜 Quests** | none |
 | Sail the boat | Thumbstick: **up** is the throttle, **left / right** the helm, **down** brakes then reverses. The helm needs the boat moving (no spinning on the spot) | `W` `S` throttle and reverse, `A` `D` or arrow keys steer |
@@ -587,6 +587,10 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.1.1: steer like a car
+- **New on-foot controls** (both views): left / right on the stick turns the angler on the spot to any angle, up / down walks forward / back, and the **camera stays behind him and turns with him**. Dragging on the screen looks around and swings back when you walk; tap-to-walk turns him toward each point first.
+- **Slower:** walking up to 2.4 m/s (was 3.3), running 3.8 m/s (was 5.6), backing up at 60%. At the pier tip he still turns to face the sea when you stop steering. Version bumped to **v6.1.1**.
 
 ### 2026-11-22, Version 6.1.0: your restaurant and cooking
 - **Your name:** a name box in character creation; your restaurant in Harbour Town carries it (*Wayne's Restaurant*, or *Fisherman's Restaurant* when empty), on its sign, its sheet, the banner and the Map.
