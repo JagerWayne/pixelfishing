@@ -600,6 +600,8 @@ The whole game is **one HTML file** (`index.html`) with no build step, plus a ha
 
 **Engine (v8.0.0):** three.js **r187** (`three@0.187.0`), loaded by the small loader at the top of `index.html` with a progress count and imported as an ES module from the downloaded bytes; the module is copied into a plain global `THREE` so the game code reads it as before. `legacyLook()` keeps the look the game was tuned for on r128: colour management off, linear output (`outputColorSpace = LinearSRGBColorSpace` on every renderer), textures marked `SRGBColorSpace`, and the light shader chunk patched back to the legacy light maths (intensities x π and the old distance fall-off), so no light needed retuning. WebGL 2 is required (every current phone and browser has it).
 
+**Physics (v8.2.0):** [Rapier](https://rapier.rs) 0.21.0 (`@dimforge/rapier3d-compat`). The loader downloads it next to three.js and starts it (compiles its WebAssembly) before the game. The `Physics` module mirrors every walk collider from the `Colliders` registry into a Rapier world (tall cuboids and cylinders, since walking ignores heights). The angler walks with Rapier's **character controller**, a capsule with the old 0.15 m body margin that slides along walls, benches and corners. The townsfolk are moving cylinders, so you still cannot walk through them. The town's path finding asks Rapier (one shape cast per segment instead of a scan of every collider; building the waypoint graph went from about 20 ms to 6 ms). The fixed pier rails, edges and island limits are unchanged clamps. If Rapier cannot load, or the secret menu's **Debug → Walking physics** is set to built-in, the old collision code runs exactly as before; the debug view of collision boxes also draws what Rapier sees (white lines).
+
 **Rendering budget (v8.0.0):** static props are merged per material look with `ModelKit.mergeStatic` and, where the materials only differ in colour, **baked into vertex colours** (`bakeColor`), so the pier, the town props, the harbour lamps and the buoys are a few dozen draw calls; `ModelKit.mergeSafe` does the same for a prop group but keeps anything that lights up or fades. The angler's and every townsperson's head, hair, face and hat are baked per material after `dress()`, townsfolk drop their finger joints past 9 m from the camera, tiny props (under ~12 cm) cast no sun shadow, the shadow map refreshes every other frame on devices running below ~45 fps, and the shaders are compiled in parallel (`compileAsync`) when the town is first built. Compared with v7.2.0 that is about **30–40% fewer draw calls** (pier 617 → 442, harbour 819 → 507, town square 514 → 359).
 
 The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`--ink-*`, `--sea`, `--coral`, `--gold`, `--glass`, `--blur`, `--r-*`, `--text-scale`); a theme block at the end of the stylesheet restyles the components, and line icons come from an inline SVG sprite (`<use href="#i-…">`).
@@ -607,6 +609,7 @@ The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`-
 ```
 index.html                 the game: HTML, CSS and all JavaScript
 vendor/three.r187.module.min.js   Three.js r187 as one ES module (bundled with esbuild; jsDelivr / unpkg are fallbacks)
+vendor/rapier3d-compat.0.21.0.min.js   Rapier 3D physics 0.21.0 as one ES module, WebAssembly inlined (Apache-2.0)
 manifest.webmanifest       installable app manifest
 sw.js                      service worker (offline support)
 icons/                     app icons (192, 512, maskable, Apple touch)
@@ -683,6 +686,13 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 8.2.0: Rapier physics and a loading screen with percentages
+
+- **Rapier physics:** walking now uses Rapier's character controller. The angler slides smoothly along walls, benches and corners instead of being pushed out after overlapping. The townsfolk are solid cylinders in the same world, and the town's path finding uses Rapier queries, building its waypoint graph about 3× faster. The pier rails and island edges work as before.
+- **Loading screen:** a big overall **percentage**, and a line with its own percentage for every step: game files, the 3D engine, the physics engine (download, then start-up) and building the harbour. Both engines download side by side.
+- **Safety net:** if the physics engine cannot load, the game starts with the built-in collisions (the loading screen says *built-in collisions*). The secret menu's Debug section can switch walking between Rapier and the built-in code, and its collision-box view shows Rapier's own shapes.
+- Offline play caches the physics engine too (`PRECACHE`).
 
 ### 2026-11-22, Version 8.0.0: three.js r187 and leaner scenes
 

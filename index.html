@@ -14,16 +14,19 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '8.0.0';
+    window.PF_VERSION = '8.2.0';
     window.PF_THREE_REV = '187';
     window.PF_THREE_BYTES = 748803; /* decoded size of vendor/three.r187.module.min.js */
+    window.PF_RAPIER_VER = '0.21.0';
+    window.PF_RAPIER_BYTES = 4336870; /* decoded size of vendor/rapier3d-compat.0.21.0.min.js (WebAssembly inlined) */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
-    /* Loader: downloads the 3D engine with a visible progress count, ALWAYS bypassing the browser cache and
-       overwriting the offline cache with the fresh copy, then starts the game. */
+    /* Loader: downloads the 3D engine (three.js) and the physics engine (Rapier) side by side with a visible progress
+       count for each, ALWAYS bypassing the browser cache and overwriting the offline cache with the fresh copy, starts
+       the physics engine, then starts the game. Without physics the game still runs on its built-in collisions. */
     (function () {
-      var V = window.PF_VERSION, URL3 = 'vendor/three.r187.module.min.js', CACHE = 'pixel-fishing-' + V;
-      var loaded = 0, pageBytes = 0, domReady = false, three = false, started = false;
+      var V = window.PF_VERSION, URL3 = 'vendor/three.r187.module.min.js', URLR = 'vendor/rapier3d-compat.0.21.0.min.js', CACHE = 'pixel-fishing-' + V;
+      var loaded = 0, loadedR = 0, pageBytes = 0, domReady = false, three = false, physics = false, started = false, stage = '';
       var STATIC = ['manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'];
 
       function fmt(n) { return n >= 1048576 ? (n / 1048576).toFixed(2) + ' MB' : Math.max(0, Math.round(n / 1024)) + ' KB'; }
@@ -31,12 +34,34 @@
         try { var n = performance.getEntriesByType('navigation')[0]; return (n && (n.decodedBodySize || n.encodedBodySize)) || 0; } catch (e) { return 0; }
       }
       function setText(t) { var el = document.getElementById('loading-text'); if (el) el.textContent = t; }
+      /* Every step has a percentage (v8.2.0): the game page, the 3D engine, the physics engine (download, then start-up)
+         and building the harbour. The big number is the whole load, weighted by how long each step takes. */
+      var world = 0;   // 0 = waiting, 1 = building, 2 = done
       function paint() {
-        var pg = pageBytes || window.PF_PAGE_BYTES_GUESS;
-        var total = pg + window.PF_THREE_BYTES;
-        var done = Math.min(total, (domReady ? pg : 0) + loaded);
-        setText('Loading... ' + fmt(done) + ' / ' + fmt(total) + '. Please Wait!');
-        var bar = document.getElementById('loading-bar-fill'); if (bar) bar.style.width = Math.round(done / total * 100) + '%';
+        var pg = pageBytes || window.PF_PAGE_BYTES_GUESS, T = window.PF_THREE_BYTES, R = window.PF_RAPIER_BYTES;
+        var pPage = domReady ? 1 : 0.5, pThree = three ? 1 : Math.min(1, loaded / T);
+        var pPhysDl = physics === true || physics === 'init' || physics === 'off' ? 1 : Math.min(1, loadedR / R);
+        var pPhysInit = physics === true || physics === 'off' ? 1 : physics === 'init' ? 0.5 : 0;
+        var pWorld = world === 2 ? 1 : world === 1 ? 0.5 : 0;
+        // weights: bytes for the downloads, plus fixed shares for starting the physics and building the world
+        var wPage = pg, wThree = T, wPhys = R, wInit = R * 0.25, wWorld = (pg + T + R) * 0.15;
+        var all = (pPage * wPage + pThree * wThree + pPhysDl * wPhys + pPhysInit * wInit + pWorld * wWorld) / (wPage + wThree + wPhys + wInit + wWorld);
+        var pct = Math.min(100, Math.floor(all * 100));
+        var big = document.getElementById('loading-pct'); if (big) big.textContent = pct + '%';
+        var bar = document.getElementById('loading-bar-fill'); if (bar) bar.style.width = pct + '%';
+        if (!stage) setText('Loading... ' + fmt(Math.min(pg + T + R, (domReady ? pg : 0) + loaded + loadedR)) + ' / ' + fmt(pg + T + R));
+        row('ls-page', pPage, domReady ? 'ok' : '', fmt(pg));
+        row('ls-three', pThree, three ? 'ok' : '', fmt(Math.min(loaded, T)) + ' / ' + fmt(T));
+        row('ls-phys', pPhysDl * 0.8 + pPhysInit * 0.2, physics === true ? 'ok' : physics === 'off' ? 'off' : '', physics === 'init' ? 'starting' : physics === 'off' ? 'built-in collisions' : fmt(Math.min(loadedR, R)) + ' / ' + fmt(R));
+        row('ls-world', pWorld, world === 2 ? 'ok' : '', world === 1 ? 'building' : world === 2 ? '' : 'waiting');
+      }
+      /* one line per step: name, percentage (and size or state) and a small bar */
+      function row(id, p, state, note) {
+        var el = document.getElementById(id); if (!el) return;
+        var pc = Math.min(100, Math.floor(p * 100));
+        el.querySelector('i').style.width = pc + '%';
+        el.querySelector('em').textContent = (state === 'off' ? '' : pc + '%') + (note ? (state === 'off' ? '' : ' · ') + note : '');
+        el.className = 'ls-row' + (state ? ' ' + state : '');
       }
       /* three.js r187 is an ES module (v8.0.0). The game reads a global THREE, so the module namespace is copied
          into a plain object (the namespace itself is frozen) and the legacy-look compat layer is applied. */
@@ -73,43 +98,71 @@
       }
       function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-      async function downloadThree() {
-        var parts = [];
-        var cdns = ['https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js', 'https://unpkg.com/three@0.187.0/build/three.module.js'];
+      /* download a vendor file with progress (fresh, then written to the offline cache); offline or blocked: the cached copy */
+      async function fetchParts(url, onBytes) {
+        var parts = [], got = 0;
         try {
           var ctrl = window.AbortController ? new AbortController() : null;
-          var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 1800) : null;
-          var res = await fetch(URL3, { cache: 'reload', signal: ctrl ? ctrl.signal : undefined });
+          var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 2500) : null;
+          var res = await fetch(url, { cache: 'reload', signal: ctrl ? ctrl.signal : undefined });
           if (timer) clearTimeout(timer);
           if (!res.ok) throw new Error('http ' + res.status);
           if (res.body && res.body.getReader) {
             var reader = res.body.getReader();
-            for (;;) { var r = await reader.read(); if (r.done) break; parts.push(r.value); loaded += r.value.length; paint(); }
+            for (;;) { var r = await reader.read(); if (r.done) break; parts.push(r.value); got += r.value.length; onBytes(got); }
           } else {
-            var buf = await res.arrayBuffer(); parts.push(new Uint8Array(buf)); loaded = buf.byteLength; paint();
+            var buf = await res.arrayBuffer(); parts.push(new Uint8Array(buf)); onBytes(buf.byteLength);
           }
           try { // overwrite the cached copy with the fresh download
             if (window.caches) {
               var c = await caches.open(CACHE);
-              await c.put(URL3, new Response(new Blob(parts, { type: 'application/javascript' }), { headers: { 'Content-Type': 'application/javascript' } }));
+              await c.put(url, new Response(new Blob(parts, { type: 'application/javascript' }), { headers: { 'Content-Type': 'application/javascript' } }));
             }
           } catch (e) {}
+          return parts;
         } catch (e) {
-          parts = null; loaded = 0; // offline or blocked: use the cached copy if there is one
+          onBytes(0);
           try {
-            var hit = window.caches && await caches.match(URL3);
-            if (hit) { var b2 = await hit.arrayBuffer(); parts = [new Uint8Array(b2)]; loaded = b2.byteLength; paint(); }
+            var hit = window.caches && await caches.match(url);
+            if (hit) { var b2 = await hit.arrayBuffer(); onBytes(b2.byteLength); return [new Uint8Array(b2)]; }
           } catch (e2) {}
+          return null;
         }
-        if (parts && parts.length) {
-          var url = URL.createObjectURL(new Blob(parts, { type: 'application/javascript' }));
-          if (await addScript(url)) return true;
-        }
+      }
+      var blobUrl = function (parts) { return URL.createObjectURL(new Blob(parts, { type: 'application/javascript' })); };
+
+      async function downloadThree() {
+        var cdns = ['https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js', 'https://unpkg.com/three@0.187.0/build/three.module.js'];
+        var parts = await fetchParts(URL3, function (n) { loaded = n; paint(); });
+        if (parts && parts.length && await addScript(blobUrl(parts))) return true;
         for (var i = 0; i < cdns.length; i++) {
           loaded = Math.round(window.PF_THREE_BYTES * ((i + 0.5) / cdns.length));
           paint();
           if (await addScript(cdns[i])) { loaded = window.PF_THREE_BYTES; paint(); return true; }
         }
+        return false;
+      }
+
+      /* v8.2.0: Rapier, the physics engine (walking, the townsfolk, path finding). It has to start (compile its
+         WebAssembly) before the game, so the loading screen waits for it too. */
+      async function downloadPhysics() {
+        if (!importer) return false;
+        var cdns = ['https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/dist/rapier.mjs', 'https://unpkg.com/@dimforge/rapier3d-compat@0.21.0/dist/rapier.mjs'];
+        var parts = await fetchParts(URLR, function (n) { loadedR = n; paint(); });
+        var srcs = (parts && parts.length ? [blobUrl(parts)] : []).concat(cdns);
+        for (var i = 0; i < srcs.length; i++) {
+          try {
+            if (i > 0 || !parts) { loadedR = Math.round(window.PF_RAPIER_BYTES * 0.5); paint(); }
+            var ns = await importer(srcs[i]);
+            var R = ns && (ns.init ? ns : ns.default);
+            if (!R || !R.init) continue;
+            physics = 'init'; paint();
+            await R.init();
+            window.RAPIER = R; loadedR = window.PF_RAPIER_BYTES; physics = true; paint();
+            return true;
+          } catch (e) { console.warn('Rapier could not start from', i ? srcs[i] : 'the bundled copy', e); }
+        }
+        physics = 'off'; paint();
         return false;
       }
 
@@ -132,13 +185,15 @@
         }
       }
 
+      var physicsDone = false;
       function maybeStart() {
-        if (started || !domReady || !three) return;
+        if (started || !domReady || !three || !physicsDone) return;
         started = true;
-        setText('Starting the game... Please Wait!');
+        stage = 'start'; setText('Building the harbour... Please Wait!'); world = 1; paint();
         requestAnimationFrame(function () { setTimeout(function () {
           try {
             window.__startPixelFishing();
+            world = 2; paint(); setText('Ready!');
           } catch (err) {
             var box = document.getElementById('loading-screen');
             if (box) box.innerHTML = '<div class="pixel-box" style="max-width:420px;padding:20px;text-align:center;"><h2 style="color:#f87171;margin-top:0;">Could not start the game</h2><p style="font-size:13px;color:#cbd5e1;">' + String(err && err.message || err) + '</p><p style="font-size:13px;color:#94a3b8;">Please reload the page.</p></div>';
@@ -153,8 +208,13 @@
       var onReady = function () { domReady = true; pageBytes = pageSize(); paint(); maybeStart(); };
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onReady); else onReady();
       downloadThree().then(function (ok) {
-        three = ok;
-        if (!ok) { setText(importer ? 'Could not download the game engine. Check your connection and reload.' : 'This browser is too old for Pixel Fishing. Please update it (or try Chrome, Safari or Firefox).'); return; }
+        three = ok; paint();
+        if (!ok) { stage = 'error'; setText(importer ? 'Could not download the game engine. Check your connection and reload.' : 'This browser is too old for Pixel Fishing. Please update it (or try Chrome, Safari or Firefox).'); return; }
+        if (!physicsDone) { stage = 'phys'; setText(physics === 'init' ? 'Starting the physics engine... Please Wait!' : 'Loading the physics engine... Please Wait!'); }
+        maybeStart();
+      });
+      downloadPhysics().then(function () {
+        physicsDone = true; paint();
         maybeStart();
       });
     })();
@@ -1668,6 +1728,16 @@
     #shop-sheet :focus-visible, #shop-confirm :focus-visible, #town-body :focus-visible { outline-color: var(--gold); }
     .town-note { color: var(--text); }
 
+    /* loading screen: one progress line per engine (v8.2.0) */
+    .ls-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; text-align: left; }
+    .ls-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 12.5px; color: var(--text-2); }
+    .ls-row em { font-style: normal; font-family: var(--font-num); color: var(--text-3); font-size: 12px; }
+    .ls-row b { grid-column: 1 / -1; height: 4px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+    .ls-row i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--info); transition: width 0.15s linear; }
+    .ls-row.ok em { color: var(--ok); } .ls-row.ok i { background: var(--ok); }
+    .ls-row.off em { color: var(--warn); } .ls-row.off i { background: var(--warn); }
+    #loading-pct { margin-top: 14px; font-family: var(--font-num); font-size: 34px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+    #loading-pct + #loading-bar { margin-top: 8px; }
     /* start, loading and pause cards */
     .start-kicker { font-size: 12px; color: var(--sea); font-weight: 800; letter-spacing: 2px; }
     .start-logo { margin: 6px 0 4px; color: var(--gold); font-family: var(--font-num); font-size: 28px; font-weight: 800; letter-spacing: 1px; }
@@ -1697,8 +1767,15 @@
     <div class="pixel-box">
       <div class="start-kicker">3D RETRO ADVENTURE</div>
       <h1 class="start-logo">PIXEL FISHING</h1>
+      <div id="loading-pct" aria-hidden="true">0%</div>
       <div id="loading-bar"><div id="loading-bar-fill"></div></div>
       <div id="loading-text">Loading... Please Wait!</div>
+      <div class="ls-rows">
+        <div class="ls-row" id="ls-page"><span>📄 Game files</span><em>0%</em><b><i></i></b></div>
+        <div class="ls-row" id="ls-three"><span>🧊 3D engine</span><em>0%</em><b><i></i></b></div>
+        <div class="ls-row" id="ls-phys"><span>⚙️ Physics engine</span><em>0%</em><b><i></i></b></div>
+        <div class="ls-row" id="ls-world"><span>🏝️ Building the harbour</span><em>0%</em><b><i></i></b></div>
+      </div>
     </div>
   </div>
   <!-- Main Responsive WebGL Viewport -->
@@ -4865,10 +4942,82 @@
 
       const Colliders = {
         list: [],
-        box(name, x, z, hx, hz, layers, y0 = -400, y1 = 400) { const c = { kind: 'box', name, x, z, hx, hz, y0, y1, layers }; this.list.push(c); return c; },
-        circle(name, x, z, r, layers, y0 = -400, y1 = 400) { const c = { kind: 'circle', name, x, z, r, y0, y1, layers }; this.list.push(c); return c; },
+        box(name, x, z, hx, hz, layers, y0 = -400, y1 = 400) { const c = { kind: 'box', name, x, z, hx, hz, y0, y1, layers }; this.list.push(c); Physics.add(c); return c; },
+        circle(name, x, z, r, layers, y0 = -400, y1 = 400) { const c = { kind: 'circle', name, x, z, r, y0, y1, layers }; this.list.push(c); Physics.add(c); return c; },
         of(layer) { return this.list.filter(c => c.layers & layer); }
       };
+
+      /* =========================================================================
+         PHYSICS (v8.2.0): Rapier, mirrored from the Colliders registry
+         The registry stays the one API: every WALK collider registered there also becomes a Rapier collider (a tall
+         cuboid or cylinder, because walking ignores heights). The angler moves with Rapier's character controller (a
+         capsule of radius BODY = the old collision margin), the townsfolk are moving cylinders, and the town's path
+         finding asks Rapier instead of scanning every collider. Without Rapier (it failed to load) or with
+         PHYS.walk = 'legacy' (secret menu, Debug) the built-in collision code runs exactly as before.
+         ========================================================================= */
+      const PHYS = { walk: 'rapier' };
+      const Physics = (() => {
+        const R = window.RAPIER;
+        const off = { on: false, add() {}, step() {}, moveCharacter: null, blocked: null, segClear: null, npc() {}, debugLines: () => null };
+        if (!R || !R.World) return off;
+        try {
+          const world = new R.World({ x: 0, y: 0, z: 0 });
+          world.timestep = 1 / 60;
+          const G = (member, filter) => (((member & 0xffff) << 16) | (filter & 0xffff)) >>> 0;
+          const GR = { WALK: 1, NPC: 2, PLAYER: 4 };
+          const HH = 10;                                        // half height of every walk collider (heights are ignored)
+          const byHandle = new Map();                            // Rapier collider handle -> registry entry
+          const BODY_R = 0.15;
+          const player = world.createCollider(R.ColliderDesc.capsule(0.5, BODY_R).setTranslation(0, 0, 0).setCollisionGroups(G(GR.PLAYER, GR.WALK | GR.NPC)));
+          const cc = world.createCharacterController(0.01);
+          cc.setSlideEnabled(true); cc.setUp({ x: 0, y: 1, z: 0 }); cc.setApplyImpulsesToDynamicBodies(false);
+          const qWalk = G(GR.PLAYER, GR.WALK), qMove = G(GR.PLAYER, GR.WALK | GR.NPC);
+          const rot = { x: 0, y: 0, z: 0, w: 1 }, v3 = { x: 0, y: 0, z: 0 }, d3 = { x: 0, y: 0, z: 0 };
+          const shapes = new Map(); const probe = r => { let sh = shapes.get(r); if (!sh) { sh = new R.Cylinder(0.5, Math.max(0.01, r - 0.002)); shapes.set(r, sh); } return sh; };   // 2 mm less: touching is not blocking (as in the built-in test)
+          const npcs = new Map();
+          let dirty = true;
+          return {
+            on: true, world, R, byHandle,
+            add(c) {
+              if (!(c.layers & COL.WALK)) return;
+              const desc = c.kind === 'box' ? R.ColliderDesc.cuboid(c.hx, HH, c.hz) : R.ColliderDesc.cylinder(HH, c.r);
+              const col = world.createCollider(desc.setTranslation(c.x, 0, c.z).setCollisionGroups(G(GR.WALK, 0xffff)));
+              byHandle.set(col.handle, c); c.rb = col; dirty = true;
+            },
+            /* one townsperson: a cylinder that follows them and switches off while they are hidden indoors */
+            npc(n, radius) {
+              let col = npcs.get(n);
+              if (!col) { col = world.createCollider(R.ColliderDesc.cylinder(HH, radius).setTranslation(n.x, 0, n.z).setCollisionGroups(G(GR.NPC, GR.PLAYER))); npcs.set(n, col); }
+              v3.x = n.x; v3.y = 0; v3.z = n.z; col.setTranslation(v3); col.setEnabled(!n.hidden); dirty = true;
+            },
+            /* the scene queries see moved and new colliders after a step (nothing here is dynamic, so it is cheap) */
+            step() { if (dirty) { world.step(); dirty = false; } },
+            /* the angler wants to move (dx, dz) from (x, z): returns how far it can go, sliding along anything solid */
+            moveCharacter(x, z, dx, dz, out) {
+              this.step();
+              v3.x = x; v3.y = 0; v3.z = z; player.setTranslation(v3);
+              d3.x = dx; d3.y = 0; d3.z = dz;
+              cc.computeColliderMovement(player, d3, R.QueryFilterFlags.EXCLUDE_SENSORS, qMove);
+              const m = cc.computedMovement();
+              out.x = m.x; out.z = m.z; return out;
+            },
+            /* is a disc of radius r at (x, z) touching a walk collider? (pred: only registry entries it accepts) */
+            blocked(x, z, r, pred) {
+              this.step();
+              v3.x = x; v3.y = 0; v3.z = z;
+              return !!world.intersectionWithShape(v3, rot, probe(r), R.QueryFilterFlags.EXCLUDE_SENSORS, qWalk, undefined, undefined, pred ? (col => { const c = byHandle.get(col.handle); return !!c && pred(c); }) : undefined);
+            },
+            /* can a disc of radius r slide from a to b without touching a walk collider? (starting inside one and leaving is allowed) */
+            segClear(a, b, r, pred) {
+              this.step();
+              v3.x = a.x; v3.y = 0; v3.z = a.z; d3.x = b.x - a.x; d3.y = 0; d3.z = b.z - a.z;
+              return !world.castShape(v3, rot, d3, probe(r), 0, 1, false, R.QueryFilterFlags.EXCLUDE_SENSORS, qWalk, undefined, undefined, pred ? (col => { const c = byHandle.get(col.handle); return !!c && pred(c); }) : undefined);
+            },
+            /* line segments of every collider for the secret menu's debug view */
+            debugLines() { this.step(); return world.debugRender(); }
+          };
+        } catch (e) { console.warn('Physics: Rapier could not be set up, using the built-in collisions', e); return off; }
+      })();
 
       class WorldBuilder {
         /* ------------------------------------------------------------------
@@ -9200,6 +9349,13 @@ const mainCanvas = document.getElementById('game-canvas');
         };
         Colliders.list.forEach(c => [COL.WALK, COL.BOAT, COL.DIVE].forEach(l => { if (c.layers & l) add(c, l); }));
         if (typeof diveSolids !== 'undefined') diveSolids.forEach(sd => add({ kind: 'circle', x: sd.x, z: sd.z, r: sd.r, y0: sd.y0, y1: sd.y1 }, COL.DIVE));
+        if (Physics.on) {   // v8.2.0: what Rapier itself sees, as white lines at walking height
+          const buf = Physics.debugLines(), pos = new Float32Array(buf.vertices);
+          for (let i = 1; i < pos.length; i += 3) pos[i] = THREE.MathUtils.clamp(pos[i], -0.2, 0.2) + 2.2;   // flatten the tall walls to a band
+          const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+          const lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, depthTest: false, transparent: true, opacity: 0.9 }));
+          lines.renderOrder = 21; colliderView.add(lines);
+        }
         scene.add(colliderView);
         return true;
       }
@@ -9499,6 +9655,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const MOVE = { walk: 2.4, run: 3.8, auto: 2.8, back: 0.6, turn: 2.4, uturn: 8, runAt: 0.9, accel: 10, brake: 14 };
       const revTurn = { on: false, yaw: 0 };   // v6.6.1: stick down turns round (see the steering block)   // v6.1.1: steer like a car, slower
       const walkVel = { x: 0, z: 0 };
+      const _phMove = { x: 0, z: 0 };   // scratch for Physics.moveCharacter
       const camOrbit = { yaw: 0, look: 0, steerT: 0 };   // camera angle (follows the angler's facing) + a look-around offset from dragging
       let autoWalk = null;                    // { pts: [{x, z}...], stuck, lastD } while walking to a tapped spot
       let anglerPrevMode = 'PIER_IDLE', anglerPrevOnBoat = false, anglerCrank = 0;
@@ -10732,7 +10889,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           ['Spawn treasure chest', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('treasure'); }],
           ['Spawn boss shadow', () => { if (!onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('boss'); }]] },
         { title: '🧱 Debug', items: [
-          ['Show / hide collision boxes', () => { const on = toggleColliderView(); showToast(on ? '🧱 Collision boxes shown (green walk, orange boat, cyan dive)' : 'Collision boxes hidden'); }]] },
+          ['Show / hide collision boxes', () => { const on = toggleColliderView(); showToast(on ? '🧱 Collision boxes shown (green walk, orange boat, cyan dive, white = Rapier)' : 'Collision boxes hidden'); }],
+          ['Walking physics: Rapier / built-in', () => { if (!Physics.on) { showToast('⚙️ Rapier did not load: the built-in collisions are in use.'); return; } PHYS.walk = PHYS.walk === 'rapier' ? 'legacy' : 'rapier'; townNav.nodes = null; showToast(PHYS.walk === 'rapier' ? '⚙️ Walking uses Rapier physics' : '⚙️ Walking uses the built-in collisions'); }]] },
         { title: '⚙️ Cheats', items: [
           ['Turn all toggles off', () => { Object.keys(cheats).forEach(k => { cheats[k] = false; }); renderCheatMenu(); showToast('Cheat toggles off'); }]] }
       ];
@@ -11693,6 +11851,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (!speed && near < 3.5 && !onBoat) n.yaw = Math.atan2(-(playerX - n.x), -(playerZ - n.z));
           n.g.visible = !n.hidden && !(n.farAway = Math.hypot((onBoat ? boatPos.x : playerX) - n.x, (onBoat ? boatPos.z : playerZ) - n.z) > 45);   // v6.3.1: far townsfolk are not drawn
           n.g.position.set(n.x, npcGround(n.z), n.z);
+          Physics.npc(n, NPC_R);   // v8.2.0: the townsperson's cylinder follows them (off while hidden)
           const dy = Math.atan2(Math.sin(n.yaw - n.g.rotation.y), Math.cos(n.yaw - n.g.rotation.y));
           n.g.rotation.y += dy * (dt > 0 ? 1 - Math.exp(-8 * dt) : 0);
           const far = Math.hypot((onBoat ? boatPos.x : playerX) - n.x, (onBoat ? boatPos.z : playerZ) - n.z) > 40;
@@ -12283,7 +12442,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       /* ---- walking around town: a few open-lane waypoints, joined where nothing solid is in the way ---- */
       const townNav = { nodes: null, adj: null, cols: null };
+      const townCol = c => c.z > ISLAND.zGate - 1;   // the colliders that count for walking in town
       function townBlocked(x, z, m = 0.3) {
+        if (x < -ISLAND.xMax + 0.2 || x > ISLAND.xMax - 0.2 || z > ISLAND.zMax - 0.1 || z < ISLAND.zIn + 0.1) return true;
+        if (Physics.on && PHYS.walk === 'rapier') return Physics.blocked(x, z, m, townCol);   // v8.2.0: one Rapier query instead of a scan
         for (const c of townNav.cols) {
           if (c.kind === 'box') { if (Math.abs(x - c.x) < c.hx + m && Math.abs(z - c.z) < c.hz + m) return true; }
           else if (Math.hypot(x - c.x, z - c.z) < c.r + m) return true;
@@ -12292,6 +12454,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function townSegClear(a, b) {
         const d = Math.hypot(b.x - a.x, b.z - a.z), n = Math.max(1, Math.ceil(d / 0.3));
+        if (Physics.on && PHYS.walk === 'rapier') {   // v8.2.0: one shape cast along the segment, plus the town edges
+          for (let i = 1; i < n; i++) { const t = i / n, x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t; if (x < -ISLAND.xMax + 0.2 || x > ISLAND.xMax - 0.2 || z > ISLAND.zMax - 0.1 || z < ISLAND.zIn + 0.1) return false; }
+          return Physics.segClear(a, b, 0.26, townCol);
+        }
         for (let i = 1; i < n; i++) { const t = i / n; if (townBlocked(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, 0.26)) return false; }
         return true;
       }
@@ -12438,7 +12604,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const a = activeJob(); if (!a || dMin <= 0) return;
         if (a.kind === 'mail' && a.stage === 1) { a.left -= dMin; if (a.left <= 0) finishJob(false, '📦 Too late: the parcel had to arrive sooner.'); }
       }
-      function townBlockedAny(x, z) { if (!townNav.cols) townNavInit(); return walkColliders.some(c => (c.kind === 'box' ? Math.abs(x - c.x) < c.hx + 0.35 && Math.abs(z - c.z) < c.hz + 0.35 : Math.hypot(x - c.x, z - c.z) < c.r + 0.35)); }
+      function townBlockedAny(x, z) { if (!townNav.cols) townNavInit(); if (Physics.on && PHYS.walk === 'rapier') return Physics.blocked(x, z, 0.35); return walkColliders.some(c => (c.kind === 'box' ? Math.abs(x - c.x) < c.hx + 0.35 && Math.abs(z - c.z) < c.hz + 0.35 : Math.hypot(x - c.x, z - c.z) < c.r + 0.35)); }
       /* the pickups of a cleanup or foraging job */
       const jobProps = [];
       function clearJobProps() { jobProps.forEach(m => scene.remove(m)); jobProps.length = 0; }
@@ -17333,7 +17499,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             // Solid objects on the pier: every WALK collider from the registry. Boxes resolve along the side the player came
             // from (so you slide along them instead of being snapped across); circles push straight out.
             const BODY = 0.15;   // extra room for the angler's body on top of each collider
-            for (const c of walkColliders) {
+            const insideAny = (px, pz) => walkColliders.some(c => c.kind === 'box'
+              ? Math.abs(px - c.x) < c.hx + BODY - 1e-3 && Math.abs(pz - c.z) < c.hz + BODY - 1e-3
+              : Math.hypot(px - c.x, pz - c.z) < c.r + BODY - 1e-3);
+            // v8.2.0: Rapier's character controller slides the angler along colliders and townsfolk. The built-in
+            // push-out below still runs without Rapier, with PHYS.walk = 'legacy', or to free an angler who starts inside a collider.
+            let rapierMoved = false;
+            if (Physics.on && PHYS.walk === 'rapier' && !insideAny(prevX, prevZ)) {
+              Physics.moveCharacter(prevX, prevZ, nextX - prevX, nextZ - prevZ, _phMove);
+              nextX = prevX + _phMove.x; nextZ = prevZ + _phMove.z; rapierMoved = true;
+            }
+            if (!rapierMoved) for (const c of walkColliders) {
               if (c.kind === 'box') {
                 const hx = c.hx + BODY, hz = c.hz + BODY, dx = nextX - c.x, dz = nextZ - c.z;
                 if (Math.abs(dx) >= hx || Math.abs(dz) >= hz) continue;
@@ -17355,7 +17531,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
 
             // v6.8.0: the townsfolk are solid too (a circle each); they stop and wait rather than walk through you
-            if (npcState.built) for (const n of npcState.list) {
+            if (npcState.built && !rapierMoved) for (const n of npcState.list) {
               if (n.hidden) continue;
               const dx = nextX - n.x, dz = nextZ - n.z, d = Math.hypot(dx, dz), m = NPC_R + BODY;
               if (d < m && d > 1e-4) { nextX = n.x + dx / d * m; nextZ = n.z + dz / d * m; }
@@ -17363,9 +17539,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
             // Two colliders close together can push the angler back and forth into each other; if the result still
             // overlaps any of them, stay where you were (the previous spot was always clear).
-            const insideAny = (px, pz) => walkColliders.some(c => c.kind === 'box'
-              ? Math.abs(px - c.x) < c.hx + BODY - 1e-3 && Math.abs(pz - c.z) < c.hz + BODY - 1e-3
-              : Math.hypot(px - c.x, pz - c.z) < c.r + BODY - 1e-3);
             if (insideAny(nextX, nextZ) && !insideAny(prevX, prevZ)) {
               if (!insideAny(nextX, prevZ)) nextZ = prevZ;
               else if (!insideAny(prevX, nextZ)) nextX = prevX;
