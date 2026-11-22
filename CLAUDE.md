@@ -48,6 +48,8 @@ description of the game, its systems and its structure.
 
 - Rigs (v6.5.0) are `RIGS` / `state.rig` (`rigState()`): bite time `rigBiteMult()`, catch weights `rigWeight(item)`, the jig's tension help `fightJig`, chum `useChum()` (moves the nearest frenzy behind the boat, `f.chum` makes it visible). Map buoys are `state.buoys` (`dropBuoy`, `syncBuoys`, `buoyPlaces` in `MAP_PLACES`). Dive vents and overhangs are made per prop cell in `makeCell` (`buildVent`, `buildOverhang`, `spawnLurkers`, `updateVents`).
 
+- Endgame (v6.6.0): `PROJECTS` / `town.proj` (`projOn(id)`), the day's weather outlook `dayOutlook(day)` weights `rollWeather()`; the smokehouse hooks the catch overflow (`smokeFits`); the Trophy Wall is `town.wall` drawn by `syncTrophyWall` on the cabin; share codes are `encodeShare` / `decodeShare` (`PF1-` + Base64 JSON, always validated).
+
 ## Checking a change
 
 Use headless Chromium (Playwright) against a local copy: boot with no errors (also with a corrupted save), walk the

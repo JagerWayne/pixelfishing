@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.5.0';
+    window.PF_VERSION = '6.6.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1473,6 +1473,7 @@
     #map-buoy-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
     #map-buoy-bar .pixel-btn { min-height: 38px; padding: 4px 10px; font-size: 12px; }
     #map-buoy-bar .mb-l { font-size: 12px; color: #cbd5e1; font-weight: bold; }
+    .town-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 6px; border: 2px solid #c9a867; background: #fffbeb; color: #3b2410; resize: vertical; }
     #town-body { display: flex; flex-direction: column; gap: 6px; }
     #town-body .sl-row { flex-wrap: wrap; cursor: default; }
     .town-note { font-size: 12px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
@@ -4622,6 +4623,8 @@
       /* map buoys (v6.5.0): up to 3, dropped on the Map, floating in the world */
       const BUOY_KINDS = { wreck: { name: 'Wreck', icon: '⚓', hex: 0xf97316 }, boss: { name: 'Boss', icon: '🐉', hex: 0xef4444 }, drop: { name: 'Drop-off', icon: '⤵️', hex: 0x3b82f6 } };
       const BUOY_MAX = 3;
+      const SMOKE_MAX = 25;   // the Pier Smokehouse keeps up to 25 kg of smoked fillets (v6.6.0)
+      const cleanNote = v => String(v == null ? '' : v).replace(/[\u0000-\u001f<>&"\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 140);
       const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
       const rarityAtLeast = (r, min) => RARITY_ORDER.indexOf(r) >= RARITY_ORDER.indexOf(min);
       /* step types: catch {n, where pier|boat, zoneMin, minW, rarityMin, night, distinct}, deliver {rarityMin, minW},
@@ -9430,7 +9433,13 @@ function replaceSceneMesh(parent, oldObj, newObj) {
 
       let weatherTimer = 95;
       let pendingWeather = null;
-      function rollWeather() { const roll = Math.random(); return roll < 0.45 ? 'CLEAR' : roll < 0.72 ? 'OVERCAST' : roll < 0.90 ? 'RAIN' : 'STORM'; }
+      /* each day has an outlook (from the day number) that weights the weather; the Weather Station forecasts it (v6.6.0) */
+      const OUTLOOKS = [{ id: 'fair', icon: '☀️', name: 'Fair', w: [0.6, 0.28, 0.1, 0.02] }, { id: 'changeable', icon: '⛅', name: 'Changeable', w: [0.45, 0.27, 0.18, 0.10] }, { id: 'stormy', icon: '⛈️', name: 'Stormy', w: [0.2, 0.25, 0.25, 0.3] }];
+      function dayOutlook(d) { let a = ((d * 17 + 9) * 2654435761) >>> 0; a = Math.imul(a ^ (a >>> 15), 2246822507) >>> 0; const r = (a % 1000) / 1000; return r < 0.4 ? OUTLOOKS[0] : r < 0.82 ? OUTLOOKS[1] : OUTLOOKS[2]; }
+      function rollWeather() {
+        const w = dayOutlook(state.dayCount || 0).w, roll = Math.random();
+        return roll < w[0] ? 'CLEAR' : roll < w[0] + w[1] ? 'OVERCAST' : roll < w[0] + w[1] + w[2] ? 'RAIN' : 'STORM';
+      }
       let lightningFlash = 0;
       let nextLightningTimer = 7;
 
@@ -10177,6 +10186,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           const bonus = 500 * c.zoneObj.id;
           state.cash = +(state.cash + bonus).toFixed(2);
           bumpStat('bossCatches'); bumpStat('earned', bonus); addXp(150);
+          { const T = town(); T.bosses.push({ id: c.item.id, w: +c.weight.toFixed(2), zone: c.zoneObj.id, day: state.dayCount || 0, boss: true }); if (T.bosses.length > 10) T.bosses.shift(); }
           seaEvents.clearBoss();
           setTimeout(() => showToast(`👑 BOSS DEFEATED! +$${bonus.toLocaleString()} bonus`), 900);
         }
@@ -11037,8 +11047,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       }
       SPOTS.push({ id: 'bed', icon: '🛏️', label: 'SLEEP', cls: 'shop', color: ['#818cf8', '#c7d2fe'],
         near: () => playerX > BED.x - 1.7 && playerX < BED.x - 0.35 && playerZ > 1.95 && playerZ < 3.5,
-        prox: () => bedTime() ? `🛏️ BUNK • SLEEP UNTIL 06:00${selectedBook() ? ' AND READ ' + BED.pages + ' PAGES' : ''}` : '🛏️ BUNK • TURN IN AFTER 18:00',
-        press: () => sleepTillMorning() });
+        prox: () => (bedTime() ? `🛏️ BUNK • SLEEP UNTIL 06:00${selectedBook() ? ' AND READ ' + BED.pages + ' PAGES' : ''}` : '🛏️ BUNK • TROPHY WALL • SLEEP AFTER 18:00'),
+        press: () => openBunk() });
       function isNearPierBucket() { const c = world.bucketCollider; return nearSpot(c.x, c.z, Math.max(1.25, Math.max(c.hx, c.hz) + 0.75)); }
       function isNearPierToolbox() { return nearSpot(PIER_TOOLBOX_X, -7.6, 1.25); }
       function isNearMooredBoat() { return nearSpot(MOOR.boardX, -5.6, 1.4) && !isNearBoatTerminal(); }
@@ -12101,7 +12111,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          crab traps in the tide pool, boat paint at Barnaby's Workshop, Talia's greenhouse and the Post Office counter.
          Everything is saved in state.town (sanitizeTown); places are SPOTS entries; walking routes use townPath.
          ========================================================================= */
-      function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1, met: {}, comm: null, commDay: -1, crave: { day: -1, done: [] } }; }
+      function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1, met: {}, comm: null, commDay: -1, crave: { day: -1, done: [] },
+        proj: { weather: false, smoke: false, slip: false }, smoke: { kg: 0, value: 0 }, wall: null, bosses: [], recs: {}, notes: [], chal: null, chalDone: 0 }; }
       function sanitizeTown(src) {
         const T = defaultTown(); if (!src || typeof src !== 'object') return T;
         const num = (v, lo, hi, d = lo) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
@@ -12119,6 +12130,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           T.crave = { day: int(src.crave.day, -1, 1e6), done: (Array.isArray(src.crave.done) ? src.crave.done : []).filter(i => i === 0 || i === 1) };
           if (Array.isArray(src.crave.ids) && src.crave.ids.length === 2 && src.crave.ids.every(x => Array.isArray(x) && NPCS[x[0]] && RECIPE_BY_ID[x[1]])) T.crave.ids = src.crave.ids.map(x => [x[0], x[1]]);
         }
+        if (src.proj && typeof src.proj === 'object') T.proj = { weather: !!src.proj.weather, smoke: !!src.proj.smoke, slip: !!src.proj.slip };
+        if (src.smoke && typeof src.smoke === 'object') T.smoke = { kg: num(src.smoke.kg, 0, SMOKE_MAX), value: num(src.smoke.value, 0, 1e6) };
+        const trophy = t => (t && typeof t === 'object' && CATALOG_INDEX[t.id] && CATALOG_INDEX[t.id].category === 'Fish' ? { id: t.id, w: num(t.w, 0.1, 5000), zone: int(t.zone, 1, ZONES.length), day: int(t.day, -1, 1e6), boss: !!t.boss } : null);
+        T.wall = trophy(src.wall);
+        T.bosses = (Array.isArray(src.bosses) ? src.bosses : []).map(trophy).filter(Boolean).slice(-10);
+        if (src.recs && typeof src.recs === 'object') Object.keys(src.recs).forEach(id => { const t = trophy(Object.assign({}, src.recs[id], { id })); if (t) T.recs[id] = { w: t.w, zone: t.zone, day: t.day }; });
+        T.notes = (Array.isArray(src.notes) ? src.notes : []).filter(n => n && typeof n === 'object').slice(-10).map(n => ({ m: cleanNote(n.m), from: cleanName(n.from) }));
+        if (src.chal && typeof src.chal === 'object' && CATALOG_INDEX[src.chal.id]) T.chal = { id: src.chal.id, w: num(src.chal.w, 0.1, 5000), from: cleanName(src.chal.from) };
+        T.chalDone = int(src.chalDone, 0, 1e5);
         if (src.dice && typeof src.dice === 'object') T.dice = { played: int(src.dice.played, 0, 1e6), won: int(src.dice.won, 0, 1e6) };
         T.traps = [0, 1, 2].map(i => { const t = Array.isArray(src.traps) ? src.traps[i] : null; return t && typeof t === 'object' ? { day: int(t.day, 0, 1e6) } : null; });
         if (src.paint && typeof src.paint === 'object') Object.keys(src.paint).forEach(k => {
@@ -12213,6 +12233,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const head = t => host.insertAdjacentHTML('beforeend', `<h4 class="ql-h">${t}</h4>`);
         const note = t => host.insertAdjacentHTML('beforeend', `<p class="town-note">${t}</p>`);
         townUI.render({ host, row, head, note });
+        host.querySelectorAll('input, textarea').forEach(el => el.addEventListener('keydown', e => e.stopPropagation()));   // typing does not steer the angler
       }
       const townClose = () => { cancelAnimationFrame(townUI.raf); document.getElementById('modal-town').classList.remove('open'); };
       function townPay(cash, xp, msg) {
@@ -12371,6 +12392,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               j.status === 'open' ? [['Take', '', () => { acceptJob(i); townRefresh(); }, !!a]] : [[j.status === 'done' ? 'Done' : j.status === 'failed' ? 'Missed' : 'Taken', '', () => {}, true]]);
           });
           craveRows({ row, head, note });
+          projectRows({ row, head, note });
         });
       }
       /* the noticeboard also shows today's restaurant cravings, Ines' Catch of the Day tip and your friendships */
@@ -12562,7 +12584,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const MAP_COST = 150;
       function openPostOffice() {
         ensureJobs();
-        openTownSheet('📮 POST OFFICE', ({ row, head, note }) => {
+        openTownSheet('📮 POST OFFICE', ({ row, head, note, host }) => {
           const T = town(), found = (state.foundMessages || []).length, stampsDue = Math.min(6, Math.floor(found / 6)) - T.stamps;
           note('Maren runs the counter: parcels to carry, old treasure maps, and a stamp for every six bottle messages you find.');
           head('Counter');
@@ -12576,10 +12598,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (stampsDue <= 0) return; T.stamps += stampsDue; townPay(100 * stampsDue, 30 * stampsDue, `📜 ${stampsDue} stamp${stampsDue > 1 ? 's' : ''} from Maren: +${shopMoney(100 * stampsDue)}.`); townRefresh(); }, stampsDue <= 0]]);
           head('Jobs');
           row(`<span class="sl-n">📋 Town jobs<small>The same jobs as the noticeboard in the square.</small></span>`, [['Open', '', () => openJobsSheet('📮 POST OFFICE: TOWN JOBS')]]);
-          postRows && postRows({ row, head, note });
+          postRows && postRows({ row, head, note, host });
         });
       }
-      let postRows = null;   // postcard and bottle codes (v6.6)
+      let postRows = null;   // share codes, set below
 
       /* ---- the winch: hoist 5 crates, press when the swinging hook is over the green ---- */
       function openWinch() {
@@ -12711,6 +12733,119 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         showToast(`📍 ${BUOY_KINDS[k].name} buoy dropped.`); return true;
       }
       function removeBuoy(i) { state.buoys.splice(i, 1); syncBuoys(); saveGame(); }
+
+      /* ---- Town Projects (v6.6.0, noticeboard): gold sinks that change how you play ---- */
+      const PROJECTS = [
+        { id: 'weather', icon: '📡', name: 'Weather Station', cost: 4000, desc: 'A 3-day forecast of the weather outlook and the moon on the Map, the noticeboard and by the cabin bunk.' },
+        { id: 'smoke', icon: '🔥', name: 'Pier Smokehouse', cost: 5500, desc: `Fish that do not fit in your bucket go to the smokehouse instead (up to ${SMOKE_MAX} kg) as smoked fillets you sell here.` },
+        { id: 'slip', icon: '🗼', name: 'Lighthouse Fast-Travel Slip', cost: 8000, desc: 'Launch your moored boat straight from the lighthouse jetty, from the noticeboard.' }
+      ];
+      const projOn = id => !!(state.town && state.town.proj && state.town.proj[id]);
+      const smokeFits = c => projOn('smoke') && c && c.item && c.item.category === 'Fish' && !c.bottleMessage && town().smoke.kg + c.weight <= SMOKE_MAX + 1e-6;
+      function forecastText(days = 4) {
+        const d0 = state.dayCount || 0;
+        return Array.from({ length: days }, (_, i) => { const o = dayOutlook(d0 + i), m = MOON_PHASES[(d0 + i) % MOON_PHASES.length]; return `${['Today', 'Tomorrow', 'Day ' + (d0 + 3), 'Day ' + (d0 + 4)][i]}: ${o.icon} ${o.name} ${m.icon}`; }).join(' • ');
+      }
+      function launchFromLighthouse() {
+        if (!projOn('slip') || state.boatTier === 0 || onBoat || mode !== 'PIER_IDLE') { if (!state.boatTier) showToast('🗼 You need a boat first.'); return; }
+        townClose();
+        playerX = MOOR.boardX; playerZ = -5.6; handleBoardOrDockToggle();
+        if (!onBoat) return;
+        const b = lhBerthPose(); boatPos.x = b.x; boatPos.z = b.z; boatYaw = b.yaw; boatVel = 0; boatSide = 0;
+        dockLighthouse(); camLookInit = false;
+      }
+      function projectRows({ row, head, note }) {
+        const T = town();
+        head('🏗️ Town projects');
+        PROJECTS.forEach(pj => {
+          const done = T.proj[pj.id];
+          row(`<span class="sl-n">${pj.icon} ${pj.name}<small>${pj.desc}${done ? ' • BUILT' : ` • ${shopMoney(pj.cost)}`}</small></span>`,
+            done ? [] : [['Fund', '', () => { if (state.cash < pj.cost) return; state.cash = +(state.cash - pj.cost).toFixed(2); T.proj[pj.id] = true; townPay(0, 200, `${pj.icon} ${pj.name} built! Thank you from Harbour Town.`); sfx.playCatchFanfare(false); townRefresh(); }, state.cash < pj.cost]]);
+        });
+        if (T.proj.weather) note(`📡 Forecast: ${forecastText()}`);
+        if (T.proj.smoke) row(`<span class="sl-n">🔥 Smoked fillets<small>${T.smoke.kg.toFixed(1)} / ${SMOKE_MAX} kg in the smokehouse • worth ${shopMoney(T.smoke.value)}</small></span>`, [['Sell', '', () => { const v = T.smoke.value; if (v <= 0) return; T.smoke = { kg: 0, value: 0 }; townPay(v, 0, `🔥 Sold the smoked fillets for ${shopMoney(v)}.`); townRefresh(); }, T.smoke.value <= 0]]);
+        if (T.proj.slip) row('<span class="sl-n">🗼 Fast-travel slip<small>Your moored boat is waiting at the lighthouse jetty.</small></span>', [['Launch', '', launchFromLighthouse, !state.boatTier]]);
+      }
+
+      /* ---- the Trophy Wall above the cabin bunk (v6.6.0): mount your heaviest fish over 18 kg or a boss you landed ---- */
+      const TROPHY_MIN = 18;
+      function trophyCandidates() {
+        const T = town(), out = [];
+        Object.entries(state.speciesStats || {}).forEach(([id, st]) => {
+          const it = CATALOG_INDEX[id]; if (!it || it.category !== 'Fish' || !(st.maxWeight > TROPHY_MIN)) return;
+          const r = T.recs[id]; out.push({ id, w: +st.maxWeight.toFixed(2), zone: r ? r.zone : (it.zones || [1])[0], day: r ? r.day : -1, boss: false });
+        });
+        T.bosses.forEach(b => out.push(Object.assign({}, b)));
+        return out.sort((a, b) => b.w - a.w).slice(0, 12);
+      }
+      const trophyLabel = t => `${t.boss ? '👑 ' : ''}${CATALOG_INDEX[t.id].name} • ${t.w.toFixed(1)} kg • ${ZONES[t.zone - 1].name}${t.day >= 0 ? ` • day ${t.day + 1}` : ''}`;
+      let trophyMesh = null;
+      function syncTrophyWall() {
+        const cab = world && world.cabin; if (!cab) return;
+        if (trophyMesh) { cab.remove(trophyMesh); trophyMesh = null; }
+        const t = town().wall; if (!t) return;
+        const g = new THREE.Group(), K = WorldBuilder.propKit(textures);
+        K.box(g, 0.06, 0.85, 1.7, K.darkWood, 0, 0, 0); K.box(g, 0.04, 0.7, 1.55, K.wood, -0.04, 0, 0);
+        const fish = WorldBuilder.buildSculptedFishMesh(CATALOG_INDEX[t.id], textures), bb = new THREE.Box3().setFromObject(fish), sz = bb.getSize(new THREE.Vector3());
+        fish.scale.setScalar(1.3 / Math.max(sz.x, 0.01)); fish.rotation.y = -Math.PI / 2; fish.position.set(-0.16, 0.08, 0); g.add(fish);
+        const cv = document.createElement('canvas'); cv.width = 512; cv.height = 64; const c2 = cv.getContext('2d');
+        c2.fillStyle = '#3b2410'; c2.fillRect(0, 0, 512, 64); c2.fillStyle = '#fde68a'; c2.font = 'bold 24px monospace'; c2.textAlign = 'center'; c2.textBaseline = 'middle';
+        c2.fillText(trophyLabel(t).replace('👑 ', 'BOSS: '), 256, 32, 500);
+        const lab = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.19), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) })); lab.rotation.y = -Math.PI / 2; lab.position.set(-0.07, -0.33, 0); g.add(lab);
+        g.position.set(CABIN.w / 2 - 0.16, 1.95, BED.z); cab.add(g); trophyMesh = g;
+      }
+      function openBunk() {
+        openTownSheet('🛏️ BUNK & TROPHY WALL', ({ row, head, note }) => {
+          const T = town();
+          row(`<span class="sl-n">💤 Turn in for the night<small>${bedTime() ? `Sleep until 06:00${selectedBook() ? ` and read ${BED.pages} pages of ${BOOKS[selectedBook()].title}` : ''}` : 'Too early: after 18:00'}</small></span>`, [['Sleep', '', () => { townClose(); sleepTillMorning(); }, !bedTime()]]);
+          if (projOn('weather')) note(`📡 ${forecastText()}`);
+          head('🏆 Trophy Wall');
+          note(T.wall ? `Mounted: ${trophyLabel(T.wall)}` : `Mount your heaviest fish over ${TROPHY_MIN} kg, or a boss you landed, on the plaque above the bunk.`);
+          const cands = trophyCandidates();
+          if (!cands.length) note('Nothing big enough yet.');
+          cands.forEach(c => row(`<span class="sl-n">${trophyLabel(c)}</span>`, [['Mount', '', () => { T.wall = c; saveGame(); syncTrophyWall(); sfx.playCoin(); showToast(`🏆 Mounted: ${CATALOG_INDEX[c.id].name}`); townRefresh(); }, !!T.wall && T.wall.id === c.id && T.wall.w === c.w]]));
+        });
+      }
+
+      /* ---- share codes (v6.6.0, Post Office): bottle notes and catch challenges as text codes, no server ---- */
+      const CODE_PREFIX = 'PF1-';
+      const encodeShare = o => CODE_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+      function decodeShare(code) {
+        try {
+          const s = String(code || '').trim(); if (!s.startsWith(CODE_PREFIX) || s.length > 2000) return null;
+          const o = JSON.parse(decodeURIComponent(escape(atob(s.slice(CODE_PREFIX.length)))));
+          if (!o || typeof o !== 'object') return null;
+          if (o.t === 'note') { const m = cleanNote(o.m); return m ? { t: 'note', m, from: cleanName(o.from) } : null; }
+          if (o.t === 'chal' && CATALOG_INDEX[o.id] && CATALOG_INDEX[o.id].category === 'Fish') { const w = Number(o.w); return Number.isFinite(w) && w > 0 && w < 5000 ? { t: 'chal', id: o.id, w: +w.toFixed(2), from: cleanName(o.from) } : null; }
+        } catch (e) { return null; }
+        return null;
+      }
+      function shareCatchCheck(c) {
+        const T = state.town; if (!T || !T.chal || c.item.id !== T.chal.id || c.weight < T.chal.w) return;
+        const from = T.chal.from || 'a friend'; T.chal = null; T.chalDone++;
+        townPay(250, 60, `🎯 Challenge beaten! You out-fished ${from}: +$250.`);
+      }
+      const copyText = t => { try { navigator.clipboard.writeText(t); showToast('📋 Code copied.'); } catch (e) { showToast('📋 Select the code and copy it.'); } };
+      postRows = ({ row, head, note, host }) => {
+        const T = town(), me = cleanName(state.playerName) || 'An angler';
+        head('✉️ Share codes');
+        note('Make a code, send it to a friend in any message app, and they paste it here. No internet needed by the game.');
+        const r1 = row('<span class="sl-n">✉️ Bottle note<small>Write a message for a friend to find.</small></span><input class="town-in" id="share-note" maxlength="140" placeholder="Your message">', [['Make code', '', () => {
+          const m = cleanNote(document.getElementById('share-note').value); if (!m) { showToast('✉️ Write something first.'); return; }
+          const code = encodeShare({ t: 'note', m, from: me }); document.getElementById('share-out').value = code; copyText(code);
+        }]]);
+        const best = Object.entries(state.speciesStats || {}).filter(([id, st]) => CATALOG_INDEX[id] && CATALOG_INDEX[id].category === 'Fish' && st.maxWeight > 0).sort((a, b) => b[1].maxWeight - a[1].maxWeight).slice(0, 3);
+        if (best.length) row(`<span class="sl-n">🎯 Catch challenge<small>Dare a friend to beat one of your records.</small></span>`, best.map(([id, st]) => [`${CATALOG_INDEX[id].name} ${st.maxWeight.toFixed(1)} kg`, '', () => { const code = encodeShare({ t: 'chal', id, w: +st.maxWeight.toFixed(2), from: me }); document.getElementById('share-out').value = code; copyText(code); }]));
+        host.insertAdjacentHTML('beforeend', '<textarea class="town-in" id="share-out" rows="2" readonly placeholder="Your code appears here"></textarea>');
+        row('<span class="sl-n">📥 Open a code<small>Paste a code from a friend.</small></span><textarea class="town-in" id="share-in" rows="2" placeholder="PF1-..."></textarea>', [['Open', '', () => {
+          const o = decodeShare(document.getElementById('share-in').value); if (!o) { showToast('📥 That code does not work.'); return; }
+          if (o.t === 'note') { T.notes.push({ m: o.m, from: o.from }); if (T.notes.length > 10) T.notes.shift(); saveGame(); showToast(`✉️ A note from ${o.from || 'a friend'}: "${o.m}"`); }
+          else { T.chal = { id: o.id, w: o.w, from: o.from }; saveGame(); showToast(`🎯 Challenge from ${o.from || 'a friend'}: land a ${CATALOG_INDEX[o.id].name} of ${o.w} kg or more.`); }
+          townRefresh();
+        }]]);
+        if (T.chal) note(`🎯 Active challenge from ${T.chal.from || 'a friend'}: a ${CATALOG_INDEX[T.chal.id].name} of ${T.chal.w} kg or more ($250). ${T.chalDone} beaten so far.`);
+        if (T.notes.length) { head('Received notes'); T.notes.slice().reverse().forEach(n => note(`✉️ <b>${n.from || 'Someone'}</b>: ${n.m}`)); }
+      };
 
       const townLift = () => (!onBoat && playerZ > ISLAND.rampZ0 ? townGround(playerZ) - 1.5 : 0);   // the camera rises with the upper terrace
 
@@ -12895,7 +13030,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function mapLegend() {
         const me = mapYou(), places = MAP_PLACES();
         const rows = places.map(p => { const dx = p.x - me.x, dz = p.z - me.z; return { p, d: Math.hypot(dx, dz), dir: mapCompass(dx, dz) }; }).sort((a, b) => a.d - b.d);
-        document.getElementById('map-legend').innerHTML = `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(me.yaw), -Math.cos(me.yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea. Tap a place to find it on the map.</div>` +
+        document.getElementById('map-legend').innerHTML = (projOn('weather') ? `<div style="font-size:12px;color:#fde68a;margin-bottom:6px;">📡 ${forecastText()}</div>` : '') + `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(me.yaw), -Math.cos(me.yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea. Tap a place to find it on the map.</div>` +
           rows.map(({ p, d, dir }) => `<div class="map-row" data-x="${p.x}" data-z="${p.z}"><span class="mi">${p.icon}</span><span><b>${p.name}</b><small>${p.desc}</small></span><span class="md">${d < 2.5 ? 'Here' : `${Math.round(d)} m ${dir}`}</span></div>`).join('');
       }
 
@@ -13352,6 +13487,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const c = activeCatch;
         sfx.playCatchFanfare(c.item.category === 'Junk' || c.item.category === 'Flora');
         questEvent('catch', { item: c.item, weight: c.weight, zoneObj: c.zoneObj, onBoat });
+        shareCatchCheck(c);
 
         const isNewSpecies = !state.discovered.includes(c.item.id);
         if (isNewSpecies) {
@@ -13360,6 +13496,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (!state.speciesStats) state.speciesStats = {};
         const prevStat = state.speciesStats[c.item.id] || { count: 0, maxWeight: 0 };
         const isNewRecord = c.item.category === 'Fish' && c.weight > prevStat.maxWeight;
+        if (isNewRecord) town().recs[c.item.id] = { w: +c.weight.toFixed(2), zone: c.zoneObj.id, day: state.dayCount || 0 };   // for the Trophy Wall
         state.speciesStats[c.item.id] = {
           count: prevStat.count + 1,
           maxWeight: Math.max(prevStat.maxWeight, c.weight)
@@ -14742,6 +14879,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           keepBtn.disabled = false;
           keepBtn.textContent = 'Keep in Bucket';
           overflowPanel.style.display = 'none';
+        } else if (smokeFits(activeCatch)) {   // the Pier Smokehouse takes what the bucket cannot (v6.6.0)
+          keepBtn.disabled = false;
+          keepBtn.textContent = `🔥 To the Smokehouse (${town().smoke.kg.toFixed(1)}/${SMOKE_MAX} kg)`;
+          overflowPanel.style.display = 'none';
         } else {
           keepBtn.disabled = true;
           keepBtn.textContent = 'Bucket Full!';
@@ -14794,6 +14935,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const cap = getBucketCapacity();
         const curW = getBucketWeight();
         if (curW + activeCatch.weight > cap + 0.001) {
+          if (smokeFits(activeCatch)) { const S = town().smoke, w = activeCatch.weight; S.kg = +(S.kg + w).toFixed(2); S.value = +(S.value + activeCatch.value * 0.9).toFixed(2); saveGame(); closeCatchModal(`🔥 ${activeCatch.item.name} (${w.toFixed(2)} kg) went to the Smokehouse: ${S.kg.toFixed(1)} / ${SMOKE_MAX} kg of smoked fillets.`); return; }
           showToast('Not enough space in your bucket!');
           return;
         }
@@ -16680,6 +16822,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateCabinFade(dt);
         updateAquarium(dt);
         updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps(); friendPerkTick(); chumTick(); updateBuoys();
+        if (!trophyMesh && state.town && state.town.wall) syncTrophyWall();
         perfCull();   // v6.3.1: what cannot be seen is not drawn
         updateTownFade(dt);
         updateStationPicker(false);
