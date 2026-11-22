@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.8.1';
+    window.PF_VERSION = '7.0.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -136,18 +136,53 @@
        1. MOBILE-FIRST RETRO PIXEL-ART UI THEME & LAYOUT
        ========================================================================= */
     :root {
-      --bg-panel: rgba(14, 22, 36, 0.92);
-      --bg-panel-solid: #101929;
-      --bg-card: #18263d;
-      --border-light: #7aa2d6;
-      --border-dark: #070c14;
-      --accent-gold: #ffd24c;
-      --accent-green: #4ade80;
-      --accent-amber: #fbbf24;
-      --accent-red: #f87171;
-      --accent-cyan: #38bdf8;
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
+      /* ---- "Tide Glass" design tokens (v7.0.0) ---- */
+      --ink-900: #07111f;
+      --ink-800: #0d1b2e;
+      --ink-700: #15263f;
+      --ink-600: #1d3352;
+      --sea: #2dd4bf;
+      --sea-deep: #0f766e;
+      --coral: #ff7a59;
+      --coral-deep: #e2552f;
+      --gold: #fcd34d;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --info: #60a5fa;
+      --text: #eef4fb;
+      --text-2: #a9b8cc;
+      --text-3: #6b7d95;
+      --glass-a: 0.6;                                   /* Settings -> HUD panels */
+      --glass: rgba(12, 22, 38, var(--glass-a));
+      --glass-strong: rgba(11, 20, 35, 0.9);
+      --glass-line: rgba(255, 255, 255, 0.1);
+      --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      --blur: blur(14px) saturate(140%);
+      --shadow-1: 0 4px 14px rgba(0, 0, 0, 0.35);
+      --shadow-2: 0 12px 34px rgba(0, 0, 0, 0.5);
+      --r-sm: 10px;
+      --r-md: 16px;
+      --r-lg: 24px;
+      --r-pill: 999px;
+      --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px;
+      --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-num: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, "Courier New", monospace;
+      --text-scale: 1;                                  /* Settings -> Text size */
+      --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+      /* older names, now mapped onto the tokens above */
+      --bg-panel: var(--glass-strong);
+      --bg-panel-solid: var(--ink-800);
+      --bg-card: var(--ink-700);
+      --border-light: rgba(255, 255, 255, 0.14);
+      --border-dark: transparent;
+      --accent-gold: var(--gold);
+      --accent-green: var(--ok);
+      --accent-amber: var(--warn);
+      --accent-red: var(--danger);
+      --accent-cyan: var(--sea);
+      --text-main: var(--text);
+      --text-muted: var(--text-2);
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-right: env(safe-area-inset-right, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -186,8 +221,8 @@
       overflow: hidden;
       overscroll-behavior: none;
       touch-action: none;
-      background-color: #070b14;
-      font-family: "Courier New", Courier, monospace;
+      background-color: var(--ink-900);
+      font-family: var(--font-ui);
       color: var(--text-main);
     }
 
@@ -380,7 +415,6 @@
     .hud-zone-pill .hz-extra:empty { display: none; }
     .hud-zone-pill .hz-extra { color: #fde68a; }
     .hud-zone-pill .hz-extra::before { content: '•'; color: #94a3b8; margin-right: 6px; }
-    #hud-bounty-pill, #hud-quest-pill, #hud-read-pill, #hud-event-pill, .hud-zone-pill { font-size: 11px !important; padding: 3px 8px !important; }
     .hud-zone-pill {
       display: inline-flex;
       align-items: center;
@@ -1631,9 +1665,220 @@
     #btn-primary-action.spear { background: radial-gradient(circle at 35% 30%, #22d3ee, #0e7490); border-color: #a5f3fc; }
     #btn-primary-action.spear.reload { background: radial-gradient(circle at 35% 30%, #94a3b8, #475569); border-color: #cbd5e1; }
     body[data-diving="1"] .hud-stack { opacity: 0.85; }
+
+    /* =========================================================================
+       TIDE GLASS (v7.0.0): frosted-glass theme and the thumb-zone play screen.
+       These rules come last on purpose and restyle the older components above.
+       ========================================================================= */
+    .ic { width: 1.15em; height: 1.15em; flex: 0 0 auto; vertical-align: -0.2em; }
+    .num, .hud-chip.cash, .hud-time, #hud-bucket, #hud-fuel, #hud-compass-deg, .sh-cash, .sh-price, .sl-p,
+    #dive-depth, #dive-air-text, #dive-bag-text, #cast-power-label, #reel-dist-label, #reel-progress-label { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+    body[data-solid="1"] { --glass: rgba(12, 22, 38, 0.95); --glass-strong: var(--ink-800); --blur: none; }
+
+    /* surfaces and buttons */
+    .pixel-box { background: var(--glass-strong); border: 1px solid var(--glass-line); border-radius: var(--r-lg);
+      box-shadow: var(--glass-hi), var(--shadow-2); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+    .pixel-btn { background: rgba(255, 255, 255, 0.07); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: none;
+      border-radius: var(--r-sm); padding: 10px 14px; min-height: 44px; font-family: var(--font-ui); font-weight: 700; font-size: 14px;
+      text-transform: none; letter-spacing: 0.2px; transition: transform 0.12s var(--ease-out), background 0.15s, border-color 0.15s; }
+    .pixel-btn:active:not(:disabled), .pixel-btn.pressed:not(:disabled) { transform: scale(0.96); box-shadow: none; background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.26); }
+    .pixel-btn.gold { background: linear-gradient(180deg, var(--coral), var(--coral-deep)); border-color: transparent; color: #fff; box-shadow: 0 6px 16px rgba(226, 85, 47, 0.3); }
+    .pixel-btn.gold:active:not(:disabled) { background: var(--coral-deep); }
+    .pixel-btn.green { background: rgba(45, 212, 191, 0.16); border-color: rgba(45, 212, 191, 0.55); color: #99f6e4; }
+    .pixel-btn.green:active:not(:disabled), .pixel-btn.green.pressed:not(:disabled) { background: rgba(45, 212, 191, 0.28); }
+    .pixel-btn.red { background: rgba(248, 113, 113, 0.14); border-color: rgba(248, 113, 113, 0.5); color: #fecaca; }
+    .pixel-btn.red:active:not(:disabled) { background: rgba(248, 113, 113, 0.26); }
+    .pixel-btn:focus-visible, .sleek-menu-btn:focus-visible, .menu-tile:focus-visible, #btn-primary-action:focus-visible, .dive-btn:focus-visible, #hud-tracker-more:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+    /* modals pick up the glass; the close button becomes a quiet pill */
+    .modal-backdrop { background: rgba(4, 10, 20, 0.55); }
+    .modal-window { overflow: hidden; }
+    .modal-header { background: transparent; border-bottom: 1px solid var(--glass-line); padding: 12px 16px; }
+    .modal-title { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: 0.2px; }
+    .modal-header .pixel-btn[data-close] { background: rgba(255, 255, 255, 0.08); border-color: transparent; color: var(--text-2); border-radius: var(--r-pill); min-height: 40px; padding: 6px 16px; }
+    .sheet-handle { background: rgba(255, 255, 255, 0.25); }
+    @media (max-width: 600px) and (min-height: 481px) {
+      .modal-backdrop:not(#modal-catch):not(#modal-menu) .modal-window { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+      .modal-backdrop:not(#modal-catch):not(.sheet-modal) .modal-header::before { background: rgba(255, 255, 255, 0.25); }
+    }
+    .item-row, .log-card, .shop-card, .map-row, .menu-tile { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-line); border-radius: var(--r-md); box-shadow: none; }
+    .menu-tile { font-family: var(--font-ui); color: var(--text); }
+    .menu-tile:active { transform: scale(0.98); box-shadow: none; background: rgba(255, 255, 255, 0.1); }
+    .menu-tile span, .menu-tile[data-label]::after { text-transform: none; font-weight: 700; letter-spacing: 0.2px; }
+    .tab-row { border-bottom-color: var(--glass-line); }
+    .tab-btn.active { background: var(--sea); border-color: transparent; color: var(--ink-900); }
+    .shop-card.equipped { border-color: rgba(74, 222, 128, 0.6); background: rgba(74, 222, 128, 0.08); }
+    .bar-wrap, .mini-bar-track, #loading-bar { background: rgba(255, 255, 255, 0.1); border: 0; border-radius: var(--r-pill); overflow: hidden; }
+    .bar-fill, .mini-bar-fill, #loading-bar-fill { border-radius: inherit; }
+    #loading-bar-fill { background: linear-gradient(90deg, var(--sea), var(--ok)); }
+    #loading-screen { background: radial-gradient(circle at 50% 30%, #12395a, var(--ink-900) 72%); }
+    .setting-row { border-bottom-color: var(--glass-line); }
+    .setting-label { font-size: 15px; color: var(--text); font-weight: 600; }
+    .setting-sub { font-size: 13px; color: var(--text-2); font-weight: 400; }
+    .set-h { margin: 16px 0 2px; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--sea); }
+    .set-h:first-child { margin-top: 0; }
+    .set-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.07); border: 1px solid var(--glass-line); }
+    .set-seg button { min-width: 44px; min-height: 38px; padding: 0 10px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--text-2); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .set-seg button[aria-pressed="true"] { background: var(--sea); color: var(--ink-900); }
+    .set-seg button:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+
+    /* text size: the readable parts of the screen scale, the controls do not */
+    .modal-body, .modal-header, .sh-head, .sh-tabs, .sh-summary, .sh-body, .sh-foot, .talk-head, #talk-text, #talk-choices, .toast, .hud-rail { zoom: var(--text-scale); }
+
+    /* ---- play screen: status bar ---- */
+    #ui-layer { padding: calc(6px + var(--safe-top)) calc(8px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(8px + var(--safe-left)); }
+    .hud-top { max-width: 760px; gap: 8px; }
+    .hud-bar-main, .hud-bar-main[class] { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "cash gauges right"; gap: 12px; min-height: 50px;
+      padding: 5px 5px 5px 16px; background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-pill);
+      box-shadow: var(--glass-hi), var(--shadow-1); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+    .hud-gauges { max-width: 440px; width: 100%; justify-self: center; gap: 12px; }
+    .hud-chip { font-size: 14px; font-weight: 700; color: var(--text); }
+    .hud-chip.cash { color: var(--gold); font-size: 16px; font-weight: 800; text-shadow: none; letter-spacing: -0.3px; }
+    .hud-time { color: var(--text); }
+    @media (max-width: 520px) { #hud-weather .w-tx { display: none; } }
+    .mini-progress-label { font-size: 12px; color: var(--text-2); font-weight: 700; align-items: center; }
+    .mini-progress-label .ic { color: var(--text-3); }
+    .mini-bar-track { height: 6px; }
+    .fuel-alert { border-color: transparent !important; }
+    .fuel-alert .mini-progress-label { color: var(--danger); }
+    .sleek-menu-btn { background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--glass-line); box-shadow: none; border-radius: var(--r-pill);
+      height: 40px; min-width: 40px; font-family: var(--font-ui); text-transform: none; font-size: 13px; }
+    #btn-toggle-drawer { width: 40px; font-size: 20px; }
+    .sleek-menu-btn:active { transform: scale(0.94); box-shadow: none; }
+    .sleek-menu-btn.active { background: rgba(45, 212, 191, 0.22); border-color: rgba(45, 212, 191, 0.6); }
+    .menu-dot.has-new::after { background: var(--coral); box-shadow: 0 0 0 2px var(--ink-800); top: 3px; right: 3px; }
+
+    /* ---- info rail: zone chip, return-fuel warning, the objective tracker, live cam; compass on the right ---- */
+    .hud-stack { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .hud-rail { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; flex: 1 1 auto; }
+    .hud-zone-pill, #hud-tracker .trk, .fuel-warning { background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-pill);
+      box-shadow: var(--glass-hi); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); color: var(--text); }
+    .hud-zone-pill { padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: var(--text); }
+    #hud-zone { color: #99f6e4; }
+    .hz-sep, .hud-zone-pill .hz-extra::before { color: var(--text-3); }
+    .hud-zone-pill .hz-extra { color: var(--gold); }
+    .fuel-warning { padding: 5px 12px; font-size: 12px; font-weight: 800; }
+    .fuel-amber { background: rgba(251, 191, 36, 0.2); border-color: rgba(251, 191, 36, 0.6); color: #fde68a; }
+    .fuel-danger { background: rgba(248, 113, 113, 0.24); border-color: rgba(248, 113, 113, 0.7); color: #fecaca; }
+    #hud-tracker { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; max-width: 100%; }
+    #hud-tracker .trk { --trk: var(--sea); padding: 6px 12px 6px 10px; font-size: 12.5px; font-weight: 700; border-left: 3px solid var(--trk);
+      max-width: min(70vw, 420px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: flex-start; }
+    #hud-event-pill.trk { --trk: var(--warn); color: #fde68a; }
+    #hud-event-pill.trk.boss { --trk: var(--danger); color: #fecaca; background: rgba(80, 14, 14, 0.55); }
+    #hud-bounty-pill.trk { --trk: var(--gold); }
+    #hud-quest-pill.trk { --trk: var(--info); }
+    #hud-read-pill.trk { --trk: #a78bfa; }
+    #hud-tracker .trk.ready { --trk: var(--ok); color: #bbf7d0; }
+    #hud-tracker:not(.open) .trk:not(.trk-top) { display: none !important; }
+    #hud-tracker-more { display: none; position: absolute; left: 100%; top: -4px; margin-left: 6px; min-width: 44px; height: 38px; padding: 0 10px;
+      pointer-events: auto; align-items: center; justify-content: center; gap: 2px; border-radius: var(--r-pill); border: 1px solid var(--glass-line);
+      background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); color: var(--text-2); font: 800 12.5px var(--font-ui); cursor: pointer; }
+    #hud-tracker.has-more #hud-tracker-more { display: inline-flex; }
+    #hud-tracker.open #hud-tracker-more { color: var(--text); background: rgba(45, 212, 191, 0.2); }
+    #live-bait-pip { border: 1px solid rgba(45, 212, 191, 0.6); border-radius: var(--r-md); box-shadow: var(--shadow-2); }
+    #hud-compass { flex: 0 0 auto; width: 136px; height: 34px; background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-pill);
+      box-shadow: var(--glass-hi); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); align-self: flex-start; }
+    #hud-compass .cmp-mark { font-family: var(--font-ui); font-size: 11px; font-weight: 800; color: var(--text-2); top: 3px; }
+    #hud-compass .cmp-mark.card { color: var(--text); font-size: 12px; }
+    #hud-compass .cmp-mark.north { color: var(--coral); }
+    #hud-compass .cmp-tick { background: var(--text-3); height: 5px; bottom: 4px; }
+    #hud-compass .cmp-needle { background: var(--sea); top: 19px; bottom: 3px; border-radius: 2px; }
+    #hud-compass .cmp-deg { font-size: 10.5px; color: var(--text); background: var(--ink-800); border-radius: var(--r-pill); padding: 0 5px; right: 8px; bottom: 3px; }
+
+    /* ---- centre: banners, station picker and the meter dock just above the thumbs ---- */
+    #center-hud { gap: 8px; width: min(94vw, 420px); }
+    #bite-banner, #leap-banner { border: 0; border-radius: var(--r-pill); font-family: var(--font-ui); font-weight: 900; letter-spacing: 0.6px; padding: 12px 22px; color: #fff; }
+    #bite-banner { background: linear-gradient(180deg, #f87171, #dc2626); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2), 0 0 30px rgba(239, 68, 68, 0.6); }
+    #leap-banner { background: linear-gradient(180deg, #38bdf8, #0369a1); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2), 0 0 30px rgba(56, 189, 248, 0.55); }
+    #proximity-banner { background: var(--glass-strong); color: var(--text); border: 1px solid rgba(252, 211, 77, 0.45); border-radius: var(--r-pill);
+      box-shadow: var(--shadow-1); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); font-weight: 700; letter-spacing: 0.2px; padding: 8px 16px; }
+    #station-picker .st-title { color: var(--text-2); letter-spacing: 0.8px; }
+    #station-picker button { font-family: var(--font-ui); font-size: 12px; font-weight: 800; min-height: 36px; padding: 4px 12px; border-radius: var(--r-pill);
+      background: var(--glass); color: var(--text); border: 1px solid var(--glass-line); box-shadow: none; backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+    #station-picker button.on { background: var(--sea); color: var(--ink-900); border-color: transparent; }
+    #cast-meter-box, #reel-meter-box { padding: 10px 14px; border-radius: var(--r-md); }
+    #reel-meter-box { max-width: 420px; background: var(--glass-strong); }
+    body[data-fishing="1"] #toast-stack { top: calc(var(--hud-top-h) + var(--safe-top) + 14px); bottom: auto; }
+    .stat-label { color: var(--text-2); font-size: 12px; font-weight: 800; letter-spacing: 0.4px; }
+    .stat-val { color: var(--text); font-size: 12.5px; }
+    .reel-dir-labels { color: var(--text-3); font-weight: 700; font-size: 11.5px; }
+    #counter-pull-hint { color: var(--gold) !important; }
+    .reel-track { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; }
+    .reel-dir-track { border-color: rgba(45, 212, 191, 0.45); }
+    .reel-safe-zone { background: rgba(74, 222, 128, 0.28); border: 0; border-radius: 6px; box-shadow: inset 0 0 0 2px rgba(74, 222, 128, 0.7); }
+    .reel-cursor, #rod-dir-marker { width: 7px; border: 0; border-radius: 4px; box-shadow: 0 0 0 2px var(--ink-900), 0 0 10px rgba(255, 255, 255, 0.5); }
+    .reel-cursor { background: #fff; }
+    #rod-dir-marker { background: var(--sea); }
+    #fish-dir-marker { background: var(--coral); border: 0; border-radius: 6px; box-shadow: 0 0 0 2px var(--ink-900); width: 20px; }
+    .cast-sweet-zone { background: rgba(252, 211, 77, 0.25); border: 0; box-shadow: inset 0 0 0 2px rgba(252, 211, 77, 0.8); }
+    #rod-warning-text { color: var(--danger); text-shadow: none; }
+
+    /* ---- thumb zones: stick bottom-left, the coral action button bottom-right with its small helpers on the inside ---- */
+    #virtual-joystick { background: radial-gradient(circle, rgba(255, 255, 255, 0.07), rgba(12, 22, 38, 0.5)); border: 1.5px solid rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.35), var(--shadow-1); }
+    #joystick-knob { background: radial-gradient(circle at 35% 30%, #99f6e4, var(--sea) 45%, var(--sea-deep)); border: 2px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45); }
+    .joy-dir-label { color: rgba(255, 255, 255, 0.35); font-size: 11px; }
+    .touch-zone-right { flex-direction: row; align-items: flex-end; gap: 10px; }
+    #mobile-controls[data-hand="left"] .touch-zone-right { flex-direction: row-reverse; align-items: flex-end; }
+    #btn-primary-action { border: 0; font-family: var(--font-ui); font-weight: 800; font-size: 13px; letter-spacing: 0.5px; color: #fff;
+      background: radial-gradient(circle at 35% 28%, #ffab94, var(--coral) 48%, var(--coral-deep));
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.14), 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 -4px 0 rgba(0, 0, 0, 0.14);
+      transition: transform 0.12s var(--ease-out); }
+    #primary-action-label { max-width: 84%; line-height: 1.15; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+    #btn-primary-action.casting, #btn-primary-action.shop { background: radial-gradient(circle at 35% 28%, #fde68a, #f59e0b 50%, #b45309); color: #fff; }
+    #btn-primary-action.bite { background: radial-gradient(circle at 35% 28%, #fca5a5, #ef4444 50%, #991b1b); box-shadow: 0 0 0 5px rgba(248, 113, 113, 0.45), 0 0 30px rgba(239, 68, 68, 0.65); }
+    #btn-primary-action.reeling, #btn-primary-action.spear { background: radial-gradient(circle at 35% 28%, #99f6e4, #14b8a6 50%, #0f766e); color: #fff; }
+    #btn-primary-action.sail { background: radial-gradient(circle at 35% 28%, #bfdbfe, #3b82f6 50%, #1d4ed8); color: #fff; }
+    #btn-primary-action.map, #btn-primary-action.bounty { background: radial-gradient(circle at 35% 28%, #bbf7d0, #22c55e 50%, #15803d); color: #fff; }
+    #btn-primary-action.spear.reload { background: radial-gradient(circle at 35% 28%, #cbd5e1, #64748b 50%, #334155); }
+    #dive-pad { flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; }
+    .dive-btn, #btn-dive-toggle { width: 52px; min-width: 52px; height: 52px; padding: 0; border-radius: 50%; flex-direction: column; gap: 1px; font-size: 18px;
+      background: var(--glass); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: var(--glass-hi), var(--shadow-1); color: var(--text);
+      backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); font-family: var(--font-ui); }
+    .dive-btn small, #dive-toggle-label { font-size: 9px; font-weight: 800; letter-spacing: 0.4px; }
+    body[data-diving="1"] #btn-dive-toggle { background: rgba(255, 122, 89, 0.4); border-color: rgba(255, 122, 89, 0.8); }
+
+    /* ---- dive gauges and toasts ---- */
+    #dive-hud { top: calc(var(--hud-top-h) + var(--safe-top) + 8px); }
+    .dive-panel { background: var(--glass); border: 1px solid var(--glass-line); border-radius: var(--r-md); box-shadow: var(--glass-hi), var(--shadow-1);
+      backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); padding: 8px 12px; color: var(--text-2); font-size: 12px; }
+    .dive-row span:last-child { color: var(--text); }
+    .dive-bar { background: rgba(255, 255, 255, 0.1); border: 0; border-radius: var(--r-pill); height: 6px; }
+    .dive-bar > i { border-radius: inherit; }
+    .toast { background: var(--glass-strong); color: var(--text); border: 1px solid var(--glass-line); border-left: 3px solid var(--sea); border-radius: var(--r-md);
+      box-shadow: var(--shadow-1); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); padding: 10px 16px; font-weight: 600; font-size: 14px; }
+
+    /* ---- the shop and town sheets join the same glass ---- */
+    #shop-sheet { background: var(--glass-strong); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border-radius: var(--r-lg) var(--r-lg) 0 0; }
+    .sh-row, .sh-summary { background: rgba(255, 255, 255, 0.05); border-color: var(--glass-line); }
+    #talk-box { background: var(--glass-strong); }
+
+    /* short landscape phones: the rail tucks under the bar, the dock narrows between the thumbs */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .hud-bar-main, .hud-bar-main[class] { min-height: 44px; }
+      #center-hud { width: min(60vw, 400px); }
+      #hud-tracker .trk { max-width: 44vw; }
+    }
+    @media (max-height: 480px) { .hud-stack { right: 0; } }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      :root { --glass: rgba(12, 22, 38, 0.9); --glass-strong: var(--ink-800); }
+    }
   </style>
 </head>
 <body>
+  <!-- Icon sprite (v7.0.0): line icons used with <svg class="ic"><use href="#i-name"/></svg> -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-bucket" viewBox="0 0 24 24"><path d="M5 8h14l-1.6 11.2a2 2 0 0 1-2 1.8H8.6a2 2 0 0 1-2-1.8L5 8zM7.5 8a4.5 4.5 0 0 1 9 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-fuel" viewBox="0 0 24 24"><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3.5 21h13M8 8h4M15 10h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V9l-3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></symbol>
+    </defs>
+  </svg>
   <div id="loading-screen" role="status" aria-live="polite">
     <div class="pixel-box">
       <div style="font-size: 12px; color: #38bdf8; font-weight: bold; letter-spacing: 1px;">3D RETRO ADVENTURE</div>
@@ -1692,65 +1937,90 @@
   <!-- HUD Layer -->
   <div id="ui-layer">
     <div class="hud-top" id="hud-top">
-      <!-- Status bar: cash, weather/time, menu; bucket and fuel gauges -->
+      <!-- Status bar (v7.0.0): one glass strip with cash, the bucket or fuel meter, weather and time, and the menu -->
       <div class="hud-bar-main">
         <span class="hud-chip cash" id="hud-cash">$25.00</span>
         <div class="hud-gauges">
           <div class="mini-progress-pill" title="Bucket Capacity">
             <div class="mini-progress-label">
-              <span>🪣</span>
+              <svg class="ic" aria-hidden="true"><use href="#i-bucket"/></svg>
               <span id="hud-bucket">0.0/6kg</span>
             </div>
             <div class="mini-bar-track">
-              <div class="mini-bar-fill" id="hud-bucket-bar" style="width: 0%; background: #38bdf8;"></div>
+              <div class="mini-bar-fill" id="hud-bucket-bar" style="width: 0%; background: var(--sea);"></div>
             </div>
           </div>
           <div class="mini-progress-pill" id="hud-fuel-bar-wrap" style="display:none;" title="Boat Fuel">
             <div class="mini-progress-label">
-              <span>⛽</span>
+              <svg class="ic" aria-hidden="true"><use href="#i-fuel"/></svg>
               <span id="hud-fuel">0/0</span>
             </div>
             <div class="mini-bar-track">
-              <div class="mini-bar-fill" id="hud-fuel-bar" style="width: 100%; background: #4ade80;"></div>
+              <div class="mini-bar-fill" id="hud-fuel-bar" style="width: 100%; background: var(--ok);"></div>
             </div>
           </div>
         </div>
         <div class="hud-right">
           <span class="hud-chip" id="hud-weather" title="Weather">☀️ Clear</span>
-          <span class="hud-chip" id="hud-time">12:00</span>
-          <button class="sleek-menu-btn" id="btn-pause" type="button" aria-label="Pause" title="Pause (P)">⏸</button>
-          <button class="sleek-menu-btn menu-dot" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu">☰</button>
+          <span class="hud-chip hud-time" id="hud-time">12:00</span>
+          <button class="sleek-menu-btn menu-dot" id="btn-toggle-drawer" type="button" aria-label="Open menu" title="Menu"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
         </div>
       </div>
 
+      <!-- Info rail: where you are and one objective tracker on the left, the compass on the right -->
       <div class="hud-stack">
-        <div id="hud-compass" aria-hidden="true"><div class="cmp-needle"></div><span class="cmp-deg" id="hud-compass-deg">0°</span></div>
-        <div class="hud-zone-pill">
-          <span id="hud-zone">1. Shallow Cove</span>
-          <span style="color:#94a3b8;">•</span>
-          <span id="hud-dist" style="color:#f8fafc;">0 m</span>
-          <span id="hud-zone-fuel" class="hz-extra"></span>
-          <span id="hud-zone-buff" class="hz-extra"></span>
-        </div>
-        <div id="hud-fuel-warning" class="fuel-warning fuel-safe" style="display:none;">
-          Return Fuel: 0.0
-        </div>
-        <div id="hud-bounty-pill"></div>
-        <div id="hud-quest-pill"></div>
-        <div id="hud-read-pill"></div>
-        <div id="hud-event-pill"><span id="hud-event-text"></span></div>
-        <!-- Underwater Live Bait Cam Picture-in-Picture (Active when Rod Cam Upgrade is purchased & Reeling) -->
-        <div id="live-bait-pip">
-          <canvas id="pip-bait-canvas" width="176" height="112"></canvas>
-          <div class="pip-overlay-top">
-            <span class="pip-rec-dot">● LIVE CAM</span>
-            <span style="color:#bae6fd;">SUBSEA</span>
+        <div class="hud-rail">
+          <div class="hud-zone-pill">
+            <span id="hud-zone">1. Shallow Cove</span>
+            <span class="hz-sep">•</span>
+            <span id="hud-dist">0 m</span>
+            <span id="hud-zone-fuel" class="hz-extra"></span>
+            <span id="hud-zone-buff" class="hz-extra"></span>
           </div>
-          <div class="pip-overlay-bottom" id="pip-bait-label">BAIT: Bread Crumbs</div>
+          <div id="hud-fuel-warning" class="fuel-warning fuel-safe" style="display:none;">
+            Return Fuel: 0.0
+          </div>
+          <!-- Tracker: the radar, bounty, quest and reading lines; only the most urgent shows until you tap +N -->
+          <div id="hud-tracker">
+            <div id="hud-event-pill" class="trk"><span id="hud-event-text"></span></div>
+            <div id="hud-bounty-pill" class="trk"></div>
+            <div id="hud-quest-pill" class="trk"></div>
+            <div id="hud-read-pill" class="trk"></div>
+            <button id="hud-tracker-more" type="button" aria-expanded="false" aria-label="Show all objectives">+1</button>
+          </div>
+          <!-- Underwater Live Bait Cam Picture-in-Picture (Active when Rod Cam Upgrade is purchased & Reeling) -->
+          <div id="live-bait-pip">
+            <canvas id="pip-bait-canvas" width="176" height="112"></canvas>
+            <div class="pip-overlay-top">
+              <span class="pip-rec-dot">● LIVE CAM</span>
+              <span style="color:#bae6fd;">SUBSEA</span>
+            </div>
+            <div class="pip-overlay-bottom" id="pip-bait-label">BAIT: Bread Crumbs</div>
+          </div>
+        </div>
+        <div id="hud-compass" aria-hidden="true"><div class="cmp-needle"></div><span class="cmp-deg" id="hud-compass-deg">0°</span></div>
+      </div>
+    </div>
+
+    <!-- Center Dynamic Fishing & Proximity Indicators -->
+    <div id="center-hud">
+      <div id="station-picker"></div>
+      <div id="proximity-banner">⚓ TACKLE SHOP — PRESS ACTION BUTTON TO OPEN</div>
+      <div id="bite-banner">! BITE! TAP HOOK NOW !</div>
+      <div id="leap-banner">🐟 IT'S JUMPING! TAP TO DIP THE ROD!</div>
+
+      <div class="pixel-box" id="cast-meter-box">
+        <div class="stat-row">
+          <span class="stat-label">CAST POWER <span style="color:#fde047;">(★ 72–88%)</span></span>
+          <span class="stat-val" id="cast-power-label">0%</span>
+        </div>
+        <div class="bar-wrap cast-bar-wrap">
+          <div class="bar-fill" id="cast-power-bar" style="width: 0%; background: linear-gradient(90deg, #38bdf8, #facc15, #ef4444);"></div>
+          <div class="cast-sweet-zone" title="Sweet Spot"></div>
         </div>
       </div>
 
-      <!-- Fish drag / reel meter: at the top of the screen so it stays visible above the thumbs -->
+      <!-- Fish drag / reel meter: docked just above the thumbs (v7.0.0) -->
       <div class="pixel-box" id="reel-meter-box">
           <div id="rod-warning-text">ROD OVERLOADED! DRAG TOO HEAVY!</div>
           <div class="stat-row">
@@ -1778,26 +2048,6 @@
             <div class="bar-fill" id="reel-progress-bar" style="width: 0%; background: #4ade80;"></div>
           </div>
         </div>
-    </div>
-
-    <!-- Center Dynamic Fishing & Proximity Indicators -->
-    <div id="center-hud">
-      <div id="station-picker"></div>
-      <div id="proximity-banner">⚓ TACKLE SHOP — PRESS ACTION BUTTON TO OPEN</div>
-      <div id="bite-banner">! BITE! TAP HOOK NOW !</div>
-      <div id="leap-banner">🐟 IT'S JUMPING! TAP TO DIP THE ROD!</div>
-
-      <div class="pixel-box" id="cast-meter-box">
-        <div class="stat-row">
-          <span class="stat-label">CAST POWER <span style="color:#fde047;">(★ 72–88%)</span></span>
-          <span class="stat-val" id="cast-power-label">0%</span>
-        </div>
-        <div class="bar-wrap cast-bar-wrap">
-          <div class="bar-fill" id="cast-power-bar" style="width: 0%; background: linear-gradient(90deg, #38bdf8, #facc15, #ef4444);"></div>
-          <div class="cast-sweet-zone" title="Sweet Spot"></div>
-        </div>
-      </div>
-
     </div>
 
     <!-- Bottom Thumb-Zone Mobile Controls -->
@@ -1851,6 +2101,7 @@
       <div class="sheet-handle"></div>
       <div class="modal-header">
         <span class="modal-title">☰ MENU</span>
+        <button class="pixel-btn" id="btn-pause" data-closes-menu type="button" aria-label="Pause the game" title="Pause (P)"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg> Pause</button>
         <button class="pixel-btn red" data-close="modal-menu" type="button">Close</button>
       </div>
       <div class="modal-body">
@@ -2049,13 +2300,22 @@
         <button class="pixel-btn red" data-close="modal-settings">Close</button>
       </div>
       <div class="modal-body">
+        <h3 class="set-h">Display</h3>
         <div class="setting-row">
-          <span class="setting-label">🔊 Sound effects<span class="setting-sub">Waves, reel clicks and splashes</span></span>
-          <button class="pixel-btn green" id="set-sound" type="button">ON</button>
+          <span class="setting-label" id="lbl-text">🔠 Text size<span class="setting-sub">Menus, shops, chats and the info chips</span></span>
+          <div class="set-seg" id="set-text" role="group" aria-labelledby="lbl-text">
+            <button type="button" data-v="S" aria-label="Small text">S</button><button type="button" data-v="M" aria-label="Medium text">M</button><button type="button" data-v="L" aria-label="Large text">L</button><button type="button" data-v="XL" aria-label="Extra large text">XL</button>
+          </div>
         </div>
         <div class="setting-row">
-          <span class="setting-label">📳 Haptics<span class="setting-sub">Vibration on bites and catches (phones)</span></span>
-          <button class="pixel-btn green" id="set-haptics" type="button">ON</button>
+          <span class="setting-label" id="lbl-alpha">🫧 HUD panels<span class="setting-sub">How much of the world shows through the glass</span></span>
+          <div class="set-seg" id="set-alpha" role="group" aria-labelledby="lbl-alpha">
+            <button type="button" data-v="40" aria-label="Clear panels">Clear</button><button type="button" data-v="60" aria-label="Balanced panels">Mid</button><button type="button" data-v="80" aria-label="Dark panels">Dark</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">🧊 Reduce transparency<span class="setting-sub">Solid panels without blur (always on in Battery saver)</span></span>
+          <button class="pixel-btn" id="set-solid" type="button">OFF</button>
         </div>
         <div class="setting-row">
           <span class="setting-label">🖼️ Graphics<span class="setting-sub">Battery saver renders at lower resolution</span></span>
@@ -2065,6 +2325,11 @@
           <span class="setting-label">🖥️ Full screen<span class="setting-sub">Enter full screen when the game starts (not available on iPhone Safari)</span></span>
           <button class="pixel-btn green" id="set-fullscreen" type="button">ON</button>
         </div>
+        <div class="setting-row">
+          <span class="setting-label">🙈 Fade HUD while fishing<span class="setting-sub">Dims gauges and shortcuts once your line is out</span></span>
+          <button class="pixel-btn" id="set-autohide" type="button">OFF</button>
+        </div>
+        <h3 class="set-h">Controls</h3>
         <div class="setting-row">
           <span class="setting-label">🖐️ Handedness<span class="setting-sub">Swap the thumbstick and action button</span></span>
           <button class="pixel-btn" id="set-hand" type="button">Right</button>
@@ -2077,10 +2342,16 @@
           <span class="setting-label">🔘 Button size<span class="setting-sub">Thumbstick and action button</span></span>
           <button class="pixel-btn" id="set-btn" type="button">M</button>
         </div>
+        <h3 class="set-h">Sound &amp; haptics</h3>
         <div class="setting-row">
-          <span class="setting-label">🙈 Fade HUD while fishing<span class="setting-sub">Dims gauges and shortcuts once your line is out</span></span>
-          <button class="pixel-btn" id="set-autohide" type="button">OFF</button>
+          <span class="setting-label">🔊 Sound effects<span class="setting-sub">Waves, reel clicks and splashes</span></span>
+          <button class="pixel-btn green" id="set-sound" type="button">ON</button>
         </div>
+        <div class="setting-row">
+          <span class="setting-label">📳 Haptics<span class="setting-sub">Vibration on bites and catches (phones)</span></span>
+          <button class="pixel-btn green" id="set-haptics" type="button">ON</button>
+        </div>
+        <h3 class="set-h">Game</h3>
         <div class="setting-row">
           <span class="setting-label">🎨 Appearance<span class="setting-sub">Clothes, hair, hats and shoes, or roll a random look</span></span>
           <button class="pixel-btn gold" id="set-customize" type="button">Customise</button>
@@ -2321,7 +2592,7 @@
 
       /* Player settings (stored separately from the save so a save reset keeps them) */
       const SETTINGS_KEY = 'pixel_fishing_settings_v1';
-      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false, fullscreen: true, firstPerson: false };
+      const settings = { sound: true, haptics: true, quality: 'high', bucketSort: 'newest', hand: 'right', joyMode: 'fixed', btnSize: 'M', autoHideHud: false, fullscreen: true, firstPerson: false, textSize: 'M', hudAlpha: 60, solidUi: false };
       try {
         const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
         if (saved && typeof saved === 'object') {
@@ -2335,6 +2606,9 @@
           if (typeof saved.autoHideHud === 'boolean') settings.autoHideHud = saved.autoHideHud;
           if (typeof saved.fullscreen === 'boolean') settings.fullscreen = saved.fullscreen;
           if (typeof saved.firstPerson === 'boolean') settings.firstPerson = saved.firstPerson;
+          if (['S', 'M', 'L', 'XL'].includes(saved.textSize)) settings.textSize = saved.textSize;
+          if ([40, 60, 80].includes(saved.hudAlpha)) settings.hudAlpha = saved.hudAlpha;
+          if (typeof saved.solidUi === 'boolean') settings.solidUi = saved.solidUi;
         }
       } catch {}
       function saveSettings() {
@@ -9994,11 +10268,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       }
       function updateReadPill() {
         const el = document.getElementById('hud-read-pill'); if (!el) return;
-        if (!reading.id) { el.style.display = 'none'; reading.pillMin = -1; return; }
+        if (!reading.id) { el.style.display = 'none'; reading.pillMin = -1; syncTracker(); return; }
         const b = BOOKS[reading.id], m = Math.floor(bookMinutes(reading.id)), left = Math.ceil(reading.left);
         if (m === reading.pillMin) return; reading.pillMin = m;
         el.style.display = 'block';
         el.textContent = `📖 ${readSpeed() > 1 ? '☕ ' : ''}${b.title}: ${bookPages(reading.id).toFixed(1)} / ${BOOK_PAGES} pages (${(bookProgress(reading.id) * 100).toFixed(1)}%) • ${Math.floor(left / 60)}h ${String(left % 60).padStart(2, '0')}m left`;
+        syncTracker();
       }
       /* Harbour Espresso: twice the reading speed while it lasts (in-game minutes in state.kitchen.espresso) */
       const readSpeed = () => (state.kitchen && state.kitchen.espresso > 0 ? 2 : 1);
@@ -15137,11 +15412,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('set-btn').textContent = settings.btnSize;
         paint(document.getElementById('set-autohide'), settings.autoHideHud, 'ON', 'OFF');
         paint(document.getElementById('set-fullscreen'), settings.fullscreen, 'ON', 'OFF');
+        paint(document.getElementById('set-solid'), settings.solidUi, 'ON', 'OFF');
+        document.querySelectorAll('#set-text button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === settings.textSize)));
+        document.querySelectorAll('#set-alpha button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.v) === settings.hudAlpha)));
         applyControlSettings();
         setQualityBtn.textContent = settings.quality === 'low' ? 'Battery saver' : 'High';
         setQualityBtn.classList.toggle('gold', settings.quality === 'low');
       }
 
+      const TEXT_SCALE = { S: 0.9, M: 1, L: 1.15, XL: 1.3 };
       function applyControlSettings() {
         const ctl = document.getElementById('mobile-controls');
         ctl.dataset.hand = settings.hand;
@@ -15149,6 +15428,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.body.dataset.joy = settings.joyMode;
         document.body.dataset.btn = settings.btnSize;
         document.body.dataset.autohide = settings.autoHideHud ? '1' : '0';
+        // Tide Glass display options (v7.0.0): text size, how see-through the HUD is, and solid panels (always on in Battery saver)
+        const rs = document.documentElement.style;
+        rs.setProperty('--text-scale', String(TEXT_SCALE[settings.textSize] || 1));
+        rs.setProperty('--glass-a', String(settings.hudAlpha / 100));
+        document.body.dataset.solid = (settings.solidUi || settings.quality === 'low') ? '1' : '0';
         if (settings.joyMode !== 'floating') document.getElementById('virtual-joystick').classList.remove('live');
       }
       document.getElementById('set-hand').addEventListener('click', () => {
@@ -15168,6 +15452,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       document.getElementById('set-fullscreen').addEventListener('click', () => {
         settings.fullscreen = !settings.fullscreen; saveSettings(); renderSettings();
         if (settings.fullscreen) enterFullscreen(); else exitFullscreen();
+      });
+      document.getElementById('set-text').addEventListener('click', e => {
+        const b = e.target.closest('button[data-v]'); if (!b) return;
+        settings.textSize = b.dataset.v; saveSettings(); renderSettings();
+      });
+      document.getElementById('set-alpha').addEventListener('click', e => {
+        const b = e.target.closest('button[data-v]'); if (!b) return;
+        settings.hudAlpha = Number(b.dataset.v); saveSettings(); renderSettings();
+      });
+      document.getElementById('set-solid').addEventListener('click', () => {
+        settings.solidUi = !settings.solidUi; saveSettings(); renderSettings();
       });
       document.getElementById('set-autohide').addEventListener('click', () => {
         settings.autoHideHud = !settings.autoHideHud; saveSettings(); renderSettings();
@@ -15441,6 +15736,27 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (show && qp) qp.style.display = 'none';
       }
 
+      /* Tracker (v7.0.0): the radar, bounty, quest and reading pills share one slot on the info rail. Only the first
+         visible one (in that order of urgency) shows; +N opens the others. */
+      var trackerEl = document.getElementById('hud-tracker'), trackerMore = document.getElementById('hud-tracker-more'), trackerSig = '';   // var: updateReadPill may call this early
+      function syncTracker() {
+        if (!trackerEl) return;
+        const vis = [...trackerEl.querySelectorAll('.trk')].filter(p => p.style.display && p.style.display !== 'none');
+        const sig = vis.map(p => p.id).join(',');
+        if (sig === trackerSig) return; trackerSig = sig;
+        trackerEl.querySelectorAll('.trk').forEach(p => p.classList.toggle('trk-top', p === vis[0]));
+        trackerEl.classList.toggle('has-more', vis.length > 1);
+        if (vis.length < 2) { trackerEl.classList.remove('open'); trackerMore.setAttribute('aria-expanded', 'false'); }
+        trackerMore.textContent = trackerEl.classList.contains('open') ? '−' : `+${vis.length - 1}`;
+      }
+      trackerMore.addEventListener('click', e => {
+        e.stopPropagation();
+        const open = trackerEl.classList.toggle('open');
+        trackerMore.setAttribute('aria-expanded', String(open));
+        trackerMore.setAttribute('aria-label', open ? 'Show only the most urgent objective' : 'Show all objectives');
+        trackerSig = ''; syncTracker(); sfx.playTick();
+      });
+
       function updateHUD() {
         updateQuestPill(); updateBountyPill(); updateBuffPill();
         updateLogNewDot();
@@ -15454,7 +15770,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const bPct = Math.min(100, (bWeight / bCap) * 100);
         const bBar = document.getElementById('hud-bucket-bar');
         bBar.style.width = `${bPct}%`;
-        bBar.style.backgroundColor = bPct > 85 ? '#f87171' : '#38bdf8';
+        bBar.style.backgroundColor = bPct > 85 ? '#f87171' : '#2dd4bf';
 
         const boat = getCurrentBoat();
         const fuelWrap = document.getElementById('hud-fuel-bar-wrap');
@@ -15517,6 +15833,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         } else {
           evPill.style.display = 'none';
         }
+        syncTracker();
 
         document.getElementById('hud-rank').textContent = RANKS[rankIndexFor(state.xp || 0)].name;
         const rod = getCurrentRod();

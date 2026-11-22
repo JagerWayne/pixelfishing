@@ -31,6 +31,7 @@ Once installed it also works offline.
 14. [Sea events](#sea-events)
 15. [Character customisation](#character-customisation)
 16. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
+16a. [The interface (Tide Glass)](#the-interface-tide-glass)
 17. [Settings](#settings)
 18. [Saving](#saving)
 19. [Installing and offline play](#installing-and-offline-play)
@@ -57,9 +58,9 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Action | Touch | Keyboard |
 |---|---|---|
 | Walk / run | Thumbstick, **steered like a car**: left / right turns the angler on the spot (any angle), up walks forward, **down turns him round** (the camera swings round behind him) and he walks that way. A light push walks (up to 2.4 m/s), a **full push runs** (3.8 m/s). The camera stays behind him and turns with him. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `A` `D` turn, `W` forward, `S` turn round and walk; hold `Shift` to run |
-| Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** to look straight ahead again | none |
+| Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** (top right, under the status bar) to look straight ahead again | none |
 | Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
-| Open the menu | **☰** (top right): a **side drawer** with Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Filter (camera filters and postcards), Quests and Exit | none |
+| Open the menu | **☰** (right end of the status bar): a **side drawer** with Pause, Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Filter (camera filters and postcards), Quests and Exit | none |
 | Harbour map | **☰ → 🗺️ Map** (📍 on the map drops buoys) | `M` |
 | Tip a chum bucket | **🪣 CHUM** beside the action button on a stopped boat | `C` |
 | Quests | **☰ Menu → 📜 Quests** | none |
@@ -71,9 +72,9 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Dive / surface | **🤿 DIVE** button (next to the action button) | `X` |
 | Swim up / down while diving | **▲ UP** / **▼ DOWN** buttons | `R` / `F` |
 | Switch **first person / third person** view | **☰ Menu → 🎥 View** row (says *first person* or *third person*) | `V` |
-| Open the menu (Bag, Log, Career, Records, Settings, Look, Sound, gear info) | **☰** button, top right | none |
+| See every objective | Tap **+N** next to the objective chip under the status bar (tap **−** to fold it again) | none |
 | Close a menu | **Close** button | `Esc` |
-| **Pause** (world stops, sound toggle, controls help) | **⏸** button, top right | `P` or `Esc` (when no menu is open) |
+| **Pause** (world stops, sound toggle, controls help) | **☰ → ⏸ Pause** (opening the menu already stops the world) | `P` or `Esc` (when no menu is open) |
 
 **First person** puts the camera in the angler's head, looking where you face. The thumbstick then turns you on the spot (left / right) and walks forward or backward (up / down); on a boat the normal boat control and chase camera apply. The choice is remembered in the settings. Whenever you stand still for half a second in front of a stand, the camera also **zooms in on it** by itself, but only at the **Bounty Board** (to tap its papers) and the **Aquarium** (its slow sweep along the tank) since v6.6.2; it lets go as soon as you move. Shops only frame themselves while their sheet is open.
 
@@ -529,10 +530,24 @@ There is a hidden cheat menu. Stand close to the **seagull perched on the west e
 
 The menu can show the collision boxes, spawn a treasure chest or boss shadow (on a boat), add money, unlock all gear, restock bait and fuel, change the time of day, weather and moon, discover every species and bottle, complete or reroll bounties, fill or empty the bucket, teleport around the pier, and toggle session-only helpers: instant bites, a line that never snaps, rare-fish luck, infinite bait and infinite fuel. Every cheat asks **Apply cheat?** first, so a stray tap changes nothing; *Cancel*, tapping outside, swiping down or `Esc` all back out. The toggles reset when you reload; changes to money and gear are saved like normal progress.
 
+## The interface (Tide Glass)
+
+Since v7.0.0 the whole interface uses one frosted-glass look built for phones held in one or two hands:
+
+- **Status bar** (top): one glass strip with your **cash**, the **bucket** meter (the **fuel** meter appears next to it on a boat; it turns amber, then red when you are low on fuel for the trip back), the **weather** and **clock**, and the **☰** menu.
+- **Info rail** (under the bar, left): the **zone chip** (zone, distance, return fuel, meal charges), the return-fuel warning when it matters, and the **objective tracker**. The tracker shows only the most urgent line, in this order: the sea radar (treasure, boss, frenzy), a bounty, the current quest, the book you are reading. **+N** opens the others. The live bait camera sits under it.
+- **Compass** (under the bar, right): a small heading tape; tap it to look ahead again.
+- **Centre:** the bite and leap banners, the station picker and the "press to open" banner, and the **meter dock** with the cast power and the fight's drag and tension meters, all **just above your thumbs** where your eyes already are.
+- **Thumb zones:** the thumbstick is bottom left. The big round **action button** is bottom right, coloured by what it does: coral by default, amber to cast or shop, red on a bite, teal while reeling or diving, blue to sail, green for the map and bounties. Its small round helpers (dive, up, down, chum) stack beside it on the inside. **Handedness: Left** mirrors all of it.
+- **Colours:** deep navy glass panels, teal for "you" and progress, coral for the main action, gold for money, green, amber and red for good, careful and danger.
+
 ## Settings
 
-Open **☰ Menu → Settings**.
+Open **☰ Menu → Settings**. The settings are grouped as **Display**, **Controls**, **Sound & haptics** and **Game**.
 
+- **Text size:** *S*, *M*, *L* or *XL* for the menus, shops, chats, toasts and the info chips (the controls keep their size; that is *Button size*).
+- **HUD panels:** *Clear*, *Mid* or *Dark*, how much of the world shows through the glass.
+- **Reduce transparency:** solid panels without blur (always on in *Battery saver*, which saves a little power on older phones).
 - **Sound effects** on or off (also on the 🔊 button).
 - **Haptics** (vibration) on or off, independent of sound.
 - **Graphics:** *High* (with soft sun shadows) or *Battery saver* (renders at lower resolution and turns shadows off).
@@ -555,7 +570,7 @@ Progress is saved automatically in your browser's `localStorage`:
 | Key | Contents |
 |---|---|
 | `pixel_fishing_save_v1` | Cash, gear, bucket, discoveries, bounties, appearance, XP, stats, achievements, the daily streak (`daily`), the owned boats (`ownedBoats`) and each boat's fuel (`boatFuel`) and more (save format version 2; new fields are validated and old saves load with defaults) |
-| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen |
+| `pixel_fishing_settings_v1` | Sound, haptics, graphics quality, bucket sort order, handedness, thumbstick mode, button size, HUD fade, full screen, text size, HUD panel opacity, reduce transparency |
 | `pixel_fishing_save_v1_backup` | A copy of a save that could not be read, kept so progress is never silently destroyed |
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
@@ -577,6 +592,8 @@ The game is a Progressive Web App: it has a web manifest, icons, and a service w
 ## Technical overview
 
 The whole game is **one HTML file** (`index.html`) with no build step, plus a handful of static assets.
+
+The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`--ink-*`, `--sea`, `--coral`, `--gold`, `--glass`, `--blur`, `--r-*`, `--text-scale`); a theme block at the end of the stylesheet restyles the components, and line icons come from an inline SVG sprite (`<use href="#i-…">`).
 
 ```
 index.html                 the game: HTML, CSS and all JavaScript
@@ -604,7 +621,7 @@ The script inside `index.html` is organised in labelled sections:
 | I | Boarding, docking and the rescue loop |
 | J | Fishing mechanics and the context-sensitive action button |
 | K | UI: the shop sheet (`ShopUI` cards, tabs, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera filters, bounties, settings, customise |
-| L | HUD and button synchronisation |
+| L | HUD and button synchronisation (`updateHUD`, the objective tracker `syncTracker`) |
 | M | Main animation and physics loop |
 
 Notes on the models:
@@ -656,6 +673,15 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 7.0.0: Tide Glass, a new interface for phones
+
+- **New look:** one frosted-glass design system (`:root` tokens: deep navy glass, teal, coral, gold) replaces the mix of retro pixel boxes and slate sheets. It covers buttons, modals, the shop and town sheets, toasts, the start, loading and pause screens, and the side drawer. System sans-serif text, tabular monospace numbers, and line icons from an inline SVG sprite.
+- **Status bar:** one rounded strip with cash, bucket or fuel meter, weather, clock and menu. The pause button moved into the menu (opening the menu already pauses; `P` and `Esc` still work).
+- **Info rail and tracker:** the zone chip on the left, the compass as a small chip on the right. The radar, bounty, quest and reading pills now share **one tracker slot** that shows the most urgent line, with **+N** to see them all.
+- **Meter dock:** the fight's drag and tension meters moved from the top of the screen to just above the thumbs, next to the cast meter. Toasts stay at the top.
+- **Thumb zones:** a coral action button whose colour follows the action; the dive, up, down and chum buttons are small glass buttons stacked beside it. Left-handed mode mirrors the whole cluster.
+- **New settings:** **Text size** (S to XL), **HUD panels** (Clear, Mid, Dark) and **Reduce transparency** (forced on in Battery saver), and the settings sheet is grouped into Display, Controls, Sound & haptics and Game.
 
 ### 2026-11-22, Version 6.8.1: townsfolk umbrellas
 
