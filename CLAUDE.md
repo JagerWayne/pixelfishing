@@ -41,6 +41,9 @@ description of the game, its systems and its structure.
 - Anything stored in the save must be validated in `sanitizeSave`. Bump the save version only for breaking changes.
 - Deployment is GitHub Pages from `main`.
 
+- Performance (v6.3.1): town buildings are merged with `ModelKit.mergeStatic` per fade group right after they are built (keep anything that changes: signs, toggled parts); what is far or hidden is switched off in `perfCull()` each frame. New town groups that toggle visibility must not be plain meshes at the root of `islandScenery`.
+- The menu is a side drawer (`#modal-menu`, rows of `.menu-tile`); the action button hides when it has nothing to do (no Map there; Map is in the drawer and on `M`).
+
 ## Checking a change
 
 Use headless Chromium (Playwright) against a local copy: boot with no errors (also with a corrupted save), walk the
