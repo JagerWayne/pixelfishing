@@ -46,6 +46,8 @@ description of the game, its systems and its structure.
 
 - Friendship (v6.4.0): points in `state.story.friend` via `addFriend(id, n)`; perks are checked with `friendPerk(id)` (8 points, `FRIEND_PERKS`) where they apply (`fuelPrice()`, `modCost()`, `paintDiscount()`, `sellValue` for flora, pantry, maps, dice, `friendPerkTick`). Restaurant cravings are `todaysCravings()` (saved per day in `town.crave`), served in `serveCravings`. Released morphs add `releaseBonus(zoneId)` to the rare-fish bonus in `selectCatchForCurrentZone`.
 
+- Rigs (v6.5.0) are `RIGS` / `state.rig` (`rigState()`): bite time `rigBiteMult()`, catch weights `rigWeight(item)`, the jig's tension help `fightJig`, chum `useChum()` (moves the nearest frenzy behind the boat, `f.chum` makes it visible). Map buoys are `state.buoys` (`dropBuoy`, `syncBuoys`, `buoyPlaces` in `MAP_PLACES`). Dive vents and overhangs are made per prop cell in `makeCell` (`buildVent`, `buildOverhang`, `spawnLurkers`, `updateVents`).
+
 ## Checking a change
 
 Use headless Chromium (Playwright) against a local copy: boot with no errors (also with a corrupted save), walk the

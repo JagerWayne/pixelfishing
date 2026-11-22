@@ -60,7 +60,8 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** to look straight ahead again | none |
 | Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
 | Open the menu | **☰** (top right): a **side drawer** with Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Quests and Exit | none |
-| Harbour map | **☰ → 🗺️ Map** | `M` |
+| Harbour map | **☰ → 🗺️ Map** (📍 on the map drops buoys) | `M` |
+| Tip a chum bucket | **🪣 CHUM** beside the action button on a stopped boat | `C` |
 | Quests | **☰ Menu → 📜 Quests** | none |
 | Sail the boat | Thumbstick: **up** is the throttle, **left / right** the helm, **down** brakes then reverses. The helm needs the boat moving (no spinning on the spot) | `W` `S` throttle and reverse, `A` `D` or arrow keys steer |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space`, `E` or `Enter` (all three are the action button: they do exactly what the button shows) |
@@ -200,6 +201,15 @@ There is also the **Rod-Tip Live Bait Cam** ($180), a picture-in-picture view of
 
 Choose your bait in the **Tackle Toolbox** on the pier. When special bait runs out you are switched back to Bread Crumbs.
 
+### Rigs (v6.5.0)
+
+A **rig** goes on the line with any bait, one at a time (Tackle Shop → **🪝 Rigs**; equip or take off there or at the pier toolbox):
+| Rig | Price | Effect |
+|---|---|---|
+| 🎯 Surface Popper | $220 | Bites come 25% faster; jumpers (marlins, slim fish) are 2.5x as likely, bottom-dwellers (flatfish, anglers) almost never bite |
+| ⚓ Weighted Deep Jig | $480 | From the Open Shelf out (zones 3 to 5): bites come 15% sooner and fish that dive pull 20% less on the line |
+| 🪣 Chum Bucket | $140 for 3 | On a stopped boat press **🪣 CHUM** (or `C`): a feeding frenzy gathers off the stern, visible even without a sonar |
+
 ### Buckets
 | Bucket | Cost | Capacity |
 |---|---|---|
@@ -303,6 +313,8 @@ The encyclopedia (📖 Log) tracks **69 catchable things**:
 
 ## Diving and spearfishing
 
+**Thermal vents and reef overhangs (v6.5.0):** from the Coastal Reef out, the sea floor has **thermal vents** (rising bubbles over a glowing cone: swimming in the column lifts you and gives **+15% air**, once every 45 s per vent) and **reef overhangs** (rock arches with one or two **lurkers**: eels and rare fish worth 50% more, which bolt if you swim in fast, so approach slowly).
+
 You can leave the surface and hunt fish by hand. You need **dive gear** (to go under) and a **spear gun** (to catch anything); both are in the **Dive Shop** on the harbour terrace (see [Dive gear and spear guns](#dive-gear-and-spear-guns)).
 
 - **Start a dive** with the **🤿 DIVE** button or `X`, either from the **pier tip** or from a **boat that is almost stopped** (speed under 1.5). The button turns into **🫧 SURFACE** while you are under, and pressing it starts an **auto-ascent** (press again to cancel).
@@ -351,6 +363,8 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 ## Harbour Town, its people and the story
 
 Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
+
+**Map buoys (v6.5.0):** on the Map, press **📍**, pick **⚓ Wreck**, **🐉 Boss** or **⤵️ Drop-off** and tap the sea: up to **3** coloured buoys float there in the world and show on the Map and its list with distance and direction. Remove them from the same bar. Saved as `buoys`.
 
 **Districts (v6.3.0).** The terrace now runs from x -37.6 to +37.6 and climbs a gentle ramp (from 14 to 17 m back) to an **upper terrace** 1.2 m higher. Tap-to-walk finds its way around every building (waypoints joined wherever nothing solid is in the way).
 - **Market Square & Artisan Quarter (east):** a paved square with a fish stall, the **📮 Post Office** (Maren) and **🔨 Barnaby's Workshop**; up the lane, the **🦀 tide pool** and the **🍺 Sailors' Rest** tavern on the upper terrace.
@@ -632,6 +646,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.5.0: rigs, buoys, vents and overhangs
+- **Rigs** in the Tackle Shop and the toolbox: Surface Popper (faster bites, jumpers), Weighted Deep Jig (deep water, easier divers) and Chum Buckets (a feeding frenzy off the stern of a stopped boat, 🪣 CHUM or `C`).
+- **Map buoys:** drop up to 3 Wreck / Boss / Drop-off buoys on the Map; they float in the world and are listed with distance and bearing.
+- **Diving:** thermal vents (lift and +15% air) and reef overhangs with valuable lurkers that flee from a fast approach, from the Coastal Reef out.
+- Save: `rig` (owned, equipped, chum) and `buoys`, validated. Version bumped to **v6.5.0**.
 
 ### 2026-11-22, Version 6.4.0: friends, cravings and Cook ×3
 - **Friendship perks** with all nine townsfolk (8 points each): cheaper fuel, pantry, modules and paint, Catch of the Day tips, frenzy shouts, storm and full-moon warnings, better sea-plant prices, half-price treasure maps and bigger dice wins. Hearts in chats, the noticeboard and the Quests list.
