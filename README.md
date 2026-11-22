@@ -494,7 +494,8 @@ Open it from the start screen (**🎨 Customise Look**), the **☰ Menu** (**�
 
 - **Your name** (up to 16 characters). It names your restaurant in Harbour Town, e.g. *Wayne's Restaurant*; left empty, it is *Fisherman's Restaurant*.
 - A live **3D preview** that rotates by itself (a *Stop / Rotate* button) and can be dragged to turn.
-- **A human-shaped angler** (since v4.0.0): a real skeleton (hips, spine, chest, neck, head, shoulders, elbows, wrists, hips, knees and ankles) with one smooth skinned body, so knees, elbows and shoulders bend like skin. Stylised adult proportions with a slightly larger head.
+- **Harbour Chibi characters** (since v9.0.0): the angler and all nine townsfolk are cute, chunky "gameish" characters, an original Pixel Fishing style. A big round head (about 3.5 heads tall in all), a short rounded body, chunky arms and legs, mitten hands and soft toon shading. The **face is painted**: big glossy eyes in your eye colour with highlights (lashes on the female face), eyebrows in your hair colour, rosy cheeks, a small smile and a button nose. Facial hair and glasses sit on top of it.
+- **A real skeleton** (since v4.0.0): hips, spine, chest, neck, head, shoulders, elbows, wrists, hips, knees and ankles under one smooth skinned body, so knees, elbows and shoulders bend like skin. Steps are shorter and a little bouncier on the short legs; feet dangle when sitting on a bench.
 - **Male / Female** bodies with different builds. The female body has a natural teardrop-shaped bust (a gentle upper slope and a fuller lower curve) that every top, sweater and coat follows.
 - **Bust physics** (since v4.2.0): the bust sits on two soft-tissue bones driven by a damped spring, so it bounces and sways a little with walking, jogging, turning, sitting down, casting and the boat's motion, then settles. Supportive tops (raincoat, hoodie, sweater, fishing vest) hold it firmer and show less of the motion than a T-shirt, tank top, bikini or bare chest.
 - Tabs: **Outfits** (quick presets), **Body** (skin tone, height, build, eye colour), **Hair** (style and colour), **Face** (face shape, nose, eyebrows, facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
@@ -686,6 +687,18 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 9.0.0: Harbour Chibi characters (character overhaul, phase 1)
+
+- **New look for everyone:** the angler and the nine townsfolk are now chibi characters, an original style.
+  - **Body:** a big round head, a short chunky body, mitten hands and toon shading.
+  - **Face:** painted on, with big glossy eyes, brows, blush, a smile and a button nose.
+  - **Fit:** total height is about 1.5 m, so benches, the rod, the camera and every interaction still fit.
+- **Everything you picked still applies:** skin, eyes, hair, face shape, nose, brows, facial hair, glasses, height, build, every top, bottom, shoe and hat. Old saves keep their look; nothing needs converting.
+  - **Clothes:** they follow the new body (every garment's heights scale with the shorter torso).
+  - **Shoes and hair:** boots are shorter, and long hair, ponytails and braids are trimmed to suit the big head.
+- **Animation:** shorter, quicker steps with a little bounce. The first-person eye height, the umbrella grip and the bench sitting pose are adjusted for the new proportions.
+- Next: full customisation (sliders, patterns, two colours per garment, expressions), then a new customise screen.
 
 ### 2026-11-22, Version 8.2.0: Rapier physics and a loading screen with percentages
 
