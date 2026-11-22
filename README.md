@@ -100,7 +100,7 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 - **Lists (Fish Market, Recycling):** each row is one piece from your bucket (icon, name, kg, price, hot or glut marks); tap a row to sell just that one (after the confirm) or the big button at the bottom to sell or recycle them all. The bag screen's own *Sell* buttons work only in front of the matching stand.
 - The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
 
-**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: from 18:00 you turn in, the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
+**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, the **film camera** (VFX lens) by the door, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: it opens the bunk sheet with the **🏆 Trophy Wall** (mount your heaviest fish over 18 kg, or a boss you landed, on a plaque above the bunk: a 3D replica with species, weight, zone and day) and, from 18:00, **Sleep**: the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
 
 In **third person the island's palms, cottages and bushes are hidden** so the camera never gets stuck behind them; first person shows them again.
 
@@ -363,6 +363,15 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 ## Harbour Town, its people and the story
 
 Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
+
+**Town Projects (v6.6.0, noticeboard):** late-game investments for the town.
+| Project | Cost | What it does |
+|---|---|---|
+| 📡 Weather Station | $4,000 | A 3-day forecast (each day has an outlook, *Fair*, *Changeable* or *Stormy*, that weights the weather) with the moon, on the Map, the noticeboard and in the bunk sheet |
+| 🔥 Pier Smokehouse | $5,500 | A fish that does not fit in your bucket can go **🔥 To the Smokehouse** instead (up to 25 kg, at 90% of its value) as smoked fillets you sell on the noticeboard |
+| 🗼 Lighthouse Fast-Travel Slip | $8,000 | **Launch** from the noticeboard: you board your boat already moored at the lighthouse jetty |
+
+**Share codes (v6.6.0, Post Office):** no server: a code is plain text (`PF1-…`) you send in any message app. Write a **bottle note**, or a **catch challenge** from one of your three best records; your friend pastes it under *Open a code*. Notes are kept in the Post Office (last 10); beating a challenge (that species at that weight or more) pays **$250** and 60 XP.
 
 **Map buoys (v6.5.0):** on the Map, press **📍**, pick **⚓ Wreck**, **🐉 Boss** or **⤵️ Drop-off** and tap the sea: up to **3** coloured buoys float there in the world and show on the Map and its list with distance and direction. Remove them from the same bar. Saved as `buoys`.
 
@@ -646,6 +655,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.6.0: town projects, the Trophy Wall and share codes
+- **Town Projects** on the noticeboard: Weather Station ($4,000, 3-day forecast; each day now has a weather outlook), Pier Smokehouse ($5,500, overflow catches become smoked fillets, up to 25 kg) and Lighthouse Fast-Travel Slip ($8,000, launch your boat at the lighthouse jetty).
+- **Trophy Wall** above the cabin bunk: mount your heaviest fish over 18 kg or a landed boss (3D replica with species, weight, zone and day). The bunk's button opens a small sheet with Sleep and the Trophy Wall.
+- **Share codes** at the Post Office: bottle notes and catch challenges as Base64 text codes, offline.
+- Save: `town.proj`, `town.smoke`, `town.wall`, `town.bosses`, `town.recs`, `town.notes`, `town.chal`, validated on load. Version bumped to **v6.6.0**.
 
 ### 2026-11-22, Version 6.5.0: rigs, buoys, vents and overhangs
 - **Rigs** in the Tackle Shop and the toolbox: Surface Popper (faster bites, jumpers), Weighted Deep Jig (deep water, easier divers) and Chum Buckets (a feeding frenzy off the stern of a stopped boat, 🪣 CHUM or `C`).
