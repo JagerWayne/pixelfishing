@@ -338,6 +338,7 @@ Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the
 | Grand Aquarium | 18 kg | 80 | 6 | 4.3 x 1.35 m | $6,000 |
 
   Anything over 18 kg never fits in any tank, so marlin, sailfish, swordfish, sharks, oarfish, mola and every deep monster stay in the sea (27 species can never be kept).
+- **🌊 Release to sea:** a grown, tank-bred colour morph (golden, albino or midnight) can be released from the Fish tab: rare fish become more common in its species' home zone, **+1.5% per release, up to +15%** per zone (saved as `aquarium.released`).
 - **🧽 Care:** food, cleanliness and happiness bars. Fish eat and foul the water as in-game days pass (more fish, faster): *Fish flakes* are free (+35 food), *Premium pellets* fill the bar (from your stock), *Clean the tank* is free and a *Deep clean* (one kit) also halves the dirt for 3 days. Visitors pay tickets that you *Collect* here.
 - **🪸 Decor:** every decoration you own, with *Remove* (it goes to storage) or *Place* (free, when a slot is free). Removed decorations are never bought again.
 
@@ -376,13 +377,29 @@ Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (
 
 **People.** Nine townsfolk live here, each with a day routine (they walk between their spots through the gate and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
 
+**Friendship (v6.4.0).** Each townsperson likes you a little more for every finished quest (+3), the first chat of the day (+1), a restaurant craving served (+2), one of Ines' commissions (+2) and a dice win against them (+1). Hearts show in the chat, on the noticeboard and in the Quests list. At **8 points** their **perk** is yours for good:
+| Friend | Perk |
+|---|---|
+| 🧔 Captain Rook | Fuel costs 20% less ($0.40 a unit) |
+| 👩‍🔬 Ines | Tells you where and when to find the Catch of the Day (noticeboard) |
+| 🧒 Pip | Shouts when a feeding frenzy is within 70 m of your boat (no sonar needed) |
+| 👵 Old Marta | Warns you before a storm and on full-moon evenings |
+| 👨‍🍳 Chef Lorenzo | Pantry goods cost 15% less |
+| 🔨 Barnaby | Boat modules and paint cost 15% less |
+| 🌿 Talia | Sea plants sell for 20% more (Recycling and the greenhouse) |
+| 📮 Maren | Treasure maps at half price |
+| 🍺 Old Salty | Dice wins pay 50% more |
+
+**Ines' commissions:** after her quest *Living Specimens*, Ines asks for one specimen a day: a named fish species from the sea (brought in your bucket, pays 2.5x its value + $40) or a grown **tank-bred colour morph** (golden, albino or midnight) from your aquarium ($320). Each pays XP and +2 friendship.
+
 **Quests** (25, in 6 chapters; chapter 5 *New Neighbours*: Maren's *Letters for the Harbour* and *Messages in Bottles*, Barnaby's *A Fresh Coat* and *Timber from the Tide*; chapter 6 *Tides & Tales*: Talia's *Life in the Tide Pool* and *Herbs of the Hill*, Old Salty's *A Roll of the Dice* and *The Shadow Rumour*, with steps for town jobs, crab traps, dice, boat paint and the telescope): each has steps that advance on their own as you play (catch fish, from the pier or in a zone, by weight, rarity or at night; dive to a depth; find bottle messages; sail somewhere; own a boat; keep species in the aquarium; bring someone a fish from your bucket). When the steps are done, talk to the giver for the reward (cash and XP). The story runs from *Welcome to Harbour Town* through *The Keeper's Light* (repair and relight the lighthouse) and *Rook's Wager* to *The Legend of the Deep*: a Legendary fish landed at night in the Abyssal Trench. The current step shows in a blue pill under the top bar; the full list is in **☰ Menu → 📜 Quests**. Saved as `story` (active steps, completed quests, friendship, flags).
 
 ## Your restaurant and cooking
 
 The restaurant at the east end of Harbour Town is **yours**, named after you (*Wayne's Restaurant*, or *Fisherman's Restaurant* without a name). It opens once you do Chef Lorenzo's first quest (bring him any fish). Stand at its door and press **🍝 KITCHEN**: a sheet opens with four tabs.
 
-- **🍳 Cook:** every recipe with what it needs; *Cook* uses the cheapest matching fish from your bucket and the pantry items. Cooking is a short mini-game: **chop** (tap three times when the knife is over a green mark), **sear** (hold the button and let go when the heat is in the green) and **plate** (tap when the arrow points up). It gives 1 to 3 ⭐ (Rare or better fish help). The dish goes in the fridge (up to 30).
+- **🍳 Cook:** every recipe with what it needs; *Cook* uses the cheapest matching fish from your bucket and the pantry items. Cooking is a short mini-game: **chop** (tap three times when the knife is over a green mark), **sear** (hold the button and let go when the heat is in the green) and **plate** (tap when the arrow points up). It gives 1 to 3 ⭐ (Rare or better fish help). The dish goes in the fridge (up to 30). Once you have cooked a recipe at 3 stars three times, **Cook ×3** appears: three dishes at once at your average stars, using three times the ingredients, without the mini-game.
+- **⭐ Cravings:** each day two townsfolk crave a dish, one at lunch and one at dinner (shown on the Fridge tab and the noticeboard). Have that dish in the fridge during that service and they come in and pay **double**, and like you more.
 - **🧊 Fridge:** your dishes and what guests pay for them; **Eat** one for a meal buff counted in **charges**, shown in a small orange pill under the top bar (eating another dish replaces it): *faster bites* (bites come 30% sooner) lasts the **next 8 casts**, *steadier line* (line tension builds 15% slower) the **next 5 fish fights**, *longer breath* (20% more air) the **next dive**.
 - **☕ Harbour Espresso** (Pantry tab, $25): you read **twice as fast** on a bench for 12 in-game hours (shown in the same pill). **Collect** the takings here.
 - **🧺 Pantry:** bread $4, lemon $3, rice $5, potato $3, spices $6, bought 5 at a time.
@@ -615,6 +632,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.4.0: friends, cravings and Cook ×3
+- **Friendship perks** with all nine townsfolk (8 points each): cheaper fuel, pantry, modules and paint, Catch of the Day tips, frenzy shouts, storm and full-moon warnings, better sea-plant prices, half-price treasure maps and bigger dice wins. Hearts in chats, the noticeboard and the Quests list.
+- **VIP cravings** at the restaurant: two a day (lunch and dinner), double pay and friendship when the dish is in the fridge during that service.
+- **Ines' commissions:** a species from the sea or a tank-bred colour morph, one a day.
+- **Release to sea** for grown colour morphs: +1.5% rare-fish odds in their home zone (up to +15%).
+- **Cook ×3** after three 3-star dishes of a recipe.
+- Save: `story.friend` (now used for perks), `town.met`, `town.comm`, `town.crave`, `kitchen.stats`, `aquarium.released`, all validated. Version bumped to **v6.4.0**.
 
 ### 2026-11-22, Version 6.3.1: side drawer and better performance
 - **The menu is a side drawer** that slides in from the right (☰): one large row per button, with **🗺️ Map** first, then Bag, Log, Settings, Career, Records, Look, Sound, **View: first / third person**, Quests and Exit. The Map also opens with `M`.
