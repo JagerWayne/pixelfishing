@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.2.0';
+    window.PF_VERSION = '6.2.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -372,9 +372,14 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 6px;
+      gap: 4px;
       pointer-events: none;
     }
+    /* v6.2.1: one compact status line (zone, distance, return fuel, meal charges) and at most one objective and one radar pill */
+    .hud-zone-pill .hz-extra:empty { display: none; }
+    .hud-zone-pill .hz-extra { color: #fde68a; }
+    .hud-zone-pill .hz-extra::before { content: '•'; color: #94a3b8; margin-right: 6px; }
+    #hud-bounty-pill, #hud-quest-pill, #hud-read-pill, #hud-event-pill, #hud-sonar-pill, .hud-zone-pill { font-size: 11px !important; padding: 3px 8px !important; }
     .hud-zone-pill {
       display: inline-flex;
       align-items: center;
@@ -1709,6 +1714,8 @@
           <span id="hud-zone">1. Shallow Cove</span>
           <span style="color:#94a3b8;">•</span>
           <span id="hud-dist" style="color:#f8fafc;">0 m</span>
+          <span id="hud-zone-fuel" class="hz-extra"></span>
+          <span id="hud-zone-buff" class="hz-extra"></span>
         </div>
         <div id="hud-fuel-warning" class="fuel-warning fuel-safe" style="display:none;">
           Return Fuel: 0.0
@@ -1716,7 +1723,6 @@
         <div id="hud-bounty-pill"></div>
         <div id="hud-quest-pill"></div>
         <div id="hud-read-pill"></div>
-        <div id="hud-buff-pill"></div>
         <div id="hud-event-pill"><span id="hud-event-text"></span></div>
         <div id="hud-sonar-pill">
           <span>📡 SONAR:</span>
@@ -11367,13 +11373,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       /* the small pill under the HUD: the meal's charges left and the espresso */
       function updateBuffPill() {
-        const el = document.getElementById('hud-buff-pill'); if (!el) return;
+        const el = document.getElementById('hud-zone-buff'); if (!el) return;   // v6.2.1: on the status line, icon + count
         const k = state.kitchen, parts = [];
-        if (k && k.buff) parts.push(buffLabel(k.buff.type, k.buff.n));
-        if (k && k.espresso > 0) parts.push(`☕ ${Math.ceil(k.espresso / 60)} h`);
-        const txt = parts.join(' • ');
+        if (k && k.buff) parts.push(`${BUFFS[k.buff.type].icon}${k.buff.n}`);
+        if (k && k.espresso > 0) parts.push(`☕${Math.ceil(k.espresso / 60)}h`);
+        const txt = parts.join(' ');
         if (el.textContent !== txt) el.textContent = txt;
-        el.style.display = txt ? 'block' : 'none';
       }
       /* the restaurant's rating (1 to 5 stars): average quality of what is in the fridge, variety, and the terrace lights */
       function restoRating() {
@@ -14165,25 +14170,29 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
       }
 
+      /* One objective pill at a time (v6.2.1): a finished quest, then a finished bounty, then a bounty that just moved
+         (for 6 seconds), otherwise the current quest (or the leading bounty when there is no quest). */
+      const bountyNote = { key: '', until: 0 };
       function updateBountyPill() {
         refreshBountyPapers();
         const pill = document.getElementById('hud-bounty-pill');
         const active = (state.bounties || []).filter(b => !b.claimed);
-        if (active.length === 0 || isAnyModalOpen()) {
-          pill.style.display = 'none';
-          return;
-        }
+        const S = story(), qids = Object.keys(S.active), questDone = qids.some(questReady);
+        if (active.length === 0 || isAnyModalOpen()) { pill.style.display = 'none'; return; }
         const ready = active.find(b => b.progress >= b.target);
         const b = ready || active.reduce((best, cur) => (cur.progress / cur.target > best.progress / best.target ? cur : best), active[0]);
+        const key = active.map(x => x.progress).join(',');
+        if (key !== bountyNote.key) { if (bountyNote.key) bountyNote.until = performance.now() + 6000; bountyNote.key = key; }
+        const show = !questDone && (ready || performance.now() < bountyNote.until || !qids.length);
         pill.classList.toggle('ready', !!ready);
-        pill.textContent = ready
-          ? `✅ ${b.title} done — claim at the Pier Board!`
-          : `📜 ${b.title}: ${b.progress}/${b.target}`;
-        pill.style.display = 'flex';
+        pill.textContent = ready ? `✅ ${b.title}: claim at the board` : `📜 ${b.title}: ${b.progress}/${b.target}`;
+        pill.style.display = show ? 'flex' : 'none';
+        const qp = document.getElementById('hud-quest-pill');
+        if (show && qp) qp.style.display = 'none';
       }
 
       function updateHUD() {
-        updateBountyPill(); updateQuestPill(); updateBuffPill();
+        updateQuestPill(); updateBountyPill(); updateBuffPill();
         updateLogNewDot();
         document.getElementById('hud-cash').textContent = `$${state.cash.toFixed(2)}`;
         { const wl = getWeatherObj().label; const sp = wl.indexOf(' ');
@@ -14215,6 +14224,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           fBar.style.width = `${fPct}%`;
 
           const returnNeeded = estimateReturnFuelNeeded();
+          const zoneFuel = document.getElementById('hud-zone-fuel');
+          zoneFuel.textContent = '';
           if (onBoat && getDistanceMeters() > 15) {
             fuelWarn.style.display = 'block';
             fuelWarn.textContent = `Return Fuel Needed: ${returnNeeded.toFixed(1)}`;
@@ -14226,8 +14237,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               fuelWarn.className = 'fuel-warning fuel-amber';
               fBar.style.backgroundColor = '#f59e0b';
               fuelWrap.classList.remove('fuel-alert');
-            } else {
+            } else {   // plenty of fuel: just a short note on the status line, no separate warning
               fuelWarn.className = 'fuel-warning fuel-safe';
+              fuelWarn.style.display = 'none';
+              zoneFuel.textContent = `⛽ ${returnNeeded.toFixed(1)} back`;
               fBar.style.backgroundColor = '#4ade80';
               fuelWrap.classList.remove('fuel-alert');
             }
@@ -14238,25 +14251,22 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
         }
 
+        // one radar pill (v6.2.1): the nearest treasure or boss and, with a sonar, the nearest frenzy, each as distance + arrow
         const evPill = document.getElementById('hud-event-pill');
-        const nearEv = onBoat ? seaEvents.nearest(boatPos) : null;
-        if (nearEv) {
+        const arrow = (dx, dz) => relativeBearing(dx, dz).split(' ').pop();
+        const nearEv = onBoat ? seaEvents.nearest(boatPos) : null, radar = [];
+        if (nearEv) radar.push(`${nearEv.kind === 'boss' ? '🐉' : '🪙'} ${Math.round(nearEv.dist)}m ${arrow(nearEv.x - boatPos.x, nearEv.z - boatPos.z)}`);
+        if (hasModule('sonar') && state.boatTier > 0 && onBoat) {
+          const nearest = vfx.getNearestFrenzy(boatPos);
+          radar.push(nearest ? `📡 ${Math.round(nearest.dist)}m ${arrow(nearest.spot.x - boatPos.x, nearest.spot.z - boatPos.z)}` : '📡 …');
+        }
+        document.getElementById('hud-sonar-pill').style.display = 'none';
+        if (radar.length) {
           evPill.style.display = 'inline-flex';
-          evPill.classList.toggle('boss', nearEv.kind === 'boss');
-          document.getElementById('hud-event-text').textContent = `${nearEv.kind === 'boss' ? '🐉 BOSS' : '🪙 TREASURE'} ${Math.round(nearEv.dist)}m (${relativeBearing(nearEv.x - boatPos.x, nearEv.z - boatPos.z)})`;
+          evPill.classList.toggle('boss', !!nearEv && nearEv.kind === 'boss');
+          document.getElementById('hud-event-text').textContent = radar.join('  ·  ');
         } else {
           evPill.style.display = 'none';
-        }
-        const sonarPill = document.getElementById('hud-sonar-pill');
-        if (hasModule('sonar') && state.boatTier > 0 && onBoat) {
-          sonarPill.style.display = 'inline-flex';
-          const refPos = boatPos;
-          const nearest = vfx.getNearestFrenzy(refPos);
-          if (nearest) {
-            document.getElementById('hud-sonar-text').textContent = `FRENZY ${Math.round(nearest.dist)}m (${relativeBearing(nearest.spot.x - refPos.x, nearest.spot.z - refPos.z)})`;
-          }
-        } else {
-          sonarPill.style.display = 'none';
         }
 
         document.getElementById('hud-rank').textContent = RANKS[rankIndexFor(state.xp || 0)].name;

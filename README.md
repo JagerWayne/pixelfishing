@@ -590,6 +590,9 @@ There is no test framework in the repository. Changes are checked with headless 
 
 ## Changelog
 
+### 2026-11-22, Version 6.2.1: a tidier HUD
+- **Less text on screen:** the pills under the top bar are now at most three short lines. The zone line also carries the return fuel (`⛽ 8.2 back`, shown as a separate warning only when fuel is getting low) and the meal charges and espresso as icons (`⚡6 ☕5h`). **One objective pill:** a finished quest first, then a finished bounty, a bounty that just moved (for 6 seconds), otherwise the current quest. **One radar pill:** treasure or boss and the sonar's frenzy as distance and arrow (`🪙 98m ▶ · 📡 34m ▼`). Smaller pill text. Version bumped to **v6.2.1**.
+
 ### 2026-11-22, Version 6.2.0: a slower day, meal charges, the bunk
 - **A slower clock:** one in-game day now lasts **7 real minutes** (`DAY_SECONDS = 420`, was 3.5 minutes): an in-game hour is 17.5 seconds. Only the time of day slows down; walking, boats, casting and fights run as before. Sun, sky, NPC routines, restaurant service, aquarium care and reading all follow the one clock.
 - **Meal buffs use charges** instead of 6 hours: *faster bites* for the next 8 casts, *steadier line* for the next 5 fights, *longer breath* for the next dive, shown in a compact orange pill. A running meal from an older save becomes a full set of charges.
