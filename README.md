@@ -558,7 +558,7 @@ Open **☰ Menu → Settings**. The settings are grouped as **Display**, **Contr
 - **Graphics:** *High* (with soft sun shadows) or *Battery saver* (renders at lower resolution and turns shadows off).
 - **Full screen:** on by default; the game enters full screen when you tap *Start*. Turn it off here to stay windowed. (iPhone Safari does not allow full screen for web pages; the installed home-screen app is already full screen.)
 - **Handedness:** *Right* or *Left*; left swaps the thumbstick and action button.
-- **Thumbstick:** *Fixed*, or *Floating*, where the stick appears under your thumb anywhere on its half of the screen and the fixed one stays as a faint hint.
+- **Thumbstick:** *Fixed*, or *Floating*, where the stick appears under your thumb anywhere in a **square in the bottom corner** (bottom left, or bottom right when left-handed) and the fixed one stays as a faint hint. The rest of the screen stays free for tap-to-walk and looking around.
 - **Button size:** *S*, *M* or *L* for the thumbstick and action button.
 - **View:** third person or first person (also the **View** tile in the menu, or `V`).
 - **Fade HUD while fishing:** dims the gauges and shortcuts while your line is out.
@@ -598,11 +598,15 @@ The game is a Progressive Web App: it has a web manifest, icons, and a service w
 
 The whole game is **one HTML file** (`index.html`) with no build step, plus a handful of static assets.
 
+**Engine (v8.0.0):** three.js **r187** (`three@0.187.0`), loaded by the small loader at the top of `index.html` with a progress count and imported as an ES module from the downloaded bytes; the module is copied into a plain global `THREE` so the game code reads it as before. `legacyLook()` keeps the look the game was tuned for on r128: colour management off, linear output (`outputColorSpace = LinearSRGBColorSpace` on every renderer), textures marked `SRGBColorSpace`, and the light shader chunk patched back to the legacy light maths (intensities x π and the old distance fall-off), so no light needed retuning. WebGL 2 is required (every current phone and browser has it).
+
+**Rendering budget (v8.0.0):** static props are merged per material look with `ModelKit.mergeStatic` and, where the materials only differ in colour, **baked into vertex colours** (`bakeColor`), so the pier, the town props, the harbour lamps and the buoys are a few dozen draw calls; `ModelKit.mergeSafe` does the same for a prop group but keeps anything that lights up or fades. The angler's and every townsperson's head, hair, face and hat are baked per material after `dress()`, townsfolk drop their finger joints past 9 m from the camera, tiny props (under ~12 cm) cast no sun shadow, the shadow map refreshes every other frame on devices running below ~45 fps, and the shaders are compiled in parallel (`compileAsync`) when the town is first built. Compared with v7.2.0 that is about **30–40% fewer draw calls** (pier 617 → 442, harbour 819 → 507, town square 514 → 359).
+
 The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`--ink-*`, `--sea`, `--coral`, `--gold`, `--glass`, `--blur`, `--r-*`, `--text-scale`); a theme block at the end of the stylesheet restyles the components, and line icons come from an inline SVG sprite (`<use href="#i-…">`).
 
 ```
 index.html                 the game: HTML, CSS and all JavaScript
-vendor/three.r128.min.js   Three.js r128, bundled (CDN copies are fallbacks)
+vendor/three.r187.module.min.js   Three.js r187 as one ES module (bundled with esbuild; jsDelivr / unpkg are fallbacks)
 manifest.webmanifest       installable app manifest
 sw.js                      service worker (offline support)
 icons/                     app icons (192, 512, maskable, Apple touch)
@@ -679,6 +683,19 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 8.0.0: three.js r187 and leaner scenes
+
+- **New engine:** three.js **r128 → r187**. It is bundled as one ES module (`vendor/three.r187.module.min.js`); the loader still shows the download progress and falls back to jsDelivr / unpkg. The game looks the same: colour management is kept off, output is linear, textures use `colorSpace`, and the light shader is patched to the legacy light maths. Screenshot comparisons against r128 differ by under 1% at noon, dusk, night and in rain (moving water and characters aside). Removed APIs were updated (`encoding` → `colorSpace`, `PCFSoftShadowMap` → `PCFShadowMap`, the old `skinning` material flag). Browsers without ES-module support get a clear "too old" message. WebGL 2 is now required.
+- **Fewer draw calls (about 30–40%):**
+  - The 14 park benches and 16 bench lamps (about 250 separate meshes) are merged, and the lamps share one glow material.
+  - The harbour lamps and channel buoys are merged except for their glowing parts.
+  - Static props that differ only in colour share one draw call through vertex colours.
+  - The heads of the angler and the townsfolk are baked per material (28 → 9 draw calls for the angler).
+  - Townsfolk skip their finger joints when more than 9 m from the camera.
+- **Cheaper shadows:** tiny props no longer cast sun shadows. On devices running below ~45 fps the shadow map refreshes every other frame (always when it moves).
+- **Smoother start:** shaders compile in parallel when the town is first built.
+- **Floating thumbstick:** it now only listens in a **square in the bottom corner** (bottom right when left-handed), so tap-to-walk and dragging the view work everywhere else.
 
 ### 2026-11-22, Version 7.2.0: Tide Glass clean-up and accessibility pass
 
