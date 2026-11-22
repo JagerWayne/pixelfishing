@@ -8,6 +8,7 @@ import { anglerRigStatics } from './angler-rig.js';
 import { anglerLimbsStatics } from './angler-limbs.js';
 import { anglerTorsoStatics } from './angler-torso.js';
 import { anglerDressStatics } from './angler-dress.js';
+import { anglerBakeStatics } from './angler-bake.js';
 
 export class AnglerFactory {
   static defaultLook(gender) {
@@ -90,9 +91,16 @@ export class AnglerFactory {
       bikini: { top: 'bikini', topColor: 7, topAccent: 0, bottom: 'bikini', bottomColor: 7, shoes: 'sandals', shoeColor: 0, hat: 'straw', hatColor: 3, glasses: 'sun' },
       shorts: { top: 'none', topColor: 0, topAccent: 0, bottom: 'swim', bottomColor: 5, shoes: 'barefoot', shoeColor: 0, hat: 'none', hatColor: 3, glasses: 'none' },
       raincoat: { top: 'slicker', topColor: 3, topAccent: 10, bottom: 'jeans', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'souwester', hatColor: 3, glasses: 'none' },
-      angler: { top: 'vest', topColor: 0, topAccent: 12, bottom: 'overalls', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 12, glasses: 'none' }
+      angler: { top: 'vest', topColor: 0, topAccent: 12, bottom: 'overalls', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 12, glasses: 'none' },
+      // v11.0.0: two more full looks
+      captain: { top: 'polo', topColor: 0, topAccent: 1, topPattern: 'plain', bottom: 'cargo', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'captain', hatColor: 0, glasses: 'none', accessory: 'badge', extraColor: 3 },
+      cosy: { top: 'cardigan', topColor: 8, topAccent: 3, topPattern: 'checks', bottom: 'leggings', bottomColor: 9, shoes: 'sneakers', shoeColor: 0, hat: 'beanie', hatColor: 2, glasses: 'round', accessory: 'scarf', extraColor: 2 }
     };
-    return this.sanitizeLook(Object.assign({}, look, presets[id] || {}), look.gender);
+    const p = presets[id]; if (!p) return this.sanitizeLook(look, look.gender);
+    // a preset is a whole outfit: picked colours of its parts give way to it, and parts it does not name go plain
+    const out = Object.assign({}, look, { topPattern: 'auto', bottomPattern: 'plain', accessory: 'none' }, p);
+    ['topHex', 'accentHex', 'bottomHex', 'bottomAccHex', 'shoeHex', 'hatHex', 'extraHex'].forEach(k => delete out[k]);
+    return this.sanitizeLook(out, look.gender);
   }
 
   static isDefault(look) {
@@ -110,4 +118,5 @@ export function init() {
   addMethods(AnglerFactory, null, anglerLimbsStatics);
   addMethods(AnglerFactory, null, anglerTorsoStatics);
   addMethods(AnglerFactory, null, anglerDressStatics);
+  addMethods(AnglerFactory, null, anglerBakeStatics);
 }

@@ -65,3 +65,28 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   :root { --glass: rgba(12, 22, 38, 0.9); --glass-strong: var(--ink-800); }
 }
+/* character customisation tools (v11.0.0): the preview toolbar, expression buttons, a dice on every row, look codes */
+.cust-tools .pixel-btn:disabled { opacity: 0.45; }
+.cust-faces { display: flex; gap: 6px; justify-content: center; }
+.cust-faces .pixel-btn { flex: 1; font-size: 20px; min-height: 44px; padding: 4px; }
+.cust-faces .pixel-btn.active { background: var(--sea); color: var(--ink-900); border-color: var(--sea); }
+.cust-row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.cust-row-head .cust-label { margin-bottom: 0; }
+.cust-dice { min-width: 44px; min-height: 36px; border-radius: var(--r-pill); border: 1px solid var(--glass-line); background: var(--glass); color: var(--text); font-size: 17px; cursor: pointer; }
+.cust-dice:active { transform: scale(0.94); }
+.cust-note { text-align: left; margin-top: 6px; }
+.cust-share { display: flex; flex-direction: column; gap: 8px; }
+.cust-share textarea { width: 100%; font: 12px/1.4 ui-monospace, monospace; }
+.cust-view { align-items: stretch; }
+.cust-view > .pixel-btn { flex: 0 0 48px; font-size: 18px; padding: 4px; }
+.cust-view .cust-faces { flex: 1; }
+/* phones held upright: the preview stays pinned at the top, only the options scroll (tabs stick above them) */
+@media (max-width: 700px) and (orientation: portrait) {
+  .cust-window { height: 94dvh; }
+  .cust-body { flex-direction: column; flex-wrap: nowrap; flex: 1; min-height: 0; overflow: hidden; padding: 8px 12px; }
+  .cust-preview { flex: none; min-width: 0; gap: 6px; }
+  #cust-canvas { height: 27dvh; min-height: 150px; }
+  .cust-panel { flex: 1; min-height: 0; min-width: 0; overflow-y: auto; }
+  #cust-tabs { position: sticky; top: 0; z-index: 1; flex-wrap: nowrap; overflow-x: auto; background: var(--ink-800); padding: 2px 0 8px; margin-bottom: 8px; }
+  #cust-tabs .tab-btn { flex: none; }
+}

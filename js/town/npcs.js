@@ -66,9 +66,6 @@ function npcSpotNow(d) {
   return d.spots[Math.floor((t - 0.27) / 0.12) % d.spots.length];
 }
 const npcGround = z => z > ISLAND.rampZ0 ? townGround(z) : z > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((z - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
-function rigFingers(rig, on) {
-  [rig.L, rig.R].forEach(S => { S.fingers.forEach((f, i) => { if (i % 2 === 0) f.visible = on; }); if (S.thumb) S.thumb.visible = on; });
-}
 export function updateNpcs(dt) {
   if (!world || shared.onBoat && !npcState.built) return;
   if (!npcState.built) { buildNpcs(); if (renderer.compileAsync) renderer.compileAsync(scene, camera).catch(() => {}); }   // v8.0.0: warm the shaders up in parallel
@@ -96,8 +93,6 @@ export function updateNpcs(dt) {
     const dy = Math.atan2(Math.sin(n.yaw - n.g.rotation.y), Math.cos(n.yaw - n.g.rotation.y));
     n.g.rotation.y += dy * (dt > 0 ? 1 - Math.exp(-8 * dt) : 0);
     const far = Math.hypot((shared.onBoat ? boatPos.x : shared.playerX) - n.x, (shared.onBoat ? boatPos.z : shared.playerZ) - n.z) > 40;
-    // v8.0.0 detail level: past 9 m from the camera the finger joints and thumbs (16 draw calls per person) are not drawn
-    { const lod = camera.position.distanceToSquared(n.g.position) > 81; if (n.lod !== lod) { n.lod = lod; rigFingers(n.rig, !lod); } }
     let hands = null;   // an umbrella in the left hand while it rains
     n.umb.w += ((isRaining() && !n.hidden ? 1 : 0) - n.umb.w) * (dt > 0 ? 1 - Math.exp(-4 * dt) : 0);
     if (n.umb.w > 0.02 && !far) { n.g.updateMatrixWorld(true); hands = { L: placeUmbrella(n.umb, n.g, n.rig.dims.hScale), R: null }; }

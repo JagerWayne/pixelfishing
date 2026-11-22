@@ -492,63 +492,34 @@ A pill under the top bar shows the nearest event with its distance and bearing r
 
 Open it from the start screen (**🎨 Customise Look**), the **☰ Menu** (**🎨 Look**) or **Settings → Appearance**.
 
-- **Your name** (up to 16 characters). It names your restaurant in Harbour Town, e.g. *Wayne's Restaurant*; left empty, it is *Fisherman's Restaurant*.
-- A live **3D preview** that rotates by itself (a *Stop / Rotate* button) and can be dragged to turn.
-- **Harbour Chibi characters** (since v9.0.0): the angler and all nine townsfolk are cute, chunky "gameish" characters, an original Pixel Fishing style. A big round head (about 3.5 heads tall in all), a short rounded body, chunky arms and legs, mitten hands and soft toon shading. The **face is painted**: big glossy eyes in your eye colour with highlights (lashes on the female face), eyebrows in your hair colour, rosy cheeks, a small smile and a button nose. Facial hair and glasses sit on top of it.
-- **A real skeleton** (since v4.0.0): hips, spine, chest, neck, head, shoulders, elbows, wrists, hips, knees and ankles under one smooth skinned body, so knees, elbows and shoulders bend like skin. Steps are shorter and a little bouncier on the short legs; feet dangle when sitting on a bench.
-- **Male / Female** bodies with different builds. The female body has a natural teardrop-shaped bust (a gentle upper slope and a fuller lower curve) that every top, sweater and coat follows.
-- **Bust physics** (since v4.2.0): the bust sits on two soft-tissue bones driven by a damped spring, so it bounces and sways a little with walking, jogging, turning, sitting down, casting and the boat's motion, then settles. Supportive tops (raincoat, hoodie, sweater, fishing vest) hold it firmer and show less of the motion than a T-shirt, tank top, bikini or bare chest.
-- Tabs (v9.1.0):
-  - **Outfits:** quick presets.
-  - **Body:**
-    - skin tone (12 swatches or **any colour** from the picker);
-    - **sliders** for height, head size and build (slim to round);
-    - ears (round, small, pointed).
-  - **Face:**
-    - **eyes** (round, big, sleepy, almond, dots, sparkle, cat-eye, wide) and eye colour (swatches or any colour);
-    - **eyebrows** (normal, thin, bushy, arched, straight, bold slant, worried, none);
-    - **mouth** (smile, grin, cat, open, smirk, calm, tongue, toothy, pout, laugh);
-    - nose, cheeks (rosy, peach, none), freckles and a beauty mark;
-    - face shape, facial hair (incl. sideburns), glasses (round, square, sunglasses).
-  - **Hair:**
-    - 15 styles, including spiky, afro, twin tails, mohawk, side part and pixie;
-    - hair colour (or any colour);
-    - a **fringe** (side sweep or full) with its own colour for dyed tips.
-  - **Top** and **Bottom:**
-    - style, a **pattern** (plain, stripes, checks, waves, colour block; *Classic* keeps the striped sweater and the checked flannel), a main and a **second colour**;
-    - new tops: polo, flannel, cardigan, dress;
-    - new bottoms: cargo trousers, leggings.
-  - **Shoes:** includes high-tops.
-  - **Hat:**
-    - new hats: captain's cap, bandana, flower crown.
-  - **Extras:** scarf, backpack, necklace or rod badge, in any colour.
-  - Every colour row ends with a rainbow button that opens your device's colour picker.
+- **Harbour Chibi characters** (since v9.0.0): the angler and all nine townsfolk are cute, chunky "gameish" characters, an original Pixel Fishing style. A big round head (about 3.5 heads tall in all), a short rounded body, chunky arms and legs, mitten hands and soft toon shading. The **face is painted** (eyes, brows, mouth, cheeks and marks on a texture), so it can change expression.
+- **A real skeleton** (since v4.0.0): hips, spine, chest, neck, head, shoulders, elbows, wrists, knees and ankles under one smooth skinned body, plus small finger joints in each mitten (since v11.0.0) that curl round the rod and point while reading. Steps are short and a little bouncy; feet dangle when sitting on a bench.
+- **Bust physics** (since v4.2.0): the female body's bust sits on two soft-tissue bones driven by a damped spring, so it moves a little with walking, turning, casting and the boat, then settles; supportive tops hold it firmer.
 - **Expressions:** everyone blinks every few seconds. Your angler looks surprised on a bite, focused in a fight, and happy with a catch or in a chat. The townsfolk smile while you talk to them, and each has a face of their own.
-- **Quick outfits:** one tap sets a whole outfit: *Fisherman*, *Vest & overalls* (fishing vest, bib overalls, cap with flaps), *Beach: Bikini* (bikini, sandals, straw hat, sunglasses), *Beach: Shorts only* (swim shorts, bare chest, barefoot) and *Raincoat day*.
-- **Hats and hair:** some hair styles would poke through a hat, so they are greyed out while that hat is worn (and picking a hat that clashes switches the hair to *Short*). Cap blocks Wavy, Bob and Bun; Beanie, Bucket hat and Straw hat also block Ponytail; the Sou'wester also blocks Long. Choose *None* for the hat to use every style. The cap with ear flaps blocks the same styles as the beanie.
-- **🎲 Random** rolls a whole new character (it keeps your chosen gender) and **↺ Reset** restores the default outfit.
-- Options:
 
-| Category | Choices |
+### The customise screen (v11.0.0)
+
+- **The live 3D preview** turns by itself (⏸ / ▶) and can be dragged. **⇄** shows the back. The four face buttons (😐 calm, 😊 happy, 😮 surprised, 😤 focused) try the expressions you will see in the game. On a phone held upright the preview stays pinned at the top while the options scroll underneath; on wide screens they sit side by side.
+- **Touching a row frames its part:** the camera moves to the face for the eyes, to the feet for shoes, to the hat for hats, and so on.
+- **↶ Undo / ↷ Redo** go back and forward through your last 20 changes (also **Ctrl+Z** and **Ctrl+Shift+Z** or **Ctrl+Y**). A slider drag or a colour-picker session counts as one change. Undo starts fresh each time you open the screen.
+- **🎲 Random** rolls a whole new character and **↺ Reset** restores the starting look; every row also has its own **🎲** that picks a new value for just that row (never the one you have).
+- Six tabs:
+
+| Tab | Rows |
 |---|---|
-| Skin tone | 6 |
-| Height | Very short, Short, Average, Tall, Very tall (about ±8%) |
-| Build | Slim, Average, Broad |
-| Face shape | Oval, Round, Square, Long |
-| Nose | Straight, Small, Button, Broad |
-| Eyebrows | Normal, Thin, Bushy |
-| Eye colour | 4 |
-| Hair styles | Short, Buzz, Wavy, Ponytail, Long, Bob, Bun, Braid, Bald |
-| Hair colours | 10 |
-| Facial hair | None, Stubble, Mustache, Goatee, Full beard |
-| Glasses | None, Round, Sunglasses |
-| Tops | Striped sweater, T-shirt, Fishing vest, Tank top, Hoodie, Raincoat, Bikini top, Bare chest |
-| Bottoms | Jeans, Bib overalls, Shorts, Swim shorts, Bikini bottom, Skirt |
-| Shoes | Rubber boots, Sneakers, Sandals, Barefoot |
-| Hats | Sou'wester, Cap, Cap with flaps, Beanie, Bucket hat, Straw hat, None |
-| Clothing colours | 14 per item |
+| 🧍 Body | Your name (up to 16 characters; it names your restaurant, e.g. *Wayne's Restaurant*), starting look (Male / Female: only a starting point, every hair style, outfit and colour suits both), height, head size and build sliders, ears |
+| 🙂 Face | Eyes (8), eyebrows (8), mouth (10), nose (4), cheeks (3), freckles and marks (4), face shape (4), facial hair (6), glasses (4) |
+| 💇 Hair | Style (15), fringe (none, side sweep, full), hair colour, fringe and tips colour (or *=* the same as the hair) |
+| 👕 Clothes | Top (12), top pattern (Classic, Plain, Stripes, Checks, Waves, Colour block), bottom (8), bottom pattern (5), shoes (5), hat (10 with *None*), accessory (scarf, backpack, necklace, rod badge) |
+| 🎨 Colours | Skin (6), eyes (4), top and its second colour, bottom and its second colour, shoes, hat, accessory (14 swatches each); every row ends with a rainbow button for **any colour** from your device's colour picker |
+| ✨ Presets | Seven outfits in one tap (*Fisherman*, *Vest and overalls*, *Beach day*, *Swim shorts*, *Rainy dock*, *Captain*, *Cosy knit*) and **look codes** |
 
-Your look is saved and applied immediately in the game world. In the world the angler walks and jogs with bending knees and elbows, breathes and shifts weight when standing, holds the rod in both hands, sits properly on the chair and in the rowboat, and puts the hands on the controls while driving a boat.
+- **Presets** set a whole outfit: tops, bottoms, shoes, hat, glasses, patterns and the accessory, and clear any picked colours of those parts (your face, hair and body stay yours).
+- **Look codes:** *📋 Copy my look code* makes a `PF1-` code of your look (only what differs from the starting look, so it is short). Send it in any message app; your friend pastes it under *Wear this look* (or opens it at the Post Office) and wears it. Undo brings your own look back.
+- **Hats and hair:** some hair styles would poke through a hat, so they are greyed out while that hat is worn (and picking a hat that clashes switches the hair to *Short*). Choose *None* for the hat to use every style.
+- The screen is keyboard and screen-reader friendly: the tabs are a tab list, every chip is a button named after its row and choice (*Eyes: Sleepy*, pressed or not), sliders are labelled range inputs and the dice say what they randomise (*Random mouth*).
+
+Your look is saved and applied immediately in the game world.
 
 ## Secret: the Seagull's menu
 
@@ -636,7 +607,7 @@ The game is a plain static site with **no build step and no dependencies**: a sh
 
 **Physics (v8.2.0):** [Rapier](https://rapier.rs) 0.21.0 (`@dimforge/rapier3d-compat`). The loader downloads it next to three.js and starts it (compiles its WebAssembly) before the game. The `Physics` module mirrors every walk collider from the `Colliders` registry into a Rapier world (tall cuboids and cylinders, since walking ignores heights). The angler walks with Rapier's **character controller**, a capsule with the old 0.15 m body margin that slides along walls, benches and corners. The townsfolk are moving cylinders, so you still cannot walk through them. The town's path finding asks Rapier (one shape cast per segment instead of a scan of every collider; building the waypoint graph went from about 20 ms to 6 ms). The fixed pier rails, edges and island limits are unchanged clamps. If Rapier cannot load, or the secret menu's **Debug → Walking physics** is set to built-in, the old collision code runs exactly as before; the debug view of collision boxes also draws what Rapier sees (white lines).
 
-**Rendering budget (v8.0.0):** static props are merged per material look with `ModelKit.mergeStatic` and, where the materials only differ in colour, **baked into vertex colours** (`bakeColor`), so the pier, the town props, the harbour lamps and the buoys are a few dozen draw calls; `ModelKit.mergeSafe` does the same for a prop group but keeps anything that lights up or fades. The angler's and every townsperson's head, hair, face and hat are baked per material after `dress()`, townsfolk drop their finger joints past 9 m from the camera, tiny props (under ~12 cm) cast no sun shadow, the shadow map refreshes every other frame on devices running below ~45 fps, and the shaders are compiled in parallel (`compileAsync`) when the town is first built. Compared with v7.2.0 that is about **30–40% fewer draw calls** (pier 617 → 442, harbour 819 → 507, town square 514 → 359).
+**Rendering budget (v8.0.0):** static props are merged per material look with `ModelKit.mergeStatic` and, where the materials only differ in colour, **baked into vertex colours** (`bakeColor`), so the pier, the town props, the harbour lamps and the buoys are a few dozen draw calls; `ModelKit.mergeSafe` does the same for a prop group but keeps anything that lights up or fades. Every character is **baked after `dress()`** (since v11.0.0, `AnglerFactory.bakeRig`): the skinned body and clothes and every rigid part (mittens, shoes, head, hair, hat, glasses, extras) are merged into one skinned mesh per material look, with colours in vertex colours, so the angler and each townsperson are 3 to 5 draw calls (they were 25 to 42) and the painted face stays apart for its expressions; tiny props (under ~12 cm) cast no sun shadow, the shadow map refreshes every other frame on devices running below ~45 fps, and the shaders are compiled in parallel (`compileAsync`) when the town is first built. Compared with v7.2.0 that is about **30–40% fewer draw calls** (pier 617 → 442, harbour 819 → 507, town square 514 → 359). With the baked characters (v11.0.0) the frame takes about half the draw calls of v10.1.0 with everyone nearby (pier 423–635 → 203–360, town 471–658 → 255–375, town square 466–645 → 275–362 per frame, depending on whether the shadow map is redrawn), for about 10% more triangles.
 
 The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`--ink-*`, `--sea`, `--coral`, `--gold`, `--glass`, `--blur`, `--r-*`, `--text-scale`); a theme block at the end of the stylesheet restyles the components, and line icons come from an inline SVG sprite (`<use href="#i-…">`).
 
@@ -739,6 +710,15 @@ For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 11.0.0: a new customise screen and lighter characters (character overhaul, phase 3)
+
+- **A new customise screen:** six tabs (Body, Face, Hair, Clothes, Colours, Presets), a preview that stays in view on phones and frames the part you are changing, **Undo / Redo** of the last 20 changes, a **🎲 on every row**, a back view and four expression buttons. The Male / Female choice is now *Starting look* in the Body tab, next to your name.
+- **Presets:** two new outfits, *Captain* and *Cosy knit*; every preset now sets a whole outfit (patterns and accessory too) and clears picked colours of those parts.
+- **Look codes:** share your look as a `PF1-` code; paste a friend's in Customise or at the Post Office.
+- **Performance:** every character is baked into one skinned mesh per material (`AnglerFactory.bakeRig`), from 25–42 meshes down to 3–5, about half the draw calls per frame in town; the mitten joints are bones, so the hands still curl and point. The finger detail switch for distant townsfolk is gone (nothing left to save). In first person the head is hidden by shrinking its bone.
+- **Fixes:** copying a share code no longer throws an error when the browser refuses clipboard access; the screen passes an axe-core check on every tab.
+- The customise buttons moved out of the secret menu's file into `js/ui/customise-tools.js`; new modules `js/angler/angler-bake.js` and `js/ui/customise-history.js`.
 
 ### 2026-11-22, Version 10.1.0: the game split into files, part 2 (ES modules)
 
