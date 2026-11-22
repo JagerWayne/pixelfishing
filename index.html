@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.7.2';
+    window.PF_VERSION = '6.8.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4241,8 +4241,8 @@
           // finger curl: relaxed, or wrapped round whatever the hands hold
           ['L', 'R'].forEach(s => {
             const S = r[s];
-            const curl = 0.25 + (st.hands && st.hands[s] ? 1.1 * hw : 0) + (st.cranking && s === 'R' ? 0.2 : 0);
-            S.fingers.forEach((f, i) => f.rotation.set(0, 0, (s === 'L' ? 1 : -1) * curl * (i % 2 ? 0.9 : 0.7)));
+            const curl = 0.25 + (st.hands && st.hands[s] ? 1.1 * hw : 0) + (st.cranking && s === 'R' ? 0.2 : 0), point = st.point === s;
+            S.fingers.forEach((f, i) => f.rotation.set(0, 0, (s === 'L' ? 1 : -1) * (point ? (i < 2 ? 0.05 : 1.45) : curl) * (i % 2 ? 0.9 : 0.7)));   // pointing: the index finger stays straight
           });
           r.root.updateMatrixWorld(true);
           this.bustPhysics(dt);
@@ -4531,6 +4531,10 @@
         pool:   { x: 34.0, z: 19.8, r: 2.3 },
         winch:  { x: -22.8, z: 1.4 }
       };
+      /* v6.8.0: more benches (all face the sea), each with a lamp; the two at x +-4.6 on the boardwalk are built with the pier */
+      const EXTRA_BENCHES = [[-12, 5.25], [-17.5, 5.25], [-22.5, 5.25], [6.8, 5.25], [11.5, 5.25], [21, 5.25],
+        [-1.9, 12.5], [1.9, 12.5], [-15, 18.2], [-6, 18.2], [6, 18.2], [15, 18.2], [25, 8.2], [30.6, 21.4]].map(([x, z]) => ({ x, z }));
+      const benchGroundY = z => (z > ISLAND.zGate ? townGround(z) : 1.55);
       const JOB_LANTERNS = [{ x: -12.5, z: 15.2 }, { x: -24.4, z: 15.4 }, { x: -29.4, z: 22.8 }, { x: 9.5, z: 15.2 }, { x: 19.4, z: 17.8 }, { x: 30.4, z: 15.4 }];
       const JOB_KIND_IDS = ['mail', 'cleanup', 'lantern', 'forage', 'winch'];
       const BOAT_PAINTS = [['Signal red', 0xb91c1c], ['Sunset orange', 0xea580c], ['Sun yellow', 0xeab308], ['Kelp green', 0x15803d], ['Lagoon teal', 0x0f766e],
@@ -7112,6 +7116,34 @@
             [[0.8, 0.2, 0], [0.8, 0.62, 0], [1.3, 0.2, 0.2]].forEach(([x, yy, z]) => K.box(g, 0.48, 0.42, 0.48, K.wood, x, yy, z));
             Colliders.circle('winch', Wn.x, Wn.z, 0.3, W); Colliders.box('crates', Wn.x + 1.05, Wn.z + 0.1, 0.55, 0.35, W);
           }
+          // v6.8.0: the extra benches, each with a lamp post whose head glows at night over a soft pool of light
+          {
+            out.benchLamps = [];
+            const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g2 = c.getContext('2d'), gr = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+              gr.addColorStop(0, 'rgba(255,230,170,0.9)'); gr.addColorStop(0.45, 'rgba(255,210,140,0.3)'); gr.addColorStop(1, 'rgba(255,200,120,0)'); g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+            const lamp = (x, y, z) => {
+              const g = new THREE.Group(); g.position.set(x, y, z); root.add(g);
+              K.cyl(g, 0.045, 0.06, 2.0, K.iron, 0, 1.0, 0, 8); K.box(g, 0.26, 0.04, 0.26, K.iron, 0, 2.02, 0);
+              const head = K.M(0xfde68a, 0.4, 0.1, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0 }); K.box(g, 0.2, 0.26, 0.2, head, 0, 1.86, 0);
+              const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+              pool.rotation.x = -Math.PI / 2; pool.position.set(-0.5, 0.04, 0); pool.renderOrder = 2; g.add(pool);
+              Colliders.circle('bench lamp', x, z, 0.1, W);
+              out.benchLamps.push({ head, pool: pool.material });
+            };
+            const bench = (x, z) => {
+              const y = benchGroundY(z), b = new THREE.Group(); b.position.set(x, y, z); root.add(b);
+              for (let k = 0; k < 3; k++) K.box(b, 1.6, 0.05, 0.13, K.lightWood, 0, 0.46, -0.16 + k * 0.15);
+              for (let k = 0; k < 2; k++) { const bk = K.box(b, 1.6, 0.12, 0.04, K.lightWood, 0, 0.66 + k * 0.17, 0.27); bk.rotation.x = -0.18; }
+              [-0.68, 0.68].forEach(lx => {
+                K.box(b, 0.07, 0.44, 0.07, K.iron, lx, 0.22, -0.18); K.box(b, 0.07, 0.95, 0.07, K.iron, lx, 0.47, 0.25);
+                K.box(b, 0.07, 0.05, 0.5, K.iron, lx, 0.44, 0.03); K.box(b, 0.07, 0.04, 0.38, K.iron, lx, 0.64, -0.02);
+              });
+              Colliders.box('bench', x, z + 0.05, 0.82, 0.35, W);
+              lamp(x + 1.1, y, z + 0.25);
+            };
+            EXTRA_BENCHES.forEach(b => bench(b.x, b.z));
+            [-4.6, 4.6].forEach(x => lamp(x + 1.1, 1.55, 5.5));   // the two original boardwalk benches get a lamp too
+          }
           return out;
         }
 
@@ -9160,6 +9192,21 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let reelLookW = 0; // 0..1: how much the camera is turned towards the hooked fish
       let camLookInit = false;
       let rodVisProgress = 1.0;
+      /* v6.8.0: an umbrella opens over the angler in the rain (on foot, hands free) */
+      const umbrella = { w: 0, g: null, canopy: null, v: null };
+      function ensureUmbrella() {
+        if (umbrella.g) return;
+        const g = new THREE.Group(), M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, flatShading: true, side: THREE.DoubleSide });
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.95, 6), M(0x1f2937)); shaft.position.y = 0.42; g.add(shaft);
+        const hook = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 5, 10, Math.PI), M(0x7c2d12)); hook.position.set(0.04, -0.04, 0); hook.rotation.z = Math.PI; g.add(hook);
+        const canopy = new THREE.Group(); canopy.position.y = 0.96; canopy.rotation.set(-0.21, 0, 0.18); g.add(canopy);   // kept level
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.3, 8, 1, true), M(0xdc2626)); canopy.add(cone);
+        for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.ConeGeometry(0.625, 0.302, 8, 1, true, i * Math.PI / 2, Math.PI / 8), M(0xf8fafc)); canopy.add(w); }
+        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), M(0x1f2937)); tip.position.y = 0.17; canopy.add(tip);
+        g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+        g.visible = false; world.anglerGroup.add(g);
+        Object.assign(umbrella, { g, canopy, v: new THREE.Vector3() });
+      }
       let chairOpenProgress = 0.0;
       let boatPos = new THREE.Vector3(-4.8, 0, -7.5);
       let boatYaw = 0;
@@ -9271,11 +9318,16 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const BENCH_SEATS = [-4.6, 4.6].flatMap(cx => [cx - 0.4, cx + 0.4]).map(x => ({ kind: 'bench', x, z: 5.27, yaw: 0, seatH: 0.53 }));
       // the Lookout Pavilion's bench (v6.3.0): fz is where you stand in front of it
       BENCH_SEATS.push(...[-0.4, 0.4].map(dx => ({ kind: 'bench', x: TOWN.lookoutBench.x + dx, z: TOWN.lookoutBench.z + 0.02, yaw: 0, seatH: 0.59, fz: TOWN.lookoutBench.z - 0.45 })));
+      EXTRA_BENCHES.forEach(b => BENCH_SEATS.push(...[-0.4, 0.4].map(dx => ({ kind: 'bench', x: b.x + dx, z: b.z + 0.02, yaw: 0, seatH: 0.53, fz: b.z - 0.45 }))));
+      /* the bench seat in front of you (r: how close, scaled along the bench's depth) */
+      function benchSeatNear(px, pz, r = 0.62) {
+        let best = null, bd = r;
+        BENCH_SEATS.forEach(s => { const fz = s.fz || 4.8, d = Math.hypot(px - s.x, (pz - fz) * 1.6); if (pz > fz - 0.5 && pz < fz + 0.7 && d < bd) { bd = d; best = s; } });
+        return best;
+      }
       function findRestSpot(px, pz) {
         // bench: in front of one of the two benches at the back of the boardwalk
-        let best = null, bd = 0.62;
-        BENCH_SEATS.forEach(s => { const fz = s.fz || 4.8, d = Math.hypot(px - s.x, (pz - fz) * 1.6); if (pz > fz - 0.5 && pz < fz + 0.7 && d < bd) { bd = d; best = s; } });
-        if (best) return best;
+        { const best = benchSeatNear(px, pz); if (best) return best; }
         // pier sides: along the walking limit, away from the stairs, bucket, toolbox, bollards, rod rack and lamp posts
         if (Math.abs(px) > PIER_WALK - 0.15 && pz < -0.3 && pz > -10.9) {
           const side = px > 0 ? 1 : -1;
@@ -10932,6 +10984,10 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           }, 700);
         }, 950);
       }
+      /* v6.8.0: SIT at any bench (standing still for two seconds still sits you down too) */
+      const SIT_SPOT = { id: 'sit', icon: '🪑', label: 'SIT', cls: 'shop', color: ['#a78bfa', '#ddd6fe'],
+        near: () => !restState.spot && !!benchSeatNear(playerX, playerZ, 1.15), prox: () => '🪑 BENCH • SIT DOWN TO REST OR READ',
+        press: () => { const sp = benchSeatNear(playerX, playerZ, 1.15); if (!sp) return; walkVel.x = walkVel.z = 0; restState.spot = sp; restState.idle = 2; sfx.playTick(); } };
       SPOTS.push({ id: 'bed', icon: '🛏️', label: 'SLEEP', cls: 'shop', color: ['#818cf8', '#c7d2fe'],
         near: () => playerX > BED.x - 1.7 && playerX < BED.x - 0.35 && playerZ > 1.95 && playerZ < 3.5,
         prox: () => (bedTime() ? `🛏️ BUNK • SLEEP UNTIL 06:00${selectedBook() ? ' AND READ ' + BED.pages + ' PAGES' : ''}` : '🛏️ BUNK • TROPHY WALL • SLEEP AFTER 18:00'),
@@ -11422,6 +11478,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       /* ---- the townsfolk in the world ---- */
       const npcState = { built: false, list: [] };
+      const NPC_R = 0.3;   // the townsfolk's body radius for collisions (v6.8.0)
       const npcMarkerTex = {};
       function npcMarker(ch, color) {
         if (!npcMarkerTex[ch]) {
@@ -11460,8 +11517,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             n.goal = spot; n.pts = planRoute({ x: spot.x, z: spot.z }, { x: n.x, z: n.z }); n.hidden = false;
           }
           let speed = 0;
+          const blocked = n.pts.length && !onBoat && (() => { const p = n.pts[0], dd = Math.hypot(p.x - n.x, p.z - n.z) || 1, nx = n.x + (p.x - n.x) / dd * 0.35, nz = n.z + (p.z - n.z) / dd * 0.35; return Math.hypot(playerX - nx, playerZ - nz) < NPC_R + 0.3; })();
           if (n.talk > 0) n.talk -= dt;
-          else if (n.pts.length && dt > 0) {
+          else if (n.pts.length && dt > 0 && !blocked) {   // (waits while you stand in the way)
             const p = n.pts[0], dx = p.x - n.x, dz = p.z - n.z, dd = Math.hypot(dx, dz), step = 1.35 * dt;
             if (dd <= step) { n.x = p.x; n.z = p.z; n.pts.shift(); } else { n.x += dx / dd * step; n.z += dz / dd * step; n.yaw = Math.atan2(-dx, -dz); }
             speed = 1.35;
@@ -12256,6 +12314,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const T = town(), night = state.timeOfDay > 0.75 || state.timeOfDay < 0.25;
         const litNow = T.litDay === (state.dayCount || 0) || (T.litDay === (state.dayCount || 0) - 1 && state.timeOfDay < 0.25);
         D.lanterns.forEach((l, i) => { const on = night && litNow && T.lit.includes(i); l.glass.emissiveIntensity = on ? 1.4 : 0; });
+        D.benchLamps.forEach(l => { l.head.emissiveIntensity = night ? 1.6 : 0; l.pool.opacity = night ? 0.55 : 0; });
         D.trapFloats.forEach((f, i) => { f.visible = !!T.traps[i]; if (f.visible) f.position.y = townGround(TOWN.pool.z) + 0.08 + Math.sin(elapsed * 2 + i) * 0.02; });
       }
 
@@ -12525,6 +12584,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { id: 'tavern', icon: '🎲', label: 'DICE', cls: 'shop', color: ['#f59e0b', '#fde68a'], near: () => inFront(TOWN.tavern), prox: () => (tavernOpen() ? "🍺 SAILORS' REST • SHIP, CAPTAIN & CREW" : "🍺 SAILORS' REST • OPENS AT 16:00"), useless: () => !tavernOpen(), press: openTavern },
         { id: 'traps', icon: '🦀', label: 'TRAPS', cls: 'shop', color: ['#fb923c', '#fed7aa'], near: () => { const d = Math.hypot(playerX - TOWN.pool.x, playerZ - TOWN.pool.z); return d > TOWN.pool.r && d < TOWN.pool.r + 1.4; }, prox: () => { const T = town(), ready = T.traps.filter(t => t && (state.dayCount || 0) > t.day).length; return `🦀 TIDE POOL • ${ready ? ready + ' TRAP' + (ready > 1 ? 'S' : '') + ' READY' : 'CRAB TRAPS'}`; }, press: openTraps },
         { id: 'workshop', icon: '🎨', label: 'PAINT', cls: 'shop', color: ['#d97706', '#fde68a'], near: () => inFront(TOWN.shop), prox: () => "🔨 BARNABY'S WORKSHOP • BOAT PAINT", press: openWorkshop },
+        SIT_SPOT,
         { id: 'greenhouse', icon: '🌿', label: 'HERBS', cls: 'shop', color: ['#22c55e', '#bbf7d0'], near: () => inFront(TOWN.talia), prox: () => "🌿 TALIA'S GREENHOUSE • LURES, SEA PLANTS", press: openGreenhouse }
       );
 
@@ -12746,7 +12806,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { icon: '🐟', name: 'Fish Market', desc: 'Sell your fish.', x: SHORE_SHOPS.fish.x, z: SHORE_SHOPS.fish.z, w: SHORE_SHOPS.fish.w, d: SHORE_SHOPS.fish.d, col: SHORE_SHOPS.fish.color },
         { icon: '🐠', name: 'Aquarium Shop', desc: 'Tanks, decorations, fish food and cleaning kits.', x: SHORE_SHOPS.aquashop.x, z: SHORE_SHOPS.aquashop.z, w: SHORE_SHOPS.aquashop.w, d: SHORE_SHOPS.aquashop.d, col: SHORE_SHOPS.aquashop.color },
         { icon: '🏠', name: 'Cabin', desc: 'Your home, with the bottle gallery, your aquarium and the bunk with the Trophy Wall.', x: CABIN.x, z: CABIN.d / 2, w: CABIN.w, d: CABIN.d, col: '#b08a5a' },
-        { icon: '📖', name: 'Benches', desc: 'Sit down to rest and read your skill books.', x: -4.6, z: 5.2, w: 1.4, d: 0.5, col: '#78350f', also: [4.6, 5.2] },
+        { icon: '📖', name: 'Benches', desc: 'Sit down to rest and read your skill books (press SIT, or stand still in front of one).', x: -4.6, z: 5.2, w: 1.4, d: 0.5, col: '#78350f', also: [[4.6, 5.2], ...EXTRA_BENCHES.map(b => [b.x, b.z])] },
         { icon: '🏘️', name: 'Harbour Town', desc: 'The village square behind the gate, with the well and the noticeboard.', x: ISLAND.plaza.x, z: ISLAND.plaza.z, w: 4.4, d: 4.4, col: '#a8a29e' },
         { icon: '🏮', name: "Marta's hut", desc: 'Home of Marta, the old lighthouse keeper.', x: TOWN.hut.x, z: TOWN.hut.z, w: TOWN.hut.w, d: TOWN.hut.d, col: '#8b5e34' },
         { icon: '⚓', name: "Rook's house", desc: 'Captain Rook lives here when he is not at the Boatyard.', x: TOWN.rook.x, z: TOWN.rook.z, w: TOWN.rook.w, d: TOWN.rook.d, col: '#f8fafc' },
@@ -12885,7 +12945,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const places = MAP_PLACES();
         g.textAlign = 'center'; g.textBaseline = 'middle';
         places.forEach(p => {
-          const pts = [[p.x, p.z]].concat(p.also ? [p.also] : []);
+          const pts = [[p.x, p.z]].concat(p.also ? (Array.isArray(p.also[0]) ? p.also : [p.also]) : []);
           pts.forEach(([x, z]) => {
             const sx = X(x), sy = Y(z); if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) return;
             g.font = '18px sans-serif'; g.fillStyle = '#fff'; g.fillText(p.icon, sx, sy);
@@ -15478,6 +15538,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const currentFogColor = new THREE.Color(ZONES[0].fogColor);
       const ZONE_SKY_MOOD = [0, 0.06, 0.12, 0.17, 0.21];   // how much each zone's own (darker) fog colour tints the daytime sky
       const _skyCol1 = new THREE.Color(), _skyCol2 = new THREE.Color(), _skyCol3 = new THREE.Color();
+      const TINT = { fullMoon: new THREE.Color(0x387899), dusk: new THREE.Color(0xd97742), lightning: new THREE.Color(0xdbeafe), trench: new THREE.Color(0x0b1233) };   // fixed blend colours, made once (not every frame)
 
       function getWaveHeight(x, z, time, zone) {
         const wMult = getWeatherObj().waveMult;
@@ -16499,7 +16560,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const dayish = 0.3 + 0.7 * day;
         const weather = getWeatherObj();
         _uwCol.copy(_uwShallow).lerp(_uwDeep, 1 - light);
-        if (dive.zone.id >= 4) _uwCol.lerp(new THREE.Color(0x0b1233), 0.35);
+        if (dive.zone.id >= 4) _uwCol.lerp(TINT.trench, 0.35);
         _uwCol.multiplyScalar(dayish * (0.6 + 0.4 * weather.skyDim));
         scene.background.copy(_uwCol);
         scene.fog.color.copy(_uwCol);
@@ -16838,15 +16899,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const targetWater = _skyCol1.setHex(zone.waterColor).lerp(_skyCol2.setHex(ZONES[2].waterColor), zone.id >= 4 ? dayFactor * 0.45 : 0)
           .multiplyScalar((0.36 + dayFactor * 0.64) * weather.skyDim);
         if (moonPhase.isFull && dayFactor < 0.4) {
-          targetWater.lerp(new THREE.Color(0x387899), 0.2);
+          targetWater.lerp(TINT.fullMoon, 0.2);
         }
         const targetSky = _skyCol3.setHex(ZONES[0].fogColor).lerp(_skyCol2.setHex(zone.fogColor), zoneMood + (1 - dayFactor) * zoneMood)
           .multiplyScalar((0.10 + dayFactor * 0.90) * weather.skyDim);
         if (twilightFactor > 0.25 && weather.id === 'CLEAR') {
-          targetSky.lerp(new THREE.Color(0xd97742), twilightFactor * 0.35);
+          targetSky.lerp(TINT.dusk, twilightFactor * 0.35);
         }
         if (lightningFlash > 0.1) {
-          targetSky.lerp(new THREE.Color(0xdbeafe), lightningFlash * 0.65);
+          targetSky.lerp(TINT.lightning, lightningFlash * 0.65);
         }
 
         currentWaterColor.lerp(targetWater, dt * 3.0);
@@ -17044,6 +17105,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               }
             }
 
+            // v6.8.0: the townsfolk are solid too (a circle each); they stop and wait rather than walk through you
+            if (npcState.built) for (const n of npcState.list) {
+              if (n.hidden) continue;
+              const dx = nextX - n.x, dz = nextZ - n.z, d = Math.hypot(dx, dz), m = NPC_R + BODY;
+              if (d < m && d > 1e-4) { nextX = n.x + dx / d * m; nextZ = n.z + dz / d * m; }
+            }
+
             // Two colliders close together can push the angler back and forth into each other; if the result still
             // overlaps any of them, stay where you were (the previous spot was always clear).
             const insideAny = (px, pz) => walkColliders.some(c => c.kind === 'box'
@@ -17081,7 +17149,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           // Rest spots: stand still for 2 s next to a bench seat or the railing and the angler sits down or leans on the rail.
           // Only the visual model moves toward the seat / rail; the walking position (and so every collision) stays put.
           {
-            const still = mode === 'PIER_IDLE' && (!isAnyModalOpen() || (restState.spot && document.getElementById('modal-books').classList.contains('open'))) && walkSpeed < 0.002 && pierMoveInput < 0.15 && !isAtPierWaterEdge() && playerY > 1.5;
+            const still = mode === 'PIER_IDLE' && (!isAnyModalOpen() || (restState.spot && document.getElementById('modal-books').classList.contains('open'))) && walkSpeed < 0.002 && pierMoveInput < 0.15 && !isAtPierWaterEdge() && playerY > 1.45;   // (1.5 is the town's ground, lower is the dock stairs)
             if (!still) { restState.idle = 0; restState.spot = null; }
             else { restState.idle += dt; if (!restState.spot && restState.idle >= 2) restState.spot = findRestSpot(playerX, playerZ); }
             if (restState.spot) restState.last = restState.spot;
@@ -17527,7 +17595,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           world.rodPivot.position.set(0.1 * hs, (hipNow + 0.12) * hs, -0.3 * hs + sitEase * 0.04);
           if (anglerAnim.whip > 0) world.rodPivot.rotation.x -= Math.sin((1 - anglerAnim.whip) * Math.PI) * 0.9;
           world.anglerGroup.updateMatrixWorld(true);
-          let hands = null, handBlend = 0;
+          let hands = null, handBlend = 0, readPoint = false;
           const helm = playerBoatMesh.userData && playerBoatMesh.userData.helm;
           if (helm && helm.roof) { // the trawler's wheelhouse roof turns see-through while you drive in third person
             const target = onBoat && mode === 'BOAT_DRIVING' && !settings.firstPerson ? 0.28 : 1;
@@ -17559,9 +17627,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             handBlend = Math.min(1, rodVisProgress);
           } else if (restW > 0.001 && restSp) {
             const ag = world.anglerGroup;
-            if (restSp.kind === 'bench' && reading.id && readProp && readProp.visible) {   // both hands hold the book
+            if (restSp.kind === 'bench' && reading.id && readProp && readProp.visible) {   // the left hand holds the book, the right index finger follows the lines
               updateReadBook(dt, seatH * hs); readProp.updateMatrixWorld(true);
-              hands = { L: readProp.localToWorld(new THREE.Vector3(-0.13, -0.02, 0.07)), R: readProp.localToWorld(new THREE.Vector3(0.13, -0.02, 0.07)) };
+              const lt = elapsed / 1.6, u = lt % 1, line = Math.floor(lt) % 8, sweep = u < 0.85 ? u / 0.85 : 1 - (u - 0.85) / 0.15;
+              hands = { L: readProp.localToWorld(new THREE.Vector3(-0.13, -0.02, 0.07)), R: readProp.localToWorld(new THREE.Vector3(0.02 + 0.09 * sweep, 0.07, -0.02 + line * 0.017)) };
+              readPoint = true;
             } else if (restSp.kind === 'bench') {   // hands rest on the thighs
               hands = { L: ag.localToWorld(new THREE.Vector3(-0.13, seatH * hs + 0.1, -0.32)), R: ag.localToWorld(new THREE.Vector3(0.13, seatH * hs + 0.1, -0.32)) };
             } else {                         // forearms on the top rail
@@ -17572,7 +17642,20 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             }
             handBlend = restW;
           }
+          {   // the umbrella (rain or storm, on foot, nothing in the hands, third person)
+            const want = !onBoat && !dive.active && (state.weather === 'RAIN' || state.weather === 'STORM') && !settings.firstPerson
+              && !(restW > 0.001) && (mode === 'PIER_IDLE' || mode === 'SHOP_BROWSE');   // not while fishing (the modes), seated or on a boat
+            umbrella.w += ((want ? 1 : 0) - umbrella.w) * (dt > 0 ? 1 - Math.exp(-5 * dt) : 0);
+            if (umbrella.w > 0.02) {
+              ensureUmbrella(); const u = umbrella, k = u.w;
+              u.g.visible = true; u.g.position.set(-0.17 * hs, 1.0 * hs, -0.2 * hs); u.g.rotation.set(0.21, 0, -0.18);   // the shaft leans in so the canopy is over the head
+              u.canopy.scale.set(0.12 + 0.88 * k, 0.55 + 0.45 * k, 0.12 + 0.88 * k);
+              const grip = world.anglerGroup.localToWorld(u.v.copy(u.g.position));   // the left hand holds it (the right keeps the rod)
+              if (!hands) { hands = { L: grip, R: null }; handBlend = k; } else { hands.L = grip; handBlend = Math.max(handBlend, k); }
+            } else if (umbrella.g) umbrella.g.visible = false;
+          }
           anglerAnim.update({
+            point: readPoint ? 'R' : null,
             dt, elapsed,
             speed: isWalkingPier ? Math.hypot(walkDX, walkDZ) / Math.max(1e-3, dt) : 0,
             sit: Math.max(sitEase, onBench ? restW : 0), seatH,

@@ -113,7 +113,7 @@ In **third person the island's palms, cottages and bushes are hidden** so the ca
 | ⚓ **Moored boat** (down the stairs on the port side, beside the low mooring platform, which is 4.5 m long since v4.6.0) | Board your boat once you own one. |
 | 🛥️ **Boat Terminal** (sea end of the mooring platform, inner corner) | Choose which of your boats is moored. |
 | ⛽ **Dock fuel pump** (sea end of the mooring platform, right by the boat) | Fills the moored boat's tank at $0.50 a unit (as much as you can afford). |
-| 🪑 **Benches** (back of the boardwalk) | Stand still in front of one for two seconds and the angler sits down, leans back and now and then crosses his legs. Move to get up. |
+| 🪑 **Benches** (16: the boardwalk, the town plaza, the upper terrace, the Market Square, the tide pool and the Lookout) | Walk up and press **🪑 SIT** (or stand still in front of one for two seconds); the angler sits down, leans back and now and then crosses his legs. While reading, his right index finger follows the lines on the page. Each bench has a lamp that glows at night over a warm pool of light. Move to get up. |
 | 🌊 **Railing** | Stand still at the pier rails or the free parts of the boardwalk rail for two seconds and the angler leans his forearms on the rail and gazes out to sea. |
 | 🪑 **Pier tip** | Where you sit and fish from the pier (the pier is two planks longer since v2.3.0; the bucket and toolbox stayed where they were). |
 
@@ -656,6 +656,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.8.0: benches, lamps, umbrella, solid townsfolk
+- **More benches:** 14 new ones (six more along the boardwalk, two at the plaza, four along the upper terrace, one at the Market Square and one by the tide pool), 16 in all plus the Lookout's. Every bench has a **lamp** whose head glows at night over a soft pool of light (glow, not real lights, to keep phones fast). Benches in the lower town now work too.
+- **🪑 SIT** on the action button next to any bench (standing still still sits you down).
+- **Reading:** the left hand holds the book, the right index finger points along the line being read.
+- **Umbrella:** in rain or a storm the angler opens a red and white umbrella over his head (on foot and not fishing; the right hand keeps the rod).
+- **Solid townsfolk:** you can no longer walk through people; they stop and wait when you stand in their way.
+- **Performance:** the sky, water and dive colour blends no longer allocate a new colour every frame. Version bumped to **v6.8.0**.
 
 ### 2026-11-22, Version 6.7.2: duplicates merged
 - **Code:** `recipeFish` is now `recipeFishN(r, 1)`; the Fish Market and Catch of the Day share one seeded random generator (`mulberry32`, the same numbers as before); the dock pump and the Boatyard's fuel tab share one `buyFuel()` (their messages are unchanged).

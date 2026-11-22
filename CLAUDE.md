@@ -50,6 +50,8 @@ description of the game, its systems and its structure.
 
 - Endgame (v6.6.0): `PROJECTS` / `town.proj` (`projOn(id)`), the day's weather outlook `dayOutlook(day)` weights `rollWeather()`; the smokehouse hooks the catch overflow (`smokeFits`); the Trophy Wall is `town.wall` drawn by `syncTrophyWall` on the cabin; share codes are `encodeShare` / `decodeShare` (`PF1-` + Base64 JSON, always validated).
 
+- Benches (v6.8.0): `BENCH_SEATS` (seats, `fz` = where you stand) and `EXTRA_BENCHES` (built with a lamp in `buildTownDistricts`, lamps driven by `updateTownProps`); `benchSeatNear(px, pz, r)` finds a seat, the SIT action is `SIT_SPOT`. Townsfolk are solid circles of `NPC_R` in the walk code and wait in `updateNpcs` while you block them. The rain umbrella is `umbrella` / `ensureUmbrella` (left-hand IK target); reading points the right index finger (`point` in `AnglerAnimator.update`). Fixed blend colours live in `TINT`, never `new THREE.Color` per frame.
+
 ## Checking a change
 
 Use headless Chromium (Playwright) against a local copy: boot with no errors (also with a corrupted save), walk the
