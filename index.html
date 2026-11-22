@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '7.1.0';
+    window.PF_VERSION = '7.2.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -133,7 +133,8 @@
   </script>
   <style>
     /* =========================================================================
-       1. MOBILE-FIRST RETRO PIXEL-ART UI THEME & LAYOUT
+       1. MOBILE-FIRST LAYOUT (component structure). Colours, glass and type come from the :root tokens below and
+          the TIDE GLASS blocks at the end of this stylesheet (v7.0.0+).
        ========================================================================= */
     :root {
       /* ---- "Tide Glass" design tokens (v7.0.0) ---- */
@@ -152,7 +153,7 @@
       --info: #60a5fa;
       --text: #eef4fb;
       --text-2: #a9b8cc;
-      --text-3: #6b7d95;
+      --text-3: #8496ae;
       --glass-a: 0.6;                                   /* Settings -> HUD panels */
       --glass: rgba(12, 22, 38, var(--glass-a));
       --glass-strong: rgba(11, 20, 35, 0.9);
@@ -234,78 +235,19 @@
       touch-action: none;
     }
 
-    /* Pixel-art stepped border box */
-    .pixel-box {
-      background: var(--bg-panel);
-      border: 3px solid var(--border-light);
-      box-shadow:
-        0 0 0 3px var(--border-dark),
-        inset 0 0 0 2px rgba(255, 255, 255, 0.08),
-        0 6px 16px rgba(0, 0, 0, 0.65);
-      border-radius: 2px;
-    }
-
     .pixel-btn {
-      background: #233859;
-      color: #fff;
-      border: 2px solid var(--border-light);
-      box-shadow: 0 3px 0 #09101d;
-      padding: 9px 13px;
-      min-height: 44px;
       min-width: 44px;
-      font-family: inherit;
-      font-weight: bold;
-      font-size: 13px;
       cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
       touch-action: manipulation;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
-      transition: transform 0.05s, background 0.1s;
-    }
-
-    .pixel-btn:active:not(:disabled),
-    .pixel-btn.pressed:not(:disabled) {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 #09101d;
-      background: #2f4c78;
-      border-color: #bae6fd;
     }
 
     .pixel-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
-    }
-
-    .pixel-btn.gold {
-      background: #854d0e;
-      border-color: var(--accent-gold);
-      color: #fef08a;
-    }
-    .pixel-btn.gold:active:not(:disabled) {
-      background: #a16207;
-    }
-
-    .pixel-btn.green {
-      background: #166534;
-      border-color: var(--accent-green);
-      color: #dcfce7;
-    }
-    .pixel-btn.green:active:not(:disabled),
-    .pixel-btn.green.pressed:not(:disabled) {
-      background: #15803d;
-    }
-
-    .pixel-btn.red {
-      background: #7f1d1d;
-      border-color: var(--accent-red);
-      color: #fee2e2;
-    }
-    .pixel-btn.red:active:not(:disabled) {
-      background: #991b1b;
     }
 
     /* HUD Layer with Safe-Area Insets */
@@ -316,11 +258,6 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding:
-        calc(8px + var(--safe-top))
-        calc(10px + var(--safe-right))
-        calc(10px + var(--safe-bottom))
-        calc(10px + var(--safe-left));
       z-index: 10;
     }
 
@@ -328,9 +265,7 @@
       transition: opacity 0.25s;
       display: flex;
       flex-direction: column;
-      gap: 6px;
       width: 100%;
-      max-width: 720px;
       margin: 0 auto;
     }
 
@@ -338,20 +273,10 @@
     .hud-bar-main {
       pointer-events: auto;
       display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-areas: "cash right" "gauges gauges";
       align-items: center;
-      gap: 6px 10px;
-      padding: 6px 8px 6px 12px;
-      background: rgba(10, 17, 30, 0.86);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      border: 2px solid var(--border-light);
-      box-shadow: 0 0 0 2px var(--border-dark), 0 4px 12px rgba(0, 0, 0, 0.55);
-      border-radius: 4px;
     }
     .hud-bar-main #hud-cash { grid-area: cash; }
-    .hud-gauges { grid-area: gauges; display: flex; gap: 14px; min-width: 0; }
+    .hud-gauges { grid-area: gauges; display: flex; min-width: 0; }
     .hud-right { grid-area: right; display: flex; align-items: center; gap: 8px; }
     @media (min-width: 600px), (orientation: landscape) and (max-height: 520px) {
       .hud-bar-main { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "cash gauges right"; gap: 14px; }
@@ -362,16 +287,9 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: var(--fs-sm);
-      font-weight: bold;
       white-space: nowrap;
-      color: #f1f5f9;
     }
-    .hud-chip.cash {
-      color: var(--accent-gold);
-      font-size: var(--fs-md);
-      text-shadow: 1px 1px 0 #000;
-    }
+
     @media (max-width: 420px) { #hud-weather .w-tx { display: none; } }
 
     .mini-progress-pill {
@@ -382,9 +300,6 @@
       min-width: 0;
     }
     .mini-progress-label {
-      font-size: var(--fs-xs);
-      font-weight: bold;
-      color: #e2e8f0;
       display: flex;
       justify-content: space-between;
       gap: 4px;
@@ -392,11 +307,6 @@
     }
     .mini-bar-track {
       width: 100%;
-      height: 6px;
-      background: #060a12;
-      border: 1px solid #475569;
-      border-radius: 2px;
-      overflow: hidden;
     }
     .mini-bar-fill {
       height: 100%;
@@ -406,103 +316,51 @@
     /* Everything under the bar (zone, fuel warning, bounty, sonar, live cam) stacks here */
     .hud-stack {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
       pointer-events: none;
     }
     /* v6.2.1: one compact status line (zone, distance, return fuel, meal charges) and at most one objective and one radar pill */
     .hud-zone-pill .hz-extra:empty { display: none; }
-    .hud-zone-pill .hz-extra { color: #fde68a; }
-    .hud-zone-pill .hz-extra::before { content: '•'; color: #94a3b8; margin-right: 6px; }
+
+    .hud-zone-pill .hz-extra::before { content: '•'; margin-right: 6px; }
     .hud-zone-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 10px;
-      background: rgba(10, 17, 30, 0.82);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      border: 2px solid rgba(122, 162, 214, 0.65);
-      box-shadow: 0 0 0 2px var(--border-dark);
-      border-radius: 4px;
-      font-size: var(--fs-xs);
-      font-weight: bold;
-      color: #67e8f9;
       white-space: nowrap;
       max-width: 100%;
     }
 
     .sleek-menu-btn {
-      background: rgba(24, 38, 61, 0.92);
-      color: #f8fafc;
-      border: 2px solid var(--border-light);
-      box-shadow: 0 2px 0 #070c14;
-      border-radius: 4px;
       padding: 0 10px;
-      height: 44px;
-      min-width: 44px;
-      font-family: inherit;
       font-weight: bold;
-      font-size: var(--fs-xs);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
-      text-transform: uppercase;
       touch-action: manipulation;
       transition: transform 0.05s, background 0.1s;
     }
-    #btn-toggle-drawer { font-size: 22px; line-height: 1; padding: 0; width: 44px; }
-    .sleek-menu-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 0 #070c14;
-    }
-    .sleek-menu-btn.active {
-      background: #0284c7;
-      border-color: #bae6fd;
-    }
+    #btn-toggle-drawer { line-height: 1; padding: 0; }
+
     .fuel-alert { border-color: #ef4444 !important; animation: pulseWarn 0.8s infinite alternate; }
 
     /* Compass tape: the heading you are looking at; North is out to sea (-Z), the island is to the South */
     #hud-compass {
       pointer-events: none;
       position: relative;
-      width: 200px;
-      height: 30px;
       overflow: hidden;
-      background: rgba(10, 18, 32, 0.82);
-      border: 2px solid #475569;
-      box-shadow: 0 0 0 2px #070c14;
-      border-radius: 4px;
-      align-self: flex-start;
     }
-    #hud-compass .cmp-mark { position: absolute; top: 2px; transform: translateX(-50%); font-size: 12px; font-weight: 900; color: #cbd5e1; white-space: nowrap; }
-    #hud-compass .cmp-mark.card { color: #f8fafc; font-size: 13px; }
-    #hud-compass .cmp-mark.north { color: #f87171; }
-    #hud-compass .cmp-tick { position: absolute; bottom: 2px; width: 2px; height: 6px; background: #64748b; transform: translateX(-50%); }
-    #hud-compass .cmp-needle { position: absolute; left: 50%; top: 17px; bottom: 0; width: 2px; background: #facc15; transform: translateX(-50%); opacity: 0.85; }
-    #hud-compass .cmp-deg { position: absolute; right: 3px; bottom: 1px; font-size: 12px; color: #fde68a; font-weight: bold; background: rgba(10, 18, 32, 0.95); padding: 0 2px; z-index: 2; }
+    #hud-compass .cmp-mark { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 
-    /* Sea event pill (treasure / boss) */
-    #hud-event-pill {
-      pointer-events: none;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 4px 10px;
-      background: rgba(40, 24, 6, 0.9);
-      border: 2px solid #f59e0b;
-      box-shadow: 0 0 0 2px #070c14;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: bold;
-      color: #fde68a;
-      align-self: flex-start;
-    }
-    #hud-event-pill.boss { border-color: #ef4444; background: rgba(48, 8, 8, 0.9); color: #fecaca; }
+    #hud-compass .cmp-tick { position: absolute; width: 2px; transform: translateX(-50%); }
+    #hud-compass .cmp-needle { position: absolute; left: 50%; width: 2px; transform: translateX(-50%); opacity: 0.85; }
+    #hud-compass .cmp-deg { position: absolute; font-weight: bold; z-index: 2; }
+
+    /* The tracker pills start hidden; their look is in the TIDE GLASS block (#hud-tracker .trk) */
+    #hud-event-pill, #hud-bounty-pill, #hud-quest-pill, #hud-read-pill { pointer-events: none; display: none; align-items: center; gap: 6px; }
+    #hud-event-pill, #hud-bounty-pill { justify-content: center; }
+    #hud-event-pill { gap: 8px; }
 
     /* Sonar Radar Pill */
 
@@ -515,9 +373,6 @@
       width: 176px;
       height: 112px;
       background: #041322;
-      border: 3px solid #38bdf8;
-      box-shadow: 0 0 0 3px #070c14, 0 8px 20px rgba(0, 0, 0, 0.8);
-      border-radius: 4px;
       overflow: hidden;
       margin-top: 2px;
     }
@@ -573,13 +428,9 @@
       overflow: hidden;
     }
     .drawer-label {
-      color: var(--text-muted);
-      font-weight: bold;
       white-space: nowrap;
     }
     .drawer-val {
-      color: #f8fafc;
-      font-weight: bold;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -587,15 +438,9 @@
 
     .fuel-warning {
       grid-column: 1 / -1;
-      font-size: var(--fs-xs);
-      font-weight: bold;
-      padding: 3px 6px;
-      border-radius: 3px;
       text-align: center;
     }
-    .fuel-safe { background: rgba(22, 101, 52, 0.55); color: #86efac; border: 1px solid #22c55e; }
-    .fuel-amber { background: rgba(146, 64, 14, 0.8); color: #fde68a; border: 1px solid #f59e0b; }
-    .fuel-danger { background: rgba(153, 27, 27, 0.9); color: #fecaca; border: 1px solid #ef4444; animation: pulseWarn 0.8s infinite alternate; }
+    .fuel-danger { animation: pulseWarn 0.8s infinite alternate; }
 
     @keyframes pulseWarn {
       from { opacity: 0.75; }
@@ -612,117 +457,111 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
       pointer-events: none;
       z-index: 12;
-      width: min(92vw, 400px);
     }
 
     #bite-banner {
       display: none;
-      background: #dc2626;
-      color: #fff;
-      border: 3px solid #fef08a;
-      box-shadow: 0 0 0 3px #000, 0 0 20px rgba(250, 204, 21, 0.85);
-      padding: 10px 18px;
       font-size: 18px;
-      font-weight: 900;
-      letter-spacing: 1px;
       text-align: center;
       animation: bounceAlert 0.28s infinite alternate;
     }
 
     #station-picker { display: none; gap: 4px; justify-content: center; flex-wrap: wrap; pointer-events: auto; }
-    #station-picker .st-title { width: 100%; text-align: center; font-size: 11px; font-weight: 900; letter-spacing: 1px; color: #bae6fd; text-shadow: 0 1px 2px #000; }
-    #station-picker button { font: inherit; font-size: 11px; font-weight: 900; letter-spacing: 0.2px; padding: 4px 7px; min-height: 30px; border-radius: 4px; background: rgba(14, 22, 36, 0.92); color: #bae6fd; border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
-    #station-picker button.on { background: #0369a1; color: #fff; border-color: #7dd3fc; }
+    #station-picker .st-title { width: 100%; text-align: center; font-size: 11px; font-weight: 900; text-shadow: 0 1px 2px #000; }
+    #station-picker button { font: inherit; letter-spacing: 0.2px; cursor: pointer; }
 
     /* ---- the shop sheet (v6.7.0): one accessible, data-driven bottom sheet for every shop, stand and town counter ---- */
     #shop-ui { position: fixed; inset: 0; z-index: 14; pointer-events: none; display: none; }
     body[data-shopping="1"] #shop-ui { display: block; }
     body[data-shopping="1"] #mobile-controls, body[data-shopping="1"] .hud-stack, body[data-shopping="1"] #center-hud, body[data-shopping="1"] #joy-zone { display: none !important; }
     .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-    #shop-sheet { --sh-accent: #fbbf24; position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 760px; max-height: 66vh; max-height: 66dvh; display: flex; flex-direction: column; gap: 8px;
-      padding: 10px 12px calc(var(--safe-bottom, 0px) + 10px); background: linear-gradient(180deg, rgba(17, 25, 44, 0.97), rgba(9, 14, 27, 0.98)); color: #e2e8f0;
-      border-top: 3px solid var(--sh-accent); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.55); pointer-events: auto; animation: shUp 0.22s ease-out; font-size: 15px; }
+    #shop-sheet {
+      --sh-accent: #fbbf24;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: 0 auto;
+      max-width: 760px;
+      max-height: 66vh;
+      max-height: 66dvh;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px calc(var(--safe-bottom, 0px) + 10px);
+      color: #e2e8f0;
+      pointer-events: auto;
+      animation: shUp 0.22s ease-out;
+      font-size: 15px;
+    }
     @keyframes shUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
     #shop-sheet [hidden], #town-body [hidden] { display: none !important; }
     .sh-head, .sh-tabs, .sh-summary, .sh-foot { flex: 0 0 auto; }
     .sh-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
     .sh-icon { font-size: 24px; line-height: 1; }
-    .sh-name { flex: 1; min-width: 0; margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sh-cash { font-size: 15px; font-weight: 900; color: #fde68a; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.35); padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
-    .sh-close { flex: 0 0 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(248, 113, 113, 0.5); background: rgba(185, 28, 28, 0.85); color: #fff; font: inherit; font-size: 18px; font-weight: 900; cursor: pointer; }
+    .sh-name { flex: 1; min-width: 0; margin: 0; font-size: 17px; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sh-cash { font-size: 15px; font-weight: 900; border: 1px solid rgba(251, 191, 36, 0.35); padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+    .sh-close { font: inherit; font-size: 18px; font-weight: 900; cursor: pointer; }
     .sh-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
     .sh-tabs::-webkit-scrollbar { display: none; }
-    .sh-tabs [role="tab"] { flex: 0 0 auto; min-height: 42px; padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.35); background: rgba(30, 41, 59, 0.9); color: #cbd5e1; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
-    .sh-tabs [role="tab"][aria-selected="true"] { background: var(--sh-accent); border-color: var(--sh-accent); color: #111827; }
-    .sh-summary { max-height: 30vh; overflow-y: auto; font-size: 14px; line-height: 1.45; color: #cbd5e1; background: rgba(30, 41, 59, 0.75); border: 1px solid rgba(148, 163, 184, 0.22); border-left: 4px solid var(--sh-accent); border-radius: 12px; padding: 8px 12px; }
-    .sh-summary b { color: #f8fafc; }
+    .sh-tabs [role="tab"] { flex: 0 0 auto; min-height: 42px; padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.35); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    .sh-tabs [role="tab"][aria-selected="true"] { border-color: var(--sh-accent); }
+    .sh-summary { max-height: 30vh; overflow-y: auto; font-size: 14px; line-height: 1.45; border: 1px solid rgba(148, 163, 184, 0.22); border-left: 4px solid var(--sh-accent); padding: 8px 12px; }
+
     .sh-summary .eco { height: 8px; margin-top: 6px; background: #1e293b; border-radius: 999px; overflow: hidden; } .sh-summary .eco i { display: block; height: 100%; background: #22c55e; }
     .sh-body { flex: 1 1 auto; min-height: 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-radius: 12px; }
     .sh-list { list-style: none; margin: 0; padding: 0 2px 4px; display: flex; flex-direction: column; gap: 8px; }
-    .sh-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; padding: 10px 12px; border-radius: 14px; background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(148, 163, 184, 0.2); }
+    .sh-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, 0.2); }
     .sh-row.locked { opacity: 0.92; }
     .sh-row-main { flex: 1 1 190px; min-width: 0; display: flex; align-items: center; gap: 12px; }
     .sh-row-main > img { width: 40px; height: 40px; image-rendering: pixelated; flex: 0 0 auto; }
-    .sh-row .sl-n { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 800; color: #f8fafc; line-height: 1.3; }
-    .sh-row .sl-n small { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 600; color: #94a3b8; line-height: 1.35; }
-    .sh-row .sl-p { font-size: 16px; font-weight: 900; color: #fde68a; white-space: nowrap; }
+    .sh-row .sl-n { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 800; line-height: 1.3; }
+    .sh-row .sl-n small { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+    .sh-row .sl-p { font-size: 16px; font-weight: 900; white-space: nowrap; }
     .sh-thumb { flex: 0 0 76px; height: 76px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, #f8ecc9, #d9c48f); overflow: hidden; position: relative; }
     .sh-thumb img { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.2s; } .sh-thumb img.on { opacity: 1; }
     .sh-text { flex: 1; min-width: 0; }
-    .sh-title { margin: 0; font-size: 16.5px; font-weight: 900; color: #f8fafc; line-height: 1.25; }
+    .sh-title { margin: 0; font-size: 16.5px; font-weight: 900; line-height: 1.25; }
     .sh-sub { margin: 3px 0 0; font-size: 13.5px; color: #fbbf24; line-height: 1.3; }
-    .sh-desc { margin: 4px 0 0; font-size: 14px; color: #cbd5e1; line-height: 1.4; }
+    .sh-desc { margin: 4px 0 0; font-size: 14px; line-height: 1.4; }
     .sh-why { margin: 4px 0 0; font-size: 13px; color: #fca5a5; font-weight: 700; }
     .sh-badge { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 900; letter-spacing: 0.4px; }
     .sh-badge.good { background: rgba(22, 163, 74, 0.2); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.45); }
     .sh-badge.bad { background: rgba(185, 28, 28, 0.2); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.45); }
     .sh-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; justify-content: flex-end; }
-    .sh-price { font-size: 17px; font-weight: 900; color: #fde68a; white-space: nowrap; }
-    .sh-btn { min-height: 44px; min-width: 44px; padding: 6px 14px; border-radius: 12px; border: 1px solid transparent; font: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #fff; }
-    .sh-btn.buy { background: #16a34a; border-color: #4ade80; }
-    .sh-btn.sell { background: #d97706; border-color: #fbbf24; }
-    .sh-btn.danger { background: #b91c1c; border-color: #f87171; }
-    .sh-btn.ghost { background: #334155; border-color: #64748b; }
+    .sh-price { font-size: 17px; font-weight: 900; white-space: nowrap; }
+    .sh-btn { min-height: 44px; min-width: 44px; padding: 6px 14px; border: 1px solid transparent; font: inherit; font-size: 15px; cursor: pointer; color: #fff; }
+
     .sh-btn.swatch { min-width: 36px; min-height: 36px; padding: 0; border: 2px solid #0f172a; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); text-shadow: 0 0 3px #000; }
-    .sh-btn:disabled { background: #273449; border-color: #334155; color: #7b8aa3; cursor: default; }
+    .sh-btn:disabled { cursor: default; }
     .sh-group { margin: 6px 2px 0; font-size: 14px; font-weight: 900; color: #e2e8f0; display: flex; align-items: center; gap: 8px; }
     .sh-group i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-    .sh-note, .sl-empty { font-size: 14.5px; color: #94a3b8; line-height: 1.45; padding: 6px 4px; }
+    .sh-note, .sl-empty { font-size: 14.5px; line-height: 1.45; padding: 6px 4px; }
     .sh-note b, .sl-empty b { color: #e2e8f0; }
     .sh-foot { display: flex; }
-    .sh-primary { flex: 1; min-height: 52px; border-radius: 14px; border: 1px solid #fbbf24; background: #d97706; color: #fff; font: inherit; font-size: 17px; font-weight: 900; cursor: pointer; }
-    .sh-primary.buy { background: #16a34a; border-color: #4ade80; }
-    .sh-primary:disabled { background: #273449; border-color: #334155; color: #7b8aa3; cursor: default; }
+    .sh-primary { flex: 1; min-height: 52px; border: 1px solid #fbbf24; font: inherit; font-size: 17px; cursor: pointer; }
+
+    .sh-primary:disabled { cursor: default; }
     .bar { display: inline-block; vertical-align: middle; width: 56px; height: 8px; border-radius: 999px; background: #1e293b; overflow: hidden; margin-right: 4px; } .bar i { display: block; height: 100%; }
     #shop-sheet :focus-visible, #shop-confirm :focus-visible, #town-body :focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
-    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.6); pointer-events: auto; z-index: 2; }
+    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; pointer-events: auto; z-index: 2; }
     #shop-confirm.open { display: flex; }
-    #shop-confirm .sc-box { width: min(92vw, 400px); padding: 18px; border-radius: 16px; background: #0f172a; border: 1px solid rgba(251, 191, 36, 0.6); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7); text-align: center; font-family: inherit; animation: shUp 0.18s ease-out; }
-    #shop-confirm-title { font-size: 18px; font-weight: 900; color: #fef3c7; line-height: 1.35; }
-    #shop-confirm-sub { font-size: 14.5px; color: #94a3b8; margin-top: 8px; }
+    #shop-confirm .sc-box { width: min(92vw, 400px); padding: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7); text-align: center; font-family: inherit; animation: shUp 0.18s ease-out; }
+    #shop-confirm-title { font-size: 18px; font-weight: 900; line-height: 1.35; }
+    #shop-confirm-sub { font-size: 14.5px; margin-top: 8px; }
     .sc-btns { display: flex; gap: 10px; margin-top: 16px; }
-    .sc-btns button { flex: 1; min-height: 52px; font: inherit; font-size: 16px; font-weight: 900; border-radius: 12px; cursor: pointer; border: 1px solid #475569; background: #1e293b; color: #e2e8f0; }
-    #shop-confirm-yes { background: #16a34a; border-color: #4ade80; color: #fff; }
-    #shop-confirm-yes.sell { background: #d97706; border-color: #fbbf24; }
+    .sc-btns button { flex: 1; min-height: 52px; font: inherit; font-size: 16px; font-weight: 900; cursor: pointer; border: 1px solid #475569; }
+
     @media (max-height: 520px) { #shop-sheet { max-height: 82vh; max-height: 82dvh; } .sh-thumb { flex-basis: 60px; height: 60px; } }
     @media (max-width: 420px) { .sh-thumb { flex-basis: 64px; height: 64px; } .sh-desc { font-size: 13.5px; } }
     @media (prefers-reduced-motion: reduce) { #shop-sheet, #shop-confirm .sc-box { animation: none; } .sh-thumb img { transition: none; } }
 
     #proximity-banner {
       display: none;
-      background: rgba(14, 22, 36, 0.92);
-      color: #fef08a;
-      border: 2px solid var(--accent-gold);
-      box-shadow: 0 0 0 2px #070c14, 0 4px 12px rgba(0, 0, 0, 0.7);
-      padding: 7px 14px;
       font-size: 13px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
       text-align: center;
-      border-radius: 4px;
     }
 
     @keyframes bounceAlert {
@@ -733,20 +572,13 @@
     #cast-meter-box, #reel-meter-box {
       display: none;
       width: 100%;
-      padding: 9px 12px;
     }
     /* the drag window lives in the top HUD (thumb-free area on phones) */
     #reel-meter-box {
-      max-width: 400px;
       align-self: center;
       pointer-events: none;
-      background: rgba(14, 22, 36, 0.94);
     }
     /* while a fish is on, toasts drop to the bottom so they never cover the drag window */
-    body[data-fishing="1"] #toast-stack {
-      top: auto;
-      bottom: calc(var(--controls-h) + var(--safe-bottom) + 84px);
-    }
 
     .stat-row {
       display: flex;
@@ -758,25 +590,19 @@
     }
 
     .stat-label {
-      color: var(--text-muted);
-      font-weight: bold;
       white-space: nowrap;
     }
 
     .stat-val {
       font-weight: bold;
-      color: #fff;
       text-align: right;
     }
 
     .bar-wrap {
       width: 100%;
       height: 10px;
-      background: #090e17;
-      border: 2px solid #475569;
       margin: 3px 0 5px;
       position: relative;
-      overflow: hidden;
     }
 
     .bar-fill {
@@ -787,8 +613,6 @@
     .reel-track {
       width: 100%;
       height: 20px;
-      background: #090e17;
-      border: 2px solid #94a3b8;
       position: relative;
       margin: 5px 0;
     }
@@ -797,29 +621,21 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      background: rgba(34, 197, 94, 0.35);
-      border-left: 2px solid #4ade80;
-      border-right: 2px solid #4ade80;
     }
 
     .reel-cursor {
       position: absolute;
       top: -3px;
       bottom: -3px;
-      width: 8px;
-      background: #ffffff;
-      border: 2px solid #000;
       transform: translateX(-50%);
     }
 
     #rod-warning-text {
-      color: #f87171;
       font-weight: 900;
       font-size: 12px;
       text-align: center;
       margin-bottom: 4px;
       display: none;
-      text-shadow: 1px 1px 0 #000;
     }
 
     .cast-sweet-zone {
@@ -828,18 +644,13 @@
       bottom: 0;
       left: 72%;
       width: 16%;
-      background: rgba(254, 240, 138, 0.28);
-      border-left: 2px solid #fef08a;
-      border-right: 2px solid #fef08a;
       pointer-events: none;
     }
 
 .cast-bar-wrap { height: 14px; }
     .reel-progress-wrap { height: 9px; }
-    .reel-dir-track { height: 18px; border-color: #38bdf8; }
+    .reel-dir-track { height: 18px; }
     .reel-dir-labels {
-      font-size: 12px;
-      color: #93c5fd;
       display: flex;
       justify-content: space-between;
       margin-top: 2px;
@@ -848,9 +659,6 @@
       position: absolute;
       top: 1px;
       bottom: 1px;
-      width: 18px;
-      background: #f87171;
-      border: 2px solid #000;
       transform: translateX(-50%);
       left: 50%;
       text-align: center;
@@ -862,9 +670,6 @@
       position: absolute;
       top: -3px;
       bottom: -3px;
-      width: 8px;
-      background: #4ade80;
-      border: 2px solid #000;
       transform: translateX(-50%);
       left: 50%;
     }
@@ -913,9 +718,6 @@
       width: calc(var(--joy-size) * var(--ui-scale, 1));
       height: calc(var(--joy-size) * var(--ui-scale, 1));
       border-radius: 50%;
-      background: rgba(15, 23, 42, 0.65);
-      border: 3px solid rgba(122, 162, 214, 0.8);
-      box-shadow: 0 0 0 3px rgba(7, 12, 20, 0.85), inset 0 0 14px rgba(0, 0, 0, 0.6);
       position: relative;
       touch-action: none;
       display: flex;
@@ -927,9 +729,6 @@
       width: calc(var(--joy-size) * var(--ui-scale, 1) * 0.42);
       height: calc(var(--joy-size) * var(--ui-scale, 1) * 0.42);
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);
-      border: 3px solid #e0f2fe;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
       position: absolute;
       transform: translate(0px, 0px);
       pointer-events: none;
@@ -938,9 +737,7 @@
 
     .joy-dir-label {
       position: absolute;
-      font-size: 12px;
       font-weight: bold;
-      color: rgba(203, 213, 225, 0.65);
       pointer-events: none;
     }
     .joy-n { top: 6px; }
@@ -951,28 +748,15 @@
     .touch-zone-right {
       pointer-events: auto;
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
     }
 
     #btn-primary-action {
       width: calc(var(--act-size) * var(--ui-scale, 1));
       height: calc(var(--act-size) * var(--ui-scale, 1));
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #22c55e, #15803d);
-      border: 4px solid #bbf7d0;
-      box-shadow:
-        0 0 0 3px #070c14,
-        0 6px 16px rgba(0, 0, 0, 0.75);
-      color: #ffffff;
-      font-family: inherit;
-      font-weight: 900;
-      font-size: 15px;
       line-height: 1.2;
       text-align: center;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -981,53 +765,21 @@
       cursor: pointer;
     }
 
-    #btn-primary-action.casting {
-      background: radial-gradient(circle at 35% 30%, #f59e0b, #b45309);
-      border-color: #fef08a;
-    }
-
     #btn-primary-action.bite {
-      background: radial-gradient(circle at 35% 30%, #ef4444, #991b1b);
-      border-color: #fef08a;
       animation: bounceAlert 0.25s infinite alternate;
     }
 
-    #btn-primary-action.reeling {
-      background: radial-gradient(circle at 35% 30%, #0284c7, #1e3a8a);
-      border-color: #bae6fd;
-    }
-
-    #btn-primary-action.shop {
-      background: radial-gradient(circle at 35% 30%, #eab308, #a16207);
-      border-color: #fef08a;
-      color: #fef9c3;
-    }
-
-    #btn-primary-action.sail {
-      background: radial-gradient(circle at 35% 30%, #0ea5e9, #0369a1);
-      border-color: #bae6fd;
-      color: #e0f2fe;
-    }
-
-
-    #btn-primary-action.map { background: radial-gradient(circle at 35% 30%, #fbbf24, #b45309); border-color: #fde68a; color: #fffbeb; }
     #map-wrap { position: relative; }
     #map-canvas { width: 100%; height: min(58dvh, 520px); display: block; border: 2px solid #334155; border-radius: 6px; background: #0b4a6f; touch-action: none; cursor: grab; }
     #map-canvas.drag { cursor: grabbing; }
     .map-tools { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
     .map-tools .pixel-btn { min-width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
     .map-hint { position: absolute; left: 8px; bottom: 8px; font-size: 11px; color: #e2e8f0; background: rgba(7,11,20,0.6); padding: 3px 6px; border-radius: 4px; pointer-events: none; }
-    .map-row { cursor: pointer; display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 2px solid #334155; background: var(--bg-card); margin-bottom: 5px; }
+    .map-row { cursor: pointer; display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; margin-bottom: 5px; }
     .map-row .mi { font-size: 20px; width: 26px; text-align: center; }
     .map-row b { display: block; font-size: 13px; }
     .map-row small { display: block; color: #94a3b8; font-size: 12px; }
     .map-row .md { margin-left: auto; color: #fde68a; font-size: 12px; white-space: nowrap; }
-    #btn-primary-action.bounty {
-      background: radial-gradient(circle at 35% 30%, #10b981, #065f46);
-      border-color: #a7f3d0;
-      color: #ecfdf5;
-    }
-
     #btn-primary-action.useless { display: none; }
     #btn-primary-action:active,
     #btn-primary-action.pressed {
@@ -1049,12 +801,6 @@
       pointer-events: none;
     }
     .toast {
-      background: rgba(15, 23, 42, 0.96);
-      border: 2px solid var(--accent-cyan);
-      color: #e0f2fe;
-      padding: 8px 14px;
-      font-weight: bold;
-      font-size: var(--fs-sm);
       text-align: center;
       max-width: 100%;
       opacity: 0;
@@ -1074,7 +820,7 @@
       border-radius: 14px 14px 0 0;
       padding-bottom: var(--safe-bottom);
     }
-    .sheet-handle { width: 44px; height: 5px; border-radius: 3px; background: #475569; margin: 8px auto 0; flex-shrink: 0; }
+    .sheet-handle { width: 44px; height: 5px; border-radius: 3px; margin: 8px auto 0; flex-shrink: 0; }
     .menu-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
     .menu-tile {
       position: relative;
@@ -1085,28 +831,20 @@
       justify-content: center;
       gap: 4px;
       font-size: 26px;
-      background: var(--bg-card);
-      color: #f8fafc;
-      border: 2px solid var(--border-light);
-      border-radius: 6px;
-      box-shadow: 0 3px 0 #070c14;
-      font-family: inherit;
       font-weight: bold;
       cursor: pointer;
       touch-action: manipulation;
     }
-    .menu-tile span, .menu-tile[data-label]::after { font-size: var(--fs-xs); text-transform: uppercase; }
+    .menu-tile span, .menu-tile[data-label]::after { font-size: var(--fs-xs); }
     .menu-tile[data-label]::after { content: attr(data-label); }
-    .menu-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 #070c14; }
+
     /* v6.3.1: the menu is a side drawer that slides in from the right, one row per button */
     #modal-menu.modal-backdrop.sheet-modal { align-items: stretch; justify-content: flex-end; padding: 0; }
-    #modal-menu .modal-window { width: min(82vw, 330px); max-height: none; height: 100%; border-radius: 14px 0 0 14px; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); padding-right: var(--safe-right); overflow-y: auto; animation: drawerIn 0.2s ease-out; }
+    #modal-menu .modal-window { max-height: none; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); padding-right: var(--safe-right); overflow-y: auto; animation: drawerIn 0.2s ease-out; }
     #modal-menu .sheet-handle { display: none; }
-    #modal-menu .menu-tiles { grid-template-columns: 1fr; gap: 6px; }
-    #modal-menu .menu-tile { min-height: 46px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 4px 14px; font-size: 22px; }
-    #modal-menu .menu-tile span, #modal-menu .menu-tile[data-label]::after { font-size: 13px; }
+
     @keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
-    .menu-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: var(--fs-sm); }
+    .menu-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .menu-info .wide { grid-column: 1 / -1; }
     .menu-info .angler-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -1114,12 +852,10 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(4, 8, 16, 0.82);
       display: none;
       align-items: center;
       justify-content: center;
-      padding:
-        calc(12px + var(--safe-top))
+      padding: calc(12px + var(--safe-top))
         calc(12px + var(--safe-right))
         calc(12px + var(--safe-bottom))
         calc(12px + var(--safe-left));
@@ -1143,17 +879,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
-      border-bottom: 3px solid var(--border-light);
-      background: #162338;
       gap: 8px;
-    }
-
-    .modal-title {
-      font-size: 15px;
-      font-weight: 900;
-      color: var(--accent-gold);
-      letter-spacing: 0.4px;
     }
 
     .modal-body {
@@ -1178,12 +904,6 @@
       min-height: 44px;
     }
 
-    .tab-btn.active {
-      background: #0284c7;
-      border-color: #bae6fd;
-      color: #fff;
-    }
-
     .upgrade-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1191,18 +911,13 @@
     }
 
     .shop-card {
-      background: var(--bg-card);
-      border: 2px solid #475569;
       padding: 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       gap: 10px;
     }
-    .shop-card.equipped {
-      border-color: var(--accent-green);
-      background: #132a24;
-    }
+
     .shop-card.camera-equipped {
       border-color: #e879f9;
       background: #2b1433;
@@ -1274,8 +989,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--bg-card);
-      border: 2px solid #334155;
       padding: 8px 10px;
       margin-bottom: 8px;
       gap: 10px;
@@ -1297,8 +1010,6 @@
     }
 
     .log-card {
-      background: var(--bg-card);
-      border: 2px solid #334155;
       padding: 9px;
       display: flex;
       align-items: center;
@@ -1339,9 +1050,9 @@
     }
     @media (prefers-reduced-motion: reduce) { #tension-vignette { display: none; } }
     #leap-banner {
-      display: none; background: #0369a1; color: #fff; border: 3px solid #fde047;
-      box-shadow: 0 0 0 3px #000, 0 0 20px rgba(56, 189, 248, 0.85);
-      padding: 10px 18px; font-size: 17px; font-weight: 900; letter-spacing: 1px; text-align: center;
+      display: none;
+      font-size: 17px;
+      text-align: center;
       animation: bounceAlert 0.2s infinite alternate;
     }
     #leap-banner.show { display: block; }
@@ -1353,16 +1064,16 @@
     #pause-overlay.counting { background: rgba(4, 8, 16, 0.35); }
     #pause-overlay.counting .pause-card { display: none; }
     .pause-card { width: min(92vw, 400px); max-height: 100%; overflow-y: auto; padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
-    .pause-title { margin: 0; color: #ffd24c; font-size: 24px; text-shadow: 2px 2px 0 #000; letter-spacing: 2px; }
+    .pause-title { margin: 0; font-size: 24px; letter-spacing: 2px; }
     #btn-resume { font-size: 17px; padding: 12px; }
     .pause-row { display: flex; gap: 8px; }
     .pause-row .pixel-btn { flex: 1; }
     .pause-daily, .start-daily { font-size: 12.5px; line-height: 1.5; color: #fde68a; }
     .start-daily { margin-bottom: 12px; }
     .start-daily:empty, .pause-daily:empty { display: none; }
-    .pause-help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; font-size: 11.5px; line-height: 1.5; color: #cbd5e1; border-top: 2px solid #334155; padding-top: 10px; }
+    .pause-help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; font-size: 11.5px; line-height: 1.5; border-top: 2px solid #334155; padding-top: 10px; }
     @media (max-width: 380px) { .pause-help { grid-template-columns: 1fr; } }
-    #pause-count { display: none; font-size: 110px; font-weight: 900; color: #ffd24c; text-shadow: 4px 4px 0 #000, 0 0 30px rgba(250, 204, 21, 0.6); }
+    #pause-count { display: none; font-size: 110px; font-weight: 900; }
     #pause-overlay.counting #pause-count { display: block; animation: countPop 1s ease-out infinite; }
     @keyframes countPop { 0% { transform: scale(1.5); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.85; } }
     .cod-badge { background: #a16207 !important; color: #fef08a !important; border-color: #fde047 !important; }
@@ -1371,13 +1082,19 @@
 
     /* loading screen */
     #loading-screen {
-      position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px;
-      background: radial-gradient(circle at 50% 35%, #12304a, #070b14 70%); transition: opacity 0.35s;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      transition: opacity 0.35s;
     }
     #loading-screen.done { opacity: 0; pointer-events: none; }
     #loading-screen .pixel-box { width: min(92vw, 380px); padding: 22px; text-align: center; }
-    #loading-bar { height: 14px; margin: 14px 0 10px; background: #090e17; border: 2px solid #475569; overflow: hidden; }
-    #loading-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #4ade80); transition: width 0.12s linear; }
+    #loading-bar { height: 14px; margin: 14px 0 10px; }
+    #loading-bar-fill { height: 100%; width: 0%; transition: width 0.12s linear; }
     #loading-text { font-size: 13px; color: #cbd5e1; min-height: 20px; }
    #rescue-overlay, #start-overlay {
       position: fixed;
@@ -1422,7 +1139,7 @@
     body[data-btn="S"] { --ui-scale: 0.85; }
     body[data-btn="L"] { --ui-scale: 1.2; }
     #mobile-controls[data-hand="left"] { flex-direction: row-reverse; }
-    #mobile-controls[data-hand="left"] .touch-zone-right { align-items: flex-start; }
+
     /* floating joystick: the stick stays home as a faint hint, and jumps under the thumb while touched */
     #joy-zone { display: none; position: absolute; bottom: 0; left: 0; width: 50%; height: 62%; pointer-events: none; touch-action: none; z-index: 0; }
     body[data-joy="floating"] #joy-zone { display: block; pointer-events: auto; }
@@ -1475,18 +1192,10 @@
       padding: 10px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     }
     .setting-row:last-child { border-bottom: none; }
-    .setting-label { font-size: 13px; color: #e2e8f0; }
-    .setting-sub { display: block; font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+    .setting-sub { display: block; margin-top: 2px; }
     .setting-row .pixel-btn { min-width: 84px; }
     /* ---- QoL: bounty pill, sort/filter bars, NEW badge ---- */
-    #hud-bounty-pill {
-      pointer-events: none; display: none; align-items: center; justify-content: center; gap: 6px;
-      padding: 4px 10px; background: rgba(40, 28, 6, 0.88); border: 2px solid #facc15;
-      box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold;
-      color: #fde68a; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    #hud-read-pill { pointer-events: none; display: none; padding: 4px 10px; background: rgba(30, 20, 60, 0.9); border: 2px solid #a78bfa; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #ddd6fe; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #hud-quest-pill { pointer-events: none; display: none; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(12, 30, 48, 0.9); border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 12px; font-weight: bold; color: #bae6fd; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #sleep-fade { position: fixed; inset: 0; background: #020617; opacity: 0; pointer-events: none; transition: opacity 0.9s ease; z-index: 900; display: flex; align-items: center; justify-content: center; color: #e2e8f0; font: bold 18px monospace; letter-spacing: 2px; }
     #sleep-fade.on { opacity: 1; pointer-events: auto; }
     #map-buoy-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
@@ -1494,7 +1203,7 @@
     #map-buoy-bar .mb-l { font-size: 12px; color: #cbd5e1; font-weight: bold; }
     .town-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 6px; border: 2px solid #c9a867; background: #fffbeb; color: #3b2410; resize: vertical; }
     #town-body { display: flex; flex-direction: column; gap: 6px; }
-    .town-note { font-size: 14px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
+    .town-note { font-size: 14px; margin: 2px 2px 6px; line-height: 1.4; }
     .dice-row { display: flex; gap: 8px; justify-content: center; margin: 4px 0; }
     .die { display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center; background: #fef3c7; color: #7c2d12; border: 3px solid #92400e; border-radius: 8px; font-size: 22px; font-weight: 900; }
     .winch-bar { position: relative; height: 36px; background: #1e293b; border: 2px solid #64748b; border-radius: 6px; margin: 8px 0; overflow: hidden; }
@@ -1507,16 +1216,15 @@
     .scope-bar { position: absolute; left: 0; right: 0; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; gap: 14px; pointer-events: auto; }
     .scope-bar .pixel-btn { min-width: 64px; min-height: 52px; font-size: 18px; }
     body[data-scope="1"] #mobile-controls, body[data-scope="1"] .hud-stack, body[data-scope="1"] #center-hud, body[data-scope="1"] #joy-zone, body[data-scope="1"] .hud-top, body[data-scope="1"] #proximity-banner { display: none !important; }
-    #hud-quest-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
-    #modal-talk { background: rgba(4, 8, 16, 0.25); align-items: flex-end; }
-    #talk-box { width: min(96vw, 560px); padding: 12px 14px calc(12px + var(--safe-bottom)); background: var(--bg-panel-solid); margin-bottom: 8px; cursor: pointer; }
-    .talk-head { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
-    .talk-head #talk-icon { font-size: 34px; line-height: 1; }
-    .talk-head b { display: block; color: #fde68a; font-size: 15px; }
-    .talk-head small { display: block; color: #94a3b8; font-size: 12px; }
-    #talk-text { font-size: 14px; line-height: 1.45; color: #f8fafc; min-height: 3.2em; }
-    #talk-choices { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 10px; }
-    #talk-choices .pixel-btn { min-height: 44px; padding: 8px 14px; }
+    #modal-talk { align-items: flex-end; }
+    #talk-box { width: min(96vw, 560px); cursor: pointer; }
+    .talk-head { display: flex; align-items: center; }
+    .talk-head #talk-icon { line-height: 1; }
+    .talk-head b { display: block; }
+    .talk-head small { display: block; }
+    #talk-text { min-height: 3.2em; }
+    #talk-choices { display: flex; flex-wrap: wrap; justify-content: flex-end; margin-top: 10px; }
+
     .ck-bar { position: relative; height: 54px; background: #1e293b; border: 2px solid #475569; border-radius: 6px; overflow: hidden; }
     .ck-zone { position: absolute; top: 0; bottom: 0; background: rgba(74, 222, 128, 0.55); }
     .ck-mark { position: absolute; top: 6px; font-size: 32px; transform: translateX(-10%); }
@@ -1526,7 +1234,6 @@
     .ck-arrow { font-size: 64px; display: block; color: #dc2626; }
     .ck-done { font-size: 90px; }
     .ql-h { margin: 10px 0 6px; font-size: 15px; color: #fde68a; }
-    #hud-bounty-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .chip-row .pixel-btn { padding: 8px 12px; font-size: 12px; min-height: 44px; }
     .chip-row .pixel-btn.active { outline: 2px solid #facc15; }
@@ -1536,8 +1243,11 @@
     }
     .menu-dot { position: relative; }
     .menu-dot.has-new::after {
-      content: ''; position: absolute; top: 2px; right: 2px; width: 8px; height: 8px;
-      background: #f43f5e; border-radius: 50%; box-shadow: 0 0 0 2px #070c14;
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
     }
     /* ---- Character customisation ---- */
     .cust-window { width: min(98vw, 900px); max-height: 94dvh; }
@@ -1581,7 +1291,6 @@
     #dive-hud {
       position: fixed;
       right: calc(8px + var(--safe-right));
-      top: calc(var(--hud-top-h) + var(--safe-top) + 10px);
       z-index: 11;
       width: min(46vw, 214px);
       display: none;
@@ -1589,17 +1298,11 @@
     }
     body[data-diving="1"] #dive-hud { display: block; }
     .dive-panel {
-      background: rgba(4, 20, 36, 0.88);
-      border: 2px solid #38bdf8;
-      box-shadow: 0 0 0 2px #070c14, 0 4px 12px rgba(0, 0, 0, 0.6);
-      padding: 6px 8px;
-      font-size: 12px;
       font-weight: bold;
-      color: #e0f2fe;
     }
     .dive-row { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 2px; white-space: nowrap; }
-    .dive-row span:last-child { color: #fff; text-align: right; }
-    .dive-bar { height: 9px; background: #041322; border: 1px solid #0e3a5c; overflow: hidden; margin: 2px 0 6px; }
+    .dive-row span:last-child { text-align: right; }
+    .dive-bar { overflow: hidden; margin: 2px 0 6px; }
     .dive-bar > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #22d3ee, #38bdf8); transition: width 0.15s linear; }
     #dive-depth-bar > i { background: linear-gradient(90deg, #4ade80, #facc15, #ef4444); }
     #dive-air-bar.low > i { background: linear-gradient(90deg, #f97316, #ef4444); animation: pulseWarn 0.35s infinite alternate; }
@@ -1608,27 +1311,20 @@
 
     #dive-pad {
       display: none;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-end;
       pointer-events: auto;
     }
     body[data-dive-btn="1"] #dive-pad, body[data-diving="1"] #dive-pad { display: flex; }
     .dive-btn {
-      width: 54px; height: 54px;
-      border-radius: 50%;
-      border: 3px solid #7dd3fc;
-      background: radial-gradient(circle at 35% 30%, #0ea5e9, #075985);
-      color: #fff; font-weight: 900; font-size: 20px; font-family: inherit;
-      box-shadow: 0 0 0 3px #070c14, 0 5px 10px rgba(0, 0, 0, 0.5);
+      font-weight: 900;
       touch-action: none;
-      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       line-height: 1;
     }
     .dive-btn.held, .dive-btn:active { transform: scale(0.92); filter: brightness(1.2); }
-    .dive-btn small { font-size: 9px; letter-spacing: 0.5px; margin-top: 2px; }
-    #btn-dive-toggle { width: auto; min-width: 74px; border-radius: 28px; padding: 0 12px; font-size: 14px; flex-direction: row; gap: 6px; }
-    body[data-diving="1"] #btn-dive-toggle { background: radial-gradient(circle at 35% 30%, #f97316, #9a3412); border-color: #fed7aa; }
+    .dive-btn small { margin-top: 2px; }
+
     body:not([data-diving="1"]) #btn-dive-up, body:not([data-diving="1"]) #btn-dive-down { display: none; }
     #btn-chum { display: none; }
     body[data-chum="1"] #dive-pad { display: flex; }
@@ -1662,8 +1358,6 @@
       font-size: 11px; font-weight: 900; color: #fff; background: rgba(4, 20, 36, 0.85); padding: 2px 6px; border: 1px solid #38bdf8;
     }
     body[data-diving="1"] #dive-vignette, body[data-diving="1"] #dive-reticle { display: block; }
-    #btn-primary-action.spear { background: radial-gradient(circle at 35% 30%, #22d3ee, #0e7490); border-color: #a5f3fc; }
-    #btn-primary-action.spear.reload { background: radial-gradient(circle at 35% 30%, #94a3b8, #475569); border-color: #cbd5e1; }
     body[data-diving="1"] .hud-stack { opacity: 0.85; }
 
     /* =========================================================================
@@ -2102,11 +1796,11 @@
 
       <div class="pixel-box" id="cast-meter-box">
         <div class="stat-row">
-          <span class="stat-label">CAST POWER <span style="color:#fde047;">(★ 72–88%)</span></span>
+          <span class="stat-label">CAST POWER <span style="color:var(--gold);">(★ 72–88%)</span></span>
           <span class="stat-val" id="cast-power-label">0%</span>
         </div>
         <div class="bar-wrap cast-bar-wrap">
-          <div class="bar-fill" id="cast-power-bar" style="width: 0%; background: linear-gradient(90deg, #38bdf8, #facc15, #ef4444);"></div>
+          <div class="bar-fill" id="cast-power-bar" style="width: 0%; background: linear-gradient(90deg, var(--info), var(--gold), #ef4444);"></div>
           <div class="cast-sweet-zone" title="Sweet Spot"></div>
         </div>
       </div>
@@ -2120,7 +1814,7 @@
           </div>
           <div class="reel-dir-labels">
             <span>◀ STICK L</span>
-            <span id="counter-pull-hint" style="color:#fde047; font-weight:bold;">STEER STICK OPPOSITE!</span>
+            <span id="counter-pull-hint" style="color:var(--gold); font-weight:bold;">STEER STICK OPPOSITE!</span>
             <span>STICK R ▶</span>
           </div>
           <div class="reel-track reel-dir-track">
@@ -2136,7 +1830,7 @@
             <div class="reel-cursor" id="reel-cursor" style="left: 30%;"></div>
           </div>
           <div class="bar-wrap reel-progress-wrap">
-            <div class="bar-fill" id="reel-progress-bar" style="width: 0%; background: #4ade80;"></div>
+            <div class="bar-fill" id="reel-progress-bar" style="width: 0%; background: var(--ok);"></div>
           </div>
         </div>
     </div>
@@ -2145,7 +1839,7 @@
     <div id="joy-zone" aria-hidden="true"></div>
     <div id="mobile-controls">
       <div class="touch-zone-left">
-        <div id="virtual-joystick" role="slider" aria-label="Movement and Rod Control Stick">
+        <div id="virtual-joystick" role="img" aria-label="Thumbstick: drag to walk, steer the boat and the fight (keyboard: WASD or arrows)">
           <span class="joy-dir-label joy-n">▲</span>
           <span class="joy-dir-label joy-s">▼</span>
           <span class="joy-dir-label joy-w">◀</span>
@@ -2225,8 +1919,8 @@
           <div class="drawer-item"><span class="drawer-label">ROD:</span><span class="drawer-val" id="hud-rod">Bamboo (3.5kg)</span></div>
           <div class="drawer-item"><span class="drawer-label">BAIT:</span><span class="drawer-val" id="hud-bait">Bread (∞)</span></div>
           <div class="drawer-item"><span class="drawer-label">VESSEL:</span><span class="drawer-val" id="hud-fuel-text">No Boat</span></div>
-          <div class="drawer-item"><span class="drawer-label">ECO PERK:</span><span class="drawer-val" id="hud-eco" style="color:#4ade80;">♻️ 0.0/100kg</span></div>
-          <div class="drawer-item"><span class="drawer-label">MOON:</span><span class="drawer-val" id="hud-moon" style="color:#fef08a;" title="Moon Phase">🌑</span></div>
+          <div class="drawer-item"><span class="drawer-label">ECO PERK:</span><span class="drawer-val" id="hud-eco" style="color:var(--ok);">♻️ 0.0/100kg</span></div>
+          <div class="drawer-item"><span class="drawer-label">MOON:</span><span class="drawer-val" id="hud-moon" style="color:var(--gold);" title="Moon Phase">🌑</span></div>
           <div class="drawer-item"><span class="drawer-label">🎬 LENS:</span><span class="drawer-val" id="hud-vfx-label" style="color:#f0abfc;">Standard Lens</span></div>
           <div class="drawer-item wide" style="border-top: 1px solid rgba(148, 163, 184, 0.25); padding-top: 10px;">
             <span class="drawer-label">🎣 ANGLER:</span>
@@ -2250,11 +1944,11 @@
       <div class="modal-body">
         <div class="pixel-box" style="padding: 12px; margin-bottom: 12px; background: #132036;">
           <div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline;">
-            <span id="career-rank" style="font-size: 18px; font-weight: 900; color: #ffd24c;">Deckhand</span>
-            <span id="career-xp" style="font-size: 12px; color: #94a3b8;">0 XP</span>
+            <span id="career-rank" style="font-size: 18px; font-weight: 900; color: var(--gold);">Deckhand</span>
+            <span id="career-xp" style="font-size: 12px; color: var(--text-2);">0 XP</span>
           </div>
-          <div class="bar-wrap" style="height: 12px; margin: 8px 0 4px;"><div class="bar-fill" id="career-xp-bar" style="width: 0%; background: #38bdf8;"></div></div>
-          <div id="career-next" style="font-size: 12px; color: #cbd5e1;"></div>
+          <div class="bar-wrap" style="height: 12px; margin: 8px 0 4px;"><div class="bar-fill" id="career-xp-bar" style="width: 0%; background: var(--info);"></div></div>
+          <div id="career-next" style="font-size: 12px; color: var(--text-2);"></div>
         </div>
         <div id="career-stats" class="menu-info" style="margin-bottom: 14px;"></div>
         <div class="cheat-title">🏅 ACHIEVEMENTS (<span id="career-ach-count">0</span>)</div>
@@ -2265,14 +1959,14 @@
 
   <!-- MODAL: TROPHY CASE -->
   <div class="modal-backdrop" id="modal-trophies">
-    <div class="pixel-box modal-window" style="border-color: #facc15;">
-      <div class="modal-header" style="background: #2a2208; border-bottom-color: #facc15;">
+    <div class="pixel-box modal-window" style="border-color: var(--gold);">
+      <div class="modal-header" style="background: #2a2208; border-bottom-color: var(--gold);">
         <span class="modal-title">🏆 RECORDS</span>
         <button class="pixel-btn red" data-close="modal-trophies" type="button">Close</button>
       </div>
       <div class="modal-body">
-        <div id="trophy-summary" style="font-size: 13px; color: #fde68a; margin-bottom: 4px;"></div>
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Your record weight for each fish decides its medal: gold at 90% of the species' top weight, silver at 70%, bronze below. The five best are mounted in the case on the pier.</div>
+        <div id="trophy-summary" style="font-size: 13px; color: var(--gold); margin-bottom: 4px;"></div>
+        <div style="font-size: 12px; color: var(--text-2); margin-bottom: 12px;">Your record weight for each fish decides its medal: gold at 90% of the species' top weight, silver at 70%, bronze below. The five best are mounted in the case on the pier.</div>
         <div id="trophy-list"></div>
       </div>
     </div>
@@ -2330,8 +2024,8 @@
     <div class="pixel-box modal-window" style="width: min(96vw, 460px);">
       <div class="modal-header"><span class="modal-title" id="cook-title">🍳 COOKING</span><button class="pixel-btn red" id="cook-quit" type="button">Stop</button></div>
       <div class="modal-body" style="text-align:center;">
-        <div id="cook-step" style="color:#94a3b8; font-size:12px;"></div>
-        <div id="cook-hint" style="margin:6px 0 12px; font-size:13px; color:#fde68a; min-height:2.6em;"></div>
+        <div id="cook-step" style="color:var(--text-2); font-size:12px;"></div>
+        <div id="cook-hint" style="margin:6px 0 12px; font-size:13px; color:var(--gold); min-height:2.6em;"></div>
         <div id="cook-area"></div>
         <button class="pixel-btn gold" id="cook-btn" type="button" style="width:100%; min-height:64px; font-size:18px; margin-top:14px; touch-action:none;">CHOP</button>
       </div>
@@ -2489,7 +2183,7 @@
       <div class="modal-body" style="text-align: center;">
         <div class="cheat-title" id="cheat-confirm-section" style="margin-bottom: 4px;"></div>
         <div id="cheat-confirm-name" style="font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 8px;"></div>
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 14px;">This changes your game right away and is saved like normal progress.</div>
+        <div style="font-size: 12px; color: var(--text-2); margin-bottom: 14px;">This changes your game right away and is saved like normal progress.</div>
         <div style="display: flex; gap: 10px;">
           <button class="pixel-btn green" id="cheat-confirm-yes" type="button" style="flex: 1; min-height: 48px;">Apply</button>
           <button class="pixel-btn red" id="cheat-confirm-no" data-close="modal-cheat-confirm" type="button" style="flex: 1; min-height: 48px;">Cancel</button>
@@ -2532,13 +2226,13 @@
 
   <!-- MODAL 2B: PIER TACKLE TOOLBOX (BAIT SELECTOR) -->
   <div class="modal-backdrop" id="modal-boats">
-    <div class="pixel-box modal-window" style="width: min(96vw, 520px); border-color: #38bdf8;">
-      <div class="modal-header" style="background: #082f49; border-bottom-color: #38bdf8;">
+    <div class="pixel-box modal-window" style="width: min(96vw, 520px); border-color: var(--info);">
+      <div class="modal-header" style="background: #082f49; border-bottom-color: var(--info);">
         <span class="modal-title" style="color: #bae6fd;">🛥️ BOAT TERMINAL — CHOOSE YOUR BOAT</span>
         <button class="pixel-btn red" data-close="modal-boats">Close</button>
       </div>
       <div class="modal-body">
-        <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 10px;">
+        <div style="font-size: 12px; color: var(--text-2); margin-bottom: 10px;">
           Every boat you own is kept at the harbor with its own fuel tank. Pick the one to moor at the platform; buy new boats at the Tackle Shop.
         </div>
         <div class="upgrade-grid" id="boat-terminal-list"></div>
@@ -2553,7 +2247,7 @@
         <button class="pixel-btn red" data-close="modal-toolbox">Close</button>
       </div>
       <div class="modal-body">
-        <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 10px;">
+        <div style="font-size: 12px; color: var(--text-2); margin-bottom: 10px;">
           Swap your active hook bait from your stored tackle inventory (buy extra 10x packs at the Tackle Shop):
         </div>
         <div class="upgrade-grid" id="toolbox-bait-list"></div>
@@ -2574,16 +2268,16 @@
           <span class="record-badge" id="catch-record-badge">🏆 NEW RECORD!</span>
           <span class="record-badge cod-badge" id="catch-cod-badge" style="display:none;">⭐ CATCH OF THE DAY ×3</span>
           <h2 style="margin: 6px 0 4px; color: #fff; font-size: 20px;" id="catch-name">Sunlit Minnow</h2>
-          <div style="font-size: 12px; color: #94a3b8;" id="catch-zone">Zone 1: Pier & Shallow Cove</div>
+          <div style="font-size: 12px; color: var(--text-2);" id="catch-zone">Zone 1: Pier & Shallow Cove</div>
         </div>
         <div style="display: flex; gap: 20px; font-size: 15px; font-weight: bold;">
-          <div>Weight: <span style="color: #38bdf8;" id="catch-weight">0.45 kg</span></div>
-          <div>Value: <span style="color: #ffd24c;" id="catch-value">$6</span></div>
+          <div>Weight: <span style="color: var(--info);" id="catch-weight">0.45 kg</span></div>
+          <div>Value: <span style="color: var(--gold);" id="catch-value">$6</span></div>
         </div>
-        <div style="font-size: 13px; color: #cbd5e1; margin: 0; width: 100%;" id="catch-desc"></div>
+        <div style="font-size: 13px; color: var(--text-2); margin: 0; width: 100%;" id="catch-desc"></div>
 
-        <div id="catch-overflow-panel" style="display: none; width: 100%; border-top: 2px solid #f87171; padding-top: 10px; text-align: left;">
-          <div style="color: #f87171; font-weight: bold; font-size: 12px; margin-bottom: 8px;" id="catch-overflow-msg">
+        <div id="catch-overflow-panel" style="display: none; width: 100%; border-top: 2px solid var(--danger); padding-top: 10px; text-align: left;">
+          <div style="color: var(--danger); font-weight: bold; font-size: 12px; margin-bottom: 8px;" id="catch-overflow-msg">
             Bucket Full! Release this catch or discard an item below:
           </div>
           <div id="catch-swap-list" style="max-height: 150px; overflow-y: auto;"></div>
@@ -2612,22 +2306,22 @@
 
   <!-- MODAL 4B: MESSAGE IN A BOTTLE COLLECTIBLE GALLERY -->
   <div class="modal-backdrop" id="modal-gallery">
-    <div class="pixel-box modal-window" style="border-color: #2dd4bf;">
-      <div class="modal-header" style="background: #0d2b2a; border-bottom-color: #2dd4bf;">
-        <span class="modal-title" id="gallery-modal-title" style="color: #5eead4;">📜 MESSAGE IN A BOTTLE GALLERY (0 / 36)</span>
+    <div class="pixel-box modal-window" style="border-color: var(--sea);">
+      <div class="modal-header" style="background: #0d2b2a; border-bottom-color: var(--sea);">
+        <span class="modal-title" id="gallery-modal-title" style="color: var(--sea);">📜 MESSAGE IN A BOTTLE GALLERY (0 / 36)</span>
         <button class="pixel-btn red" data-close="modal-gallery">Close</button>
       </div>
       <div class="modal-body">
-        <div class="pixel-box" style="padding: 10px 12px; margin-bottom: 12px; background: #0f2928; border-color: #2dd4bf;">
+        <div class="pixel-box" style="padding: 10px 12px; margin-bottom: 12px; background: #0f2928; border-color: var(--sea);">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
-            <span style="font-size:12px; font-weight:900; color:#5eead4;">🏆 MASTER ARCHIVIST COLLECTION REWARD</span>
-            <span style="font-size:12px; font-weight:bold; color:#fef08a;" id="gallery-reward-status">$2,500.00</span>
+            <span style="font-size:12px; font-weight:900; color:var(--sea);">🏆 MASTER ARCHIVIST COLLECTION REWARD</span>
+            <span style="font-size:12px; font-weight:bold; color:var(--gold);" id="gallery-reward-status">$2,500.00</span>
           </div>
           <div style="font-size: 12px; color:#ccfbf1; margin-bottom:6px;">
             Collect & keep all <b>36 unique Messages in a Bottle</b> across all 4 ocean depths to claim <b>$2,500.00</b>! Each bottle is one-of-a-kind once kept (discarded bottles drift back to sea).
           </div>
           <div class="bar-wrap" style="height: 10px; margin: 0;">
-            <div class="bar-fill" id="gallery-progress-bar" style="width: 0%; background: #2dd4bf;"></div>
+            <div class="bar-fill" id="gallery-progress-bar" style="width: 0%; background: var(--sea);"></div>
           </div>
         </div>
 
@@ -2662,15 +2356,15 @@
 
   <!-- OVERLAY 7: COAST GUARD RESCUE SEQUENCE -->
   <div id="rescue-overlay">
-    <div class="pixel-box" style="max-width: 440px; padding: 20px; text-align: center; background: #180c12; border-color: #f87171;">
-      <h2 style="color: #f87171; margin: 0 0 10px;">🚨 OUT OF FUEL! MAYDAY!</h2>
+    <div class="pixel-box" style="max-width: 440px; padding: 20px; text-align: center; background: #180c12; border-color: var(--danger);">
+      <h2 style="color: var(--danger); margin: 0 0 10px;">🚨 OUT OF FUEL! MAYDAY!</h2>
       <p style="font-size: 13px; line-height: 1.5; color: #fecaca;" id="rescue-text">
         Your engine sputtered out at sea! A Coast Guard Rescue Cutter is towing your vessel back to the Harbor Pier...
       </p>
       <div class="bar-wrap" style="height: 14px; margin: 14px 0;">
-        <div class="bar-fill" id="rescue-progress-bar" style="width: 0%; background: #f87171;"></div>
+        <div class="bar-fill" id="rescue-progress-bar" style="width: 0%; background: var(--danger);"></div>
       </div>
-      <div style="font-size: 12px; color: #fde047; font-weight: bold;" id="rescue-fee-label">
+      <div style="font-size: 12px; color: var(--gold); font-weight: bold;" id="rescue-fee-label">
         Emergency Tow Fee: $100.00
       </div>
     </div>
@@ -2685,8 +2379,8 @@
       if (!THREE) {
         document.getElementById('start-overlay').innerHTML = `
           <div class="pixel-box" style="max-width:420px; padding:20px; text-align:center;">
-            <h2 style="color:#f87171; margin-top:0;">3D Engine Load Error</h2>
-            <p style="font-size:13px; color:#cbd5e1;">Could not load Three.js from any CDN. Please check your internet connection and reload the page.</p>
+            <h2 style="color:var(--danger); margin-top:0;">3D Engine Load Error</h2>
+            <p style="font-size:13px; color:var(--text-2);">Could not load Three.js from any CDN. Please check your internet connection and reload the page.</p>
           </div>`;
         return;
       }
@@ -10595,7 +10289,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function dailyLine(onStart) {
         const cod = catchOfDay(), dl = state.daily || {};
         const streak = dl.streak > 0 ? ` &middot; 🔥 Streak: <b>${dl.streak}</b> day${dl.streak === 1 ? '' : 's'}${dl.best > dl.streak ? ` (best ${dl.best})` : ''}` : '';
-        const zones = cod.zones && cod.zones.length ? ` <span style="color:#94a3b8;">(zone ${cod.zones.join('/')})</span>` : '';
+        const zones = cod.zones && cod.zones.length ? ` <span style="color:var(--text-2);">(zone ${cod.zones.join('/')})</span>` : '';
         return `⭐ Catch of the Day: <b>${cod.name}</b>${zones} pays <b>x3</b>${onStart && !hadSavedGame ? '' : streak}`;
       }
 
@@ -11449,9 +11143,9 @@ pierBucketMesh = replaceSceneMesh(scene, pierBucketMesh, WorldBuilder.buildPierB
           if (!owned) card.style.opacity = '0.5';
           card.innerHTML = `
             <div>
-              <div class="card-title"><span>${BOAT_ICONS[b.tier]} ${b.name}</span><span style="color:${owned ? '#4ade80' : '#94a3b8'};">${active ? 'MOORED' : owned ? 'OWNED' : '$' + b.cost.toLocaleString()}</span></div>
+              <div class="card-title"><span>${BOAT_ICONS[b.tier]} ${b.name}</span><span style="color:${owned ? 'var(--ok)' : 'var(--text-2)'};">${active ? 'MOORED' : owned ? 'OWNED' : '$' + b.cost.toLocaleString()}</span></div>
               <div class="card-stats">Top speed: <b>${b.speed} m/s</b> • Reaches: <b>Zone ${b.maxZone}</b><br/>${owned
-                ? `Fuel: <b>${fuel.toFixed(0)} / ${b.maxFuel}</b> <span style="display:inline-block; width:70px; height:7px; background:#0f172a; border:1px solid #475569; vertical-align:middle;"><span style="display:block; height:100%; width:${pct}%; background:${pct > 30 ? '#4ade80' : '#f87171'};"></span></span>`
+                ? `Fuel: <b>${fuel.toFixed(0)} / ${b.maxFuel}</b> <span style="display:inline-block; width:70px; height:7px; background:#0f172a; border:1px solid #475569; vertical-align:middle;"><span style="display:block; height:100%; width:${pct}%; background:${pct > 30 ? 'var(--ok)' : 'var(--danger)'};"></span></span>`
                 : 'Not owned yet: buy it at the Tackle Shop.'}</div>
             </div>`;
           const btn = document.createElement('button');
@@ -13375,7 +13069,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function mapLegend() {
         const me = mapYou(), places = MAP_PLACES();
         const rows = places.map(p => { const dx = p.x - me.x, dz = p.z - me.z; return { p, d: Math.hypot(dx, dz), dir: mapCompass(dx, dz) }; }).sort((a, b) => a.d - b.d);
-        document.getElementById('map-legend').innerHTML = (projOn('weather') ? `<div style="font-size:12px;color:#fde68a;margin-bottom:6px;">📡 ${forecastText()}</div>` : '') + `<div style="font-size:12px;color:#94a3b8;margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(me.yaw), -Math.cos(me.yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea. Tap a place to find it on the map.</div>` +
+        document.getElementById('map-legend').innerHTML = (projOn('weather') ? `<div style="font-size:12px;color:var(--gold);margin-bottom:6px;">📡 ${forecastText()}</div>` : '') + `<div style="font-size:12px;color:var(--text-2);margin-bottom:6px;">You are facing ${mapCompass(-Math.sin(me.yaw), -Math.cos(me.yaw))}${onBoat ? ', on your boat' : ''}. North is the open sea. Tap a place to find it on the map.</div>` +
           rows.map(({ p, d, dir }) => `<div class="map-row" data-x="${p.x}" data-z="${p.z}"><span class="mi">${p.icon}</span><span><b>${p.name}</b><small>${p.desc}</small></span><span class="md">${d < 2.5 ? 'Here' : `${Math.round(d)} m ${dir}`}</span></div>`).join('');
       }
 
@@ -14152,11 +13846,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           row.innerHTML = `<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
               <div style="font-size:24px; width:32px; text-align:center; filter:${has ? 'none' : 'grayscale(1)'};">${a.icon}</div>
               <div style="min-width:0; flex:1;">
-                <div style="font-weight:bold; font-size:13px; color:${has ? '#ffd24c' : '#f1f5f9'};">${a.name}</div>
-                <div style="font-size:12px; color:#94a3b8;">${a.desc}</div>
-                ${has ? '' : `<div class="bar-wrap" style="height:6px; margin:4px 0 0;"><div class="bar-fill" style="width:${(p / a.goal) * 100}%; background:#38bdf8;"></div></div>`}
+                <div style="font-weight:bold; font-size:13px; color:${has ? 'var(--gold)' : 'var(--text)'};">${a.name}</div>
+                <div style="font-size:12px; color:var(--text-2);">${a.desc}</div>
+                ${has ? '' : `<div class="bar-wrap" style="height:6px; margin:4px 0 0;"><div class="bar-fill" style="width:${(p / a.goal) * 100}%; background:var(--info);"></div></div>`}
               </div></div>
-            <div style="font-size:12px; font-weight:bold; color:${has ? '#4ade80' : '#94a3b8'}; white-space:nowrap;">${has ? '✔ $' + a.cash : '$' + a.cash}</div>`;
+            <div style="font-size:12px; font-weight:bold; color:${has ? 'var(--ok)' : 'var(--text-2)'}; white-space:nowrap;">${has ? '✔ $' + a.cash : '$' + a.cash}</div>`;
           host.appendChild(row);
         });
       }
@@ -14270,7 +13964,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('trophy-summary').textContent = `${ids.length} / ${FISH_TOTAL} fish species   🥇 ${counts.gold}   🥈 ${counts.silver}   🥉 ${counts.bronze}`;
         const host = document.getElementById('trophy-list');
         host.innerHTML = '';
-        if (!ids.length) host.innerHTML = '<div style="color:#94a3b8; font-size:13px; padding:12px 0;">No fish yet. Land one and its record will appear here.</div>';
+        if (!ids.length) host.innerHTML = '<div style="color:var(--text-2); font-size:13px; padding:12px 0;">No fish yet. Land one and its record will appear here.</div>';
         ids.forEach((id, i) => {
           const it = CATALOG_INDEX[id], st = state.speciesStats[id], m = medalFor(id);
           const row = document.createElement('div');
@@ -14278,8 +13972,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           row.innerHTML = `<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
               <img class="item-icon" src="${ITEM_ICONS[id]}" alt="" />
               <div style="min-width:0;">
-                <div style="font-weight:bold; font-size:13px;">${it.name} ${i < 5 ? '<span style="color:#facc15; font-size:11px;">• ON DISPLAY</span>' : ''}</div>
-                <div style="font-size:12px; color:#94a3b8;">${it.rarity} • record ${st.maxWeight.toFixed(2)} / ${it.maxW.toFixed(1)} kg • caught ${st.count}</div>
+                <div style="font-weight:bold; font-size:13px;">${it.name} ${i < 5 ? '<span style="color:var(--gold); font-size:11px;">• ON DISPLAY</span>' : ''}</div>
+                <div style="font-size:12px; color:var(--text-2);">${it.rarity} • record ${st.maxWeight.toFixed(2)} / ${it.maxW.toFixed(1)} kg • caught ${st.count}</div>
               </div></div>
             <div style="font-size:24px;">${MEDAL_ICON[m]}</div>`;
           host.appendChild(row);
@@ -14309,7 +14003,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             <div>
               <div class="card-title">
                 <span>${bt.name}</span>
-                <span style="color: ${bt.infinite ? '#4ade80' : (stock > 0 ? '#ffd24c' : '#94a3b8')};">
+                <span style="color: ${bt.infinite ? 'var(--ok)' : (stock > 0 ? 'var(--gold)' : 'var(--text-2)')};">
                   ${bt.infinite ? '∞' : `${stock}x`}
                 </span>
               </div>
@@ -14498,7 +14192,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             <div>
               <div class="card-title">
                 <span>🎞️ ${preset.label}</span>
-                <span style="color: ${isEquipped ? '#f0abfc' : '#94a3b8'}; font-size: 12px;">${isEquipped ? 'ACTIVE' : 'FILTER'}</span>
+                <span style="color: ${isEquipped ? '#f0abfc' : 'var(--text-2)'}; font-size: 12px;">${isEquipped ? 'ACTIVE' : 'FILTER'}</span>
               </div>
               <div class="card-stats">${preset.desc}</div>
             </div>
@@ -14928,13 +14622,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function openBooksModal() {
         const host = document.getElementById('books-list'); host.innerHTML = '';
         const owned = Object.keys(BOOKS).filter(bookOwned);
-        if (!owned.length) host.innerHTML = '<p style="color:#94a3b8; text-align:center;">No books yet. Every shop sells one.</p>';
+        if (!owned.length) host.innerHTML = '<p style="color:var(--text-2); text-align:center;">No books yet. Every shop sells one.</p>';
         owned.forEach(id => {
           const b = BOOKS[id], pr = bookProgress(id), done = pr >= 1, card = document.createElement('div');
           card.className = `shop-card ${done ? 'equipped' : ''}`;
-          card.innerHTML = `<div><div class="card-title"><span>${b.icon} ${b.title}</span><span style="color:#ffd24c;">${(pr * 100).toFixed(1)}%</span></div>
+          card.innerHTML = `<div><div class="card-title"><span>${b.icon} ${b.title}</span><span style="color:var(--gold);">${(pr * 100).toFixed(1)}%</span></div>
             <div class="card-stats"><b>${bookPages(id).toFixed(1)} / ${BOOK_PAGES} pages</b>${done ? ' • Finished' : ''}<br>${b.perks.map(p => bookPerkText(b, p)).join('<br>')}</div>
-            <div class="bar-wrap" style="height:8px; margin-top:6px;"><div class="bar-fill" style="width:${(pr * 100).toFixed(1)}%; background:#4ade80;"></div></div></div>`;
+            <div class="bar-wrap" style="height:8px; margin-top:6px;"><div class="bar-fill" style="width:${(pr * 100).toFixed(1)}%; background:var(--ok);"></div></div></div>`;
           const btn = document.createElement('button'); btn.className = done ? 'pixel-btn' : 'pixel-btn green'; btn.disabled = done;
           btn.textContent = done ? 'Finished' : 'Read';
           btn.onclick = () => { document.getElementById('modal-books').classList.remove('open'); startReading(id); updateHUD(); };
@@ -15193,12 +14887,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         container.innerHTML = '';
 
         if (state.bucket.length === 0) {
-          container.innerHTML = '<p style="color:#94a3b8; text-align:center;">Your bucket is empty. Cast a line to catch fish!</p>';
+          container.innerHTML = '<p style="color:var(--text-2); text-align:center;">Your bucket is empty. Cast a line to catch fish!</p>';
         } else {
           const atFish = nearShoreShop(SHORE_SHOPS.fish), atRecycle = isNearRecycle();
           const sortBar = document.createElement('div');
           sortBar.className = 'chip-row';
-          sortBar.innerHTML = '<span style="font-size: 12px; color:#94a3b8; align-self:center;">Sort:</span>';
+          sortBar.innerHTML = '<span style="font-size: 12px; color:var(--text-2); align-self:center;">Sort:</span>';
           [['newest', 'Newest'], ['value', '$ Value'], ['weight', 'Weight'], ['name', 'Name']].forEach(([key, label]) => {
             const b = document.createElement('button');
             b.className = `pixel-btn ${settings.bucketSort === key ? 'active gold' : ''}`;
@@ -15223,7 +14917,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 <img class="item-icon" src="${ITEM_ICONS[entry.id]}" alt="" />
                 <div>
                   <div style="font-weight:bold; font-size:13px;">${entry.name}</div>
-                  <div style="font-size: 12px; color:#94a3b8;">${entry.weight.toFixed(2)} kg • <span style="color:#ffd24c;">$${sellValue(entry)}</span>${marketMult(entry.id) > 1.1 ? ' <span style="color:#4ade80;">▲</span>' : marketMult(entry.id) < 0.9 ? ' <span style="color:#f87171;">▼</span>' : ''}</div>
+                  <div style="font-size: 12px; color:var(--text-2);">${entry.weight.toFixed(2)} kg • <span style="color:var(--gold);">$${sellValue(entry)}</span>${marketMult(entry.id) > 1.1 ? ' <span style="color:var(--ok);">▲</span>' : marketMult(entry.id) < 0.9 ? ' <span style="color:var(--danger);">▼</span>' : ''}</div>
                 </div>
               </div>
             `;
@@ -15443,9 +15137,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const isNew = found && !state.seenSpecies.includes(item.id);
           const stat = (state.speciesStats && state.speciesStats[item.id]) || null;
           const recordTxt = item.isMessageBottle
-            ? ` • <b style="color:#2dd4bf;">${msgFoundCount}/${BOTTLE_MESSAGES.length} Scrolls</b>`
+            ? ` • <b style="color:var(--sea);">${msgFoundCount}/${BOTTLE_MESSAGES.length} Scrolls</b>`
             : (stat && stat.maxWeight > 0
-              ? ` • PB: <b style="color:#4ade80;">${stat.maxWeight.toFixed(2)}kg</b> (${stat.count}x)`
+              ? ` • PB: <b style="color:var(--ok);">${stat.maxWeight.toFixed(2)}kg</b> (${stat.count}x)`
               : '');
           const card = document.createElement('div');
           const isCod = item.id === catchOfDay().id;
@@ -15454,8 +15148,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             <img class="item-icon" src="${ITEM_ICONS[item.id]}" style="${found ? '' : 'filter: brightness(0);'}" alt="" />
             <div style="font-size: 12px; line-height: 1.35;">
               <div style="font-weight: bold; font-size: 12px; color: #fff;">${found ? item.name : '???'}${isNew ? '<span class="new-badge">NEW</span>' : ''}${isCod ? '<span class="log-cod">⭐ TODAY x3</span>' : ''}</div>
-              <div style="color: #94a3b8;">Zones: ${item.zones.join(', ')} • ${item.rarity}</div>
-              <div style="color: #ffd24c;">${found ? `~$${item.value}${recordTxt}` : 'Undiscovered'}</div>
+              <div style="color: var(--text-2);">Zones: ${item.zones.join(', ')} • ${item.rarity}</div>
+              <div style="color: var(--gold);">${found ? `~$${item.value}${recordTxt}` : 'Undiscovered'}</div>
             </div>
           `;
           grid.appendChild(card);
