@@ -14,7 +14,7 @@ const PRECACHE = [
   './',
   'index.html',
   'manifest.webmanifest',
-  'vendor/three.r128.min.js',
+  'vendor/three.r187.module.min.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-192.png',
