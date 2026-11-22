@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.3.1';
+    window.PF_VERSION = '6.4.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4593,6 +4593,16 @@
           home: { x: 27.4, z: 18.2 }, spots: [{ x: 27.4, z: 18.2 }, { x: -8.6, z: 8.0 }, { x: 23.6, z: 7.6 }],
           chat: ['The tavern opens at four. The stories start at five. The truth, around midnight.', 'Big shadows like a storm, they say. Bigger ones like a full moon.', 'Ship, captain, crew, then cargo. Remember the order and you will win my money.', 'I have seen a fish as long as the pier. Well. Half the pier.'] }
       };
+      /* friendship (v6.4.0): points per townsperson in state.story.friend; at FRIEND_PERK points their perk is yours for good */
+      const FRIEND_PERK = 8;
+      const FRIEND_PERKS = { rook: 'Fuel costs 20% less', ines: 'Tells you where and when to find the Catch of the Day (on the noticeboard)', pip: 'Shouts when a feeding frenzy is near your boat',
+        marta: 'Warns you before a storm and on full-moon evenings', lorenzo: 'Pantry goods cost 15% less', barnaby: 'Boat modules and paint cost 15% less',
+        talia: 'Sea plants sell for 20% more', maren: 'Treasure maps at half price', salty: 'Dice wins pay 50% more' };
+      const friendPts = id => { try { return (state.story && state.story.friend && state.story.friend[id]) || 0; } catch (e) { return 0; } };
+      const friendPerk = id => friendPts(id) >= FRIEND_PERK;
+      const modCost = m => Math.round(m.cost * (friendPerk('barnaby') ? 0.85 : 1));
+      const fuelPrice = () => (friendPerk('rook') ? 0.4 : 0.5);
+      const RELEASE_MAX_SAVE = 10;
       const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
       const rarityAtLeast = (r, min) => RARITY_ORDER.indexOf(r) >= RARITY_ORDER.indexOf(min);
       /* step types: catch {n, where pier|boat, zoneMin, minW, rarityMin, night, distinct}, deliver {rarityMin, minW},
@@ -8574,7 +8584,7 @@ this._scratchVec = new THREE.Vector3();
           spot.x = spot.minX + Math.random() * (spot.maxX - spot.minX);
           spot.z = spot.minZ + Math.random() * (spot.maxZ - spot.minZ);
           spot.ttl = 45 + Math.random() * 40;
-          spot.spotted = false;   // a frenzy that moves needs spotting again
+          spot.spotted = false; spot.pipSaid = false;   // a frenzy that moves needs spotting again
           spot.mesh.position.set(spot.x, 0.08, spot.z);
         }
 
@@ -9382,6 +9392,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let rescueFeePaid = 0;
 
       let weatherTimer = 95;
+      let pendingWeather = null;
+      function rollWeather() { const roll = Math.random(); return roll < 0.45 ? 'CLEAR' : roll < 0.72 ? 'OVERCAST' : roll < 0.90 ? 'RAIN' : 'STORM'; }
       let lightningFlash = 0;
       let nextLightningTimer = 7;
 
@@ -9679,7 +9691,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         { id: 'lights', name: 'Light Show', icon: '✨', cost: 900, charm: 12, desc: 'Colour-changing glow ring.' }
       ];
       const aquaLoad = w => Math.max(1, Math.pow(w, 0.8));      // how much room a fish takes
-      function defaultAquarium() { return { tier: 1, fish: [], food: 80, clean: 80, decor: [], stored: [], pellets: 0, kits: 0, cleanBoost: 0, tickets: 0, lastDay: 0, kept: [], bred: 0, forms: [] }; }
+      function defaultAquarium() { return { tier: 1, fish: [], food: 80, clean: 80, decor: [], stored: [], pellets: 0, kits: 0, cleanBoost: 0, tickets: 0, lastDay: 0, kept: [], bred: 0, forms: [], released: {} }; }
       const aquaTankOf = aq => AQUARIUM_TANKS[Math.max(1, Math.min(AQUARIUM_TANKS.length, aq.tier || 1)) - 1];
       const aquaUsed = aq => aq.fish.reduce((s, f) => s + aquaLoad(f.w), 0);
       /* can this bucket fish (or { category, weight }) go into the tank? -> { ok, reason } */
@@ -9763,7 +9775,19 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         saveGame(); rebuildPierBucketVisual(); updateHUD();
         return true;
       }
-      function aquariumRelease(i) { const aq = state.aquarium; if (!aq.fish[i]) return false; aq.fish.splice(i, 1); saveGame(); return true; }
+      /* releasing a grown, tank-bred colour morph (golden, albino, midnight) to the sea raises the rare-fish odds in its home zone: +1.5% each, up to +15% (v6.4.0) */
+      const RELEASE_STEP = 0.015, RELEASE_MAX = 10;
+      const releaseBonus = zid => Math.min(RELEASE_MAX, (state.aquarium && state.aquarium.released && state.aquarium.released[zid]) || 0) * RELEASE_STEP;
+      function aquariumRelease(i) {
+        const aq = state.aquarium, f = aq.fish[i]; if (!f) return false;
+        aq.fish.splice(i, 1);
+        if (f.form && f.form !== 'normal' && !f.g) {
+          const z = (CATALOG_INDEX[f.id].zones || [1])[0];
+          aq.released[z] = Math.min(RELEASE_MAX, (aq.released[z] || 0) + 1);
+          showToast(`🌊 ${AQUARIUM_FORMS[f.form].name} ${CATALOG_INDEX[f.id].name} released: rare fish odds in ${ZONES[z - 1].name} now +${(releaseBonus(z) * 100).toFixed(1)}%.`);
+        }
+        saveGame(); return true;
+      }
       function aquariumFeed(premium) {
         const aq = state.aquarium;
         if (premium) { if (aq.pellets < 1) return false; aq.pellets--; aq.food = 100; }
@@ -9832,6 +9856,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         aq.kept = [...new Set((Array.isArray(src.kept) ? src.kept : []).filter(id => CATALOG_INDEX[id] && CATALOG_INDEX[id].category === 'Fish'))];
         aq.bred = Math.floor(num(src.bred, 0, 0, 1e6));
         aq.forms = [...new Set((Array.isArray(src.forms) ? src.forms : []).filter(f => AQUARIUM_FORMS[f] && f !== 'normal'))];
+        if (src.released && typeof src.released === 'object') ZONES.forEach(z => { const v = Math.floor(Number(src.released[z.id])); if (Number.isFinite(v) && v > 0) aq.released[z.id] = Math.min(RELEASE_MAX_SAVE, v); });
         return aq;
       }
 
@@ -10147,7 +10172,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         return marketCache;
       }
       const marketMult = id => marketFor(state.dayCount || 0).mult[id] || 1;
-      const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id) * (1 + (entry.category === 'Fish' ? bookBonus('fishPrice') : (entry.category === 'Junk' || entry.category === 'Flora') ? bookBonus('junkPrice') : 0))));
+      const sellValue = entry => Math.max(1, Math.round(entry.value * marketMult(entry.id) * (1 + (entry.category === 'Fish' ? bookBonus('fishPrice') : (entry.category === 'Junk' || entry.category === 'Flora') ? bookBonus('junkPrice') : 0)) * (entry.category === 'Flora' && friendPerk('talia') ? 1.2 : 1)));
 
       /* ---- Catch of the Day and the daily streak: both keyed on the real calendar date (local time) ---- */
       function todayNum() { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
@@ -10977,9 +11002,9 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         if (state.boatTier === 0) { showToast('⛽ No boat moored here yet: buy one at the Boatyard.'); return; }
         const boat = getCurrentBoat(), missing = Math.max(0, boat.maxFuel - state.fuel);
         if (missing <= 0.1) { showToast(`⛽ ${boat.name}: the tank is already full.`); return; }
-        const units = Math.min(missing, Math.floor(state.cash / 0.5));
-        if (units <= 0) { showToast('⛽ Not enough cash for fuel ($0.50 a unit).'); return; }
-        const cost = +(units * 0.5).toFixed(2);
+        const units = Math.min(missing, Math.floor(state.cash / fuelPrice()));
+        if (units <= 0) { showToast(`⛽ Not enough cash for fuel ($${fuelPrice().toFixed(2)} a unit).`); return; }
+        const cost = +(units * fuelPrice()).toFixed(2);
         state.cash = +(state.cash - cost).toFixed(2);
         state.fuel = +(state.fuel + units).toFixed(1);
         state.boatFuel[state.boatTier] = state.fuel;
@@ -11440,7 +11465,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (r.cash) { state.cash = +(state.cash + r.cash).toFixed(2); bumpStat('earned', r.cash); }
         if (r.xp) addXp(r.xp);
         if (r.flag) S.flags[r.flag] = true;
-        S.friend[q.giver] = (S.friend[q.giver] || 0) + 1;
+        addFriend(q.giver, 3);
         sfx.playCatchFanfare(false); saveGame(); updateHUD(); updateQuestPill();
         showToast(`🏅 ${q.title} complete! +${shopMoney(r.cash || 0)}${r.xp ? `, +${r.xp} XP` : ''}`);
       }
@@ -11538,8 +11563,17 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function talkSay(lines, choices) { talk.lines = lines; talk.i = 0; talk.choices = choices || null; talkShow(); }
       function talkClose() { document.getElementById('modal-talk').classList.remove('open'); talk.npc = null; updateQuestPill(); }
+      /* friendship points: +3 a finished quest, +1 the first chat of the day, +2 a craving served, +2 a commission, +1 a dice win */
+      function addFriend(id, n) {
+        const S = story(); if (!NPCS[id]) return;
+        const before = S.friend[id] || 0; S.friend[id] = Math.min(99, before + n);
+        if (before < FRIEND_PERK && S.friend[id] >= FRIEND_PERK) { showToast(`❤️ You and ${NPCS[id].name} are friends! ${FRIEND_PERKS[id]}.`); sfx.playCatchFanfare(false); }
+        saveGame();
+      }
+      const friendHearts = id => { const f = Math.min(FRIEND_PERK, friendPts(id)); return '❤️'.repeat(Math.floor(f / 2)) + '🤍'.repeat(Math.ceil((FRIEND_PERK - f) / 2) - (f % 2 ? 1 : 0)) + (f % 2 ? '🩷' : ''); };
       function openTalk(n) {
         talk.npc = n; n.talk = 4;
+        { const T = town(), day = state.dayCount || 0; if (T.met[n.id] !== day) { T.met[n.id] = day; addFriend(n.id, 1); } }
         document.getElementById('modal-talk').classList.add('open');
         questEvent('talk', { npc: n.id });
         talkMenu();
@@ -11564,10 +11598,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           talkSay(offer.intro, [{ label: 'I will do it', cls: 'green', fn: () => { S.active[offer.id] = { s: 0, n: 0, seen: [] }; saveGame(); showToast(`📜 New quest: ${offer.title}`); updateQuestPill(); questTickT = 0; talkSay([`Good luck! (${offer.steps[0].text})`]); } }, { label: 'Not now' }]);
           return;
         }
-        // 4. an active quest of theirs in progress, or small talk
+        // 3b. Ines' specimen commissions (v6.4.0)
+        if (n.id === 'ines' && QUEST_BY_ID.study && S.done.includes('study')) { if (inesTalk()) return; }
+        // 4. an active quest of theirs in progress, or small talk (with your friendship)
         const mine = Object.keys(S.active).find(id => QUEST_BY_ID[id].giver === n.id);
+        const fl = `${friendHearts(n.id)} ${friendPerk(n.id) ? `Friends: ${FRIEND_PERKS[n.id]}.` : `Friendship ${Math.min(FRIEND_PERK, friendPts(n.id))} / ${FRIEND_PERK}`}`;
         const day = state.dayCount || 0, chat = n.d.chat[(day + Object.keys(NPCS).indexOf(n.id)) % n.d.chat.length];
-        talkSay(mine ? [`How is it going? ${questStepText(mine)}.`, chat] : [chat]);
+        talkSay(mine ? [`How is it going? ${questStepText(mine)}.`, chat, fl] : [chat, fl]);
       }
       (function wireTalk() {
         const box = document.getElementById('talk-box');
@@ -11589,7 +11626,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const act = Object.keys(S.active).map(id => { const q = QUEST_BY_ID[id]; return row(questReady(id) ? '✅' : '📜', q.title, `${NPCS[q.giver].icon} ${NPCS[q.giver].name} • ${questStepText(id)}`); });
         const avail = QUESTS.filter(questAvailable).map(q => row('❗', q.title, `Talk to ${NPCS[q.giver].name} (${NPCS[q.giver].role}) in Harbour Town or the harbour.`));
         const done = S.done.map(id => row('🏅', QUEST_BY_ID[id].title, 'Complete'));
-        host.innerHTML = `<h4 class="ql-h">In progress</h4>${act.join('') || '<p class="sl-empty">Nothing yet. Look for people with a ! above their heads.</p>'}`
+        const friends = Object.keys(NPCS).map(id => row(NPCS[id].icon, `${NPCS[id].name} ${friendHearts(id)}`, friendPerk(id) ? `Friends: ${FRIEND_PERKS[id]}` : `Friendship ${Math.min(FRIEND_PERK, friendPts(id))} / ${FRIEND_PERK} • at ${FRIEND_PERK}: ${FRIEND_PERKS[id]}`));
+        host.innerHTML = `<h4 class="ql-h">Friends</h4>${friends.join('')}<h4 class="ql-h">In progress</h4>${act.join('') || '<p class="sl-empty">Nothing yet. Look for people with a ! above their heads.</p>'}`
           + (avail.length ? `<h4 class="ql-h">Waiting for you</h4>${avail.join('')}` : '')
           + `<h4 class="ql-h">Completed (${S.done.length} / ${QUESTS.length})</h4>${done.join('') || '<p class="sl-empty">None yet.</p>'}`;
         document.getElementById('modal-quests').classList.add('open');
@@ -11599,7 +11637,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          LORENZO'S RESTAURANT (v6.1): cook catches into dishes (a three-step timing mini-game), keep them in the fridge,
          and guests buy them at lunch and dinner (in-game time). Everything lives in state.kitchen (sanitizeKitchen).
          ========================================================================= */
-      function defaultKitchen() { return { pantry: { bread: 0, lemon: 0, rice: 0, potato: 0, spices: 0, shellfish: 0 }, dishes: [], cooked: 0, served: 0, bank: 0, tables: 0, stove: 0, lights: 0, buff: null, acc: 0, espresso: 0 }; }
+      function defaultKitchen() { return { pantry: { bread: 0, lemon: 0, rice: 0, potato: 0, spices: 0, shellfish: 0 }, dishes: [], cooked: 0, served: 0, bank: 0, tables: 0, stove: 0, lights: 0, buff: null, acc: 0, espresso: 0, stats: {} }; }
       function sanitizeKitchen(src) {
         const k = defaultKitchen(); if (!src || typeof src !== 'object') return k;
         const num = (v, lo, hi) => { v = Math.floor(Number(v)); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
@@ -11613,6 +11651,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (n > 0) k.buff = { type: src.buff.type, n };
         }
         k.espresso = Math.max(0, Math.min(ESPRESSO.minutes, Number(src.espresso) || 0));
+        if (src.stats && typeof src.stats === 'object') Object.keys(src.stats).forEach(id => { const v = src.stats[id]; if (RECIPE_BY_ID[id] && Array.isArray(v)) k.stats[id] = [num(v[0], 0, 1e5), num(v[1], 0, 3e5), num(v[2], 0, 1e5)]; });
         return k;
       }
       const kitchen = () => state.kitchen || (state.kitchen = defaultKitchen());
@@ -11664,7 +11703,27 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
         return used;
       }
-      const recipePantryOk = r => Object.entries(r.pantry).every(([p, n]) => kitchen().pantry[p] >= n);
+      const recipePantryOk = (r, times = 1) => Object.entries(r.pantry).every(([p, n]) => kitchen().pantry[p] >= n * times);
+      /* fish for several batches at once (each fish used once), or null */
+      function recipeFishN(r, times) {
+        const used = [], pool = state.bucket.slice().sort((a, b) => sellValue(a) - sellValue(b));
+        for (let t = 0; t < times; t++) for (const req of r.fish) {
+          const f = pool.find(e => !used.includes(e) && e.category === (req.cat || 'Fish') && (!req.minW || e.weight >= req.minW) && (!req.rarityMin || rarityAtLeast(e.rarity, req.rarityMin)));
+          if (!f) return null; used.push(f);
+        }
+        return used;
+      }
+      /* COOK x3 (v6.4.0): after three 3-star dishes of a recipe, cook three at once at your average stars, no mini-game */
+      const batchStars = r => { const st = kitchen().stats[r.id]; return st && st[2] ? Math.max(1, Math.min(3, Math.round(st[1] / st[2]))) : 2; };
+      function cookBatch(r) {
+        const k = kitchen(), fish = recipeFishN(r, 3); if (!fish || !recipePantryOk(r, 3)) return;
+        const stars = batchStars(r), room = Math.min(3, DISH_MAX - k.dishes.length); if (room <= 0) return;
+        fish.forEach(f => { const i = state.bucket.indexOf(f); if (i >= 0) state.bucket.splice(i, 1); });
+        Object.entries(r.pantry).forEach(([p, n]) => { k.pantry[p] -= n * 3; });
+        for (let i = 0; i < 3; i++) { if (k.dishes.length < DISH_MAX) k.dishes.push({ id: r.id, stars }); k.cooked++; questEvent('cook', { stars, recipe: r }); }
+        sfx.playCoin(); rebuildPierBucketVisual(); saveGame(); updateHUD(); refreshShopBrowse();
+        showToast(`${r.icon} Cooked 3 × ${r.name} (${'⭐'.repeat(stars)})${room < 3 ? ': the fridge is full, some went to the staff' : ''}.`);
+      }
       const recipeNeedText = r => r.fish.map(q => `${q.cat === 'Flora' ? 'seaweed' : 'a fish'}${q.minW ? ` over ${q.minW} kg` : ''}${q.rarityMin ? ` (${q.rarityMin}+)` : ''}`).join(', ')
         + ' + ' + Object.entries(r.pantry).map(([p, n]) => `${n > 1 ? n + ' ' : ''}${PANTRY[p].icon}`).join(' ');
       /* service: lunch 11:00 to 14:00 and dinner 17:30 to 21:00; guests arrive with the in-game clock */
@@ -11674,6 +11733,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (k.espresso > 0) { const h = Math.ceil(k.espresso / 60); k.espresso = Math.max(0, k.espresso - dMin); if (Math.ceil(k.espresso / 60) !== h) { updateBuffPill(); if (k.espresso <= 0) showToast('☕ The espresso has worn off.'); } }
         if (!restoOpen() || !inService(state.timeOfDay) || !k.dishes.length) { restoView.busy = Math.max(0, restoView.busy - dMin / 30); return; }
         const rating = restoRating();
+        serveCravings(rating);
         k.acc += dMin * restoTables() * (0.006 + rating * 0.004);   // guests per in-game minute
         while (k.acc >= 1 && k.dishes.length) {
           k.acc -= 1;
@@ -11686,6 +11746,37 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (k.acc > 3) k.acc = 3;
       }
       const restoView = { busy: 0 };
+      /* VIP cravings (v6.4.0): each day two townsfolk crave a dish, one at lunch and one at dinner; with it in the fridge
+         during that service they come in, pay double and like you more. Chosen from the day number (nothing to save but done flags). */
+      function todaysCravings() {
+        const T = town(), day = state.dayCount || 0;
+        craveDone();
+        if (!T.crave.ids || T.crave.ids.length !== 2) {   // chosen once a day from the recipes you know, then kept (saved)
+          const r = dayRng(day * 11 + 5), ids = Object.keys(NPCS), pool = RECIPES.filter(recipeUnlocked);
+          const a = ids[Math.floor(r() * ids.length)]; let b = ids[Math.floor(r() * ids.length)]; if (b === a) b = ids[(ids.indexOf(a) + 3) % ids.length];
+          const pick = () => (pool.length ? pool[Math.floor(r() * pool.length)] : RECIPES[0]).id;
+          T.crave.ids = [[a, pick()], [b, pick()]];
+        }
+        return T.crave.ids.map(([npc, rid], i) => ({ npc, recipe: RECIPE_BY_ID[rid] || RECIPES[0], meal: i ? 'dinner' : 'lunch' }));
+      }
+      const mealNow = t => (t >= 0.458 && t < 0.583 ? 'lunch' : t >= 0.729 && t < 0.875 ? 'dinner' : null);
+      function craveDone() { const T = town(), day = state.dayCount || 0; if (T.crave.day !== day) T.crave = { day, done: [] }; return T.crave.done; }
+      function serveCravings(rating) {
+        const k = kitchen(), meal = mealNow(state.timeOfDay); if (!meal) return;
+        const done = craveDone();
+        todaysCravings().forEach((c, i) => {
+          if (c.meal !== meal || done.includes(i)) return;
+          const j = k.dishes.findIndex(d => d.id === c.recipe.id); if (j < 0) return;
+          const d = k.dishes.splice(j, 1)[0], pay = dishPrice(d, rating) * 2;
+          k.bank = +(k.bank + pay).toFixed(2); k.served++; done.push(i); questEvent('serve', {});
+          addFriend(c.npc, 2);
+          showToast(`${NPCS[c.npc].icon} ${NPCS[c.npc].name} came for the ${c.recipe.name}: paid double (${shopMoney(pay)})!`);
+        });
+      }
+      function cravingLines() {
+        const done = craveDone();
+        return todaysCravings().map((c, i) => `${NPCS[c.npc].icon} ${NPCS[c.npc].name} craves <b>${c.recipe.icon} ${c.recipe.name}</b> at ${c.meal} (${c.meal === 'lunch' ? '11:00 to 14:00' : '17:30 to 21:00'})${done.includes(i) ? ' ✅ served' : recipeUnlocked(c.recipe) ? '' : ' (not on your menu yet)'}`);
+      }
 
       /* ---- the cooking mini-game: chop (tap in the green), sear (hold, release in the green), plate (stop the arrow at the top) ---- */
       const cook = { r: null, fish: null, step: 0, scores: [], raf: 0, t0: 0, holding: false, heat: 0, taps: 0 };
@@ -11751,6 +11842,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         Object.entries(r.pantry).forEach(([p, n]) => { k.pantry[p] -= n; });
         if (k.dishes.length < DISH_MAX) k.dishes.push({ id: r.id, stars });
         k.cooked++;
+        { const st = k.stats[r.id] || (k.stats[r.id] = [0, 0, 0]); if (stars === 3) st[0]++; st[1] += stars; st[2]++; }   // for COOK x3
         const newly = RECIPES.filter(x => x.at === k.cooked);
         rebuildPierBucketVisual(); saveGame(); updateHUD();
         questEvent('cook', { stars, recipe: r });
@@ -11783,10 +11875,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           RECIPES.forEach(r => {
             if (!recipeUnlocked(r)) { mk(`<span class="sl-n">🔒 ${r.name}<small>Unlocks after ${r.at} dishes cooked (${k.cooked} so far).</small></span>`); return; }
             const fish = recipeFish(r), pan = recipePantryOk(r);
-            mk(`<span class="sl-n">${r.icon} ${r.name}<small>${recipeNeedText(r)} • sells for about ${shopMoney(dishPrice({ id: r.id, stars: 2 }, rating))}</small></span>`,
-              [['Cook', 'green', () => startCooking(r), !fish || !pan || k.dishes.length >= DISH_MAX]]);
+            const st = k.stats[r.id], batch = st && st[0] >= 3, btns = [['Cook', 'green', () => startCooking(r), !fish || !pan || k.dishes.length >= DISH_MAX]];
+            if (batch) btns.push(['Cook ×3', 'green', () => cookBatch(r), !recipeFishN(r, 3) || !recipePantryOk(r, 3) || k.dishes.length >= DISH_MAX]);
+            mk(`<span class="sl-n">${r.icon} ${r.name}<small>${recipeNeedText(r)} • sells for about ${shopMoney(dishPrice({ id: r.id, stars: 2 }, rating))}${batch ? ` • ×3 at ${'⭐'.repeat(batchStars(r))}` : st ? ` • 3-star dishes: ${st[0]} / 3 for Cook ×3` : ''}</small></span>`, btns);
           });
         } else if (tab === 'fridge') {
+          if (restoOpen()) host.insertAdjacentHTML('beforeend', `<p class="sl-empty" style="padding:6px 8px;text-align:left;">⭐ Today's cravings (double pay with the dish in the fridge):<br>${cravingLines().join('<br>')}</p>`);
           if (!k.dishes.length) msg('The fridge is empty. Cook something on the Cook tab.');
           const groups = {}; k.dishes.forEach(d => { const key = d.id + ':' + d.stars; (groups[key] = groups[key] || { d, n: 0 }).n++; });
           Object.values(groups).forEach(({ d, n }) => {
@@ -11797,10 +11891,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           btn.style.display = ''; btn.disabled = k.bank < 1;
           btn.textContent = k.bank >= 1 ? `Collect ${shopMoney(k.bank)}` : 'No takings yet';
         } else if (tab === 'pantry') {
+          const pm = friendPerk('lorenzo') ? 0.85 : 1;   // Lorenzo's friendship perk
           mk(`<span class="sl-n">☕ Harbour Espresso<small>Read twice as fast on a bench for 12 hours${k.espresso > 0 ? ` • ${Math.ceil(k.espresso / 60)} h left` : ''} • ${shopMoney(ESPRESSO.cost)}</small></span>`,
             [['Drink', '', () => shopAsk({ confirm: `Drink a Harbour Espresso for ${shopMoney(ESPRESSO.cost)}?`, price: ESPRESSO.cost, verb: 'Buy', can: state.cash >= ESPRESSO.cost, act: () => { state.cash = +(state.cash - ESPRESSO.cost).toFixed(2); k.espresso = ESPRESSO.minutes; sfx.playCoin(); saveGame(); updateHUD(); updateBuffPill(); updateReadPill(); showToast('☕ Harbour Espresso: you read twice as fast for 12 hours.'); } }), state.cash < ESPRESSO.cost]]);
-          Object.entries(PANTRY).forEach(([id, p]) => p.trap ? mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id] || 0} in stock • from your crab traps in the tide pool</small></span>`) : mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id]} in stock • ${shopMoney(p.cost)} each</small></span>`,
-            [['+5', '', () => shopAsk({ confirm: `Buy 5 ${p.name.toLowerCase()} for ${shopMoney(p.cost * 5)}?`, price: p.cost * 5, verb: 'Buy', can: state.cash >= p.cost * 5, act: () => { state.cash = +(state.cash - p.cost * 5).toFixed(2); k.pantry[id] += 5; sfx.playCoin(); saveGame(); updateHUD(); } }), state.cash < p.cost * 5]]));
+          Object.entries(PANTRY).forEach(([id, p]) => p.trap ? mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id] || 0} in stock • from your crab traps in the tide pool</small></span>`) : mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id]} in stock • ${shopMoney(p.cost * pm)} each</small></span>`,
+            [['+5', '', () => shopAsk({ confirm: `Buy 5 ${p.name.toLowerCase()} for ${shopMoney(p.cost * 5 * pm)}?`, price: +(p.cost * 5 * pm).toFixed(2), verb: 'Buy', can: state.cash >= p.cost * 5 * pm, act: () => { state.cash = +(state.cash - p.cost * 5 * pm).toFixed(2); k.pantry[id] += 5; sfx.playCoin(); saveGame(); updateHUD(); } }), state.cash < p.cost * 5 * pm]]));
         } else if (tab === 'upgrades') {
           RESTO_UP.forEach(u => {
             const lvl = k[u.id], nxt = u.levels[lvl + 1];
@@ -11958,7 +12053,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          crab traps in the tide pool, boat paint at Barnaby's Workshop, Talia's greenhouse and the Post Office counter.
          Everything is saved in state.town (sanitizeTown); places are SPOTS entries; walking routes use townPath.
          ========================================================================= */
-      function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1 }; }
+      function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1, met: {}, comm: null, commDay: -1, crave: { day: -1, done: [] } }; }
       function sanitizeTown(src) {
         const T = defaultTown(); if (!src || typeof src !== 'object') return T;
         const num = (v, lo, hi, d = lo) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
@@ -11966,6 +12061,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         T.rep = int(src.rep, 0, 1e5); T.jobsDone = int(src.jobsDone, 0, 1e6); T.herbs = int(src.herbs, 0, 999); T.stamps = int(src.stamps, 0, 6);
         T.scopeDay = int(src.scopeDay, -1, 1e6); T.mapDay = int(src.mapDay, -1, 1e6); T.litDay = int(src.litDay, -1, 1e6);
         T.lit = (Array.isArray(src.lit) ? src.lit : []).filter(i => Number.isInteger(i) && i >= 0 && i < JOB_LANTERNS.length).slice(0, JOB_LANTERNS.length);
+        if (src.met && typeof src.met === 'object') Object.keys(NPCS).forEach(k => { const v = Math.floor(Number(src.met[k])); if (Number.isFinite(v)) T.met[k] = v; });
+        T.commDay = int(src.commDay, -1, 1e6);
+        if (src.comm && typeof src.comm === 'object') {
+          if (src.comm.kind === 'species' && CATALOG_INDEX[src.comm.id]) T.comm = { kind: 'species', id: src.comm.id };
+          else if (src.comm.kind === 'morph' && ['golden', 'albino', 'midnight'].includes(src.comm.form)) T.comm = { kind: 'morph', form: src.comm.form };
+        }
+        if (src.crave && typeof src.crave === 'object') {
+          T.crave = { day: int(src.crave.day, -1, 1e6), done: (Array.isArray(src.crave.done) ? src.crave.done : []).filter(i => i === 0 || i === 1) };
+          if (Array.isArray(src.crave.ids) && src.crave.ids.length === 2 && src.crave.ids.every(x => Array.isArray(x) && NPCS[x[0]] && RECIPE_BY_ID[x[1]])) T.crave.ids = src.crave.ids.map(x => [x[0], x[1]]);
+        }
         if (src.dice && typeof src.dice === 'object') T.dice = { played: int(src.dice.played, 0, 1e6), won: int(src.dice.won, 0, 1e6) };
         T.traps = [0, 1, 2].map(i => { const t = Array.isArray(src.traps) ? src.traps[i] : null; return t && typeof t === 'object' ? { day: int(t.day, 0, 1e6) } : null; });
         if (src.paint && typeof src.paint === 'object') Object.keys(src.paint).forEach(k => {
@@ -12217,10 +12322,19 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             row(`<span class="sl-n">${K.icon} ${K.name}<small>${K.desc(j)} • ${shopMoney(j.pay)} + ${j.xp} XP</small></span>`,
               j.status === 'open' ? [['Take', '', () => { acceptJob(i); townRefresh(); }, !!a]] : [[j.status === 'done' ? 'Done' : j.status === 'failed' ? 'Missed' : 'Taken', '', () => {}, true]]);
           });
-          craveRows && craveRows({ row, head, note });
+          craveRows({ row, head, note });
         });
       }
-      let craveRows = null;   // filled in by the restaurant cravings (v6.4)
+      /* the noticeboard also shows today's restaurant cravings, Ines' Catch of the Day tip and your friendships */
+      function craveRows({ row, head, note }) {
+        if (restoOpen()) { head("Today's cravings at the restaurant"); note(cravingLines().join('<br>') + '<br>Have the dish in the fridge during that service: they pay double.'); }
+        if (friendPerk('ines')) {
+          const c = catchOfDay(), when = c.fullMoonOnly ? 'on full-moon nights' : c.stormOnly ? 'in storms' : 'at any time';
+          head('🔬 Ines\' tip'); note(`Today's Catch of the Day is the <b>${c.name}</b>: it lives in ${c.zones.map(z => ZONES[z - 1].name).join(', ')}, ${when}. Worth three times its price today.`);
+        }
+        head('Friends');
+        note(Object.keys(NPCS).map(id => `${NPCS[id].icon} ${NPCS[id].name} ${friendHearts(id)}${friendPerk(id) ? ` • ${FRIEND_PERKS[id]}` : ''}`).join('<br>'));
+      }
 
       /* ---- the lookout telescope: sweep the sea, spot frenzies, treasure beams and boss shadows; they go on the Map ---- */
       const scope = { on: false, yaw: 0, auto: true, idle: 0, dir: 1, hold: 0, dwell: new Map(), fov: 13 };
@@ -12290,8 +12404,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const a = sccScore(dice.me), b = sccScore(t), name = DICE_OPP[dice.opp][1], T = town(), w = dice.wager;
         T.dice.played++; dice.phase = 'done';
         if (a > b) {
-          T.dice.won++; questEvent('dice', { won: true });
-          if (w > 0) { townPay(w * 2, 4, null); dice.msg = `You win ${shopMoney(w)}! ${name} pays up.`; }
+          T.dice.won++; questEvent('dice', { won: true }); addFriend(DICE_OPP[dice.opp][0], 1);
+          const win = Math.round(w * (friendPerk('salty') ? 1.5 : 1));
+          if (w > 0) { townPay(w + win, 4, null); dice.msg = `You win ${shopMoney(win)}! ${name} pays up.`; }
           else { const tier = Math.max(2, Math.min(4, state.baitTier || 2)); state.baitStock[tier] = (state.baitStock[tier] || 0) + 5; if (state.baitTier === tier) state.baitCount = state.baitStock[tier]; townPay(0, 4, null); dice.msg = `You win 5 ${BAIT_TIERS[tier - 1].name}!`; }
         } else if (a === b) { if (w > 0) { state.cash = +(state.cash + w).toFixed(2); updateHUD(); } dice.msg = 'A draw: the bets go back.'; saveGame(); }
         else { dice.msg = `${name} wins this one.`; saveGame(); }
@@ -12379,7 +12494,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (tier === state.boatTier) rebuildPlayerBoatVisual();
         townRefresh();
       }
-      const paintDiscount = () => 1;   // Barnaby's friendship perk lowers it (v6.4)
+      const paintDiscount = () => (friendPerk('barnaby') ? 0.85 : 1);   // Barnaby's friendship perk
 
       /* ---- Talia's greenhouse: sells herbal lures, buys your seaweed ---- */
       function openGreenhouse() {
@@ -12393,7 +12508,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (!flora.length) return; state.bucket = state.bucket.filter(e => e.category !== 'Flora'); townPay(pay, 0, `🌱 Talia paid ${shopMoney(pay)} for your sea plants.`); townRefresh(); }, !flora.length]]);
         });
       }
-      const floraBonus = () => 1;   // Talia's friendship perk raises it (v6.4)
+      const floraBonus = () => 1;   // Talia's perk is inside sellValue
 
       /* ---- the Post Office: jobs, treasure maps and bottle stamps ---- */
       const MAP_COST = 150;
@@ -12403,11 +12518,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const T = town(), found = (state.foundMessages || []).length, stampsDue = Math.min(6, Math.floor(found / 6)) - T.stamps;
           note('Maren runs the counter: parcels to carry, old treasure maps, and a stamp for every six bottle messages you find.');
           head('Counter');
-          row(`<span class="sl-n">🗺️ Treasure map<small>Marks a floating chest out on the Coastal Reef on your Map • one a day • ${shopMoney(MAP_COST)}</small></span>`, [['Buy', '', () => {
-            if (state.cash < MAP_COST || T.mapDay === (state.dayCount || 0)) return;
+          const mapCost = MAP_COST * (friendPerk('maren') ? 0.5 : 1);
+          row(`<span class="sl-n">🗺️ Treasure map<small>Marks a floating chest out on the Coastal Reef on your Map • one a day • ${shopMoney(mapCost)}</small></span>`, [['Buy', '', () => {
+            if (state.cash < mapCost || T.mapDay === (state.dayCount || 0)) return;
             const t = seaEvents.sight(true); if (!t) { showToast('🗺️ Maren finds no fresh map today. Try tomorrow.'); return; }
-            state.cash = +(state.cash - MAP_COST).toFixed(2); T.mapDay = state.dayCount || 0; t.spotted = true; townPay(0, 0, '🗺️ A chest is marked on your Map. Sail out to it.'); townRefresh();
-          }, state.cash < MAP_COST || T.mapDay === (state.dayCount || 0)]]);
+            state.cash = +(state.cash - mapCost).toFixed(2); T.mapDay = state.dayCount || 0; t.spotted = true; townPay(0, 0, '🗺️ A chest is marked on your Map. Sail out to it.'); townRefresh();
+          }, state.cash < mapCost || T.mapDay === (state.dayCount || 0)]]);
           row(`<span class="sl-n">📜 Bottle stamps<small>${found} / ${BOTTLE_MESSAGES.length} bottle messages • ${T.stamps} / 6 stamps • each stamp pays $100</small></span>`, [['Claim', '', () => {
             if (stampsDue <= 0) return; T.stamps += stampsDue; townPay(100 * stampsDue, 30 * stampsDue, `📜 ${stampsDue} stamp${stampsDue > 1 ? 's' : ''} from Maren: +${shopMoney(100 * stampsDue)}.`); townRefresh(); }, stampsDue <= 0]]);
           head('Jobs');
@@ -12463,6 +12579,40 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const far = onBoat && Math.hypot(boatPos.x, boatPos.z) > 210, under = !!dive.active && mode === 'DIVING';
         if (world.islandScenery) world.islandScenery.visible = !(far || under);
         if (world.pierGroup) world.pierGroup.visible = !under;
+      }
+      /* Ines' specimen commissions (v6.4.0, after her quest Living Specimens): one a day, a species from the sea or a
+         tank-bred colour morph from your aquarium. Pays well and +2 friendship. */
+      function inesCommission() {
+        const T = town(), day = state.dayCount || 0;
+        if (!T.comm && T.commDay !== day) {
+          const r = dayRng(day * 13 + 1);
+          if (r() < 0.35) T.comm = { kind: 'morph', form: ['golden', 'albino', 'midnight'][Math.floor(r() * 3)] };
+          else { const pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly && c.zones.some(z => z <= Math.max(2, (state.stats && state.stats.maxZone) || 1)) && c.rarity !== 'Legendary'); T.comm = { kind: 'species', id: pool[Math.floor(r() * pool.length)].id }; }
+          saveGame();
+        }
+        return T.comm;
+      }
+      function inesTalk() {
+        const c = inesCommission(); if (!c) return false;
+        const T = town();
+        if (c.kind === 'species') {
+          const it = CATALOG_INDEX[c.id], f = state.bucket.find(e => e.id === c.id), pay = Math.round(it.value * 2.5 + 40);
+          if (f) { talkSay([`A ${it.name}! Exactly the specimen I needed.`], [{ label: `Give ${it.name} (+${shopMoney(pay)})`, cls: 'green', fn: () => { const i = state.bucket.indexOf(f); if (i >= 0) state.bucket.splice(i, 1); rebuildPierBucketVisual(); T.comm = null; T.commDay = state.dayCount || 0; addFriend('ines', 2); townPay(pay, 30, `🔬 Commission done: +${shopMoney(pay)}.`); talkMenu(); } }, { label: 'Not now' }]); return true; }
+          talkSay([`My commission today: a ${it.name}, from ${it.zones.map(z => ZONES[z - 1].name).join(' or ')}. Bring it to me in your bucket and I will pay ${shopMoney(pay)}.`], [{ label: 'I will look' }]); return true;
+        }
+        const form = c.form, F = AQUARIUM_FORMS[form], aq = state.aquarium, i = aq.fish.findIndex(f => f.form === form && !f.g), pay = 320;
+        if (i >= 0) { const f = aq.fish[i]; talkSay([`A ${F.name} ${CATALOG_INDEX[f.id].name} from your tank? Perfect for my study.`], [{ label: `Give it (+${shopMoney(pay)})`, cls: 'green', fn: () => { aq.fish.splice(i, 1); T.comm = null; T.commDay = state.dayCount || 0; addFriend('ines', 2); townPay(pay, 50, `🔬 Commission done: +${shopMoney(pay)}.`); talkMenu(); } }, { label: 'Not now' }]); return true; }
+        talkSay([`My commission: a grown ${F.name} colour morph, bred in your aquarium. Happy fish in pairs have fry, and some come out ${F.name.toLowerCase()}. I pay ${shopMoney(pay)}.`], [{ label: 'I will try' }]); return true;
+      }
+      /* Pip's perk: a shout when a frenzy is near the boat; Marta's: storm and full-moon warnings */
+      const perkState = { moonDay: -1, stormWarned: false };
+      function friendPerkTick() {
+        if (onBoat && friendPerk('pip')) vfx.frenzies.forEach(f => { if (f.pipSaid) return; const d = Math.hypot(boatPos.x - f.x, boatPos.z - f.z); if (d < 70) { f.pipSaid = true; showToast(`🧒 Pip: "A feeding frenzy, ${Math.round(d)} m ${relativeBearing(f.x - boatPos.x, f.z - boatPos.z).toLowerCase()}!"`); } });
+        if (friendPerk('marta')) {
+          const day = state.dayCount || 0;
+          if (perkState.moonDay !== day && state.timeOfDay > 0.66 && state.timeOfDay < 0.75 && getMoonPhase().isFull) { perkState.moonDay = day; showToast('👵 Marta: "Full moon tonight, dear. The glowing ones will be up."'); }
+          if (weatherTimer < 25 && pendingWeather === null) { pendingWeather = rollWeather(); if (pendingWeather === 'STORM' && state.weather !== 'STORM') showToast('👵 Marta: "A storm is coming. Get the boat in, or get ready for the electric ones."'); }
+        }
       }
       const townLift = () => (!onBoat && playerZ > ISLAND.rampZ0 ? townGround(playerZ) - 1.5 : 0);   // the camera rises with the upper terrace
 
@@ -12870,7 +13020,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (pool.length === 0) pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly);
 
         const frenzyRarityMult = (inFrenzy ? 2.1 : 1.0) * (cheats.luck ? 5 : 1);
-        const rb = bait.rarityBonus + bookBonus(onBoat ? 'boatRare' : 'pierRare');   // bait plus the pier or boat book
+        const rb = bait.rarityBonus + bookBonus(onBoat ? 'boatRare' : 'pierRare') + releaseBonus(zone.id);   // bait, the pier or boat book, and bred fish released here
 
         const weightedPool = pool.map(item => {
           let w = 10;
@@ -13793,9 +13943,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (state.boatTier === 0) return;
         const missing = Math.max(0, boat.maxFuel - state.fuel);
         if (missing <= 0.1) return;
-        const unitsToBuy = Math.min(missing, Math.floor(state.cash / 0.5));
+        const unitsToBuy = Math.min(missing, Math.floor(state.cash / fuelPrice()));
         if (unitsToBuy <= 0) { showToast('Not enough cash to buy fuel!'); return; }
-        const cost = +(unitsToBuy * 0.5).toFixed(2);
+        const cost = +(unitsToBuy * fuelPrice()).toFixed(2);
         state.cash = +(state.cash - cost).toFixed(2);
         state.fuel = +(state.fuel + unitsToBuy).toFixed(1);
         sfx.playCoin(); saveGame(); updateHUD();
@@ -13866,16 +14016,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         } else if (tab === 'modules') {
           BOAT_MODULES.forEach(mod => {
             const installed = hasModule(mod.id), noBoat = state.boatTier === 0;
-            add({ id: 'mod' + mod.id, key: 'module', data: mod, title: `${mod.icon} ${mod.name}`, stats: 'Boat module', desc: mod.desc, price: mod.cost, verb: 'Install',
-              badge: installed ? 'INSTALLED' : noBoat ? 'NEEDS A BOAT' : '', can: !installed && !noBoat && afford(mod.cost), note: installed ? 'Fitted to your boats.' : noBoat ? 'Buy a boat first.' : afford(mod.cost) ? '' : shopNeed(mod.cost),
-              confirm: `Install ${mod.name} for ${shopMoney(mod.cost)}?`,
-              act: () => { pay(mod.cost); state.modules.push(mod.id); saveGame(); rebuildPlayerBoatVisual(); updateHUD(); showToast(`Installed ${mod.name}!`); } });
+            add({ id: 'mod' + mod.id, key: 'module', data: mod, title: `${mod.icon} ${mod.name}`, stats: 'Boat module', desc: mod.desc, price: modCost(mod), verb: 'Install',
+              badge: installed ? 'INSTALLED' : noBoat ? 'NEEDS A BOAT' : '', can: !installed && !noBoat && afford(modCost(mod)), note: installed ? 'Fitted to your boats.' : noBoat ? 'Buy a boat first.' : afford(modCost(mod)) ? '' : shopNeed(modCost(mod)),
+              confirm: `Install ${mod.name} for ${shopMoney(modCost(mod))}?`,
+              act: () => { pay(modCost(mod)); state.modules.push(mod.id); saveGame(); rebuildPlayerBoatVisual(); updateHUD(); showToast(`Installed ${mod.name}!`); } });
           });
         } else if (tab === 'fuel') {
           const boat = getCurrentBoat(), missing = Math.max(0, boat.maxFuel - state.fuel);
-          const units = Math.min(missing, Math.floor(state.cash / 0.5)), cost = +(units * 0.5).toFixed(2), full = +(missing * 0.5).toFixed(2);
+          const units = Math.min(missing, Math.floor(state.cash / fuelPrice())), cost = +(units * fuelPrice()).toFixed(2), full = +(missing * fuelPrice()).toFixed(2);
           const none = state.boatTier === 0, topped = !none && missing <= 0.1;
-          add({ id: 'fuel', key: 'fuel', data: {}, title: none ? 'Marine fuel' : `Refuel the ${boat.name}`, stats: none ? '$0.50 per unit' : `Tank ${state.fuel.toFixed(0)} / ${boat.maxFuel} u • $0.50 per unit`,
+          add({ id: 'fuel', key: 'fuel', data: {}, title: none ? 'Marine fuel' : `Refuel the ${boat.name}`, stats: none ? `${shopMoney(fuelPrice())} per unit` : `Tank ${state.fuel.toFixed(0)} / ${boat.maxFuel} u • ${shopMoney(fuelPrice())} per unit${friendPerk('rook') ? ' (Rook\'s price)' : ''}`,
             desc: 'Fill the tank of the boat that is moored. The dock pump at the end of the mooring platform sells the same fuel.', price: none || topped ? null : (units > 0 ? cost : full), verb: 'Refuel',
             badge: topped ? 'TANK FULL' : none ? 'NO BOAT' : '', can: !none && !topped && units > 0, note: none ? 'Buy a boat first.' : topped ? 'Nothing to add.' : units <= 0 ? 'Not enough cash.' : units < missing ? 'All you can afford.' : '',
             confirm: `Add ${units.toFixed(0)} units of fuel for ${shopMoney(cost)}?`, act: refuelBoat });
@@ -14110,9 +14260,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (!aq.fish.length) msg('The tank is empty. Catch a small fish, keep it in your bucket and add it on the Add tab. Big fish will not fit.');
           aq.fish.forEach((f, i) => {
             const it = CATALOG_INDEX[f.id], form = AQUARIUM_FORMS[f.form] || AQUARIUM_FORMS.normal;
-            mk(`${icon(f.id)}<span class="sl-n">${form.name ? form.name + ' ' : ''}${it.name}<small>${f.w.toFixed(2)} kg • worth ${shopMoney(f.v)}${f.g ? ' • growing' : ''}${form.mult > 1 ? ' • x' + form.mult + ' tickets' : ''}</small></span>`,
+            const seaGood = f.form !== 'normal' && !f.g, hz = (it.zones || [1])[0];
+            mk(`${icon(f.id)}<span class="sl-n">${form.name ? form.name + ' ' : ''}${it.name}<small>${f.w.toFixed(2)} kg • worth ${shopMoney(f.v)}${f.g ? ' • growing' : ''}${form.mult > 1 ? ' • x' + form.mult + ' tickets' : ''}${seaGood ? ` • release to sea: +1.5% rare fish in ${ZONES[hz - 1].name}` : ''}</small></span>`,
               [['Bucket', '', () => shopAsk({ confirm: `Take ${it.name} (${f.w.toFixed(2)} kg) out of the tank and back into your bucket?`, price: null, verb: 'Take out', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumTakeOut(j); } })],
-               ['Release', 'red', () => shopAsk({ confirm: `Release ${it.name} into the sea? It will not come back.`, price: null, verb: 'Release', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumRelease(j); } })]]);
+               [seaGood ? 'Release to sea' : 'Release', seaGood ? '' : 'red', () => shopAsk({ confirm: seaGood ? `Release your ${form.name} ${it.name} to the sea? Rare fish become a little more common in ${ZONES[hz - 1].name} (now +${(releaseBonus(hz) * 100).toFixed(1)}%, up to +15%).` : `Release ${it.name} into the sea? It will not come back.`, price: null, verb: 'Release', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumRelease(j); } })]]);
           });
         } else if (tab === 'add') {
           const fish = state.bucket.filter(e => e.category === 'Fish');
@@ -16327,7 +16478,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateShopBrowse(dt);
         updateCabinFade(dt);
         updateAquarium(dt);
-        updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps();
+        updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps(); friendPerkTick();
         perfCull();   // v6.3.1: what cannot be seen is not drawn
         updateTownFade(dt);
         updateStationPicker(false);
@@ -16338,12 +16489,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         weatherTimer -= dt;
         if (weatherTimer <= 0) {
           weatherTimer = 85 + Math.random() * 75;
-          const roll = Math.random();
-          let nextWeather = 'CLEAR';
-          if (roll < 0.45) nextWeather = 'CLEAR';
-          else if (roll < 0.72) nextWeather = 'OVERCAST';
-          else if (roll < 0.90) nextWeather = 'RAIN';
-          else nextWeather = 'STORM';
+          const nextWeather = pendingWeather || rollWeather(); pendingWeather = null;   // Marta may already know (her perk)
 
           if (nextWeather !== state.weather) {
             state.weather = nextWeather;
