@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.7.1';
+    window.PF_VERSION = '6.7.2';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -290,6 +290,7 @@
     }
 
     .hud-top {
+      transition: opacity 0.25s;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -613,7 +614,6 @@
     @keyframes shUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
     #shop-sheet [hidden], #town-body [hidden] { display: none !important; }
     .sh-head, .sh-tabs, .sh-summary, .sh-foot { flex: 0 0 auto; }
-    .sh-summary { max-height: 30vh; overflow-y: auto; }
     .sh-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
     .sh-icon { font-size: 24px; line-height: 1; }
     .sh-name { flex: 1; min-width: 0; margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -623,7 +623,7 @@
     .sh-tabs::-webkit-scrollbar { display: none; }
     .sh-tabs [role="tab"] { flex: 0 0 auto; min-height: 42px; padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.35); background: rgba(30, 41, 59, 0.9); color: #cbd5e1; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
     .sh-tabs [role="tab"][aria-selected="true"] { background: var(--sh-accent); border-color: var(--sh-accent); color: #111827; }
-    .sh-summary { font-size: 14px; line-height: 1.45; color: #cbd5e1; background: rgba(30, 41, 59, 0.75); border: 1px solid rgba(148, 163, 184, 0.22); border-left: 4px solid var(--sh-accent); border-radius: 12px; padding: 8px 12px; }
+    .sh-summary { max-height: 30vh; overflow-y: auto; font-size: 14px; line-height: 1.45; color: #cbd5e1; background: rgba(30, 41, 59, 0.75); border: 1px solid rgba(148, 163, 184, 0.22); border-left: 4px solid var(--sh-accent); border-radius: 12px; padding: 8px 12px; }
     .sh-summary b { color: #f8fafc; }
     .sh-summary .eco { height: 8px; margin-top: 6px; background: #1e293b; border-radius: 999px; overflow: hidden; } .sh-summary .eco i { display: block; height: 100%; background: #22c55e; }
     .sh-body { flex: 1 1 auto; min-height: 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-radius: 12px; }
@@ -983,8 +983,7 @@
     .map-tools { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
     .map-tools .pixel-btn { min-width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
     .map-hint { position: absolute; left: 8px; bottom: 8px; font-size: 11px; color: #e2e8f0; background: rgba(7,11,20,0.6); padding: 3px 6px; border-radius: 4px; pointer-events: none; }
-    .map-row { cursor: pointer; }
-    .map-row { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 2px solid #334155; background: var(--bg-card); margin-bottom: 5px; }
+    .map-row { cursor: pointer; display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; border: 2px solid #334155; background: var(--bg-card); margin-bottom: 5px; }
     .map-row .mi { font-size: 20px; width: 26px; text-align: center; }
     .map-row b { display: block; font-size: 13px; }
     .map-row small { display: block; color: #94a3b8; font-size: 12px; }
@@ -1097,6 +1096,7 @@
     }
 
     .modal-window {
+      position: relative;
       width: min(96vw, 760px);
       max-height: 88dvh;
       display: flex;
@@ -1105,6 +1105,7 @@
     }
 
     .modal-header {
+      touch-action: none;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -1396,14 +1397,12 @@
     body[data-joy="floating"] .touch-zone-left { min-width: calc(var(--joy-size) * var(--ui-scale, 1)); min-height: calc(var(--joy-size) * var(--ui-scale, 1)); pointer-events: none; }
     body[data-joy="floating"] #virtual-joystick.live { position: fixed; opacity: 1; z-index: 30; }
     /* auto-hide: while a line is in the water only the essentials stay */
-    .hud-top { transition: opacity 0.25s; }
     body[data-autohide="1"][data-fishing="1"] .hud-gauges,
     body[data-autohide="1"][data-fishing="1"] .hud-stack,
     body[data-autohide="1"][data-fishing="1"] #live-bait-pip { opacity: 0.12; pointer-events: none; }
     @media (prefers-reduced-motion: reduce) { .hud-top { transition: none; } }
     /* ---- Bottom-sheet modals (phones), near full-screen in short landscape ---- */
     @keyframes sheetUp { from { transform: translateY(40px); opacity: 0.6; } to { transform: none; opacity: 1; } }
-    .modal-window { position: relative; }
     @media (max-width: 600px) and (min-height: 481px) {
       .modal-backdrop:not(#modal-catch):not(#modal-menu) {
         align-items: flex-end;
@@ -1427,7 +1426,6 @@
       .modal-window { max-height: calc(100vh - 8px - var(--safe-top) - var(--safe-bottom)); max-height: calc(100dvh - 8px - var(--safe-top) - var(--safe-bottom)); }
       .modal-header { padding: 6px 12px; }
     }
-    .modal-header { touch-action: none; }
     .modal-window:focus { outline: none; }
     .modal-window.dragging { transition: none; }
     /* shop: tabs stay reachable while the list scrolls; cash sits in the header */
@@ -10097,10 +10095,11 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       /* ---- Daily market: prices come from the day number, so every player sees the same board and nothing is saved ---- */
       const MARKET_FISH = CATCH_CATALOG.filter(c => c.category === 'Fish' && !c.fullMoonOnly && !c.stormOnly).map(c => c.id);
       let marketCache = { day: -1, mult: {}, hot: [], glut: [] };
+      /* a seeded random sequence: the same seed always gives the same numbers (market, Catch of the Day) */
+      function mulberry32(a) { return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
       function marketFor(day) {
         if (marketCache.day === day) return marketCache;
-        let a = (Math.imul(day + 1, 2654435761) ^ 0x9e3779b9) >>> 0;
-        const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        const rnd = mulberry32((Math.imul(day + 1, 2654435761) ^ 0x9e3779b9) >>> 0);
         const mult = {};
         CATCH_CATALOG.forEach(c => { mult[c.id] = c.category === 'Fish' ? 0.75 + rnd() * 0.6 : 1; });
         const pool = [...MARKET_FISH], hot = [], glut = [];
@@ -10120,8 +10119,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let codCache = { day: -1, item: null };
       function catchOfDay(day = todayNum()) {
         if (codCache.day === day) return codCache.item;
-        let a = (Math.imul(day + 7, 2246822519) ^ 0x85ebca6b) >>> 0;
-        const rnd = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        const rnd = mulberry32((Math.imul(day + 7, 2246822519) ^ 0x85ebca6b) >>> 0);
         const pool = MARKET_FISH.map(id => CATALOG_INDEX[id]).filter(Boolean);
         const tot = pool.reduce((t, c) => t + (COD_WEIGHT[c.rarity] || 1), 0);
         let r = rnd() * tot, item = pool[0];
@@ -10945,15 +10943,20 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       function isNearBoatTerminal() { return nearSpot(BOAT_TERMINAL.useX, BOAT_TERMINAL.useZ, 0.72) && dockDist(BOAT_TERMINAL) <= dockDist(DOCK_PUMP); }
       function isNearDockPump() { return nearSpot(DOCK_PUMP.useX, DOCK_PUMP.useZ, 0.72) && dockDist(DOCK_PUMP) < dockDist(BOAT_TERMINAL); }
       /* the dock pump fills the moored boat's tank ($0.50 a unit, as much as you can afford) */
+      /* pay for up to `missing` units of fuel (as many as the cash allows); null when not even one is affordable */
+      function buyFuel(missing) {
+        const units = Math.min(missing, Math.floor(state.cash / fuelPrice())); if (units <= 0) return null;
+        const cost = +(units * fuelPrice()).toFixed(2);
+        state.cash = +(state.cash - cost).toFixed(2); state.fuel = +(state.fuel + units).toFixed(1);
+        return { units, cost };
+      }
       function refuelAtPump() {
         if (state.boatTier === 0) { showToast('⛽ No boat moored here yet: buy one at the Boatyard.'); return; }
         const boat = getCurrentBoat(), missing = Math.max(0, boat.maxFuel - state.fuel);
         if (missing <= 0.1) { showToast(`⛽ ${boat.name}: the tank is already full.`); return; }
-        const units = Math.min(missing, Math.floor(state.cash / fuelPrice()));
-        if (units <= 0) { showToast(`⛽ Not enough cash for fuel ($${fuelPrice().toFixed(2)} a unit).`); return; }
-        const cost = +(units * fuelPrice()).toFixed(2);
-        state.cash = +(state.cash - cost).toFixed(2);
-        state.fuel = +(state.fuel + units).toFixed(1);
+        const bought = buyFuel(missing);
+        if (!bought) { showToast(`⛽ Not enough cash for fuel ($${fuelPrice().toFixed(2)} a unit).`); return; }
+        const { units, cost } = bought;
         state.boatFuel[state.boatTier] = state.fuel;
         sfx.playCoin(); sfx.vibrate(20);
         saveGame(); updateHUD();
@@ -11641,14 +11644,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const restoTables = () => RESTO_UP[0].levels[kitchen().tables].v;
       const dishPrice = (d, rating) => Math.round(RECIPE_BY_ID[d.id].value * (0.55 + 0.25 * d.stars) * (0.8 + rating * 0.1));
       /* fish for a recipe: the cheapest matching fish in the bucket for each requirement (each fish used once) */
-      function recipeFish(r) {
-        const used = [], pool = state.bucket.slice().sort((a, b) => sellValue(a) - sellValue(b));
-        for (const req of r.fish) {
-          const f = pool.find(e => !used.includes(e) && e.category === (req.cat || 'Fish') && (!req.minW || e.weight >= req.minW) && (!req.rarityMin || rarityAtLeast(e.rarity, req.rarityMin)));
-          if (!f) return null; used.push(f);
-        }
-        return used;
-      }
+      const recipeFish = r => recipeFishN(r, 1);
       const recipePantryOk = (r, times = 1) => Object.entries(r.pantry).every(([p, n]) => kitchen().pantry[p] >= n * times);
       /* fish for several batches at once (each fish used once), or null */
       function recipeFishN(r, times) {
@@ -14098,13 +14094,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (state.boatTier === 0) return;
         const missing = Math.max(0, boat.maxFuel - state.fuel);
         if (missing <= 0.1) return;
-        const unitsToBuy = Math.min(missing, Math.floor(state.cash / fuelPrice()));
-        if (unitsToBuy <= 0) { showToast('Not enough cash to buy fuel!'); return; }
-        const cost = +(unitsToBuy * fuelPrice()).toFixed(2);
-        state.cash = +(state.cash - cost).toFixed(2);
-        state.fuel = +(state.fuel + unitsToBuy).toFixed(1);
+        const bought = buyFuel(missing);
+        if (!bought) { showToast('Not enough cash to buy fuel!'); return; }
         sfx.playCoin(); saveGame(); updateHUD();
-        showToast(`Refueled +${unitsToBuy.toFixed(1)}u ($${cost.toFixed(2)}).`);
+        showToast(`Refueled +${bought.units.toFixed(1)}u ($${bought.cost.toFixed(2)}).`);
       }
 
       /* The goods. Each item: key + data pick the 3D model; badge / note / can say what tapping does. */
