@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '9.0.0';
+    window.PF_VERSION = '9.1.0';
     window.PF_THREE_REV = '187';
     window.PF_THREE_BYTES = 748803; /* decoded size of vendor/three.r187.module.min.js */
     window.PF_RAPIER_VER = '0.21.0';
@@ -1362,6 +1362,11 @@
     .cust-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
     .cust-swatch { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #475569; cursor: pointer; padding: 0; }
     .cust-swatch.active { outline: 3px solid #facc15; outline-offset: 2px; }
+    .cust-pick { position: relative; overflow: hidden; display: inline-block; }
+    .cust-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+    .cust-same { color: var(--text); font: 800 18px var(--font-ui); background: rgba(255, 255, 255, 0.08); }
+    .cust-slider { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-2); }
+    .cust-slider input { flex: 1; min-height: 44px; accent-color: var(--sea); }
     #cust-tabs { flex-wrap: wrap; margin-bottom: 12px; }
     #cust-tabs .tab-btn { padding: 6px 9px; font-size: 12px; }
     /* wide / landscape screens: preview and options sit side by side, each scrolling on its own */
@@ -3479,18 +3484,44 @@
         hairColor: ['#111827', '#3b2314', '#78350f', '#a0522d', '#d6a85c', '#f1d9a0', '#b91c1c', '#9ca3af', '#7c3aed', '#0ea5e9'],
         eyes: ['#3b2314', '#2563eb', '#16a34a', '#64748b'],
         colors: ['#f8fafc', '#1e3a8a', '#dc2626', '#eab308', '#16a34a', '#0e7490', '#7c3aed', '#db2777', '#ea580c', '#475569', '#111827', '#a16207', '#365314', '#7dd3fc'],
-        hairStyle: [['short', 'Short'], ['buzz', 'Buzz'], ['wavy', 'Wavy'], ['ponytail', 'Ponytail'], ['long', 'Long'], ['bob', 'Bob'], ['bun', 'Bun'], ['braid', 'Braid'], ['bald', 'Bald']],
-        facial: [['none', 'None'], ['stubble', 'Stubble'], ['mustache', 'Mustache'], ['goatee', 'Goatee'], ['beard', 'Full beard']],
-        glasses: [['none', 'None'], ['round', 'Round'], ['sun', 'Sunglasses']],
-        top: [['sweater', 'Striped sweater'], ['tee', 'T-shirt'], ['vest', 'Fishing vest'], ['tank', 'Tank top'], ['hoodie', 'Hoodie'], ['slicker', 'Raincoat'], ['bikini', 'Bikini top'], ['none', 'Bare chest']],
-        bottom: [['jeans', 'Jeans'], ['overalls', 'Bib overalls'], ['shorts', 'Shorts'], ['swim', 'Swim shorts'], ['bikini', 'Bikini bottom'], ['skirt', 'Skirt']],
-        shoes: [['boots', 'Rubber boots'], ['sneakers', 'Sneakers'], ['sandals', 'Sandals'], ['barefoot', 'Barefoot']],
-        hat: [['souwester', "Sou'wester"], ['cap', 'Cap'], ['flapcap', 'Cap with flaps'], ['beanie', 'Beanie'], ['bucket', 'Bucket hat'], ['straw', 'Straw hat'], ['none', 'None']],
+        hairStyle: [['short', 'Short'], ['buzz', 'Buzz'], ['wavy', 'Wavy'], ['ponytail', 'Ponytail'], ['long', 'Long'], ['bob', 'Bob'], ['bun', 'Bun'], ['braid', 'Braid'],
+          ['spiky', 'Spiky'], ['afro', 'Afro'], ['twintails', 'Twin tails'], ['mohawk', 'Mohawk'], ['sidepart', 'Side part'], ['pixie', 'Pixie'], ['bald', 'Bald']],
+        facial: [['none', 'None'], ['stubble', 'Stubble'], ['mustache', 'Mustache'], ['goatee', 'Goatee'], ['beard', 'Full beard'], ['sideburns', 'Sideburns']],
+        glasses: [['none', 'None'], ['round', 'Round'], ['square', 'Square'], ['sun', 'Sunglasses']],
+        top: [['sweater', 'Sweater'], ['tee', 'T-shirt'], ['polo', 'Polo'], ['flannel', 'Flannel'], ['cardigan', 'Cardigan'], ['dress', 'Dress'], ['vest', 'Fishing vest'], ['tank', 'Tank top'], ['hoodie', 'Hoodie'], ['slicker', 'Raincoat'], ['bikini', 'Bikini top'], ['none', 'Bare chest']],
+        bottom: [['jeans', 'Jeans'], ['cargo', 'Cargo trousers'], ['leggings', 'Leggings'], ['overalls', 'Bib overalls'], ['shorts', 'Shorts'], ['swim', 'Swim shorts'], ['bikini', 'Bikini bottom'], ['skirt', 'Skirt']],
+        shoes: [['boots', 'Rubber boots'], ['sneakers', 'Sneakers'], ['hightops', 'High-tops'], ['sandals', 'Sandals'], ['barefoot', 'Barefoot']],
+        hat: [['souwester', "Sou'wester"], ['cap', 'Cap'], ['captain', "Captain's cap"], ['bandana', 'Bandana'], ['flowers', 'Flower crown'], ['flapcap', 'Cap with flaps'], ['beanie', 'Beanie'], ['bucket', 'Bucket hat'], ['straw', 'Straw hat'], ['none', 'None']],
         height: [['xs', 'Very short'], ['s', 'Short'], ['m', 'Average'], ['l', 'Tall'], ['xl', 'Very tall']],
         build: [['slim', 'Slim'], ['average', 'Average'], ['broad', 'Broad']],
         faceShape: [['oval', 'Oval'], ['round', 'Round'], ['square', 'Square'], ['long', 'Long']],
         nose: [['straight', 'Straight'], ['small', 'Small'], ['button', 'Button'], ['broad', 'Broad']],
-        brows: [['normal', 'Normal'], ['thin', 'Thin'], ['bushy', 'Bushy']]
+        brows: [['normal', 'Normal'], ['thin', 'Thin'], ['bushy', 'Bushy'], ['arched', 'Arched'], ['flat', 'Straight'], ['bold', 'Bold slant'], ['worried', 'Worried'], ['none', 'None']],
+        // v9.1.0: the painted face, the body sliders, patterns and extras
+        eyeShape: [['round', 'Round'], ['big', 'Big'], ['sleepy', 'Sleepy'], ['almond', 'Almond'], ['dot', 'Dots'], ['sparkle', 'Sparkle'], ['cat', 'Cat-eye'], ['wide', 'Wide']],
+        mouth: [['smile', 'Smile'], ['grin', 'Grin'], ['cat', 'Cat'], ['open', 'Open'], ['smirk', 'Smirk'], ['flat', 'Calm'], ['tongue', 'Tongue'], ['teeth', 'Toothy'], ['pout', 'Pout'], ['laugh', 'Laugh']],
+        cheeks: [['rosy', 'Rosy'], ['peach', 'Peach'], ['none', 'None']],
+        marks: [['none', 'None'], ['freckles', 'Freckles'], ['mole', 'Beauty mark'], ['both', 'Both']],
+        ears: [['round', 'Round'], ['pointed', 'Pointed'], ['small', 'Small']],
+        fringe: [['none', 'None'], ['side', 'Side sweep'], ['full', 'Full fringe']],
+        pattern: [['plain', 'Plain'], ['stripes', 'Stripes'], ['checks', 'Checks'], ['waves', 'Waves'], ['block', 'Colour block']],
+        accessory: [['none', 'None'], ['scarf', 'Scarf'], ['backpack', 'Backpack'], ['necklace', 'Necklace'], ['badge', 'Rod badge']]
+      };
+      /* v9.1.0: a colour comes from a picked hex (look.<key>Hex, from the colour picker) or else from the palette index */
+      const HEX_RE = /^#[0-9a-f]{6}$/i;
+      const LookColor = {
+        pick(look, hexKey, list, idx, fallback) { const h = look[hexKey]; return HEX_RE.test(h || '') ? h : (list[look[idx]] || fallback); },
+        skin: l => LookColor.pick(l, 'skinHex', ANGLER_OPTS.skin, 'skin', '#f5c9a0'),
+        eyes: l => LookColor.pick(l, 'eyeHex', ANGLER_OPTS.eyes, 'eyes', '#3b2314'),
+        hair: l => LookColor.pick(l, 'hairHex', ANGLER_OPTS.hairColor, 'hairColor', '#3b2314'),
+        fringe: l => HEX_RE.test(l.fringeHex || '') ? l.fringeHex : (l.fringeColor >= 0 ? ANGLER_OPTS.hairColor[l.fringeColor] : LookColor.hair(l)),
+        top: l => LookColor.pick(l, 'topHex', ANGLER_OPTS.colors, 'topColor', '#f8fafc'),
+        accent: l => LookColor.pick(l, 'accentHex', ANGLER_OPTS.colors, 'topAccent', '#1e3a8a'),
+        bottom: l => LookColor.pick(l, 'bottomHex', ANGLER_OPTS.colors, 'bottomColor', '#1e3a8a'),
+        bottomAcc: l => LookColor.pick(l, 'bottomAccHex', ANGLER_OPTS.colors, 'bottomAccent', '#111827'),
+        shoe: l => LookColor.pick(l, 'shoeHex', ANGLER_OPTS.colors, 'shoeColor', '#111827'),
+        hat: l => LookColor.pick(l, 'hatHex', ANGLER_OPTS.colors, 'hatColor', '#eab308'),
+        extra: l => LookColor.pick(l, 'extraHex', ANGLER_OPTS.colors, 'extraColor', '#dc2626')
       };
 
       class AnglerFactory {
@@ -3503,14 +3534,18 @@
             bottom: 'jeans', bottomColor: f ? 13 : 1,
             shoes: 'boots', shoeColor: 10,
             hat: 'souwester', hatColor: 3,
-            height: 'm', build: 'average', faceShape: 'oval', nose: 'straight', brows: 'normal'
+            height: 'm', build: 'average', faceShape: 'oval', nose: 'straight', brows: 'normal',
+            // v9.1.0 (their defaults reproduce the v9.0.0 look)
+            heightK: 1, headK: 1, buildK: 0.5, eyeShape: 'round', mouth: 'smile', cheeks: 'rosy', marks: 'none', ears: 'round',
+            fringe: 'none', fringeColor: -1, topPattern: 'auto', bottomPattern: 'plain', bottomAccent: 10, accessory: 'none', extraColor: 2
           };
         }
 
         // Hair styles that would poke through a hat; they are disabled while that hat is worn.
         static blockedHair(hat) {
-          const volume = ['wavy', 'bun', 'bob', 'ponytail'];
-          return ({ none: [], cap: ['wavy', 'bun', 'bob'], flapcap: volume, beanie: volume, bucket: volume, straw: volume, souwester: volume.concat(['long']) })[hat] || [];
+          const volume = ['wavy', 'bun', 'bob', 'ponytail', 'afro', 'mohawk', 'spiky', 'twintails'];
+          return ({ none: [], flowers: ['afro', 'mohawk'], bandana: ['afro', 'mohawk', 'spiky'], cap: ['wavy', 'bun', 'bob', 'afro', 'mohawk', 'spiky'], captain: ['wavy', 'bun', 'bob', 'afro', 'mohawk', 'spiky'],
+            flapcap: volume, beanie: volume, bucket: volume, straw: volume, souwester: volume.concat(['long']) })[hat] || [];
         }
 
         static sanitizeLook(src, gender) {
@@ -3541,6 +3576,24 @@
             nose: pick(src.nose, ANGLER_OPTS.nose, def.nose),
             brows: pick(src.brows, ANGLER_OPTS.brows, def.brows)
           };
+          // v9.1.0 fields: sliders (older saves: from the height / build steps), face, patterns, extras and picked colours
+          const num = (v, lo, hi, d) => { const k = Number(v); return Number.isFinite(k) ? Math.min(hi, Math.max(lo, k)) : d; };
+          out.heightK = num(src.heightK, 0.85, 1.15, ({ xs: 0.92, s: 0.96, m: 1, l: 1.04, xl: 1.08 })[out.height] || 1);
+          out.buildK = num(src.buildK, 0, 1, ({ slim: 0, average: 0.5, broad: 1 })[out.build]);
+          out.headK = num(src.headK, 0.9, 1.15, 1);
+          out.eyeShape = pick(src.eyeShape, ANGLER_OPTS.eyeShape, def.eyeShape);
+          out.mouth = pick(src.mouth, ANGLER_OPTS.mouth, def.mouth);
+          out.cheeks = pick(src.cheeks, ANGLER_OPTS.cheeks, def.cheeks);
+          out.marks = pick(src.marks, ANGLER_OPTS.marks, def.marks);
+          out.ears = pick(src.ears, ANGLER_OPTS.ears, def.ears);
+          out.fringe = pick(src.fringe, ANGLER_OPTS.fringe, def.fringe);
+          out.fringeColor = Number(src.fringeColor) === -1 || src.fringeColor == null ? -1 : idx(src.fringeColor, ANGLER_OPTS.hairColor.length, -1);
+          out.topPattern = src.topPattern === 'auto' ? 'auto' : pick(src.topPattern, ANGLER_OPTS.pattern, def.topPattern);
+          out.bottomPattern = pick(src.bottomPattern, ANGLER_OPTS.pattern, def.bottomPattern);
+          out.bottomAccent = idx(src.bottomAccent, ANGLER_OPTS.colors.length, def.bottomAccent);
+          out.accessory = pick(src.accessory, ANGLER_OPTS.accessory, def.accessory);
+          out.extraColor = idx(src.extraColor, ANGLER_OPTS.colors.length, def.extraColor);
+          ['skinHex', 'eyeHex', 'hairHex', 'fringeHex', 'topHex', 'accentHex', 'bottomHex', 'bottomAccHex', 'shoeHex', 'hatHex', 'extraHex'].forEach(k => { if (HEX_RE.test(src[k] || '')) out[k] = String(src[k]).toLowerCase(); });
           if (this.blockedHair(out.hat).includes(out.hairStyle)) out.hairStyle = 'short';
           return out;
         }
@@ -3568,10 +3621,10 @@
           const f = gender === 'female';
           const r = n => Math.floor(Math.random() * n);
           const choose = arr => arr[r(arr.length)];
-          const hat = choose(['souwester', 'cap', 'flapcap', 'beanie', 'bucket', 'straw', 'none', 'none']);
+          const hat = choose(['souwester', 'cap', 'captain', 'flapcap', 'beanie', 'bucket', 'straw', 'bandana', 'flowers', 'none', 'none']);
           const blocked = this.blockedHair(hat);
-          const hairPool = (f ? ['short', 'wavy', 'ponytail', 'long', 'long', 'bob', 'bun', 'braid'] : ['short', 'short', 'buzz', 'wavy', 'bald', 'ponytail', 'braid']).filter(h => !blocked.includes(h));
-          const facial = f ? ['none'] : ['none', 'none', 'stubble', 'mustache', 'goatee', 'beard', 'beard'];
+          const hairPool = (f ? ['short', 'wavy', 'ponytail', 'long', 'long', 'bob', 'bun', 'braid', 'twintails', 'pixie', 'afro', 'sidepart'] : ['short', 'short', 'buzz', 'wavy', 'bald', 'ponytail', 'braid', 'spiky', 'afro', 'mohawk', 'sidepart']).filter(h => !blocked.includes(h));
+          const facial = f ? ['none'] : ['none', 'none', 'stubble', 'mustache', 'goatee', 'beard', 'beard', 'sideburns'];
           // coherent outfits: beach wear is paired with beach wear
           const beach = r(6) === 0;
           let top, bottom;
@@ -3579,8 +3632,8 @@
             top = f ? 'bikini' : choose(['none', 'none', 'tank']);
             bottom = f ? choose(['bikini', 'bikini', 'swim', 'shorts']) : choose(['swim', 'shorts']);
           } else {
-            top = choose(['sweater', 'tee', 'vest', 'tank', 'hoodie', 'slicker']);
-            bottom = choose(f ? ['shorts', 'jeans', 'jeans', 'overalls', 'skirt', 'skirt'] : ['shorts', 'jeans', 'jeans', 'overalls']);
+            top = choose(['sweater', 'tee', 'vest', 'tank', 'hoodie', 'slicker', 'polo', 'flannel', 'cardigan'].concat(f ? ['dress', 'dress'] : []));
+            bottom = choose(f ? ['shorts', 'jeans', 'jeans', 'overalls', 'skirt', 'skirt', 'leggings', 'cargo'] : ['shorts', 'jeans', 'jeans', 'overalls', 'cargo']);
           }
           return this.sanitizeLook({
             gender: f ? 'female' : 'male',
@@ -3592,7 +3645,14 @@
             shoes: beach ? choose(['sandals', 'barefoot']) : choose(['boots', 'sneakers', 'sandals', 'barefoot']), shoeColor: r(ANGLER_OPTS.colors.length),
             hat, hatColor: r(ANGLER_OPTS.colors.length),
             height: choose(['s', 'm', 'm', 'l', f ? 's' : 'l']), build: choose(['slim', 'average', 'average', 'broad']),
-            faceShape: choose(['oval', 'round', 'square', 'long']), nose: choose(['straight', 'small', 'button', 'broad']), brows: choose(['normal', 'normal', 'thin', 'bushy'])
+            faceShape: choose(['oval', 'round', 'square', 'long']), nose: choose(['straight', 'small', 'button', 'broad']), brows: choose(['normal', 'normal', 'thin', 'bushy', 'arched', 'flat', 'bold', 'worried']),
+            // v9.1.0
+            heightK: 0.88 + Math.random() * 0.24, headK: 0.92 + Math.random() * 0.2, buildK: Math.random(),
+            eyeShape: choose(ANGLER_OPTS.eyeShape)[0], mouth: choose(['smile', 'smile', 'grin', 'cat', 'open', 'smirk', 'flat', 'tongue', 'teeth', 'laugh']),
+            cheeks: choose(['rosy', 'rosy', 'peach', 'none']), marks: choose(['none', 'none', 'none', 'freckles', 'mole', 'both']), ears: choose(['round', 'round', 'small', 'pointed']),
+            fringe: choose(['none', 'none', 'side', 'full']), fringeColor: r(5) === 0 ? r(ANGLER_OPTS.hairColor.length) : -1,
+            topPattern: choose(['auto', 'plain', 'plain', 'stripes', 'checks', 'waves', 'block']), bottomPattern: choose(['plain', 'plain', 'plain', 'stripes', 'checks']),
+            bottomAccent: r(ANGLER_OPTS.colors.length), accessory: choose(['none', 'none', 'none', 'scarf', 'backpack', 'necklace', 'badge']), extraColor: r(ANGLER_OPTS.colors.length)
           }, gender);
         }
 
@@ -3610,8 +3670,11 @@
         static dims(look) {
           const female = look && look.gender === 'female';
           const build = (look && look.build) || 'average';
-          const w = build === 'slim' ? 0.9 : build === 'broad' ? 1.16 : 1.04;
-          const hScale = (({ xs: 0.92, s: 0.96, m: 1.0, l: 1.04, xl: 1.08 })[(look && look.height) || 'm'] || 1) * 1.08;
+          // v9.1.0 sliders (older looks: from the steps)
+          const bk = look && Number.isFinite(look.buildK) ? look.buildK : ({ slim: 0, average: 0.5, broad: 1 })[build];
+          const w = 0.9 + 0.28 * (bk == null ? 0.5 : bk);
+          const hk = look && Number.isFinite(look.heightK) ? look.heightK : (({ xs: 0.92, s: 0.96, m: 1.0, l: 1.04, xl: 1.08 })[(look && look.height) || 'm'] || 1);
+          const hScale = hk * 1.08, headK = look && Number.isFinite(look.headK) ? look.headK : 1;
           const torso = 0.72, thigh = 0.20, shin = 0.19, ankle = 0.08;
           return {
             female, w, hScale, torso, legs: (thigh + shin) / 0.8,
@@ -3619,7 +3682,7 @@
             spine: 0.10 * torso, chest: 0.18 * torso, neck: 0.25 * torso, headB: 0.05,
             clavX: female ? 0.028 : 0.032, clavY: 0.20 * torso, shoulderX: female ? 0.146 : 0.16,
             upper: 0.2, fore: 0.17, hand: 0.13,
-            headScale: 1.38, headLift: 0.2,
+            headScale: 1.38 * headK, headLift: 0.2 * (0.6 + 0.4 * headK),
             // bust: smaller and higher on the short chibi chest
             bustX: 0.078, bustY: 0.03 * torso, bustZ: -0.098 * (0.94 + 0.06 * w), bustAmt: 0.042,
             support: ({ sweater: 1.5, hoodie: 1.7, slicker: 1.8, vest: 1.4, tee: 1.15, tank: 1.05, bikini: 1.0, none: 0.9 })[(look && look.top) || 'tee'] || 1.2
@@ -3633,42 +3696,89 @@
         }
         /* the face patch on the head sphere: 116 degrees across the front, 50..134 degrees down from the top */
         static get FACE_PATCH() { return { phi0: Math.PI * 1.178, phiLen: Math.PI * 0.644, th0: Math.PI * 0.28, thLen: Math.PI * 0.466 }; }
-        /* Paint the chibi face (v9.0.0) on a 256x256 canvas. Positions are given in degrees on the head: ax across from
-           the middle (+ = the character's left), ay down from the top. Eyes, brows (hair colour), lashes, cheeks and mouth. */
-        static paintFace(look) {
+        /* Paint the chibi face on a 256x256 canvas (v9.0.0; v9.1.0 shapes and expressions). Positions are in degrees on
+           the head: ax across from the middle (+ = the character's left), ay down from the top. expr: 'open' (default),
+           'blink', 'happy', 'surprise', 'focus'. Eyes, brows (hair colour), lashes, cheeks, freckles and mouth. */
+        static paintFace(look, expr = 'open') {
           const W = 256, cv = document.createElement('canvas'); cv.width = cv.height = W;
           const g = cv.getContext('2d'), FP = this.FACE_PATCH;
           const spanX = FP.phiLen * 180 / Math.PI, top = FP.th0 * 180 / Math.PI, spanY = FP.thLen * 180 / Math.PI;
           const X = ax => W / 2 + ax / spanX * W, Y = ay => (ay - top) / spanY * W, SX = d => d / spanX * W, SY = d => d / spanY * W;
           const female = look.gender === 'female';
-          const eyeCol = ANGLER_OPTS.eyes[look.eyes] || '#3b2314', hairCol = ANGLER_OPTS.hairColor[look.hairColor] || '#3b2314';
+          const eyeCol = LookColor.eyes(look), hairCol = LookColor.hair(look), ink = '#1a1410';
+          const shape = look.eyeShape || 'round', brows = look.brows || 'normal', mouth = look.mouth || 'smile';
           const ell = (cx, cy, rx, ry, fill) => { g.beginPath(); g.ellipse(cx, cy, Math.max(0.5, rx), Math.max(0.5, ry), 0, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); };
+          const line = (w, col) => { g.lineWidth = w; g.strokeStyle = col; g.lineCap = 'round'; g.lineJoin = 'round'; };
+          const arc = (x0, y0, xc, yc, x1, y1) => { g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(xc, yc, x1, y1); g.stroke(); };
+          const closed = expr === 'blink', happy = expr === 'happy', surprise = expr === 'surprise', focus = expr === 'focus';
+          const size = ({ big: 1.22, wide: 1.1, dot: 0.42, almond: 0.95, cat: 1.0, sleepy: 1.0, sparkle: 1.08 })[shape] || 1;
           [-1, 1].forEach(s => {
-            const cx = X(s * 22.5), cy = Y(92), rx = SX(6.4), ry = SY(9.2);
-            // eye: dark outline, iris gradient, pupil, two highlights
-            ell(cx, cy, rx + 2, ry + 2, '#1a1410');
-            const gr = g.createLinearGradient(0, cy - ry, 0, cy + ry); gr.addColorStop(0, '#120c08'); gr.addColorStop(0.55, eyeCol); gr.addColorStop(1, eyeCol);
-            ell(cx, cy, rx, ry, gr);
-            ell(cx, cy + ry * 0.12, rx * 0.5, ry * 0.52, '#0b0705');
-            ell(cx - s * rx * 0.28, cy - ry * 0.4, rx * 0.36, ry * 0.26, '#ffffff');
-            ell(cx + s * rx * 0.3, cy + ry * 0.36, rx * 0.16, ry * 0.12, 'rgba(255,255,255,0.85)');
-            if (female) {   // three little lashes at the outer corner
-              g.strokeStyle = '#1a1410'; g.lineWidth = 2.6; g.lineCap = 'round';
+            const cx = X(s * (shape === 'wide' ? 25 : 22.5)), cy = Y(92), rx = SX(6.4) * size, ry = SY(9.2) * size * (shape === 'almond' ? 0.72 : 1) * (surprise ? 1.12 : 1);
+            if (closed || happy) {   // closed: a soft line; happy: an upward arc (^ ^)
+              line(3.4, ink); happy ? arc(cx - rx, cy + ry * 0.2, cx, cy - ry * 0.9, cx + rx, cy + ry * 0.2) : arc(cx - rx, cy, cx, cy + ry * 0.35, cx + rx, cy);
+            } else if (shape === 'dot') {
+              ell(cx, cy, SX(3.2), SY(3.8), ink); ell(cx - s * SX(1), cy - SY(1.4), SX(1), SY(1), '#ffffff');
+            } else {
+              ell(cx, cy, rx + 2, ry + 2, ink);
+              const gr = g.createLinearGradient(0, cy - ry, 0, cy + ry); gr.addColorStop(0, '#120c08'); gr.addColorStop(0.55, eyeCol); gr.addColorStop(1, eyeCol);
+              ell(cx, cy, rx, ry, gr);
+              ell(cx, cy + ry * 0.12, rx * (surprise ? 0.34 : 0.5), ry * (surprise ? 0.36 : 0.52), '#0b0705');
+              if (shape === 'sparkle') {   // a little four-point star as the highlight
+                g.fillStyle = '#ffffff'; g.beginPath(); const hx = cx - s * rx * 0.25, hy = cy - ry * 0.35, k = rx * 0.5;
+                g.moveTo(hx, hy - k); g.quadraticCurveTo(hx, hy, hx + k * 0.8, hy); g.quadraticCurveTo(hx, hy, hx, hy + k); g.quadraticCurveTo(hx, hy, hx - k * 0.8, hy); g.quadraticCurveTo(hx, hy, hx, hy - k); g.fill();
+              } else ell(cx - s * rx * 0.28, cy - ry * 0.4, rx * 0.36, ry * 0.26, '#ffffff');
+              ell(cx + s * rx * 0.3, cy + ry * 0.36, rx * 0.16, ry * 0.12, 'rgba(255,255,255,0.85)');
+              if (shape === 'sleepy' || focus) { g.fillStyle = LookColor.skin(look); g.fillRect(cx - rx - 3, cy - ry - 3, 2 * rx + 6, ry * (focus ? 0.75 : 0.9) + 3); line(3, ink); arc(cx - rx - 1, cy - ry * (focus ? 0.25 : 0.1), cx, cy - ry * (focus ? 0.32 : 0.14), cx + rx + 1, cy - ry * (focus ? 0.25 : 0.1)); }
+              if (shape === 'cat') { line(3, ink); arc(cx + s * rx * 0.6, cy - ry * 0.75, cx + s * (rx + 4), cy - ry * 0.95, cx + s * (rx + 8), cy - ry * 1.15); }
+            }
+            if (female && !closed && !happy && shape !== 'dot') {   // three little lashes at the outer corner
+              line(2.6, ink);
               for (let k = 0; k < 3; k++) { const a = -0.5 - k * 0.38; g.beginPath(); g.moveTo(cx + s * rx * Math.cos(a) * 0.95, cy + ry * Math.sin(a) * 0.95); g.lineTo(cx + s * (rx * Math.cos(a) + 6 + k), cy + ry * Math.sin(a) - 3 - k * 1.5); g.stroke(); }
             }
-            // brow: a soft arc in the hair colour, thickness from the brows option
-            const bt = ({ thin: 2.4, normal: 4, bushy: 6.4 })[look.brows] || 4;
-            g.strokeStyle = hairCol; g.lineWidth = bt; g.lineCap = 'round';
-            g.beginPath(); g.moveTo(X(s * 15.5), Y(78.5)); g.quadraticCurveTo(X(s * 22.5), Y(75.5), X(s * 29.5), Y(78.8)); g.stroke();
-            // cheek: a soft blush
-            const bg = g.createRadialGradient(X(s * 33), Y(103), 0, X(s * 33), Y(103), SX(7));
-            bg.addColorStop(0, female ? 'rgba(251,113,133,0.42)' : 'rgba(248,113,113,0.26)'); bg.addColorStop(1, 'rgba(251,113,133,0)');
-            g.fillStyle = bg; g.fillRect(X(s * 33) - SX(8), Y(103) - SX(8), SX(16), SX(16));
+            // brow: shape from the brows option, raised when surprised, lowered and angled when focused
+            if (brows !== 'none') {
+              const bt = ({ thin: 2.4, bushy: 6.4, bold: 5.4 })[brows] || 4, by = 78.5 + (surprise ? -3 : 0) + (focus ? 1.5 : 0);
+              line(bt, hairCol);
+              const inY = by + (brows === 'bold' || focus ? 2.2 : brows === 'worried' ? -2.2 : 0), outY = by + (brows === 'worried' ? 1.5 : 0);
+              const midY = by - (brows === 'arched' ? 4.5 : brows === 'flat' ? 0 : 3);
+              arc(X(s * 15.5), Y(inY), X(s * 22.5), Y(midY), X(s * 29.5), Y(outY + 0.3));
+            }
+            // cheeks
+            if (look.cheeks !== 'none') {
+              const col = look.cheeks === 'peach' ? '251,146,60' : female ? '251,113,133' : '248,113,113', al = (female ? 0.42 : 0.28) + (happy ? 0.14 : 0);
+              const bg = g.createRadialGradient(X(s * 33), Y(103), 0, X(s * 33), Y(103), SX(7));
+              bg.addColorStop(0, `rgba(${col},${al})`); bg.addColorStop(1, `rgba(${col},0)`);
+              g.fillStyle = bg; g.fillRect(X(s * 33) - SX(8), Y(103) - SX(8), SX(16), SX(16));
+            }
+            if (look.marks === 'freckles' || look.marks === 'both') [[-3, 0], [0, -2.2], [3, 0.6], [1.5, 2.6], [-1.8, 2.8]].forEach(([dx, dy]) => ell(X(s * (32 + dx)), Y(99 + dy), 1.4, 1.4, 'rgba(120,60,30,0.55)'));
           });
-          // mouth: a small smile
-          g.strokeStyle = female ? '#9f1239' : '#4a2a1a'; g.lineWidth = 3.2; g.lineCap = 'round';
-          g.beginPath(); g.moveTo(X(-6), Y(113.5)); g.quadraticCurveTo(X(0), Y(118.5), X(6), Y(113.5)); g.stroke();
+          if (look.marks === 'mole' || look.marks === 'both') ell(X(-14), Y(114), 1.8, 1.8, 'rgba(60,30,20,0.8)');
+          // mouth
+          const lip = female ? '#9f1239' : '#4a2a1a', m = surprise ? 'open' : happy && mouth !== 'laugh' ? 'grin' : focus ? 'flat' : mouth;
+          const mx = X(0), my = Y(114);
+          line(3.2, lip);
+          if (m === 'smile') arc(X(-6), my - 0.5, mx, Y(118.5), X(6), my - 0.5);
+          else if (m === 'flat') arc(X(-4.5), my + 2, mx, my + 2.4, X(4.5), my + 2);
+          else if (m === 'smirk') arc(X(-5), my + 1.5, X(2), my + 3, X(6), my - 1.5);
+          else if (m === 'cat') { g.beginPath(); g.moveTo(X(-6), my); g.quadraticCurveTo(X(-3), my + SY(3.5), mx, my); g.quadraticCurveTo(X(3), my + SY(3.5), X(6), my); g.stroke(); }
+          else if (m === 'pout') ell(mx, my + 2, SX(2.2), SY(1.8), lip);
+          else {   // open shapes: grin, open, laugh, teeth, tongue
+            const w = ({ open: 3.2, grin: 6, laugh: 7, teeth: 6.5, tongue: 5.5 })[m] || 5, h = ({ open: 4.2, grin: 3.6, laugh: 5.2, teeth: 3.4, tongue: 3.8 })[m] || 3.6;
+            g.beginPath();
+            if (m === 'open') g.ellipse(mx, my + SY(1.5), SX(w), SY(h), 0, 0, Math.PI * 2);
+            else { g.moveTo(X(-w), my); g.quadraticCurveTo(mx, my + SY(h * 2.1), X(w), my); g.closePath(); }
+            g.fillStyle = '#5b1424'; g.fill(); g.stroke();
+            if (m === 'teeth') { g.fillStyle = '#ffffff'; g.fillRect(X(-w * 0.7), my + 1, SX(w * 1.4), SY(1.6)); }
+            if (m === 'tongue' || m === 'laugh') ell(mx + SX(1), my + SY(h * 0.85), SX(w * 0.42), SY(h * 0.45), '#f43f5e');
+          }
           return cv;
+        }
+        /* show an expression on a dressed rig (textures are painted once per expression and kept until the next dress) */
+        static setExpression(rig, expr) {
+          if (!rig.faceMesh || rig.faceExpr === expr) return;
+          rig.faces = rig.faces || {};
+          if (!rig.faces[expr]) { const t = new THREE.CanvasTexture(this.paintFace(rig.look, expr)); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; rig.faces[expr] = t; }
+          rig.faceMesh.material.map = rig.faces[expr]; rig.faceExpr = expr;
         }
 
         static createRig(look) {
@@ -3908,11 +4018,14 @@
         }
 
         static dress(rig, look) {
+          look = AnglerFactory.sanitizeLook(look, look && look.gender);   // v9.1.0: every look gets every field (townsfolk looks are partial)
           look = this.sanitizeLook(look, look && look.gender);
           const female = look.gender === 'female';
           // remove the previous outfit (skinned meshes on the skeleton root, rigid parts on the bones)
           rig.parts.forEach(m => { if (m.parent) m.parent.remove(m); this.dispose(m); });
           rig.parts = [];
+          if (rig.faces) Object.values(rig.faces).forEach(t => t.dispose());   // v9.1.0: the old face textures
+          rig.faces = null; rig.faceMesh = null;
           this.clear(rig.headGroup);
           const d = this.dims(look);
           rig.dims = d;
@@ -3920,19 +4033,20 @@
           const add = (parent, obj) => { parent.add(obj); rig.parts.push(obj); return obj; };
 
           const C = i => new THREE.Color(ANGLER_OPTS.colors[i]);
+          const LC = k => new THREE.Color(LookColor[k](look));   // v9.1.0: picked colour or palette
           // v9.0.0: skin, hair and cloth use soft three-step toon shading; shiny and metal parts stay standard
           const mat = (color, rough = 0.8, metal = 0, extra = {}) => (metal > 0.3 || rough < 0.4)
             ? new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra))
             : new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: AnglerFactory.toonRamp() }, extra));
-          const skinCol = new THREE.Color(ANGLER_OPTS.skin[look.skin]);
+          const skinCol = new THREE.Color(LookColor.skin(look));
           const skinMat = mat(skinCol, 0.7, 0, { side: THREE.DoubleSide });
-          const hairMat = mat(ANGLER_OPTS.hairColor[look.hairColor], 0.65);
-          const topMat = mat(C(look.topColor), 0.85, 0, { side: THREE.DoubleSide });
-          const accMat = mat(C(look.topAccent), 0.85, 0, { side: THREE.DoubleSide });
-          const botMat = mat(C(look.bottomColor), 0.85, 0, { side: THREE.DoubleSide });
-          const shoeMat = mat(C(look.shoeColor), look.shoes === 'boots' ? 0.35 : 0.8);
+          const hairMat = mat(LookColor.hair(look), 0.65);
+          const topMat = mat(LC('top'), 0.85, 0, { side: THREE.DoubleSide });
+          const accMat = mat(LC('accent'), 0.85, 0, { side: THREE.DoubleSide });
+          const botMat = mat(LC('bottom'), 0.85, 0, { side: THREE.DoubleSide });
+          const shoeMat = mat(LC('shoe'), look.shoes === 'boots' ? 0.35 : 0.8);
           const soleMat = mat(look.shoes === 'boots' ? 0xeab308 : 0xf1f5f9, 0.8);
-          const hatMat = mat(C(look.hatColor), 0.7, 0, { side: THREE.DoubleSide });
+          const hatMat = mat(LC('hat'), 0.7, 0, { side: THREE.DoubleSide });
           const darkMat = new THREE.MeshBasicMaterial({ color: 0x0b1020 });
           const brass = mat(0xd9a21b, 0.3, 0.8);
           const skinned = m => { const k = m.clone(); m.dispose(); return k; };   // skinning is automatic since r129
@@ -4040,7 +4154,8 @@
                 rbox(fgp, 0.1, 0.012, 0.022, shoeMat, 0, g0 + 0.045, fz - 0.05, 0.005);
                 rbox(fgp, 0.1, 0.012, 0.022, shoeMat, 0, g0 + 0.06, 0.0, 0.005);
               }
-            } else if (shoe === 'sneakers') {
+            } else if (shoe === 'sneakers' || shoe === 'hightops') {
+              if (shoe === 'hightops') { lathe(fgp, [[0.058, g0 + 0.15 * BL], [0.062, g0 + 0.1 * BL], [0.06, g0 + 0.05]], shoeMat, 18); put(fgp, new THREE.TorusGeometry(0.059, 0.008, 6, 16), soleMat, 0, g0 + 0.15 * BL, 0).rotation.x = Math.PI / 2; }
               sph(fgp, 0.06, shoeMat, 0, g0 + 0.05, fz, 0.95, 0.75, 2.2, 18);
               sph(fgp, 0.055, shoeMat, 0, g0 + 0.07, 0.015, 1, 1, 1.05, 14);
               soleFn(0.112, footLen + 0.03, g0 + 0.012, fz, soleMat);
@@ -4060,54 +4175,81 @@
           const clothGeos = new Map();
           const pushCloth = (m, g) => { if (!clothGeos.has(m)) clothGeos.set(m, []); clothGeos.get(m).push(g); };
           const tAt = o => this.torsoGeo(d, idxOf, prof, Object.assign({ bust: female ? d.bustAmt : 0 }, o));   // clothes follow the body's bust
-          const topBase = C(look.topColor), topAcc = C(look.topAccent);
+          const topBase = LC('top'), topAcc = LC('accent');
           const vcol = m => { const k = m.clone(); k.vertexColors = true; k.color.set(0xffffff); return k; };
           const armCloth = (m, uEnd, off, colFn) => limbs.forEach(({ s, sh, el, wr }) => {
             const L1 = sh.distanceTo(el) + el.distanceTo(wr);
             pushCloth(m, this.limbGeo(sh, el, wr, [bi['upper' + s], bi['fore' + s], bi['hand' + s]], armR, { s1: L1 * uEnd, off, capTop: true, topBone: bi['clav' + s], ez: 0.9, seg: 12, colFn }));
           });
-          const legCloth = (m, uEnd, off, flare = 0) => limbs.forEach(({ s, hp, kn, an }) => {
+          const legCloth = (m, uEnd, off, flare = 0, colFn) => limbs.forEach(({ s, hp, kn, an }) => {
             const top0 = hp.clone().add(new THREE.Vector3(0, 0.03, 0)), L1 = top0.distanceTo(kn) + kn.distanceTo(an);
-            pushCloth(m, this.limbGeo(top0, kn, an, [bi['thigh' + s], bi['shin' + s], bi['foot' + s]], (u, ss) => legR(u, ss) + flare * u, { s1: L1 * uEnd, off, capTop: true, topBone: bi.hips, ez: 0.95, seg: 14 }));
+            pushCloth(m, this.limbGeo(top0, kn, an, [bi['thigh' + s], bi['shin' + s], bi['foot' + s]], (u, ss) => legR(u, ss) + flare * u, { s1: L1 * uEnd, off, capTop: true, topBone: bi.hips, ez: 0.95, seg: 14, colFn }));
           });
           const front = a => Math.abs(a - Math.PI * 1.5);   // angular distance from the front
           const shirtTop = yNeck - 0.035 * TS;
-          const stripes = (yy, a, out) => out.copy((Math.floor((yy - d.hipY + 0.02 * TS) / 0.06) % 2 === 0) ? topAcc : topBase);
-          if (top === 'sweater') {
-            const m = vcol(topMat);
-            pushCloth(m, tAt({ y0: d.hipY - 0.03 * TS, y1: shirtTop, off: 0.016, colFn: stripes }));
-            armCloth(m, 0.9, 0.012, (u, a, out) => out.copy((Math.floor(u * 9) % 2 === 0) ? topBase : topAcc));
-          } else if (top === 'tee' || top === 'vest') {
-            pushCloth(topMat, tAt({ y0: d.hipY - 0.02 * TS, y1: shirtTop, off: 0.012 }));
-            armCloth(topMat, 0.3, 0.012);
+          /* v9.1.0 patterns, painted into the vertex colours: v is an adult-scale height (m), a the angle round the body */
+          const PAT = (kind, v, a) => {
+            if (kind === 'stripes') return Math.floor(v / 0.06) % 2 === 0;
+            if (kind === 'checks') return (Math.floor(v / 0.05) + Math.floor(a / (Math.PI * 2) * 12)) % 2 === 0;
+            if (kind === 'waves') return Math.floor((v + 0.018 * Math.sin(a * 4)) / 0.05) % 2 === 0;
+            if (kind === 'block') return v > 0.3;
+            return false;
+          };
+          const topPat = look.topPattern === 'auto' || !look.topPattern ? (({ sweater: 'stripes', flannel: 'checks' })[top] || 'plain') : look.topPattern;
+          const botPat = look.bottomPattern || 'plain', botBase = LC('bottom'), botAcc = LC('bottomAcc');
+          const torsoFn = (kind, base, acc) => (kind === 'plain' ? undefined : (yy, a, out) => out.copy(PAT(kind, (yy - d.hipY) / TS + 0.02, a) ? acc : base));
+          const limbFn = (kind, base, acc, len) => (kind === 'plain' ? undefined : (u, a, out) => out.copy(PAT(kind, u * len, a) ? acc : base));
+          const tMat = topPat === 'plain' ? topMat : vcol(topMat), tFn = torsoFn(topPat, topBase, topAcc), aFn = limbFn(topPat, topBase, topAcc, 0.55);
+          const bMat = botPat === 'plain' ? botMat : vcol(botMat), bFn = torsoFn(botPat, botBase, botAcc), lFn = limbFn(botPat, botBase, botAcc, 0.8);
+          if (top === 'sweater' || top === 'flannel') {
+            pushCloth(tMat, tAt({ y0: d.hipY - 0.03 * TS, y1: shirtTop, off: 0.016, colFn: tFn }));
+            armCloth(tMat, 0.9, 0.012, aFn);
+          } else if (top === 'tee' || top === 'vest' || top === 'polo' || top === 'dress') {
+            pushCloth(tMat, tAt({ y0: d.hipY - 0.02 * TS, y1: shirtTop, off: 0.012, colFn: tFn }));
+            armCloth(tMat, top === 'dress' ? 0.22 : 0.3, 0.012, aFn);
             if (top === 'vest') { // fishing vest: open front, no sleeves, lots of pockets
-              const vm = mat(C(look.topAccent), 0.85, 0, { side: THREE.DoubleSide });
+              const vm = mat(LC('accent'), 0.85, 0, { side: THREE.DoubleSide });
               pushCloth(vm, tAt({ y0: d.hipY + 0.02 * TS, y1: yChest + 0.17 * TS, off: 0.03, keep: (a, y, x) => front(a) > 0.32 && !(Math.abs(x) > 0.13 && y > yChest + 0.08 * TS) }));
             }
+          } else if (top === 'cardigan') { // an open knit over a shirt in the accent colour
+            pushCloth(mat(LC('accent'), 0.85, 0, { side: THREE.DoubleSide }), tAt({ y0: d.hipY - 0.02 * TS, y1: shirtTop, off: 0.011 }));
+            pushCloth(tMat, tAt({ y0: d.hipY - 0.05 * TS, y1: shirtTop, off: 0.022, colFn: tFn, keep: a => front(a) > 0.26 }));
+            armCloth(tMat, 0.9, 0.016, aFn);
           } else if (top === 'tank') {
-            pushCloth(topMat, tAt({ y0: d.hipY - 0.02 * TS, y1: yChest + 0.15 * TS, off: 0.012, keep: (a, y, x) => !(Math.abs(x) > 0.11 && y > yChest + 0.06 * TS) }));
+            pushCloth(tMat, tAt({ y0: d.hipY - 0.02 * TS, y1: yChest + 0.15 * TS, off: 0.012, colFn: tFn, keep: (a, y, x) => !(Math.abs(x) > 0.11 && y > yChest + 0.06 * TS) }));
           } else if (top === 'hoodie' || top === 'slicker') {
             const off = top === 'slicker' ? 0.026 : 0.02;
-            pushCloth(topMat, tAt({ y0: top === 'slicker' ? d.hipY - 0.11 * TS : d.hipY - 0.03 * TS, y1: shirtTop, off }));
-            armCloth(topMat, 0.88, off * 0.8);
+            pushCloth(tMat, tAt({ y0: top === 'slicker' ? d.hipY - 0.11 * TS : d.hipY - 0.03 * TS, y1: shirtTop, off, colFn: tFn }));
+            armCloth(tMat, 0.88, off * 0.8, aFn);
           } else if (top === 'bikini') {
             pushCloth(topMat, tAt({ y0: yChest - 0.02 * TS, y1: yChest + 0.09 * TS, off: 0.008, bust: female ? d.bustAmt * 1.1 : 0 }));
           }
-          if (bottom === 'jeans' || bottom === 'overalls') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY + 0.17 * TS, off: 0.012, capBottom: true }));
-            legCloth(botMat, look.shoes === 'boots' ? 0.86 : 0.95, 0.012, 0.008);
-            if (bottom === 'overalls') pushCloth(botMat, tAt({ y0: d.hipY + 0.15 * TS, y1: yChest + 0.12 * TS, off: 0.03, keep: a => front(a) < 1.05 }));
+          if (bottom === 'jeans' || bottom === 'overalls' || bottom === 'cargo' || bottom === 'leggings') {
+            const tight = bottom === 'leggings';
+            pushCloth(bMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY + 0.17 * TS, off: tight ? 0.008 : 0.012, capBottom: true, colFn: bFn }));
+            legCloth(bMat, look.shoes === 'boots' ? 0.86 : tight ? 0.97 : 0.95, tight ? 0.006 : 0.012, tight ? 0 : bottom === 'cargo' ? 0.012 : 0.008, lFn);
+            if (bottom === 'overalls') pushCloth(bMat, tAt({ y0: d.hipY + 0.15 * TS, y1: yChest + 0.12 * TS, off: 0.03, keep: a => front(a) < 1.05, colFn: bFn }));
           } else if (bottom === 'shorts' || bottom === 'swim') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY + 0.16 * TS, off: 0.013, capBottom: true }));
-            legCloth(botMat, bottom === 'swim' ? 0.24 : 0.38, 0.016, 0.01);
+            pushCloth(bMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY + 0.16 * TS, off: 0.013, capBottom: true, colFn: bFn }));
+            legCloth(bMat, bottom === 'swim' ? 0.24 : 0.38, 0.016, 0.01, lFn);
           } else if (bottom === 'bikini') {
             pushCloth(botMat, tAt({ y0: d.hipY - 0.115 * TS, y1: d.hipY - 0.0 * TS, off: 0.008, capBottom: true }));
           } else if (bottom === 'skirt') {
-            pushCloth(botMat, tAt({ y0: d.hipY - 0.04 * TS, y1: d.hipY + 0.16 * TS, off: 0.014 }));
+            pushCloth(bMat, tAt({ y0: d.hipY - 0.04 * TS, y1: d.hipY + 0.16 * TS, off: 0.014, colFn: bFn }));
           }
           clothGeos.forEach((gs, m) => skinMesh(this.mergeSkin(gs), m));
 
           // rigid clothing details on the bones
+          if (top === 'dress') { // the dress's skirt, in the top's colour, over whatever is worn below
+            const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.175 * W + 0.03 * fw + t * 0.12 + Math.sin(t * Math.PI * 4) * 0.006, 0.02 - t * 0.36 * d.legs * 1.25]); }
+            const sk = lathe(rig.hips, pts, topMat, 34, 0.86); rig.parts.push(sk);
+          }
+          if (top === 'polo') {   // a soft collar and two buttons
+            [-1, 1].forEach(sx => { const f = rbox(rig.chest, 0.07, 0.012, 0.05, topMat, sx * 0.04, d.neck - 0.035 * TS, -0.05, 0.005); f.rotation.set(0.5, sx * 0.4, sx * 0.3); });
+            [0, 1].forEach(k => sph(rig.chest, 0.007, accMat, 0, d.neck - (0.06 + k * 0.035) * TS, -(prof(yNeck - (0.06 + k * 0.035) * TS).wz + 0.017), 1, 1, 0.6, 6));
+          }
+          if (top === 'cardigan') [0, 1, 2].forEach(k => sph(rig.chest, 0.008, brass, 0.03, d.neck - (0.08 + k * 0.05) * TS, -(prof(yNeck - (0.08 + k * 0.05) * TS).wz + 0.026), 1, 1, 0.6, 6));
+          if (bottom === 'cargo') limbs.forEach(({ S, s }) => { const sx = s === 'L' ? -1 : 1; rbox(S.thigh, 0.03, 0.07, 0.07, mat(LC('bottom').multiplyScalar(0.82), 0.85), sx * 0.085, -d.thigh * 0.55, 0, 0.008); });
           if (bottom === 'skirt') { // a flared skirt hanging from the hips
             const pts = []; for (let i = 0; i <= 8; i++) { const t = i / 8; pts.push([0.17 * W + 0.03 * fw + t * 0.11 + Math.sin(t * Math.PI * 4) * 0.006, -0.02 - t * 0.36 * d.legs * 1.3]); }
             const sk = lathe(rig.hips, pts, botMat, 34, 0.86); rig.parts.push(sk);
@@ -4121,18 +4263,18 @@
               for (let k = 0; k < 4; k++) rbox(rig.spine, 0.03, 0.012, 0.012, accMat, 0, (-0.02 + k * 0.09) * TS, -(prof(ySpine + k * 0.09 * TS).wz + 0.03), 0.004);
             }
           }
-          if (top === 'tee' || top === 'sweater' || top === 'vest') {
+          if (top === 'tee' || top === 'sweater' || top === 'vest' || top === 'flannel' || top === 'dress') {
             const collar = put(rig.chest, new THREE.TorusGeometry(0.062, 0.014, 8, 20), top === 'sweater' ? accMat : topMat, 0, d.neck - 0.03 * TS, 0.005); collar.rotation.x = Math.PI / 2;
           }
           if (top === 'vest') {
-            [[-1, 0.0], [1, 0.0], [-1, 0.1 * TS], [1, 0.1 * TS]].forEach(([sx, dy]) => rbox(rig.chest, 0.07, 0.06 * TS, 0.02, mat(C(look.topAccent).multiplyScalar(0.8), 0.85), sx * 0.085, dy - 0.02 * TS, -(prof(yChest + dy).wz + 0.045), 0.006));
+            [[-1, 0.0], [1, 0.0], [-1, 0.1 * TS], [1, 0.1 * TS]].forEach(([sx, dy]) => rbox(rig.chest, 0.07, 0.06 * TS, 0.02, mat(LC('accent').multiplyScalar(0.8), 0.85), sx * 0.085, dy - 0.02 * TS, -(prof(yChest + dy).wz + 0.045), 0.006));
           }
           if (top === 'tank' || top === 'bikini') {
             [-1, 1].forEach(sx => { const st = put(rig.chest, new THREE.CylinderGeometry(0.006, 0.006, 0.22 * TS, 4), top === 'bikini' ? topMat : topMat, sx * 0.085, d.chest + 0.08 * TS, 0); st.rotation.x = 0.0; });
           }
           if (bottom === 'overalls') {
             [-1, 1].forEach(sx => { rbox(rig.chest, 0.04, 0.012, 0.26 * TS, botMat, sx * 0.085, d.chest + 0.14 * TS, 0.0, 0.005); rbox(rig.chest, 0.03, 0.03, 0.012, brass, sx * 0.085, d.chest + 0.1 * TS, -(prof(yChest + 0.1 * TS).wz + 0.035), 0.005); });
-            rbox(rig.spine, 0.12, 0.08 * TS, 0.012, mat(C(look.bottomColor).multiplyScalar(0.8), 0.85), 0, d.chest * 0.5, -(prof(ySpine + 0.1 * TS).wz + 0.04), 0.006);
+            rbox(rig.spine, 0.12, 0.08 * TS, 0.012, mat(LC('bottom').multiplyScalar(0.8), 0.85), 0, d.chest * 0.5, -(prof(ySpine + 0.1 * TS).wz + 0.04), 0.006);
           }
           if (bottom === 'jeans' || bottom === 'shorts') {
             const belt = put(rig.hips, new THREE.TorusGeometry(1, 0.02, 6, 28), mat(0x3b2314, 0.6), 0, 0.15 * TS, 0); belt.rotation.x = Math.PI / 2; belt.scale.set(prof(d.hipY + 0.15 * TS).wx + 0.014, prof(d.hipY + 0.15 * TS).wz + 0.014, 1);
@@ -4165,10 +4307,14 @@
             const tex = new THREE.CanvasTexture(AnglerFactory.paintFace(look)); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
             const fm = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.55, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
             const face = put(H, fg, fm); face.renderOrder = 1; face.userData.noMerge = true; rig.faceTex = tex;
+            rig.faceMesh = face; rig.look = look; rig.faces = { open: tex }; rig.faceExpr = 'open';
           }
-          [-1, 1].forEach(s => sph(H, 0.042, skinMat, s * 0.2, 0.0, 0.01, 0.55, 1, 0.8, 12));   // ears
+          [-1, 1].forEach(s => {   // ears: round, small or pointed
+            if (look.ears === 'pointed') { const e = sph(H, 0.042, skinMat, s * 0.205, 0.03, 0.02, 0.5, 1.5, 0.75, 12); e.rotation.z = -s * 0.5; }
+            else sph(H, look.ears === 'small' ? 0.032 : 0.042, skinMat, s * 0.2, 0.0, 0.01, 0.55, 1, 0.8, 12);
+          });
           {   // a small button nose (the eyes, brows, cheeks and mouth are painted on the face)
-            const noseMat = mat(new THREE.Color(ANGLER_OPTS.skin[look.skin]).multiplyScalar(0.93), 0.7);
+            const noseMat = mat(new THREE.Color(LookColor.skin(look)).multiplyScalar(0.93), 0.7);
             const k = ({ small: 0.8, button: 1.05, broad: 1.2, straight: 0.95 })[look.nose] || 1;
             sph(H, 0.021 * k, noseMat, 0, -0.03, -0.206, look.nose === 'broad' ? 1.4 : 1.1, 0.85, 0.75, 12);
           }
@@ -4176,9 +4322,10 @@
           // facial hair
           const fh = look.facial;
           if (fh === 'stubble') {
-            const g = sph(H, 0.215, mat(ANGLER_OPTS.hairColor[look.hairColor], 0.9, 0, { transparent: true, opacity: 0.16 }), 0, -0.03, -0.005, 1, 1, 1, 26);
+            const g = sph(H, 0.215, mat(LookColor.hair(look), 0.9, 0, { transparent: true, opacity: 0.16 }), 0, -0.03, -0.005, 1, 1, 1, 26);
             g.geometry.dispose(); g.geometry = new THREE.SphereGeometry(0.212, 28, 14, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.38);   // jaw only: the painted smile stays visible
           }
+          if (fh === 'sideburns') [-1, 1].forEach(s => { const sb = sph(H, 0.03, hairMat, s * 0.19, -0.05, 0.0, 0.5, 1.9, 0.9, 10); sb.rotation.z = s * 0.15; });
           if (fh === 'mustache' || fh === 'beard' || fh === 'goatee') [-1, 1].forEach(s => { const m = sph(H, 0.038, hairMat, s * 0.032, -0.066, -0.19, 1.25, 0.55, 0.7, 12); m.rotation.z = s * -0.2; });
           if (fh === 'goatee') sph(H, 0.04, hairMat, 0, -0.14, -0.15, 0.9, 1.3, 0.8, 12);
           if (fh === 'beard') {
@@ -4198,7 +4345,7 @@
               const pts = [new THREE.Vector3(0, 0.1, 0.2), new THREE.Vector3(0, 0.02, 0.32), new THREE.Vector3(0, -0.09, 0.35), new THREE.Vector3(0, -0.2, 0.31)];   // shorter on the chibi head
               put(H, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.055, 10, false), hairMat);
               sph(H, 0.06, hairMat, 0, -0.21, 0.31, 0.85, 1.2, 0.85, 10);
-              const tie = put(H, new THREE.TorusGeometry(0.058, 0.014, 6, 12), mat(C(look.hatColor), 0.5), 0, 0.09, 0.205); tie.rotation.x = 0.9;
+              const tie = put(H, new THREE.TorusGeometry(0.058, 0.014, 6, 12), mat(LC('hat'), 0.5), 0, 0.09, 0.205); tie.rotation.x = 0.9;
               [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.17, 0.06, -0.08, 0.7, 1.2, 0.7, 10));
             }
             if (hs === 'long') {
@@ -4208,10 +4355,29 @@
               [-1, 1].forEach(s => { const lock = sph(H, 0.055, hairMat, s * 0.19, -0.1, -0.03, 0.8, 2.3, 0.9, 12); });
             }
             if (hs === 'bob') { const bobM = put(H, new THREE.SphereGeometry(0.235, 30, 18, 0, Math.PI, 0, Math.PI * 0.78), mat(hairMat.color, 0.65)); bobM.scale.set(1.04, 0.85, 1.02); bobM.position.set(0, -0.04, 0.02); [-1, 1].forEach(s => sph(H, 0.04, hairMat, s * 0.2, -0.05, -0.04, 0.8, 1.6, 0.8, 10)); }
-            if (hs === 'bun') { sph(H, 0.085, hairMat, 0, 0.24, 0.07, 1, 0.9, 1, 16); const t = put(H, new THREE.TorusGeometry(0.07, 0.014, 6, 14), mat(C(look.hatColor), 0.5), 0, 0.2, 0.07); t.rotation.x = Math.PI / 2; }
+            if (hs === 'bun') { sph(H, 0.085, hairMat, 0, 0.24, 0.07, 1, 0.9, 1, 16); const t = put(H, new THREE.TorusGeometry(0.07, 0.014, 6, 14), mat(LC('hat'), 0.5), 0, 0.2, 0.07); t.rotation.x = Math.PI / 2; }
             if (hs === 'braid') {
               for (let i = 0; i < 6; i++) sph(H, 0.045 - i * 0.002, hairMat, 0.17 + i * 0.012, -0.03 - i * 0.055, -0.02 + (i % 2 ? 0.012 : -0.012), 1, 1.2, 1, 10);
-              sph(H, 0.03, mat(C(look.hatColor), 0.5), 0.24, -0.33, -0.02, 1, 1, 1, 8);
+              sph(H, 0.03, mat(LC('hat'), 0.5), 0.24, -0.33, -0.02, 1, 1, 1, 8);
+            }
+            // v9.1.0 styles
+            const capOK = look.hat === 'none' || look.hat === 'flowers';
+            if (hs === 'spiky' && capOK) for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2, rr = i % 2 ? 0.09 : 0.14; const c = put(H, new THREE.ConeGeometry(0.05, 0.13, 8), hairMat, Math.cos(a) * rr, 0.22, Math.sin(a) * rr + 0.02); c.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6); }
+            if (hs === 'afro') { sph(H, 0.27, hairMat, 0, 0.15, 0.1, 1.08, 0.92, 0.9, 24); for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; if (Math.sin(a) < -0.35) continue; sph(H, 0.09, hairMat, Math.cos(a) * 0.25, 0.12 + (i % 3) * 0.05, Math.sin(a) * 0.22 + 0.1, 1, 1, 1, 10); } sph(H, 0.1, hairMat, 0, 0.24, -0.08, 1.6, 0.7, 0.9, 12); }   // high and back, so the face stays clear
+            if (hs === 'twintails') [-1, 1].forEach(sx => {
+              const pts = [new THREE.Vector3(sx * 0.19, 0.1, 0.06), new THREE.Vector3(sx * 0.29, 0.03, 0.08), new THREE.Vector3(sx * 0.31, -0.1, 0.07), new THREE.Vector3(sx * 0.27, -0.21, 0.05)];
+              put(H, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 14, 0.05, 10, false), hairMat);
+              sph(H, 0.055, hairMat, sx * 0.27, -0.22, 0.05, 0.9, 1.15, 0.9, 10);
+              sph(H, 0.022, mat(LC('hat'), 0.5), sx * 0.2, 0.1, 0.06, 1.3, 1.3, 1.3, 8);
+            });
+            if (hs === 'mohawk' && capOK) for (let i = 0; i < 6; i++) sph(H, 0.06, hairMat, 0, 0.2 + Math.sin(i / 5 * Math.PI) * 0.04, -0.15 + i * 0.065, 0.45, 1.5, 0.9, 10);
+            if (hs === 'sidepart' && capOK) { const sw = sph(H, 0.12, hairMat, 0.06, 0.17, -0.1, 1.5, 0.6, 0.9, 14); sw.rotation.z = -0.3; sph(H, 0.08, hairMat, -0.12, 0.15, -0.08, 1, 0.7, 0.9, 12); }
+            if (hs === 'pixie' && capOK) { for (let i = 0; i < 5; i++) sph(H, 0.05, hairMat, -0.12 + i * 0.06, 0.15 + (i % 2) * 0.02, -0.15, 0.9, 0.7, 0.8, 10); [-1, 1].forEach(sx => sph(H, 0.045, hairMat, sx * 0.19, 0.0, -0.06, 0.6, 1.3, 0.8, 10)); }
+            // fringe (its own colour when chosen: tips and dyed bangs)
+            if (look.fringe !== 'none' && hs !== 'buzz') {
+              const fm = mat(LookColor.fringe(look), 0.65);
+              if (look.fringe === 'full') { const fr = put(H, new THREE.SphereGeometry(0.226, 30, 10, Math.PI * 1.15, Math.PI * 0.7, Math.PI * 0.18, Math.PI * 0.2), fm); fr.position.y = 0.005; }
+              else { const fr = sph(H, 0.085, fm, 0.07, 0.175, -0.15, 1.55, 0.5, 0.65, 14); fr.rotation.set(0.35, 0, -0.38); }   // a sweep across the hairline, above the brows
             }
           }
 
@@ -4220,6 +4386,10 @@
             [-1, 1].forEach(s => sph(H, 0.052, mat(0x0b1020, 0.15, 0.4), s * 0.08, -0.006, -0.197, 1.15, 0.86, 0.35, 16));
             put(H, new THREE.BoxGeometry(0.05, 0.012, 0.012), darkMat, 0, 0.004, -0.203);
             [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.012, 0.012, 0.19), darkMat, s * 0.145, 0.004, -0.1));
+          } else if (look.glasses === 'square') {
+            [-1, 1].forEach(s => { const fr = put(H, new THREE.TorusGeometry(0.045, 0.008, 4, 4), darkMat, s * 0.08, -0.006, -0.205); fr.rotation.z = Math.PI / 4; fr.scale.set(1.15, 0.85, 1); });
+            put(H, new THREE.BoxGeometry(0.03, 0.008, 0.008), darkMat, 0, 0.004, -0.207);
+            [-1, 1].forEach(s => put(H, new THREE.BoxGeometry(0.008, 0.008, 0.18), darkMat, s * 0.13, 0.004, -0.12));
           } else if (look.glasses === 'round') {
             [-1, 1].forEach(s => put(H, new THREE.TorusGeometry(0.042, 0.007, 6, 20), brass, s * 0.08, -0.006, -0.205));
             put(H, new THREE.BoxGeometry(0.04, 0.008, 0.008), brass, 0, 0.004, -0.207);
@@ -4229,7 +4399,7 @@
           // hats
           const hat = look.hat;
           const hatG = new THREE.Group(); H.add(hatG);
-          hatG.position.y = { souwester: 0.07, cap: 0.07, flapcap: 0.06, beanie: 0.03, bucket: 0.09, straw: 0.06, none: 0 }[hat] || 0;
+          hatG.position.y = { souwester: 0.07, cap: 0.07, captain: 0.07, flapcap: 0.06, beanie: 0.03, bucket: 0.09, straw: 0.06, bandana: 0.02, flowers: 0.16, none: 0 }[hat] || 0;
           if (hat === 'souwester') {
             lathe(hatG, [[0.001, 0.25], [0.12, 0.245], [0.205, 0.2], [0.232, 0.1], [0.235, 0.05]], hatMat, 30);
             lathe(hatG, [[0.235, 0.05], [0.29, 0.03], [0.4, -0.02]], hatMat, 30, 1.05).position.set(0, 0.0, 0.05);
@@ -4241,6 +4411,20 @@
             const visor = put(hatG, new THREE.CircleGeometry(0.27, 28, Math.PI, Math.PI), new THREE.MeshStandardMaterial({ color: hatMat.color, roughness: 0.7, side: THREE.DoubleSide })); visor.geometry.rotateX(Math.PI / 2); visor.scale.set(0.85, 1, 1); visor.position.set(0, 0.035, -0.02); visor.rotation.x = 0.12;
             put(hatG, new THREE.TorusGeometry(0.226, 0.01, 6, 28), accMat, 0, 0.03, 0).rotation.x = Math.PI / 2;
             sph(hatG, 0.02, accMat, 0, 0.245, 0, 1, 1, 1, 8);
+          } else if (hat === 'captain') {   // white crown, black peak, gold band and anchor badge
+            const crown = lathe(hatG, [[0.001, 0.13], [0.2, 0.13], [0.26, 0.11], [0.25, 0.05], [0.22, 0.0]], mat(0xf8fafc, 0.7), 30); crown.position.y = 0.02;
+            put(hatG, new THREE.TorusGeometry(0.222, 0.022, 8, 28), mat(0x111827, 0.6), 0, 0.03, 0).rotation.x = Math.PI / 2;
+            put(hatG, new THREE.TorusGeometry(0.226, 0.006, 6, 28), brass, 0, 0.058, 0).rotation.x = Math.PI / 2;
+            const peak = put(hatG, new THREE.CircleGeometry(0.24, 24, Math.PI, Math.PI), new THREE.MeshStandardMaterial({ color: 0x0b1020, roughness: 0.3, side: THREE.DoubleSide })); peak.geometry.rotateX(Math.PI / 2); peak.scale.set(0.8, 1, 0.75); peak.position.set(0, 0.02, -0.08); peak.rotation.x = 0.25;
+            sph(hatG, 0.03, brass, 0, 0.09, -0.235, 1, 1, 0.4, 10);
+          } else if (hat === 'bandana') {   // a scarf knotted at the back
+            const cap = put(hatG, new THREE.SphereGeometry(0.218, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.4), hatMat); cap.scale.set(1.02, 1.02, 1.03);
+            sph(hatG, 0.04, hatMat, 0, 0.06, 0.21, 1.1, 0.9, 0.8, 10);
+            [-1, 1].forEach(sx => { const tail = sph(hatG, 0.035, hatMat, sx * 0.04, 0.0, 0.24, 0.6, 1.6, 0.4, 8); tail.rotation.z = sx * 0.5; });
+          } else if (hat === 'flowers') {   // a crown of little flowers and leaves
+            for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2, x = Math.cos(a) * 0.2, z = Math.sin(a) * 0.2;
+              if (i % 3 === 2) sph(hatG, 0.022, mat(0x16a34a, 0.8), x, 0, z, 1.6, 0.5, 0.9, 8);
+              else { sph(hatG, 0.03, mat(i % 2 ? LC('hat') : LC('accent'), 0.7), x, 0.005, z, 1, 0.7, 1, 10); sph(hatG, 0.012, mat(0xfde047, 0.6), x * 1.03, 0.02, z * 1.03, 1, 1, 1, 6); } }
           } else if (hat === 'beanie') {
             const dome = put(hatG, new THREE.SphereGeometry(0.232, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.46), hatMat); dome.position.y = 0.02; dome.scale.set(1, 1.05, 1.02);
             const cuff = put(hatG, new THREE.TorusGeometry(0.225, 0.03, 10, 30), accMat, 0, 0.09, 0); cuff.rotation.x = Math.PI / 2;
@@ -4258,6 +4442,25 @@
             const dome = put(hatG, new THREE.SphereGeometry(0.236, 30, 14, 0, Math.PI * 2, 0, Math.PI * 0.45), mat(0xe9c46a, 0.9, 0, { side: THREE.DoubleSide })); dome.position.y = 0.05; dome.scale.set(1, 0.9, 1);
             const brim = put(hatG, new THREE.CylinderGeometry(0.46, 0.46, 0.014, 34), mat(0xe9c46a, 0.9), 0, 0.055, 0); brim.scale.set(1, 1, 1.0);
             put(hatG, new THREE.TorusGeometry(0.218, 0.022, 8, 30), hatMat, 0, 0.1, 0).rotation.x = Math.PI / 2;
+          }
+          // v9.1.0 accessories (rigid on the chest)
+          {
+            const ac = look.accessory, em = mat(LC('extra'), 0.8, 0, { side: THREE.DoubleSide });
+            const zf = yy => -(prof(yy).wz + 0.02);
+            if (ac === 'scarf') {
+              const sc = put(rig.chest, new THREE.TorusGeometry(0.075, 0.035, 10, 22), em, 0, d.neck - 0.02 * TS, -0.005); sc.rotation.x = Math.PI / 2; sc.scale.set(1.15, 1, 1); rig.parts.push(sc);
+              rbox(rig.chest, 0.06, 0.13, 0.025, em, 0.05, d.neck - 0.1 * TS, zf(yNeck - 0.1 * TS) - 0.01, 0.01).rotation.z = 0.15;
+            } else if (ac === 'backpack') {
+              rbox(rig.chest, 0.2, 0.22, 0.09, em, 0, d.chest * 0.2, prof(yChest).wz + 0.06, 0.03);
+              rbox(rig.chest, 0.15, 0.07, 0.03, mat(LC('extra').multiplyScalar(0.8), 0.8), 0, d.chest * 0.05, prof(yChest).wz + 0.115, 0.012);
+              [-1, 1].forEach(sx => rbox(rig.chest, 0.025, 0.25, 0.018, mat(0x3f3f46, 0.7), sx * 0.08, d.chest * 0.25, zf(yChest + 0.05 * TS) + 0.005, 0.006));
+            } else if (ac === 'necklace') {
+              const nk = put(rig.chest, new THREE.TorusGeometry(0.08, 0.005, 6, 24), brass, 0, d.neck - 0.06 * TS, -0.025); nk.rotation.x = Math.PI / 2 + 0.5; rig.parts.push(nk);
+              sph(rig.chest, 0.016, em, 0, d.neck - 0.115 * TS, zf(yNeck - 0.11 * TS) - 0.004, 1, 1, 0.6, 10);
+            } else if (ac === 'badge') {
+              const bd = put(rig.chest, new THREE.CylinderGeometry(0.025, 0.025, 0.008, 16), em, -0.07, d.chest * 0.75, zf(yChest + 0.03 * TS) - 0.008); bd.rotation.x = Math.PI / 2; rig.parts.push(bd);
+              sph(rig.chest, 0.01, brass, -0.07, d.chest * 0.75, zf(yChest + 0.03 * TS) - 0.014, 1, 1, 0.5, 6);
+            }
           }
           // v8.0.0: the head, hair, face and hat are rigid on the head bone, so they are baked into one mesh per material
           // (about 28 draw calls down to a handful for the angler and every townsperson); dress() rebuilds them anyway
@@ -4292,6 +4495,13 @@
                  hands: { L, R } (world-space wrist targets or null), handBlend, sway, idleAllowed } */
         update(st) {
           const r = this.rig, d = r.dims, dt = Math.min(0.05, st.dt == null ? 0.016 : st.dt), t = st.elapsed || 0;
+          // v9.1.0 face: blink every few seconds on top of the expression asked for (painted textures, swapped)
+          if (r.faceMesh) {
+            if (this.blinkT == null) this.blinkT = 1 + Math.random() * 3;
+            this.blinkT -= dt; if (this.blinkT < -0.13) this.blinkT = 2.2 + Math.random() * 3.8;
+            const base = st.expr || 'open';
+            AnglerFactory.setExpression(r, this.blinkT < 0 && base !== 'happy' ? 'blink' : base);
+          }
           const damp = (cur, goal, k) => cur + (goal - cur) * (1 - Math.exp(-k * dt));
           const ss = (x, a, b) => THREE.MathUtils.smoothstep(x, a, b);
           // ---- rest pose ----
@@ -4772,39 +4982,39 @@
         ['Harbour blue', 0x1d4ed8], ['Navy', 0x1e293b], ['Royal purple', 0x6d28d9], ['Coral pink', 0xdb2777], ['Pearl white', 0xf1f5f9], ['Charcoal', 0x374151], ['Varnished oak', 0xb45309]];
       const NPCS = {
         marta: { name: 'Old Marta', icon: '👵', role: 'Lighthouse keeper',
-          look: { gender: 'female', skin: 1, hairStyle: 'bun', hairColor: 7, facial: 'none', glasses: 'round', top: 'slicker', topColor: 3, topAccent: 10, bottom: 'skirt', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 's', build: 'slim' },
+          look: { eyeShape: 'sleepy', mouth: 'smile', brows: 'worried', marks: 'mole', gender: 'female', skin: 1, hairStyle: 'bun', hairColor: 7, facial: 'none', glasses: 'round', top: 'slicker', topColor: 3, topAccent: 10, bottom: 'skirt', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 's', build: 'slim' },
           home: { x: TOWN.hut.x + 0.5, z: TOWN.hut.z - 1.5 }, spots: [{ x: -21.6, z: 9.2 }, { x: -2.6, z: 8.9 }, { x: -11.5, z: 8.4 }],
           chat: ['The sea gives, and the sea takes. Mostly it takes bait.', 'Forty years I kept that light. It still blinks at me every night, like an old friend.', 'Storms come from the north-west here. Watch the sky, not the clock.', 'If you hear singing from the deep at night, keep your line taut.'] },
         rook: { name: 'Captain Rook', icon: '🧔', role: 'Boatyard owner',
-          look: { gender: 'male', skin: 2, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'sweater', topColor: 1, topAccent: 0, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 1, height: 'l', build: 'broad' },
+          look: { eyeShape: 'almond', mouth: 'smirk', brows: 'bold', gender: 'male', skin: 2, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'sweater', topColor: 1, topAccent: 0, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 1, height: 'l', build: 'broad' },
           home: { x: TOWN.rook.x, z: TOWN.rook.z - TOWN.rook.d / 2 - 0.7 }, spots: [{ x: -14.4, z: 4.9 }, { x: 0.4, z: 8.1 }, { x: -9.4, z: 4.9 }],
           chat: ['A boat is only as good as the one steering it. Mine are better than that, mind you.', 'Fuel up before you head out. The tow fee hurts more than the fuel.', 'Bigger hulls ride the swell out in the Shelf. Small ones just bounce.', 'I once caught a marlin with a broom handle. Well. Nearly.'] },
         pip: { name: 'Pip', icon: '🧒', role: 'Young angler',
-          look: { gender: 'male', skin: 0, hairStyle: 'wavy', hairColor: 4, facial: 'none', glasses: 'none', top: 'tee', topColor: 2, topAccent: 3, bottom: 'shorts', bottomColor: 1, shoes: 'sneakers', shoeColor: 2, hat: 'cap', hatColor: 3, height: 'xs', build: 'slim' },
+          look: { eyeShape: 'big', mouth: 'grin', marks: 'freckles', gender: 'male', skin: 0, hairStyle: 'wavy', hairColor: 4, facial: 'none', glasses: 'none', top: 'tee', topColor: 2, topAccent: 3, bottom: 'shorts', bottomColor: 1, shoes: 'sneakers', shoeColor: 2, hat: 'cap', hatColor: 3, height: 'xs', build: 'slim' },
           home: { x: TOWN.pip.x, z: TOWN.pip.z - TOWN.pip.d / 2 - 0.7 }, spots: [{ x: 2.2, z: -5.0 }, { x: -1.9, z: 11.6 }, { x: 2.6, z: 4.9 }],
           chat: ['When I grow up I will catch a fish bigger than Captain Rook!', 'Did you know some fish change colour? Ines told me.', 'I saw a shadow under the pier this big! Well, maybe this big.', 'Mum says I can go out on a boat when I am taller than the bounty board.'] },
         ines: { name: 'Ines', icon: '👩‍🔬', role: 'Marine biologist',
-          look: { gender: 'female', skin: 3, hairStyle: 'ponytail', hairColor: 0, facial: 'none', glasses: 'round', top: 'vest', topColor: 5, topAccent: 0, bottom: 'jeans', bottomColor: 1, shoes: 'sneakers', shoeColor: 0, hat: 'bucket', hatColor: 5, height: 'm', build: 'average' },
+          look: { eyeShape: 'sparkle', mouth: 'smile', brows: 'arched', gender: 'female', skin: 3, hairStyle: 'ponytail', hairColor: 0, facial: 'none', glasses: 'round', top: 'vest', topColor: 5, topAccent: 0, bottom: 'jeans', bottomColor: 1, shoes: 'sneakers', shoeColor: 0, hat: 'bucket', hatColor: 5, height: 'm', build: 'average' },
           home: { x: TOWN.ines.x, z: TOWN.ines.z - TOWN.ines.d / 2 - 0.7 }, spots: [{ x: 13.5, z: 4.9 }, { x: 7.0, z: 9.5 }, { x: 17.4, z: 4.9 }],
           chat: ['Every species here has a story. Most of them involve eating something smaller.', 'Happy fish breed. Clean water, good food, a little coral.', 'The bottle messages are a record of the bay. I have been collecting copies.', 'Deep fish glow to talk to each other. Imagine what they are saying about us.'] },
         lorenzo: { name: 'Chef Lorenzo', icon: '👨‍🍳', role: 'Chef',
-          look: { gender: 'male', skin: 1, hairStyle: 'short', hairColor: 0, facial: 'mustache', glasses: 'none', top: 'tee', topColor: 0, topAccent: 2, bottom: 'jeans', bottomColor: 9, shoes: 'sneakers', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'broad' },
+          look: { eyeShape: 'round', mouth: 'teeth', brows: 'arched', cheeks: 'peach', gender: 'male', skin: 1, hairStyle: 'short', hairColor: 0, facial: 'mustache', glasses: 'none', top: 'tee', topColor: 0, topAccent: 2, bottom: 'jeans', bottomColor: 9, shoes: 'sneakers', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'broad' },
           home: { x: TOWN.resto.x, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.8 }, spots: [{ x: TOWN.resto.x + 3.3, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.7 }, { x: 9.4, z: 4.9 }],
           chat: ['Your restaurant is a boat on dry land: everyone must row together.', 'Fresh fish, a little lemon, nothing else. The secret is: no secret.', 'You catch them, I cook them. A beautiful arrangement.', 'Bring me something rare one day and I will make you a dish to remember.'] },
         maren: { name: 'Maren', icon: '📮', role: 'Postmistress & cartographer',
-          look: { gender: 'female', skin: 0, hairStyle: 'bun', hairColor: 3, facial: 'none', glasses: 'round', top: 'sweater', topColor: 5, topAccent: 0, bottom: 'skirt', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'slim' },
+          look: { eyeShape: 'cat', mouth: 'cat', gender: 'female', skin: 0, hairStyle: 'bun', hairColor: 3, facial: 'none', glasses: 'round', top: 'sweater', topColor: 5, topAccent: 0, bottom: 'skirt', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'slim' },
           home: { x: 31.6, z: 11.0 }, spots: [{ x: 31.6, z: 11.0 }, { x: -1.6, z: 8.2 }, { x: 26.4, z: 8.0 }],
           chat: ['Every bottle that washes up has travelled further than most people ever will.', 'My charts say the Shelf drops away past six hundred metres. My knees say I will never check.', 'A parcel for the lighthouse jetty pays double. The sea is not in a hurry, but I am.', 'I draw the coastline from memory. It changes a little every winter.'] },
         barnaby: { name: 'Barnaby', icon: '🔨', role: 'Retired shipwright',
-          look: { gender: 'male', skin: 2, hairStyle: 'short', hairColor: 8, facial: 'mustache', glasses: 'round', top: 'vest', topColor: 9, topAccent: 1, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 9, height: 'm', build: 'broad' },
+          look: { eyeShape: 'dot', mouth: 'flat', brows: 'bushy', gender: 'male', skin: 2, hairStyle: 'short', hairColor: 8, facial: 'mustache', glasses: 'round', top: 'vest', topColor: 9, topAccent: 1, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 9, height: 'm', build: 'broad' },
           home: { x: 35.6, z: 8.5 }, spots: [{ x: 35.6, z: 8.5 }, { x: -26.2, z: 4.0 }, { x: 21.6, z: 7.6 }],
           chat: ['Forty hulls I built. Every one of them still floats, except the ones that sank, which were not my fault.', 'A good coat of paint is half the seaworthiness. The other half is not hitting rocks.', 'Bring me driftwood and I will make you something worth mounting.', 'Rook buys his boats new. I tell him every boat was new once.'] },
         talia: { name: 'Talia', icon: '🌿', role: 'Botanist & tide-pool keeper',
-          look: { gender: 'female', skin: 3, hairStyle: 'ponytail', hairColor: 2, facial: 'none', glasses: 'none', top: 'tee', topColor: 3, topAccent: 5, bottom: 'shorts', bottomColor: 3, shoes: 'sneakers', shoeColor: 3, hat: 'bucket', hatColor: 3, height: 's', build: 'slim' },
+          look: { eyeShape: 'wide', mouth: 'tongue', marks: 'freckles', gender: 'female', skin: 3, hairStyle: 'ponytail', hairColor: 2, facial: 'none', glasses: 'none', top: 'tee', topColor: 3, topAccent: 5, bottom: 'shorts', bottomColor: 3, shoes: 'sneakers', shoeColor: 3, hat: 'bucket', hatColor: 3, height: 's', build: 'slim' },
           home: { x: -21.2, z: 19.0 }, spots: [{ x: -21.2, z: 19.0 }, { x: -26.0, z: 16.2 }, { x: 29.6, z: 17.2 }],
           chat: ['Seaweed is not a weed. It is a forest that has learned to swim.', 'Crabs walk sideways because forward was already taken.', 'Rosemary, thyme and a little sea fennel: fish cannot resist my lures.', 'The tide pool is a whole ocean in a bowl. Look closely.'] },
         salty: { name: 'Old Salty', icon: '🍺', role: 'Tavern keeper',
-          look: { gender: 'male', skin: 1, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'slicker', topColor: 6, topAccent: 10, bottom: 'jeans', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'cap', hatColor: 6, height: 'l', build: 'broad' },
+          look: { eyeShape: 'sleepy', mouth: 'smirk', brows: 'bushy', gender: 'male', skin: 1, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'slicker', topColor: 6, topAccent: 10, bottom: 'jeans', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'cap', hatColor: 6, height: 'l', build: 'broad' },
           home: { x: 27.4, z: 18.2 }, spots: [{ x: 27.4, z: 18.2 }, { x: -8.6, z: 8.0 }, { x: 23.6, z: 7.6 }],
           chat: ['The tavern opens at four. The stories start at five. The truth, around midnight.', 'Big shadows like a storm, they say. Bigger ones like a full moon.', 'Ship, captain, crew, then cargo. Remember the order and you will win my money.', 'I have seen a fish as long as the pier. Well. Half the pier.'] }
       };
@@ -10669,46 +10879,62 @@ function replaceSceneMesh(parent, oldObj, newObj) {
          ========================================================================= */
       const custModal = document.getElementById('modal-customize');
       const custCanvas = document.getElementById('cust-canvas');
-      const CUST_FRAMES = {
-        outfit: { y: 1.0, z: 4.2, ly: 0.9 },
-        body: { y: 1.0, z: 4.2, ly: 0.9 },
-        hair: { y: 1.65, z: 1.35, ly: 1.62 },
-        face: { y: 1.65, z: 1.15, ly: 1.62 },
-        top: { y: 1.25, z: 2.4, ly: 1.15 },
-        bottom: { y: 0.65, z: 2.7, ly: 0.55 },
-        shoes: { y: 0.3, z: 1.9, ly: 0.12 },
-        hat: { y: 1.7, z: 1.5, ly: 1.66 }
+      const CUST_FRAMES = {   // v9.1.0: framed for the chibi heights (eyes at about 1.2 m)
+        outfit: { y: 0.95, z: 3.7, ly: 0.8 },
+        body: { y: 0.95, z: 3.7, ly: 0.8 },
+        hair: { y: 1.32, z: 1.5, ly: 1.25 },
+        face: { y: 1.24, z: 1.15, ly: 1.2 },
+        top: { y: 0.95, z: 2.2, ly: 0.85 },
+        bottom: { y: 0.5, z: 2.2, ly: 0.42 },
+        shoes: { y: 0.28, z: 1.6, ly: 0.1 },
+        hat: { y: 1.45, z: 1.65, ly: 1.36 },
+        extra: { y: 0.95, z: 2.2, ly: 0.85 }
       };
+
       const CUST_TABS = [
         { id: 'outfit', label: '✨ Outfits', rows: [
           { key: 'preset', label: 'Quick outfits', kind: 'presets', list: [['fisherman', '🎣 Fisherman'], ['angler', '🦺 Vest & overalls'], ['bikini', '👙 Beach: Bikini'], ['shorts', '🩳 Beach: Shorts only'], ['raincoat', '🌧️ Raincoat day']] }] },
         { id: 'body', label: '🧍 Body', rows: [
-          { key: 'skin', label: 'Skin tone', kind: 'swatch', list: ANGLER_OPTS.skin },
-          { key: 'height', label: 'Height', kind: 'chips', list: ANGLER_OPTS.height },
-          { key: 'build', label: 'Build', kind: 'chips', list: ANGLER_OPTS.build },
-          { key: 'eyes', label: 'Eye colour', kind: 'swatch', list: ANGLER_OPTS.eyes }] },
-        { id: 'hair', label: '💇 Hair', rows: [
-          { key: 'hairStyle', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hairStyle },
-          { key: 'hairColor', label: 'Hair colour', kind: 'swatch', list: ANGLER_OPTS.hairColor }] },
+          { key: 'skin', label: 'Skin tone', kind: 'swatch', list: ANGLER_OPTS.skin, hex: 'skinHex' },
+          { key: 'heightK', label: 'Height', kind: 'slider', min: 0.85, max: 1.15, step: 0.01, lo: 'Short', hi: 'Tall' },
+          { key: 'headK', label: 'Head size', kind: 'slider', min: 0.9, max: 1.15, step: 0.01, lo: 'Small', hi: 'Big' },
+          { key: 'buildK', label: 'Build', kind: 'slider', min: 0, max: 1, step: 0.02, lo: 'Slim', hi: 'Round' },
+          { key: 'ears', label: 'Ears', kind: 'chips', list: ANGLER_OPTS.ears }] },
         { id: 'face', label: '🙂 Face', rows: [
-          { key: 'faceShape', label: 'Face shape', kind: 'chips', list: ANGLER_OPTS.faceShape },
-          { key: 'nose', label: 'Nose', kind: 'chips', list: ANGLER_OPTS.nose },
+          { key: 'eyeShape', label: 'Eyes', kind: 'chips', list: ANGLER_OPTS.eyeShape },
+          { key: 'eyes', label: 'Eye colour', kind: 'swatch', list: ANGLER_OPTS.eyes, hex: 'eyeHex' },
           { key: 'brows', label: 'Eyebrows', kind: 'chips', list: ANGLER_OPTS.brows },
+          { key: 'mouth', label: 'Mouth', kind: 'chips', list: ANGLER_OPTS.mouth },
+          { key: 'nose', label: 'Nose', kind: 'chips', list: ANGLER_OPTS.nose },
+          { key: 'cheeks', label: 'Cheeks', kind: 'chips', list: ANGLER_OPTS.cheeks },
+          { key: 'marks', label: 'Freckles', kind: 'chips', list: ANGLER_OPTS.marks },
+          { key: 'faceShape', label: 'Face shape', kind: 'chips', list: ANGLER_OPTS.faceShape },
           { key: 'facial', label: 'Facial hair', kind: 'chips', list: ANGLER_OPTS.facial },
           { key: 'glasses', label: 'Glasses', kind: 'chips', list: ANGLER_OPTS.glasses }] },
+        { id: 'hair', label: '💇 Hair', rows: [
+          { key: 'hairStyle', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hairStyle },
+          { key: 'hairColor', label: 'Hair colour', kind: 'swatch', list: ANGLER_OPTS.hairColor, hex: 'hairHex' },
+          { key: 'fringe', label: 'Fringe', kind: 'chips', list: ANGLER_OPTS.fringe },
+          { key: 'fringeColor', label: 'Fringe and tips colour', kind: 'swatch', list: ANGLER_OPTS.hairColor, hex: 'fringeHex', same: true }] },
         { id: 'top', label: '👕 Top', rows: [
           { key: 'top', label: 'Style', kind: 'chips', list: ANGLER_OPTS.top },
-          { key: 'topColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors },
-          { key: 'topAccent', label: 'Accent / stripes', kind: 'swatch', list: ANGLER_OPTS.colors }] },
+          { key: 'topPattern', label: 'Pattern', kind: 'chips', list: [['auto', 'Classic']].concat(ANGLER_OPTS.pattern) },
+          { key: 'topColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'topHex' },
+          { key: 'topAccent', label: 'Second colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'accentHex' }] },
         { id: 'bottom', label: '👖 Bottom', rows: [
           { key: 'bottom', label: 'Style', kind: 'chips', list: ANGLER_OPTS.bottom },
-          { key: 'bottomColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] },
+          { key: 'bottomPattern', label: 'Pattern', kind: 'chips', list: ANGLER_OPTS.pattern },
+          { key: 'bottomColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'bottomHex' },
+          { key: 'bottomAccent', label: 'Second colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'bottomAccHex' }] },
         { id: 'shoes', label: '🥾 Shoes', rows: [
           { key: 'shoes', label: 'Style', kind: 'chips', list: ANGLER_OPTS.shoes },
-          { key: 'shoeColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] },
+          { key: 'shoeColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'shoeHex' }] },
         { id: 'hat', label: '🎩 Hat', rows: [
           { key: 'hat', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hat },
-          { key: 'hatColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors }] }
+          { key: 'hatColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'hatHex' }] },
+        { id: 'extra', label: '🎒 Extras', rows: [
+          { key: 'accessory', label: 'Accessory', kind: 'chips', list: ANGLER_OPTS.accessory },
+          { key: 'extraColor', label: 'Accessory colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'extraHex' }] }
       ];
       let custTab = 'outfit';
       let custRenderer = null, custScene = null, custCam = null, custRig = null, custAnim = null, custLastT = 0;
@@ -10771,8 +10997,24 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           const wrap = document.createElement('div');
           wrap.className = 'cust-row';
           wrap.innerHTML = `<div class="cust-label">${row.label}</div>`;
+          if (row.kind === 'slider') {   // v9.1.0: a labelled range input that rebuilds the preview as it moves
+            const v = Number.isFinite(state.look[row.key]) ? state.look[row.key] : (row.min + row.max) / 2;
+            const sl = document.createElement('div'); sl.className = 'cust-slider';
+            sl.innerHTML = `<span>${row.lo}</span><input type="range" min="${row.min}" max="${row.max}" step="${row.step}" value="${v}" aria-label="${row.label}"><span>${row.hi}</span>`;
+            const inp = sl.querySelector('input'); let tm = 0;
+            inp.addEventListener('input', () => { state.look[row.key] = Number(inp.value); clearTimeout(tm); tm = setTimeout(() => { dressAngler(); if (custRig) AnglerFactory.dress(custRig, state.look); }, 60); });
+            inp.addEventListener('change', () => { saveGame(); });
+            wrap.appendChild(sl); host.appendChild(wrap); return;
+          }
           const line = document.createElement('div');
           line.className = row.kind === 'swatch' ? 'cust-swatches' : 'chip-row';
+          if (row.same) {   // "same as the hair" swatch
+            const b0 = document.createElement('button'); b0.type = 'button';
+            b0.className = 'cust-swatch cust-same' + (state.look[row.key] === -1 && !state.look[row.hex] ? ' active' : '');
+            b0.textContent = '='; b0.setAttribute('aria-label', `${row.label}: same as the hair`);
+            b0.onclick = () => { state.look[row.key] = -1; delete state.look[row.hex]; saveGame(); custRefresh(); };
+            line.appendChild(b0);
+          }
           (row.list || []).forEach((entry, i) => {
             const b = document.createElement('button');
             b.type = 'button';
@@ -10781,9 +11023,9 @@ function replaceSceneMesh(parent, oldObj, newObj) {
               b.textContent = entry[1];
               b.onclick = () => { state.look = AnglerFactory.applyPreset(state.look, entry[0]); saveGame(); custRefresh(); };
             } else if (row.kind === 'swatch') {
-              b.className = 'cust-swatch' + (state.look[row.key] === i ? ' active' : '');
+              b.className = 'cust-swatch' + (state.look[row.key] === i && !(row.hex && state.look[row.hex]) ? ' active' : '');
               b.style.background = entry; b.setAttribute('aria-label', `${row.label} ${i + 1}`);
-              b.onclick = () => { state.look[row.key] = i; saveGame(); custRefresh(); };
+              b.onclick = () => { state.look[row.key] = i; if (row.hex) delete state.look[row.hex]; saveGame(); custRefresh(); };
             } else {
               b.className = 'pixel-btn' + (state.look[row.key] === entry[0] ? ' active gold' : '');
               b.textContent = entry[1];
@@ -10798,6 +11040,17 @@ function replaceSceneMesh(parent, oldObj, newObj) {
             }
             line.appendChild(b);
           });
+          if (row.kind === 'swatch' && row.hex) {   // v9.1.0: any colour at all, from the system colour picker
+            const pk = document.createElement('label'); pk.className = 'cust-swatch cust-pick' + (state.look[row.hex] ? ' active' : '');
+            pk.title = 'Pick any colour';
+            const cur = state.look[row.hex] || (row.list[state.look[row.key]] || '#888888');
+            pk.innerHTML = `<input type="color" value="${cur}" aria-label="${row.label}: pick any colour">`;
+            pk.style.background = state.look[row.hex] || 'conic-gradient(#f43f5e, #fbbf24, #4ade80, #22d3ee, #6366f1, #f43f5e)';
+            const ci = pk.querySelector('input'); let tm = 0;
+            ci.addEventListener('input', () => { state.look[row.hex] = ci.value.toLowerCase(); pk.style.background = ci.value; clearTimeout(tm); tm = setTimeout(() => { dressAngler(); if (custRig) AnglerFactory.dress(custRig, state.look); }, 80); });
+            ci.addEventListener('change', () => { saveGame(); custRefresh(); });
+            line.appendChild(pk);
+          }
           wrap.appendChild(line);
           if (row.key === 'hairStyle' && state.look.hat !== 'none') {
             const note = document.createElement('div');
@@ -11901,7 +12154,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           n.umb.w += ((isRaining() && !n.hidden ? 1 : 0) - n.umb.w) * (dt > 0 ? 1 - Math.exp(-4 * dt) : 0);
           if (n.umb.w > 0.02 && !far) { n.g.updateMatrixWorld(true); hands = { L: placeUmbrella(n.umb, n.g, n.rig.dims.hScale), R: null }; }
           else n.umb.g.visible = false;
-          if (!n.hidden && !far) n.anim.update({ dt, elapsed, speed, idleAllowed: true, hands, handBlend: hands ? n.umb.w : 0 });
+          if (!n.hidden && !far) n.anim.update({ dt, elapsed, speed, idleAllowed: true, hands, handBlend: hands ? n.umb.w : 0, expr: talk.npc === n && document.getElementById('modal-talk').classList.contains('open') ? 'happy' : 'open' });
           // ! a quest to offer, ? a quest to hand in
           const ready = Object.keys(story().active).some(id => QUEST_BY_ID[id].giver === n.id && questReady(id));
           const offer = QUESTS.some(q => q.giver === n.id && questAvailable(q));
@@ -18116,6 +18369,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
           anglerAnim.update({
             point: readPoint ? 'R' : null,
+            // v9.1.0 expressions: surprised on a bite, focused in the fight, happy with a catch or in a chat
+            expr: mode === 'BITE_WINDOW' ? 'surprise' : mode === 'REELING' ? 'focus' : (document.getElementById('modal-catch').classList.contains('open') || document.getElementById('modal-talk').classList.contains('open')) ? 'happy' : 'open',
             dt, elapsed,
             speed: isWalkingPier ? Math.hypot(walkDX, walkDZ) / Math.max(1e-3, dt) : 0,
             sit: Math.max(sitEase, onBench ? restW : 0), seatH,

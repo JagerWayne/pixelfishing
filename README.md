@@ -498,7 +498,32 @@ Open it from the start screen (**🎨 Customise Look**), the **☰ Menu** (**�
 - **A real skeleton** (since v4.0.0): hips, spine, chest, neck, head, shoulders, elbows, wrists, hips, knees and ankles under one smooth skinned body, so knees, elbows and shoulders bend like skin. Steps are shorter and a little bouncier on the short legs; feet dangle when sitting on a bench.
 - **Male / Female** bodies with different builds. The female body has a natural teardrop-shaped bust (a gentle upper slope and a fuller lower curve) that every top, sweater and coat follows.
 - **Bust physics** (since v4.2.0): the bust sits on two soft-tissue bones driven by a damped spring, so it bounces and sways a little with walking, jogging, turning, sitting down, casting and the boat's motion, then settles. Supportive tops (raincoat, hoodie, sweater, fishing vest) hold it firmer and show less of the motion than a T-shirt, tank top, bikini or bare chest.
-- Tabs: **Outfits** (quick presets), **Body** (skin tone, height, build, eye colour), **Hair** (style and colour), **Face** (face shape, nose, eyebrows, facial hair, glasses), **Top**, **Bottom**, **Shoes**, **Hat**. Every clothing item has its own colour and the sweater and hoodie have an accent colour.
+- Tabs (v9.1.0):
+  - **Outfits:** quick presets.
+  - **Body:**
+    - skin tone (12 swatches or **any colour** from the picker);
+    - **sliders** for height, head size and build (slim to round);
+    - ears (round, small, pointed).
+  - **Face:**
+    - **eyes** (round, big, sleepy, almond, dots, sparkle, cat-eye, wide) and eye colour (swatches or any colour);
+    - **eyebrows** (normal, thin, bushy, arched, straight, bold slant, worried, none);
+    - **mouth** (smile, grin, cat, open, smirk, calm, tongue, toothy, pout, laugh);
+    - nose, cheeks (rosy, peach, none), freckles and a beauty mark;
+    - face shape, facial hair (incl. sideburns), glasses (round, square, sunglasses).
+  - **Hair:**
+    - 15 styles, including spiky, afro, twin tails, mohawk, side part and pixie;
+    - hair colour (or any colour);
+    - a **fringe** (side sweep or full) with its own colour for dyed tips.
+  - **Top** and **Bottom:**
+    - style, a **pattern** (plain, stripes, checks, waves, colour block; *Classic* keeps the striped sweater and the checked flannel), a main and a **second colour**;
+    - new tops: polo, flannel, cardigan, dress;
+    - new bottoms: cargo trousers, leggings.
+  - **Shoes:** includes high-tops.
+  - **Hat:**
+    - new hats: captain's cap, bandana, flower crown.
+  - **Extras:** scarf, backpack, necklace or rod badge, in any colour.
+  - Every colour row ends with a rainbow button that opens your device's colour picker.
+- **Expressions:** everyone blinks every few seconds. Your angler looks surprised on a bite, focused in a fight, and happy with a catch or in a chat. The townsfolk smile while you talk to them, and each has a face of their own.
 - **Quick outfits:** one tap sets a whole outfit: *Fisherman*, *Vest & overalls* (fishing vest, bib overalls, cap with flaps), *Beach: Bikini* (bikini, sandals, straw hat, sunglasses), *Beach: Shorts only* (swim shorts, bare chest, barefoot) and *Raincoat day*.
 - **Hats and hair:** some hair styles would poke through a hat, so they are greyed out while that hat is worn (and picking a hat that clashes switches the hair to *Short*). Cap blocks Wavy, Bob and Bun; Beanie, Bucket hat and Straw hat also block Ponytail; the Sou'wester also blocks Long. Choose *None* for the hat to use every style. The cap with ear flaps blocks the same styles as the beanie.
 - **🎲 Random** rolls a whole new character (it keeps your chosen gender) and **↺ Reset** restores the default outfit.
@@ -687,6 +712,26 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 9.1.0: full character customisation (character overhaul, phase 2)
+
+- **Sliders:** height, head size and build. Older saves map their height and build steps onto them.
+- **Painted faces:**
+  - 8 eye shapes, 8 brow styles and 10 mouths;
+  - cheeks, freckles, a beauty mark and three ear shapes;
+  - **expressions**: blinking, surprised on a bite, focused in a fight, happy with a catch or in a chat.
+- **Hair:** six new styles (spiky, afro, twin tails, mohawk, side part, pixie) and a fringe with its own colour.
+- **Clothes:**
+  - **patterns** on tops and bottoms (stripes, checks, waves, colour block) with a second colour;
+  - new tops: polo, flannel, cardigan, dress;
+  - new bottoms: cargo trousers, leggings;
+  - new shoes: high-tops;
+  - new hats: captain's cap, bandana, flower crown;
+  - square glasses and sideburns.
+- **Extras:** a new tab for a scarf, backpack, necklace or rod badge.
+- **Any colour:** every colour row has a free colour picker next to the swatches (skin, eyes, hair, fringe, every garment, the extra).
+- **Townsfolk:** each now has their own face: sleepy Old Marta, freckled Pip, cat-eyed Maren and so on.
+- **Saving:** all choices are saved and validated, and older looks load unchanged.
 
 ### 2026-11-22, Version 9.0.0: Harbour Chibi characters (character overhaul, phase 1)
 
