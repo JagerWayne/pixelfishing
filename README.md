@@ -59,6 +59,8 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Walk / run | Thumbstick, **steered like a car**: left / right turns the angler on the spot (any angle), up walks forward, down backs up slowly. A light push walks (up to 2.4 m/s), a **full push runs** (3.8 m/s). The camera stays behind him and turns with him. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `A` `D` turn, `W` `S` forward / back; hold `Shift` to run |
 | Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** to look straight ahead again | none |
 | Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
+| Open the menu | **☰** (top right): a **side drawer** with Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Quests and Exit | none |
+| Harbour map | **☰ → 🗺️ Map** | `M` |
 | Quests | **☰ Menu → 📜 Quests** | none |
 | Sail the boat | Thumbstick: **up** is the throttle, **left / right** the helm, **down** brakes then reverses. The helm needs the boat moving (no spinning on the spot) | `W` `S` throttle and reverse, `A` `D` or arrow keys steer |
 | Cast, reel, interact | On-screen **action button** (bottom right) | Hold `Space`, `E` or `Enter` (all three are the action button: they do exactly what the button shows) |
@@ -67,7 +69,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 | Toolbox or bucket (when nearby) | Action button | `T` |
 | Dive / surface | **🤿 DIVE** button (next to the action button) | `X` |
 | Swim up / down while diving | **▲ UP** / **▼ DOWN** buttons | `R` / `F` |
-| Switch **first person / third person** view | **☰ Menu → 🎥 View** tile (shows 👁️ in first person) | `V` |
+| Switch **first person / third person** view | **☰ Menu → 🎥 View** row (says *first person* or *third person*) | `V` |
 | Open the menu (Bag, Log, Career, Records, Settings, Look, Sound, gear info) | **☰** button, top right | none |
 | Close a menu | **Close** button | `Esc` |
 | **Pause** (world stops, sound toggle, controls help) | **⏸** button, top right | `P` or `Esc` (when no menu is open) |
@@ -613,6 +615,11 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.3.1: side drawer and better performance
+- **The menu is a side drawer** that slides in from the right (☰): one large row per button, with **🗺️ Map** first, then Bag, Log, Settings, Career, Records, Look, Sound, **View: first / third person**, Quests and Exit. The Map also opens with `M`.
+- **No more MAP on the action button:** when there is nothing to do the button simply hides.
+- **Performance:** the static meshes of every town building, palm and the loose terrace props are merged (about **45% fewer draw calls** in the town square, 20% on the boardwalk); the town is not drawn far out at sea (over 210 m) or underwater, the pier not underwater, townsfolk more than 45 m away are not drawn, and High graphics renders at up to 1.5x pixel density instead of 2x. Version bumped to **v6.3.1**.
 
 ### 2026-11-22, Version 6.3.0: a bigger Harbour Town
 - **Expanded town:** the terrace is wider (to +-37.6 m) with a ramp up to an upper terrace. New **Market Square & Artisan Quarter** (Post Office, Barnaby's Workshop, tide pool, Sailors' Rest) and **Lighthouse Hill** (Talia's greenhouse, herb garden, Lookout Pavilion with telescope and reading bench), street lanterns and Rook's winch. Every new building fades when it blocks the camera and has walk colliders; tap-to-walk now routes around buildings through town waypoints (`townPath`). All places are on the Map.

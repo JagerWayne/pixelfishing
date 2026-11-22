@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.3.0';
+    window.PF_VERSION = '6.3.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1074,6 +1074,14 @@
     .menu-tile span, .menu-tile[data-label]::after { font-size: var(--fs-xs); text-transform: uppercase; }
     .menu-tile[data-label]::after { content: attr(data-label); }
     .menu-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 #070c14; }
+    /* v6.3.1: the menu is a side drawer that slides in from the right, one row per button */
+    #modal-menu.modal-backdrop.sheet-modal { align-items: stretch; justify-content: flex-end; padding: 0; }
+    #modal-menu .modal-window { width: min(82vw, 330px); max-height: none; height: 100%; border-radius: 14px 0 0 14px; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); padding-right: var(--safe-right); overflow-y: auto; animation: drawerIn 0.2s ease-out; }
+    #modal-menu .sheet-handle { display: none; }
+    #modal-menu .menu-tiles { grid-template-columns: 1fr; gap: 6px; }
+    #modal-menu .menu-tile { min-height: 46px; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 4px 14px; font-size: 22px; }
+    #modal-menu .menu-tile span, #modal-menu .menu-tile[data-label]::after { font-size: 13px; }
+    @keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
     .menu-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; font-size: var(--fs-sm); }
     .menu-info .wide { grid-column: 1 / -1; }
     .menu-info .angler-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1406,11 +1414,11 @@
     @keyframes sheetUp { from { transform: translateY(40px); opacity: 0.6; } to { transform: none; opacity: 1; } }
     .modal-window { position: relative; }
     @media (max-width: 600px) and (min-height: 481px) {
-      .modal-backdrop:not(#modal-catch) {
+      .modal-backdrop:not(#modal-catch):not(#modal-menu) {
         align-items: flex-end;
         padding-left: 0; padding-right: 0; padding-bottom: 0;
       }
-      .modal-backdrop:not(#modal-catch) .modal-window {
+      .modal-backdrop:not(#modal-catch):not(#modal-menu) .modal-window {
         width: 100% !important; max-width: none !important;
         max-height: 92vh; max-height: 92dvh;
         border-radius: 14px 14px 0 0;
@@ -1859,6 +1867,7 @@
       </div>
       <div class="modal-body">
         <div class="menu-tiles">
+          <button class="menu-tile" id="menu-map" data-closes-menu type="button">🗺️<span>Map</span></button>
           <button class="menu-tile" id="menu-bag" data-closes-menu type="button">🪣<span>Bag</span></button>
           <button class="menu-tile menu-dot" id="menu-log" data-closes-menu type="button">📖<span>Log</span></button>
           <button class="menu-tile" id="btn-open-settings" data-closes-menu type="button" aria-label="Settings">🎛️<span>Settings</span></button>
@@ -7339,6 +7348,10 @@
           });
           const restoProps = this.buildHarbourTown(islandScenery, townFade, textures);
           const districtProps = this.buildTownDistricts(islandScenery, townFade, textures);
+          // v6.3.1 performance: merge the static meshes of every town building and palm (fading still works per material),
+          // then the loose props on the terrace (hedges, paving, cobbles, rocks); groups that change stay as they are
+          islandScenery.children.forEach(g => { if (!g.isMesh && (g.userData.townFade || g.userData.fade)) ModelKit.mergeStatic(g, [g.userData.nameSign, g.userData.soonSign]); });
+          ModelKit.mergeStatic(islandScenery, islandScenery.children.filter(o => !o.isMesh));
           // a stone path from the pier ramp across the terrace
           for (let i = 0; i < 9; i++) {
             const st = new THREE.Mesh(ModelKit.roundedBox(1.1 + (i % 2) * 0.3, 0.08, 0.8, 0.03), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xa8a29e : 0x9ca3af, roughness: 0.95, flatShading: true }));
@@ -8384,6 +8397,7 @@
             cabin,
             islandScenery,
             resto: restoProps,
+            pierGroup,
             district: districtProps,
             townFade: islandScenery.children.filter(o => o.userData.fade || o.userData.townFade),
             skyGroup,
@@ -8954,7 +8968,7 @@ const mainCanvas = document.getElementById('game-canvas');
       function resizeViewport() {
         const w = window.visualViewport ? window.visualViewport.width : window.innerWidth;
         const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const dpr = Math.min(window.devicePixelRatio || 1, settings.quality === 'low' ? 1 : 2);
+        const dpr = Math.min(window.devicePixelRatio || 1, settings.quality === 'low' ? 1 : 1.5);   // v6.3.1: 1.5 is plenty for pixel art and much lighter than 2
         camera.fov = w < h ? 62 : 52;
         camera.aspect = w / Math.max(1, h);
         camera.updateProjectionMatrix();
@@ -9557,6 +9571,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           else showToast('Walk near the Toolbox or Bucket on the pier!');
         } else if (e.code === 'KeyV') {
           toggleFirstPerson(true);
+        } else if (e.code === 'KeyM') {
+          openMapModal();
         } else if (e.code === 'KeyL') {
           openLogModal();
         } else if (e.code === 'Space' || e.code === 'KeyE' || e.code === 'Enter') {
@@ -11479,7 +11495,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           // stand still facing the angler when close, otherwise face where you are going (or the sea)
           const near = Math.hypot(playerX - n.x, playerZ - n.z);
           if (!speed && near < 3.5 && !onBoat) n.yaw = Math.atan2(-(playerX - n.x), -(playerZ - n.z));
-          n.g.visible = !n.hidden;
+          n.g.visible = !n.hidden && !(n.farAway = Math.hypot((onBoat ? boatPos.x : playerX) - n.x, (onBoat ? boatPos.z : playerZ) - n.z) > 45);   // v6.3.1: far townsfolk are not drawn
           n.g.position.set(n.x, npcGround(n.z), n.z);
           const dy = Math.atan2(Math.sin(n.yaw - n.g.rotation.y), Math.cos(n.yaw - n.g.rotation.y));
           n.g.rotation.y += dy * (dt > 0 ? 1 - Math.exp(-8 * dt) : 0);
@@ -12441,6 +12457,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { id: 'greenhouse', icon: '🌿', label: 'HERBS', cls: 'shop', color: ['#22c55e', '#bbf7d0'], near: () => inFront(TOWN.talia), prox: () => "🌿 TALIA'S GREENHOUSE • LURES, SEA PLANTS", press: openGreenhouse }
       );
 
+      /* v6.3.1 performance: the town is not drawn far out at sea or underwater, and the pier not underwater (fog hides them anyway) */
+      function perfCull() {
+        if (!world) return;
+        const far = onBoat && Math.hypot(boatPos.x, boatPos.z) > 210, under = !!dive.active && mode === 'DIVING';
+        if (world.islandScenery) world.islandScenery.visible = !(far || under);
+        if (world.pierGroup) world.pierGroup.visible = !under;
+      }
       const townLift = () => (!onBoat && playerZ > ISLAND.rampZ0 ? townGround(playerZ) - 1.5 : 0);   // the camera rises with the upper terrace
 
       /* ---- the harbour map ---- */
@@ -14641,6 +14664,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
       });
       document.getElementById('menu-bag').addEventListener('click', () => openBucketModal());
+      document.getElementById('menu-map').addEventListener('click', () => openMapModal());
       document.getElementById('menu-log').addEventListener('click', () => openLogModal());
       const audioBtn = document.getElementById('btn-toggle-audio');
       const setSoundBtn = document.getElementById('set-sound');
@@ -14757,13 +14781,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       let actionIsMap = false;
       function updatePrimaryActionButton() {
         updatePrimaryActionButtonInner();
-        actionIsMap = false;
-        if (primaryBtn.classList.contains('useless') && mode !== 'DIVING' && !dive.active) {
-          primaryBtn.classList.remove('useless'); primaryBtn.classList.add('map');
-          document.getElementById('primary-action-icon').textContent = '🗺️';
-          document.getElementById('primary-action-label').textContent = 'MAP';
-          actionIsMap = true;
-        }
+        actionIsMap = false;   // v6.3.1: the Map lives in the side drawer (and on M); a button with nothing to do simply hides
       }
       function updatePrimaryActionButtonInner() {
         const iconEl = document.getElementById('primary-action-icon');
@@ -15156,7 +15174,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const b = document.getElementById('btn-toggle-view');
         if (!b) return;
         b.textContent = settings.firstPerson ? '👁️' : '🎥';
-        b.setAttribute('data-label', settings.firstPerson ? 'First' : 'Third');
+        b.setAttribute('data-label', settings.firstPerson ? 'View: first person' : 'View: third person');
       }
       function toggleFirstPerson(notify = true) {
         settings.firstPerson = !settings.firstPerson;
@@ -16310,7 +16328,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateCabinFade(dt);
         updateAquarium(dt);
         updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps();
-        if (world.islandScenery) world.islandScenery.visible = true;   // v6.0: always shown; whatever blocks the camera fades (updateTownFade)
+        perfCull();   // v6.3.1: what cannot be seen is not drawn
         updateTownFade(dt);
         updateStationPicker(false);
         const zone = getCurrentZone();
