@@ -1,0 +1,116 @@
+/* Character customisation screen and the diving and spearfishing overlay. */
+/* ---- Character customisation ---- */
+.cust-window { width: min(98vw, 900px); max-height: 94dvh; }
+.cust-body { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px 12px; overflow-y: auto; }
+.cust-preview { flex: 1 1 250px; min-width: 230px; display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+#cust-canvas { width: 100%; height: min(42dvh, 340px); min-height: 200px; background: radial-gradient(circle at 50% 35%, #1e4a63, #0b2230 75%); border: 2px solid #334155; border-radius: 6px; touch-action: none; cursor: grab; }
+.cust-gender { display: flex; gap: 8px; }
+.cust-gender .pixel-btn { flex: 1; }
+.cust-name-row { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #cbd5e1; }
+#cust-name { font: inherit; font-size: 16px; padding: 10px; min-height: 44px; border: 2px solid #475569; border-radius: 6px; background: #0b1320; color: #f8fafc; }
+#cust-name:focus { outline: 2px solid #facc15; }
+.cust-hint { font-size: 12px; color: #94a3b8; text-align: center; }
+.cust-panel { flex: 2 1 320px; min-width: 260px; }
+.cust-row { margin-bottom: 12px; }
+.cust-label { font-size: 12px; font-weight: bold; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+.cheat-window { width: min(98vw, 760px); }
+.cheat-section { margin-bottom: 14px; }
+.cheat-title { font-size: 12px; font-weight: bold; color: #facc15; letter-spacing: 0.5px; margin-bottom: 6px; }
+.cheat-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.cheat-grid .pixel-btn { padding: 6px 9px; font-size: 12px; }
+.cheat-grid .pixel-btn.on { background: #16a34a; }
+.chip-row .pixel-btn:disabled { opacity: 0.32; cursor: not-allowed; text-decoration: line-through; }
+.cust-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.cust-swatch { width: 44px; height: 44px; border-radius: 50%; border: 2px solid #475569; cursor: pointer; padding: 0; }
+.cust-swatch.active { outline: 3px solid #facc15; outline-offset: 2px; }
+.cust-pick { position: relative; overflow: hidden; display: inline-block; }
+.cust-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.cust-same { color: var(--text); font: 800 18px var(--font-ui); background: rgba(255, 255, 255, 0.08); }
+.cust-slider { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-2); }
+.cust-slider input { flex: 1; min-height: 44px; accent-color: var(--sea); }
+#cust-tabs { flex-wrap: wrap; margin-bottom: 12px; }
+#cust-tabs .tab-btn { padding: 6px 9px; font-size: 12px; }
+/* wide / landscape screens: preview and options sit side by side, each scrolling on its own */
+@media (min-width: 640px) and (max-height: 620px), (min-width: 900px) {
+  .cust-window { height: min(94dvh, 640px); }
+  .cust-body { flex-wrap: nowrap; flex: 1; min-height: 0; overflow: hidden; }
+  .cust-preview { flex: 0 0 38%; min-width: 0; overflow-y: auto; }
+  #cust-canvas { height: auto; flex: 1; min-height: 110px; }
+  .cust-panel { flex: 1; min-width: 0; overflow-y: auto; padding-right: 4px; }
+  .cust-gender .pixel-btn { padding: 6px 4px; font-size: 12px; }
+}
+
+/* =========================================================================
+   DIVING & SPEARFISHING
+   ========================================================================= */
+#dive-hud {
+  position: fixed;
+  right: calc(8px + var(--safe-right));
+  z-index: 11;
+  width: min(46vw, 214px);
+  display: none;
+  pointer-events: none;
+}
+body[data-diving="1"] #dive-hud { display: block; }
+.dive-panel {
+  font-weight: bold;
+}
+.dive-row { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 2px; white-space: nowrap; }
+.dive-row span:last-child { text-align: right; }
+.dive-bar { overflow: hidden; margin: 2px 0 6px; }
+.dive-bar > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #22d3ee, #38bdf8); transition: width 0.15s linear; }
+#dive-depth-bar > i { background: linear-gradient(90deg, #4ade80, #facc15, #ef4444); }
+#dive-air-bar.low > i { background: linear-gradient(90deg, #f97316, #ef4444); animation: pulseWarn 0.35s infinite alternate; }
+#dive-gun-state.reload { color: #fbbf24; }
+#dive-gun-state.ready { color: #4ade80; }
+
+#dive-pad {
+  display: none;
+  pointer-events: auto;
+}
+body[data-dive-btn="1"] #dive-pad, body[data-diving="1"] #dive-pad { display: flex; }
+.dive-btn {
+  font-weight: 900;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.dive-btn.held, .dive-btn:active { transform: scale(0.92); filter: brightness(1.2); }
+.dive-btn small { margin-top: 2px; }
+
+body:not([data-diving="1"]) #btn-dive-up, body:not([data-diving="1"]) #btn-dive-down { display: none; }
+#btn-chum { display: none; }
+body[data-chum="1"] #dive-pad { display: flex; }
+body[data-chum="1"]:not([data-diving="1"]) #btn-chum { display: flex; }
+body:not([data-dive-btn="1"]):not([data-diving="1"]) #btn-dive-toggle { display: none; }
+
+#dive-vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 8; display: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 52%, rgba(0, 20, 38, 0.6) 100%);
+}
+#dive-flash {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9; opacity: 0; transition: opacity 0.25s;
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0) 40%, rgba(239, 68, 68, 0.5) 100%);
+}
+#dive-flash.on { opacity: 1; }
+#dive-reticle {
+  position: fixed; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border: 2px solid rgba(186, 230, 253, 0.75); border-radius: 50%; display: none; pointer-events: none; z-index: 9;
+}
+#dive-reticle::before, #dive-reticle::after { content: ''; position: absolute; background: rgba(186, 230, 253, 0.8); }
+#dive-reticle::before { left: 50%; top: 4px; bottom: 4px; width: 2px; margin-left: -1px; }
+#dive-reticle::after { top: 50%; left: 4px; right: 4px; height: 2px; margin-top: -1px; }
+#dive-lock {
+  position: fixed; left: 0; top: 0; width: 58px; height: 58px; margin: -29px 0 0 -29px;
+  border: 3px solid #4ade80; border-radius: 8px; display: none; pointer-events: none; z-index: 9;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.7);
+}
+#dive-lock.bad { border-color: #fb923c; box-shadow: 0 0 10px rgba(251, 146, 60, 0.7); }
+#dive-lock span {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; white-space: nowrap;
+  font-size: 11px; font-weight: 900; color: #fff; background: rgba(4, 20, 36, 0.85); padding: 2px 6px; border: 1px solid #38bdf8;
+}
+body[data-diving="1"] #dive-vignette, body[data-diving="1"] #dive-reticle { display: block; }
+body[data-diving="1"] .hud-stack { opacity: 0.85; }

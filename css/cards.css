@@ -1,0 +1,129 @@
+/* Tabs, shop cards, the catch layout, rarity colours, item rows and the catch log. */
+.tab-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #334155;
+  padding-bottom: 10px;
+}
+
+.tab-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+}
+
+.upgrade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+
+.shop-card {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shop-card.camera-equipped {
+  border-color: #e879f9;
+  background: #2b1433;
+}
+
+.card-title {
+  font-weight: bold;
+  font-size: 14px;
+  color: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-stats {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.catch-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+#catch-preview-canvas {
+  width: 180px;
+  height: 135px;
+  border: 3px solid var(--border-light);
+  background: radial-gradient(circle, #1e3a5f 0%, #0b1324 100%);
+}
+
+.rarity-badge {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+}
+.rar-Common { color: #cbd5e1; }
+.rar-Uncommon { color: #4ade80; }
+.rar-Rare { color: #38bdf8; }
+.rar-Epic { color: #c084fc; }
+.rar-Legendary { color: #facc15; }
+.rar-Junk { color: #fb923c; }
+.rar-Flora { color: #34d399; }
+
+.record-badge {
+  display: none;
+  background: #854d0e;
+  color: #fef08a;
+  border: 1px solid #facc15;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 900;
+  margin-left: 6px;
+}
+
+#bucket-list-container .chip-row { position: sticky; top: -14px; z-index: 2; background: var(--bg-panel-solid); padding: 6px 0; margin: 0 0 6px; }
+#bucket-list-container .item-row { padding: 4px 8px; margin-bottom: 4px; gap: 6px; }
+#bucket-list-container .item-icon { width: 30px; height: 30px; }
+#bucket-list-container .item-row .pixel-btn { min-height: 34px; padding: 4px 10px; font-size: 12px; }
+@media (min-width: 560px) { #bucket-list-container { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; } #bucket-list-container .chip-row { grid-column: 1 / -1; } }
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.item-icon {
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+  border: 1px solid #64748b;
+  background: #0f172a;
+  flex-shrink: 0;
+}
+
+.log-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.log-card {
+  padding: 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.log-card.undiscovered {
+  opacity: 0.45;
+}

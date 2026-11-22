@@ -1,0 +1,114 @@
+/* Stats, bars, the reel and cast meters, direction markers and world callouts. */
+/* while a fish is on, toasts drop to the bottom so they never cover the drag window */
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.stat-label {
+  white-space: nowrap;
+}
+
+.stat-val {
+  font-weight: bold;
+  text-align: right;
+}
+
+.bar-wrap {
+  width: 100%;
+  height: 10px;
+  margin: 3px 0 5px;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.08s linear, background-color 0.2s;
+}
+
+.reel-track {
+  width: 100%;
+  height: 20px;
+  position: relative;
+  margin: 5px 0;
+}
+
+.reel-safe-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.reel-cursor {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  transform: translateX(-50%);
+}
+
+#rod-warning-text {
+  font-weight: 900;
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 4px;
+  display: none;
+}
+
+.cast-sweet-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 72%;
+  width: 16%;
+  pointer-events: none;
+}
+
+.cast-bar-wrap { height: 14px; }
+.reel-progress-wrap { height: 9px; }
+.reel-dir-track { height: 18px; }
+.reel-dir-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+#fish-dir-marker {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  transform: translateX(-50%);
+  left: 50%;
+  text-align: center;
+  font-size: 12px;
+  line-height: 12px;
+  font-weight: bold;
+}
+#rod-dir-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  transform: translateX(-50%);
+  left: 50%;
+}
+	
+.world-callout {
+  position: fixed;
+  pointer-events: none;
+  z-index: 25;
+  font-weight: 900;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  text-shadow: 0 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  transform: translate(-50%, -50%);
+  animation: floatCallout 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes floatCallout {
+  0%   { opacity: 0; transform: translate(-50%, -20%) scale(0.75); }
+  18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  100% { opacity: 0; transform: translate(-50%, -155%) scale(0.95); }
+}

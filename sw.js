@@ -6,22 +6,14 @@
  * - The page loader also re-downloads the 3D engine on every start (bypassing the HTTP cache) and overwrites the
  *   cached copy, so the offline copy always matches the build that is running.
  * - The page itself is fetched network-first (never from the HTTP cache), falling back to the cached copy offline.
- * - Static files (icons, manifest) are cache-first.
+ * - The game's own code (css/, js/) is network-first and revalidated, so a new build never mixes with old files;
+ *   the cached copy is used offline. The file list is js/boot/files.js, shared with the page loader.
+ * - Static files (icons, manifest, vendor engines) are cache-first.
  */
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = `pixel-fishing-${VERSION}`;
-const PRECACHE = [
-  './',
-  'index.html',
-  'manifest.webmanifest',
-  'vendor/three.r187.module.min.js',
-  'vendor/rapier3d-compat.0.21.0.min.js',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/icon-maskable-192.png',
-  'icons/icon-maskable-512.png',
-  'icons/apple-touch-icon.png'
-];
+importScripts('./js/boot/files.js');
+const PRECACHE = ['./'].concat(self.PF_FILES || []);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -60,6 +52,18 @@ self.addEventListener('fetch', event => {
           return res;
         })
         .catch(() => caches.match('index.html').then(r => r || caches.match('./')))
+    );
+    return;
+  }
+
+  if (/\/(css|js)\/[^/]+(\/[^/]+)*\.(css|js)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(req, { cache: 'no-cache' })
+        .then(res => {
+          if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {}); }
+          return res;
+        })
+        .catch(() => caches.match(req).then(r => r || Response.error()))
     );
     return;
   }

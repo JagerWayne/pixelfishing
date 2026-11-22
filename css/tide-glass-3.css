@@ -1,0 +1,67 @@
+/* TIDE GLASS part 3: toast kinds, talk box, shop and town sheets, loading and start cards. */
+/* toasts: coloured edge by kind */
+.toast.t-warn { border-left-color: var(--warn); }
+.toast.t-gold { border-left-color: var(--gold); }
+.toast.t-ok { border-left-color: var(--ok); }
+
+/* talk box: a glass speech panel docked at the bottom, choices as full-width rows */
+#modal-talk { background: linear-gradient(180deg, transparent 40%, rgba(4, 10, 20, 0.45)); }
+#talk-box { border-radius: var(--r-lg); padding: 16px 16px calc(14px + var(--safe-bottom)); margin-bottom: 10px; }
+.talk-head { gap: 12px; margin-bottom: 10px; }
+.talk-head #talk-icon { flex: 0 0 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px;
+  background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 0 2px rgba(252, 211, 77, 0.45); }
+.talk-head b { color: var(--gold); font-size: 16px; font-weight: 800; }
+.talk-head small { color: var(--text-2); font-size: 13px; }
+#talk-text { font-size: 15.5px; line-height: 1.5; color: var(--text); }
+#talk-choices { flex-direction: column; align-items: stretch; gap: 8px; }
+#talk-choices .pixel-btn { width: 100%; justify-content: flex-start; text-align: left; min-height: 48px; padding: 10px 16px; border-radius: var(--r-md); font-size: 15px; }
+#talk-choices .pixel-btn.gold, #talk-choices .pixel-btn.green { justify-content: center; }
+
+/* the shop and town sheets on the same tokens */
+#shop-sheet { border-top: 0; box-shadow: inset 0 3px 0 var(--sh-accent), 0 -1px 0 var(--glass-line), var(--shadow-2); padding-top: 14px; }
+.sh-name { font-weight: 800; color: var(--text); }
+.sh-close { flex: 0 0 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.08); color: var(--text-2); }
+.sh-cash { background: rgba(252, 211, 77, 0.12); border-color: rgba(252, 211, 77, 0.35); color: var(--gold); }
+.sh-tabs [role="tab"] { border-color: var(--glass-line); background: rgba(255, 255, 255, 0.06); color: var(--text-2); }
+.sh-tabs [role="tab"][aria-selected="true"] { background: var(--sh-accent); color: var(--ink-900); }
+.sh-summary { color: var(--text-2); border-radius: var(--r-md); }
+.sh-summary b, .sh-title, .sh-row .sl-n { color: var(--text); }
+.sh-row { border-radius: var(--r-md); }
+.sh-desc { color: var(--text-2); }
+.sh-row .sl-n small, .sh-note, .sl-empty { color: var(--text-2); }
+.sh-price, .sh-row .sl-p { color: var(--gold); }
+.sh-btn { border-radius: var(--r-sm); font-family: var(--font-ui); font-weight: 800; }
+.sh-btn.buy, .sh-primary.buy, #shop-confirm-yes { background: linear-gradient(180deg, var(--coral), var(--coral-deep)); border-color: transparent; color: #fff; }
+.sh-btn.sell, .sh-primary, #shop-confirm-yes.sell { background: linear-gradient(180deg, #fcd34d, #f59e0b); border-color: transparent; color: #241500; }
+.sh-btn.danger { background: rgba(248, 113, 113, 0.18); border-color: rgba(248, 113, 113, 0.55); color: #fecaca; }
+.sh-btn.ghost { background: rgba(255, 255, 255, 0.08); border-color: var(--glass-line); color: var(--text); }
+.sh-btn:disabled, .sh-primary:disabled { background: rgba(255, 255, 255, 0.05); border-color: transparent; color: var(--text-3); }
+.sh-primary { border-radius: var(--r-md); font-family: var(--font-ui); font-weight: 800; }
+#shop-confirm { background: rgba(4, 10, 20, 0.55); }
+#shop-confirm .sc-box { background: var(--glass-strong); border: 1px solid var(--glass-line); border-radius: var(--r-lg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+#shop-confirm-title { color: var(--text); }
+#shop-confirm-sub { color: var(--text-2); }
+.sc-btns button { border-radius: var(--r-md); border-color: var(--glass-line); background: rgba(255, 255, 255, 0.08); color: var(--text); font-family: var(--font-ui); }
+#shop-sheet :focus-visible, #shop-confirm :focus-visible, #town-body :focus-visible { outline-color: var(--gold); }
+.town-note { color: var(--text); }
+
+/* loading screen: one progress line per engine (v8.2.0) */
+.ls-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; text-align: left; }
+.ls-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 12.5px; color: var(--text-2); }
+.ls-row em { font-style: normal; font-family: var(--font-num); color: var(--text-3); font-size: 12px; }
+.ls-row b { grid-column: 1 / -1; height: 4px; border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.ls-row i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--info); transition: width 0.15s linear; }
+.ls-row.ok em { color: var(--ok); } .ls-row.ok i { background: var(--ok); }
+.ls-row.off em { color: var(--warn); } .ls-row.off i { background: var(--warn); }
+#loading-pct { margin-top: 14px; font-family: var(--font-num); font-size: 34px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+#loading-pct + #loading-bar { margin-top: 8px; }
+/* start, loading and pause cards */
+.start-kicker { font-size: 12px; color: var(--sea); font-weight: 800; letter-spacing: 2px; }
+.start-logo { margin: 6px 0 4px; color: var(--gold); font-family: var(--font-num); font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+.start-card, #loading-screen .pixel-box, .pause-card { border-radius: var(--r-lg); }
+.pause-title { color: var(--text); text-shadow: none; font-family: var(--font-num); font-weight: 800; }
+.pause-help { border-top-color: var(--glass-line); color: var(--text-2); }
+#pause-count { color: var(--gold); text-shadow: 0 6px 30px rgba(0, 0, 0, 0.5); font-family: var(--font-num); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass: rgba(12, 22, 38, 0.9); --glass-strong: var(--ink-800); }
+}

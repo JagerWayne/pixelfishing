@@ -1,0 +1,107 @@
+/* HUD layer: safe-area insets, status bar, info rail and compass tape. */
+/* HUD Layer with Safe-Area Insets */
+#ui-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.hud-top {
+  transition: opacity 0.25s;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Status bar: cash + weather/time + menu on the first row, gauges on the second (portrait) or all in one row (wide) */
+.hud-bar-main {
+  pointer-events: auto;
+  display: grid;
+  align-items: center;
+}
+.hud-bar-main #hud-cash { grid-area: cash; }
+.hud-gauges { grid-area: gauges; display: flex; min-width: 0; }
+.hud-right { grid-area: right; display: flex; align-items: center; gap: 8px; }
+@media (min-width: 600px), (orientation: landscape) and (max-height: 520px) {
+  .hud-bar-main { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "cash gauges right"; gap: 14px; }
+  .hud-gauges { max-width: 440px; width: 100%; justify-self: center; }
+}
+
+.hud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) { #hud-weather .w-tx { display: none; } }
+
+.mini-progress-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.mini-progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  white-space: nowrap;
+}
+.mini-bar-track {
+  width: 100%;
+}
+.mini-bar-fill {
+  height: 100%;
+  transition: width 0.15s ease-out, background-color 0.2s;
+}
+
+/* Everything under the bar (zone, fuel warning, bounty, sonar, live cam) stacks here */
+.hud-stack {
+  display: flex;
+  pointer-events: none;
+}
+/* v6.2.1: one compact status line (zone, distance, return fuel, meal charges) and at most one objective and one radar pill */
+.hud-zone-pill .hz-extra:empty { display: none; }
+
+.hud-zone-pill .hz-extra::before { content: '•'; margin-right: 6px; }
+.hud-zone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.sleek-menu-btn {
+  padding: 0 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  touch-action: manipulation;
+  transition: transform 0.05s, background 0.1s;
+}
+#btn-toggle-drawer { line-height: 1; padding: 0; }
+
+.fuel-alert { border-color: #ef4444 !important; animation: pulseWarn 0.8s infinite alternate; }
+
+/* Compass tape: the heading you are looking at; North is out to sea (-Z), the island is to the South */
+#hud-compass {
+  pointer-events: none;
+  position: relative;
+  overflow: hidden;
+}
+#hud-compass .cmp-mark { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+
+#hud-compass .cmp-tick { position: absolute; width: 2px; transform: translateX(-50%); }
+#hud-compass .cmp-needle { position: absolute; left: 50%; width: 2px; transform: translateX(-50%); opacity: 0.85; }
+#hud-compass .cmp-deg { position: absolute; font-weight: bold; z-index: 2; }

@@ -1,0 +1,115 @@
+/* HUD indicators: tracker pills, sonar, live bait cam and the centre banners. */
+/* The tracker pills start hidden; their look is in the TIDE GLASS block (#hud-tracker .trk) */
+#hud-event-pill, #hud-bounty-pill, #hud-quest-pill, #hud-read-pill { pointer-events: none; display: none; align-items: center; gap: 6px; }
+#hud-event-pill, #hud-bounty-pill { justify-content: center; }
+#hud-event-pill { gap: 8px; }
+
+/* Sonar Radar Pill */
+
+/* Underwater Live Bait Cam Picture-in-Picture (PiP) */
+#live-bait-pip {
+  pointer-events: none;
+  display: none;
+  position: relative;
+  align-self: flex-start;
+  width: 176px;
+  height: 112px;
+  background: #041322;
+  overflow: hidden;
+  margin-top: 2px;
+}
+#live-bait-pip.active {
+  display: block;
+}
+#pip-bait-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pip-overlay-top {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 0 #000;
+  pointer-events: none;
+}
+.pip-rec-dot {
+  color: #f87171;
+  animation: pulseWarn 0.75s infinite alternate;
+}
+.pip-overlay-bottom {
+  position: absolute;
+  bottom: 3px;
+  left: 6px;
+  right: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fef08a;
+  text-align: center;
+  background: rgba(4, 12, 24, 0.72);
+  padding: 2px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.drawer-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+.drawer-label {
+  white-space: nowrap;
+}
+.drawer-val {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fuel-warning {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+.fuel-danger { animation: pulseWarn 0.8s infinite alternate; }
+
+@keyframes pulseWarn {
+  from { opacity: 0.75; }
+  to { opacity: 1; }
+}
+
+/* Center Floating Indicators */
+#center-hud {
+  position: fixed;
+  left: 50%;
+  top: auto;
+  bottom: calc(var(--controls-h) + var(--safe-bottom) + 18px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 12;
+}
+
+#bite-banner {
+  display: none;
+  font-size: 18px;
+  text-align: center;
+  animation: bounceAlert 0.28s infinite alternate;
+}
+
+#station-picker { display: none; gap: 4px; justify-content: center; flex-wrap: wrap; pointer-events: auto; }
+#station-picker .st-title { width: 100%; text-align: center; font-size: 11px; font-weight: 900; text-shadow: 0 1px 2px #000; }
+#station-picker button { font: inherit; letter-spacing: 0.2px; cursor: pointer; }

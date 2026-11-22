@@ -84,7 +84,7 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) and a **42 m waterfront boardwalk** (twice as long since v4.6.0) with every shop along its sea edge, backs to the sea and fronts facing south (toward the island), like the Tackle Shop. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Stop in front of a shop and the camera zooms in on it.
 
-**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Cabin. All fronts face south and every back is on the sea rail. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `CABIN` in `index.html`.
+**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Cabin. All fronts face south and every back is on the sea rail. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `CABIN` in `js/game.js`.
 
 **Shops (each has its own trade; none is a menu):**
 
@@ -163,7 +163,7 @@ Your hands stay on the wheel or tiller and the wheel turns as you steer.
 | Deep-Sea Trawler | Port, Starboard (the stern has the trawl gear, the bow the winch) |
 | Expedition Yacht | Stern, Port, Starboard (the bow is a railed foredeck) |
 
-The numbers live in `BOAT_STATIONS` in `index.html` (boat-local position and casting direction per station).
+The numbers live in `BOAT_STATIONS` in `js/game.js` (boat-local position and casting direction per station).
 
 | Boat | Cost | Fuel tank | Reaches zone |
 |---|---|---|---|
@@ -460,7 +460,7 @@ The restaurant at the east end of Harbour Town is **yours**, named after you (*W
 
 ## Skill books
 
-Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market and Recycling sheets and the Aquarium Shop; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `index.html`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
+Every shop sells one **skill book** (a *📚 Book* tab in the Tackle Shop, Boatyard and Dive Shop catalogues, and in the Fish Market and Recycling sheets and the Aquarium Shop; one copy each, bought with a confirm). The books are defined in one data table, `BOOKS` in `js/game.js`, so adding one means adding a row and calling `bookBonus(perkId)` where its perk applies.
 
 | Book | Shop | Price | Perk at 310 / 310 pages |
 |---|---|---|---|
@@ -606,7 +606,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
 
-The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version shown there is `PF_VERSION` at the top of `index.html`; bump it with each release (it also names the offline cache).
+The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version shown there is `PF_VERSION` in `js/boot/version.js`; bump it with each release (it also names the offline cache).
 
 On iPhones the home-screen app and Safari can keep separate saves. Clearing site data erases progress.
 
@@ -616,15 +616,20 @@ The game is a Progressive Web App: it has a web manifest, icons, and a service w
 
 - A **loading screen** shows `Loading... 412 KB / 1.07 MB. Please Wait!` while the game downloads, then `Starting the game...`.
 - **Every start re-checks and overwrites the cache.** The loader downloads the 3D engine fresh each time (bypassing the browser cache), overwrites the offline copy, removes caches from older versions and re-fetches the icons and manifest. The service worker is registered as `sw.js?v=<PF_VERSION>` and is re-checked on every load, so a new version always installs a new worker and a new cache. If you are offline, the cached copy is used.
-- The **page itself is fetched network-first and never from the browser cache**, so an installed copy picks up new versions whenever you open it online.
+- The **page and the game's own code (`css/`, `js/`) are fetched network-first** (the page never from the browser cache, the code revalidated), so an installed copy picks up a new version whenever you open it online and never mixes files from two versions. Offline, the cached copies are used.
 - **Static files** (icons, manifest) are cache-first, which is what makes offline play work.
-- There is no cache number to bump any more: change `PF_VERSION` in `index.html` for a release. If the list of static files changes, update `PRECACHE` in `sw.js` and `STATIC` in the loader.
+- There is no cache number to bump any more: change `PF_VERSION` in `js/boot/version.js` for a release. Every static file is listed once, in `js/boot/files.js`: the service worker precaches that list (`importScripts`) and the loader re-fetches it after each start and counts it on the loading screen.
 
 ## Technical overview
 
-The whole game is **one HTML file** (`index.html`) with no build step, plus a handful of static assets.
+The game is a plain static site with **no build step and no dependencies**: a short `index.html` (head, the loading screen and the start card), stylesheets in `css/` and ES modules in `js/`, all linked with relative `./` paths so it runs from a GitHub Pages project subpath (`https://<user>.github.io/<repo>/`). Since v10.0.0 (see the changelog) the old single file is split up:
 
-**Engine (v8.0.0):** three.js **r187** (`three@0.187.0`), loaded by the small loader at the top of `index.html` with a progress count and imported as an ES module from the downloaded bytes; the module is copied into a plain global `THREE` so the game code reads it as before. `legacyLook()` keeps the look the game was tuned for on r128: colour management off, linear output (`outputColorSpace = LinearSRGBColorSpace` on every renderer), textures marked `SRGBColorSpace`, and the light shader chunk patched back to the legacy light maths (intensities x π and the old distance fall-off), so no light needed retuning. WebGL 2 is required (every current phone and browser has it).
+- `js/main.js` is the only script the page loads. It sets the build numbers (`js/boot/version.js`) and starts the loader (`js/boot/loader.js`, `progress.js`, `engines.js`), which downloads three.js and Rapier and then imports the game.
+- `js/dom.js` mounts the game's markup (HUD layer, overlays, every modal and sheet, kept as template strings in `js/ui/markup-*.js`) right after the start card, with every id unchanged, before `js/game.js` starts.
+- `js/game.js` is the game itself; its `start()` builds the world and starts the frame loop.
+- The stylesheets load in cascade order from `index.html`; the TIDE GLASS theme files come after the component files, and `utilities-*.css` (the former inline `style=""` attributes, scoped under their element ids so they keep their old precedence) come last.
+
+**Engine (v8.0.0):** three.js **r187** (`three@0.187.0`), loaded by the loader (`js/boot/engines.js`) with a progress count and imported as an ES module from the downloaded bytes; the module is copied into a plain global `THREE` so the game code reads it as before. `legacyLook()` keeps the look the game was tuned for on r128: colour management off, linear output (`outputColorSpace = LinearSRGBColorSpace` on every renderer), textures marked `SRGBColorSpace`, and the light shader chunk patched back to the legacy light maths (intensities x π and the old distance fall-off), so no light needed retuning. WebGL 2 is required (every current phone and browser has it).
 
 **Physics (v8.2.0):** [Rapier](https://rapier.rs) 0.21.0 (`@dimforge/rapier3d-compat`). The loader downloads it next to three.js and starts it (compiles its WebAssembly) before the game. The `Physics` module mirrors every walk collider from the `Colliders` registry into a Rapier world (tall cuboids and cylinders, since walking ignores heights). The angler walks with Rapier's **character controller**, a capsule with the old 0.15 m body margin that slides along walls, benches and corners. The townsfolk are moving cylinders, so you still cannot walk through them. The town's path finding asks Rapier (one shape cast per segment instead of a scan of every collider; building the waypoint graph went from about 20 ms to 6 ms). The fixed pier rails, edges and island limits are unchanged clamps. If Rapier cannot load, or the secret menu's **Debug → Walking physics** is set to built-in, the old collision code runs exactly as before; the debug view of collision boxes also draws what Rapier sees (white lines).
 
@@ -633,7 +638,16 @@ The whole game is **one HTML file** (`index.html`) with no build step, plus a ha
 The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`--ink-*`, `--sea`, `--coral`, `--gold`, `--glass`, `--blur`, `--r-*`, `--text-scale`); a theme block at the end of the stylesheet restyles the components, and line icons come from an inline SVG sprite (`<use href="#i-…">`).
 
 ```
-index.html                 the game: HTML, CSS and all JavaScript
+index.html                 page shell: head, stylesheet links, loading screen, start card, the module entry
+.nojekyll                  tells GitHub Pages to serve the files as they are
+css/                       16 stylesheets in cascade order (layout, hud, hud-indicators, shop-sheet, meters, controls,
+                           drawer, cards, screens, settings, customise-dive, tide-glass-1..3, utilities-1..2)
+js/main.js                 entry point: build numbers, loader, then the game
+js/dom.js                  mounts the game's markup after the start card
+js/game.js                 the game (world, angler, fishing, boats, town, shops, diving, frame loop)
+js/boot/                   version.js (PF_VERSION), loader.js, progress.js, engines.js, files.js (every static file),
+                           nomodule.js (message for browsers without ES modules)
+js/ui/markup-*.js          the HUD, overlays, modals and sheets as template strings
 vendor/three.r187.module.min.js   Three.js r187 as one ES module (bundled with esbuild; jsDelivr / unpkg are fallbacks)
 vendor/rapier3d-compat.0.21.0.min.js   Rapier 3D physics 0.21.0 as one ES module, WebAssembly inlined (Apache-2.0)
 manifest.webmanifest       installable app manifest
@@ -644,7 +658,7 @@ README.md                  this file
 CLAUDE.md                  working notes for AI-assisted changes
 ```
 
-The script inside `index.html` is organised in labelled sections:
+The game script (`js/game.js`) is organised in labelled sections:
 
 | Section | Contents |
 |---|---|
@@ -683,7 +697,7 @@ Run locally with any static file server (the service worker needs `http://localh
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000. Opening `index.html` directly also works, just without offline support.
+Then open http://localhost:8000. Opening `index.html` straight from disk (`file://`) does **not** work since v10.0.0: browsers do not load ES modules from `file://`, so always use a local server. To check GitHub Pages paths, serve the parent folder and open `http://localhost:8000/<folder>/`.
 
 Deployment is **GitHub Pages from the `main` branch**. Merging to `main` publishes the site (the *Deploy static content to Pages* workflow and GitHub's own *pages build and deployment* both run).
 
@@ -697,6 +711,7 @@ There is no test framework in the repository. Changes are checked with headless 
 - the fight (each style, the jump prompt, pause and the 3-2-1 resume, menu keys blocked mid-fight, the landing moment) and the boat handling numbers (top speed, no spin at rest, turn rates, coasting, slams per zone),
 - the action button only responds to the button, not the canvas,
 - every one of the 69 catch models builds,
+- the site is served from a subpath (as on GitHub Pages) and a script checks that no `href`, `src`, `import` or `url()` starts with `/`, that every import names a file that exists with the same letter case, and that `index.html` has no `<style>`, inline script or `style=""`,
 - the app registers its service worker and reloads and runs offline,
 - contact-sheet renders of fish, boats, props and characters are reviewed by eye,
 - interface changes: screenshots at 375×812 and 812×375 (also left-handed and XL text), an **axe-core** pass (button names, ARIA, colour contrast) over the start screen, HUD, drawer, settings, career, bag, log, map, quests, chat, a shop and the pause screen, and, for pure clean-ups, a **computed-style parity** diff of every element in those states against the previous build (it must come out empty).
@@ -709,9 +724,22 @@ There is no test framework in the repository. Changes are checked with headless 
 2. Add an entry at the top of the [Changelog](#changelog) with the date and a short summary.
 3. If counts changed (species, bounties, options), update the numbers above.
 
+For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed file (stylesheet, module, icon) goes into `js/boot/files.js` (and a stylesheet also gets its `<link>` in `index.html`, in cascade order). Use relative `./` paths with the `.js` extension in every import, and lowercase file names: GitHub Pages is case-sensitive.
+
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 10.0.0: the game split into files, part 1 (CSS, markup, loader)
+
+The single 18,874-line `index.html` is now a small page plus separate files, ready for GitHub Pages project sites. Nothing changes in play: a computed-style comparison of every element on the start screen, HUD, drawer, settings, career, bucket, chat, shop and pause screens (portrait and landscape) matches v9.1.0.
+
+- **CSS:** the stylesheet is 16 files in `css/`, linked in the original order. The 177 inline `style=""` attributes of the page are classes and id rules in `utilities-1.css` and `utilities-2.css`, scoped so they win exactly where the inline styles did.
+- **Markup:** `index.html` keeps the loading screen and the start card (88 lines). The HUD, overlays, modals and sheets are template strings in `js/ui/markup-*.js`, mounted by `js/dom.js` before the game starts, with the same ids.
+- **Loader:** the inline loader is the modules `js/boot/loader.js`, `progress.js` and `engines.js`, started from `js/main.js`. The *Game files* line on the loading screen now counts the game's files as they arrive. `PF_VERSION` lives in `js/boot/version.js`. Browsers without ES modules get a message (`js/boot/nomodule.js`).
+- **Game:** the game script is the module `js/game.js` (strict mode); part 2 (v10.1.0) splits it into small modules.
+- **Offline:** `js/boot/files.js` lists every static file once, for the service worker and the loader. The service worker fetches the game's code network-first, so a new version never mixes with old cached files. `.nojekyll` makes GitHub Pages serve the files as they are.
+- **Local runs** need a static server; `file://` no longer works because browsers do not load modules from disk.
 
 ### 2026-11-22, Version 9.1.0: full character customisation (character overhaul, phase 2)
 
