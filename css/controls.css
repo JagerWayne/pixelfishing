@@ -1,0 +1,94 @@
+/* Thumb-zone virtual controls: stick, action button and helpers (multi-touch). */
+/* =========================================================================
+   MOBILE THUMB-ZONE VIRTUAL CONTROLS (MULTI-TOUCH)
+   ========================================================================= */
+#mobile-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  gap: 10px;
+  pointer-events: none;
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.touch-zone-left {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#virtual-joystick {
+  width: calc(var(--joy-size) * var(--ui-scale, 1));
+  height: calc(var(--joy-size) * var(--ui-scale, 1));
+  border-radius: 50%;
+  position: relative;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#joystick-knob {
+  width: calc(var(--joy-size) * var(--ui-scale, 1) * 0.42);
+  height: calc(var(--joy-size) * var(--ui-scale, 1) * 0.42);
+  border-radius: 50%;
+  position: absolute;
+  transform: translate(0px, 0px);
+  pointer-events: none;
+  transition: transform 0.04s linear;
+}
+
+.joy-dir-label {
+  position: absolute;
+  font-weight: bold;
+  pointer-events: none;
+}
+.joy-n { top: 6px; }
+.joy-s { bottom: 6px; }
+.joy-w { left: 8px; }
+.joy-e { right: 8px; }
+
+.touch-zone-right {
+  pointer-events: auto;
+  display: flex;
+}
+
+#btn-primary-action {
+  width: calc(var(--act-size) * var(--ui-scale, 1));
+  height: calc(var(--act-size) * var(--ui-scale, 1));
+  border-radius: 50%;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  cursor: pointer;
+}
+
+#btn-primary-action.bite {
+  animation: bounceAlert 0.25s infinite alternate;
+}
+
+#map-wrap { position: relative; }
+#map-canvas { width: 100%; height: min(58dvh, 520px); display: block; border: 2px solid #334155; border-radius: 6px; background: #0b4a6f; touch-action: none; cursor: grab; }
+#map-canvas.drag { cursor: grabbing; }
+.map-tools { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.map-tools .pixel-btn { min-width: 44px; min-height: 44px; padding: 0; font-size: 20px; }
+.map-hint { position: absolute; left: 8px; bottom: 8px; font-size: 11px; color: #e2e8f0; background: rgba(7,11,20,0.6); padding: 3px 6px; border-radius: 4px; pointer-events: none; }
+.map-row { cursor: pointer; display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; margin-bottom: 5px; }
+.map-row .mi { font-size: 20px; width: 26px; text-align: center; }
+.map-row b { display: block; font-size: 13px; }
+.map-row small { display: block; color: #94a3b8; font-size: 12px; }
+.map-row .md { margin-left: auto; color: #fde68a; font-size: 12px; white-space: nowrap; }
+#btn-primary-action.useless { display: none; }
+#btn-primary-action:active,
+#btn-primary-action.pressed {
+  transform: scale(0.94);
+}

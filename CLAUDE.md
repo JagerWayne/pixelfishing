@@ -1,18 +1,21 @@
 # Working notes for Pixel Fishing
 
-This is a single-file browser game (`index.html`, Three.js r187 bundled as one ES module in `vendor/three.r187.module.min.js`, exposed as a plain global `THREE` by the loader). See `README.md` for the full
-description of the game, its systems and its structure.
+This is a static browser game with no build step (since v10.0.0 split into files): a short `index.html` (head, stylesheet links,
+loading screen, start card), stylesheets in `css/` and ES modules in `js/` (`main.js` entry, `boot/` loader, `dom.js` + `ui/markup-*.js`
+for the page markup, `game.js` the game). Three.js r187 is bundled as one ES module in `vendor/three.r187.module.min.js` and exposed as a
+plain global `THREE` by the loader. See `README.md` for the full description of the game, its systems and its structure.
 
 ## Always do this with every update
 
 1. **Update `README.md` in the same change.** Update any section the change touches (controls, tables, counts,
    features, technical overview) and add a new entry at the **top of the Changelog** with today's date and a short
    summary. Do not leave the README describing old behaviour.
-2. If you add, remove or rename static files (assets, icons, scripts), update the file list in the README, `PRECACHE` in `sw.js`
-   and `STATIC` in the loader at the top of `index.html`. Bump `PF_VERSION` (top of `index.html`) for every release: it is shown on the
-   start screen and names the offline cache (there is no `CACHE_VERSION` any more).
+2. If you add, remove or rename static files (stylesheets, modules, assets, icons), update the file list in the README and
+   `js/boot/files.js` (the one list the service worker precaches and the loader counts; a stylesheet also needs its `<link>` in
+   `index.html`, in cascade order). Bump `PF_VERSION` (`js/boot/version.js`) for every release: it is shown on the start screen and
+   names the offline cache (there is no `CACHE_VERSION` any more).
 3. Keep numbers in the README accurate (species counts, bounty pool, option counts, prices). Re-read them from the
-   data tables in `index.html` rather than from memory.
+   data tables in `js/game.js` rather than from memory.
 
 ## Conventions
 
@@ -62,7 +65,16 @@ description of the game, its systems and its structure.
 
 - Characters (v9.0.0, Harbour Chibi): proportions come only from `AnglerFactory.dims` (`torso` scales every height between hips and neck, `legs` the boots and skirt; `headScale` 1.38). Inside `dress()` and `torsoGeo` any new height offset from the hips, spine, chest or neck must be multiplied by `TS` (= `d.torso`) and boot or skirt lengths by `BL` / `d.legs`; the torso profile `prof(y)` is keyed in adult heights (`t / d.torso`). Faces are painted by `AnglerFactory.paintFace(look)` onto the `FACE_PATCH` of the head (one canvas per character, `rig.faceTex`); skin, hair and cloth use `MeshToonMaterial` with the shared `AnglerFactory.toonRamp()` (shiny or metal parts stay standard). Hands are mittens: `S.fingers` is `[mitten, tip]`. Since v9.1.0: colours come from `LookColor.<part>(look)` (a picked `<part>Hex` wins over the palette index); `dress()` runs every look through `sanitizeLook` first (townsfolk looks are partial), so a new look field needs a default in `defaultLook`, a check in `sanitizeLook`, a roll in `randomLook` and a row in `CUST_TABS` (kinds `chips`, `swatch` with `hex`, `slider`, `presets`). Garment patterns are vertex colours (`PAT` via `colFn` on `torsoGeo` / `limbGeo`). Expressions are pre-painted face textures: `paintFace(look, expr)` and `AnglerFactory.setExpression(rig, expr)`; `AnglerAnimator.update` blinks and shows `st.expr`.
 
+- Files (v10.0.0): GitHub Pages serves from a case-sensitive project subpath, so every path is relative (`./css/…`, `./js/…`, never a
+  leading `/`), file names are lowercase, and imports are explicit relative paths with the `.js` extension (no bare specifiers).
+  `index.html` holds no `<style>`, no inline script, no `style=""` and no `on…=` attributes: styles go in the matching `css/` file
+  (new UI in `tide-glass-*.css`, tokens only), markup in `js/ui/markup-*.js` (mounted by `mountMarkup()` in `js/dom.js` before the game
+  starts; keep the ids), behaviour in modules with `addEventListener`. Runtime `style=` written by the game's JavaScript (per-value
+  widths, colours from tokens) is fine. The game script is one module, `js/game.js`, in strict mode; its `start()` is called by the
+  loader once three.js and Rapier are ready. Keep files near 100 lines and never split a function between files. `file://` does not load
+  modules: test through a local server.
+
 ## Checking a change
 
-Use headless Chromium (Playwright) against a local copy: boot with no errors (also with a corrupted save), walk the
+Use headless Chromium (Playwright) against a local copy served over HTTP from a subpath (as GitHub Pages does): boot with no errors (also with a corrupted save), walk the
 pier, exercise the menus, and make sure all 69 catch models still build. See the Testing section of the README.

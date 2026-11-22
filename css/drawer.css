@@ -1,0 +1,104 @@
+/* Toast stack, quick buttons, the menu sheet, side drawer and base modal styles. */
+/* Toast stack (queue of up to 3, positioned from the measured HUD height) */
+#toast-stack {
+  position: fixed;
+  left: 50%;
+  top: calc(var(--hud-top-h) + var(--safe-top) + 18px);
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: min(92vw, 440px);
+  pointer-events: none;
+}
+.toast {
+  text-align: center;
+  max-width: 100%;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.toast.show { opacity: 1; transform: none; }
+
+/* Thumb-reach quick buttons between the stick and the action button */
+
+/* Menu sheet */
+.modal-backdrop.sheet-modal { align-items: flex-end; padding-bottom: 0; }
+.sheet-modal .modal-window {
+  width: min(100%, 560px);
+  max-height: 82vh;
+  max-height: 82dvh;
+  border-radius: 14px 14px 0 0;
+  padding-bottom: var(--safe-bottom);
+}
+.sheet-handle { width: 44px; height: 5px; border-radius: 3px; margin: 8px auto 0; flex-shrink: 0; }
+.menu-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.menu-tile {
+  position: relative;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 26px;
+  font-weight: bold;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.menu-tile span, .menu-tile[data-label]::after { font-size: var(--fs-xs); }
+.menu-tile[data-label]::after { content: attr(data-label); }
+
+/* v6.3.1: the menu is a side drawer that slides in from the right, one row per button */
+#modal-menu.modal-backdrop.sheet-modal { align-items: stretch; justify-content: flex-end; padding: 0; }
+#modal-menu .modal-window { max-height: none; height: 100%; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); padding-right: var(--safe-right); overflow-y: auto; animation: drawerIn 0.2s ease-out; }
+#modal-menu .sheet-handle { display: none; }
+
+@keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
+.menu-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.menu-info .wide { grid-column: 1 / -1; }
+.menu-info .angler-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: calc(12px + var(--safe-top))
+    calc(12px + var(--safe-right))
+    calc(12px + var(--safe-bottom))
+    calc(12px + var(--safe-left));
+  z-index: 30;
+}
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal-window {
+  position: relative;
+  width: min(96vw, 760px);
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel-solid);
+}
+
+.modal-header {
+  touch-action: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  flex: 1;
+}

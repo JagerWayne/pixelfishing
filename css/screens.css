@@ -1,0 +1,117 @@
+/* Bottle gallery, game-feel effects, pause, loading and start screens. */
+/* Bottle Gallery Parchment Cards */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.scroll-card {
+  background: #fef3c7;
+  color: #451a03;
+  border: 2px solid #b45309;
+  box-shadow: inset 0 0 12px rgba(180, 83, 9, 0.25);
+  padding: 10px 12px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.scroll-card.locked {
+  background: #151f33;
+  color: #64748b;
+  border-color: #334155;
+  box-shadow: none;
+}
+
+/* game feel: tension vignette, leap prompt, pause screen, daily catch */
+#tension-vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(220, 38, 38, 0.6) 100%);
+}
+@media (prefers-reduced-motion: reduce) { #tension-vignette { display: none; } }
+#leap-banner {
+  display: none;
+  font-size: 17px;
+  text-align: center;
+  animation: bounceAlert 0.2s infinite alternate;
+}
+#leap-banner.show { display: block; }
+#pause-overlay {
+  position: fixed; inset: 0; z-index: 65; display: none; align-items: center; justify-content: center;
+  padding: calc(12px + var(--safe-top, 0px)) 16px calc(12px + var(--safe-bottom, 0px)); background: rgba(4, 8, 16, 0.78);
+}
+#pause-overlay.open { display: flex; }
+#pause-overlay.counting { background: rgba(4, 8, 16, 0.35); }
+#pause-overlay.counting .pause-card { display: none; }
+.pause-card { width: min(92vw, 400px); max-height: 100%; overflow-y: auto; padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+.pause-title { margin: 0; font-size: 24px; letter-spacing: 2px; }
+#btn-resume { font-size: 17px; padding: 12px; }
+.pause-row { display: flex; gap: 8px; }
+.pause-row .pixel-btn { flex: 1; }
+.pause-daily, .start-daily { font-size: 12.5px; line-height: 1.5; color: #fde68a; }
+.start-daily { margin-bottom: 12px; }
+.start-daily:empty, .pause-daily:empty { display: none; }
+.pause-help { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; font-size: 11.5px; line-height: 1.5; border-top: 2px solid #334155; padding-top: 10px; }
+@media (max-width: 380px) { .pause-help { grid-template-columns: 1fr; } }
+#pause-count { display: none; font-size: 110px; font-weight: 900; }
+#pause-overlay.counting #pause-count { display: block; animation: countPop 1s ease-out infinite; }
+@keyframes countPop { 0% { transform: scale(1.5); opacity: 0; } 25% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.85; } }
+.cod-badge { background: #a16207 !important; color: #fef08a !important; border-color: #fde047 !important; }
+.log-card.cod { border-color: #fde047; box-shadow: 0 0 10px rgba(250, 204, 21, 0.45); }
+.log-cod { display: inline-block; margin-left: 6px; padding: 0 5px; font-size: 10px; font-weight: 900; color: #451a03; background: #fde047; border-radius: 2px; }
+
+/* loading screen */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  transition: opacity 0.35s;
+}
+#loading-screen.done { opacity: 0; pointer-events: none; }
+#loading-screen .pixel-box { width: min(92vw, 380px); padding: 22px; text-align: center; }
+#loading-bar { height: 14px; margin: 14px 0 10px; }
+#loading-bar-fill { height: 100%; width: 0%; transition: width 0.12s linear; }
+#loading-text { font-size: 13px; color: #cbd5e1; min-height: 20px; }
+   #rescue-overlay, #start-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 16, 0.84);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+#rescue-overlay.open, #start-overlay.open {
+  display: flex;
+}
+#rescue-overlay {
+  background: rgba(127, 29, 29, 0.52);
+}
+/* start card scrolls (and stays reachable) on short screens */
+#start-overlay { overflow-y: auto; align-items: flex-start; }
+.start-card { margin: auto; max-width: 420px; width: 100%; padding: 22px; text-align: center; }
+
+@media (max-height: 480px) {
+  :root { --joy-size: 104px; --act-size: 92px; }
+  .start-card { padding: 12px 16px; }
+  .hud-top { position: relative; }
+  .hud-stack { position: absolute; top: 100%; left: 0; margin-top: 6px; }
+  #center-hud {
+    bottom: calc(var(--controls-h) + var(--safe-bottom) + 12px);
+    width: min(74vw, 380px);
+  }
+  #btn-primary-action { font-size: 13px; }
+  #cast-meter-box, #reel-meter-box { padding: 5px 10px; }
+  .stat-row { margin-bottom: 1px; }
+  .bar-wrap, .cast-bar-wrap, .reel-progress-wrap { height: 8px; margin: 1px 0 3px; }
+  .reel-track, .reel-dir-track { height: 16px; margin: 3px 0; }
+  #live-bait-pip {
+    width: 148px;
+    height: 92px;
+  }
+}
