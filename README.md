@@ -27,6 +27,7 @@ Once installed it also works offline.
 12. [The fish market](#the-fish-market)
 13. [The Aquarium](#the-aquarium)
 13a. [Harbour Town, its people and the story](#harbour-town-its-people-and-the-story)
+13b. [Your restaurant and cooking](#your-restaurant-and-cooking)
 14. [Sea events](#sea-events)
 15. [Character customisation](#character-customisation)
 16. [Secret: the Seagull's menu](#secret-the-seagulls-menu)
@@ -346,11 +347,47 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 
 ## Harbour Town, its people and the story
 
-Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **Lorenzo's** restaurant (opening soon) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
+Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
 
 **People.** Five townsfolk live here, each with a day routine (they walk between their spots through the gate and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist) and **👨‍🍳 Chef Lorenzo**. Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
 
-**Quests** (13, in 4 chapters): each has steps that advance on their own as you play (catch fish, from the pier or in a zone, by weight, rarity or at night; dive to a depth; find bottle messages; sail somewhere; own a boat; keep species in the aquarium; bring someone a fish from your bucket). When the steps are done, talk to the giver for the reward (cash and XP). The story runs from *Welcome to Harbour Town* through *The Keeper's Light* (repair and relight the lighthouse) and *Rook's Wager* to *The Legend of the Deep*: a Legendary fish landed at night in the Abyssal Trench. The current step shows in a blue pill under the top bar; the full list is in **☰ Menu → 📜 Quests**. Saved as `story` (active steps, completed quests, friendship, flags).
+**Quests** (17, in 4 chapters): each has steps that advance on their own as you play (catch fish, from the pier or in a zone, by weight, rarity or at night; dive to a depth; find bottle messages; sail somewhere; own a boat; keep species in the aquarium; bring someone a fish from your bucket). When the steps are done, talk to the giver for the reward (cash and XP). The story runs from *Welcome to Harbour Town* through *The Keeper's Light* (repair and relight the lighthouse) and *Rook's Wager* to *The Legend of the Deep*: a Legendary fish landed at night in the Abyssal Trench. The current step shows in a blue pill under the top bar; the full list is in **☰ Menu → 📜 Quests**. Saved as `story` (active steps, completed quests, friendship, flags).
+
+## Your restaurant and cooking
+
+The restaurant at the east end of Harbour Town is **yours**, named after you (*Wayne's Restaurant*, or *Fisherman's Restaurant* without a name). It opens once you do Chef Lorenzo's first quest (bring him any fish). Stand at its door and press **🍝 KITCHEN**: a sheet opens with four tabs.
+
+- **🍳 Cook:** every recipe with what it needs; *Cook* uses the cheapest matching fish from your bucket and the pantry items. Cooking is a short mini-game: **chop** (tap three times when the knife is over a green mark), **sear** (hold the button and let go when the heat is in the green) and **plate** (tap when the arrow points up). It gives 1 to 3 ⭐ (Rare or better fish help). The dish goes in the fridge (up to 30).
+- **🧊 Fridge:** your dishes and what guests pay for them; **Eat** one for a 6-hour buff (*faster bites*: bites come 30% sooner; *steadier line*: line tension builds 15% slower; *longer breath*: 20% more air when diving). **Collect** the takings here.
+- **🧺 Pantry:** bread $4, lemon $3, rice $5, potato $3, spices $6, bought 5 at a time.
+- **⭐ Upgrades:** *Extra waiters* (more guests per service: $400, then $1,200), *Pro stove* (wider green zones, $800), *Terrace lights* (higher rating, $600).
+
+**Service:** at lunch (11:00 to 14:00) and dinner (17:30 to 21:00), in-game time, guests sit at the three terrace tables and buy dishes from your fridge (best first). Each pays the dish's value x its stars x your rating; the money banks until you collect it. The **rating** (1 to 5) grows with the quality and variety of your dishes, the terrace lights and the number of guests served.
+
+**Recipes** (18) unlock as you cook (after 0, 3, 8, 15, 25 and 40 dishes):
+
+| Dish | Fish | Pantry | Value | Unlocks after |
+|---|---|---|---|---|
+| 🐟 Grilled Fish | a fish | lemon | $28 | 0 |
+| 🍳 Fisherman's Breakfast | a fish | bread, potato | $34 | 0 |
+| 🥗 Seaweed Salad | seaweed (Flora) | lemon | $22 | 0 |
+| 🍟 Fish & Chips | a fish over 1 kg | potato, bread | $45 | 0 |
+| 🍲 Fish Soup | 2 fish | potato | $52 | 3 |
+| 🌮 Fish Tacos | 2 fish | bread, spices | $60 | 3 |
+| 🧆 Fishcakes | 2 fish | potato, bread | $58 | 3 |
+| 🍢 Spiced Kebab | a fish over 2 kg | spices, bread | $70 | 8 |
+| 🍣 Sushi Platter | an Uncommon+ fish over 0.5 kg | rice | $95 | 8 |
+| 🥧 Fish Pie | 2 fish | 2 potato, bread | $80 | 8 |
+| 🍽️ Baked Whole Fish | a fish over 3 kg | lemon, spices | $120 | 15 |
+| 🥘 Seafood Paella | an Uncommon+ fish and another | 2 rice, spices | $150 | 15 |
+| 🍋 Ceviche | a Rare+ fish | 2 lemon | $190 | 15 |
+| 🪵 Smoked Fish Board | a fish over 5 kg | 2 bread | $210 | 25 |
+| 🦞 Seafood Platter | a Rare+ fish and 2 more | lemon, bread | $320 | 25 |
+| 🥩 Steak of the Deep | a fish over 10 kg | spices, potato | $360 | 40 |
+| 👑 Golden Feast | an Epic+ fish | rice, spices, lemon | $650 | 40 |
+| 🌟 Legend's Banquet | a Legendary fish | rice, spices, lemon, bread, potato | $1800 | 40 |
+
+**Lorenzo's quests:** *Lorenzo's Kitchen* (bring him a fish: the restaurant opens), *First Service* (cook 3 dishes), *A Full House* (serve 10 guests) and *Master Chef* (a 3-star dish of a recipe worth 150 or more). Saved as `kitchen` (pantry, fridge, counters, takings, upgrades, buff) and `playerName`.
 
 ## Skill books
 
@@ -385,7 +422,8 @@ A pill under the top bar shows the nearest event with its distance and bearing r
 
 Open it from the start screen (**🎨 Customise Look**), the **☰ Menu** (**🎨 Look**) or **Settings → Appearance**.
 
-- A live **3D preview** that rotates by itself and can be dragged to turn.
+- **Your name** (up to 16 characters). It names your restaurant in Harbour Town, e.g. *Wayne's Restaurant*; left empty, it is *Fisherman's Restaurant*.
+- A live **3D preview** that rotates by itself (a *Stop / Rotate* button) and can be dragged to turn.
 - **A human-shaped angler** (since v4.0.0): a real skeleton (hips, spine, chest, neck, head, shoulders, elbows, wrists, hips, knees and ankles) with one smooth skinned body, so knees, elbows and shoulders bend like skin. Stylised adult proportions with a slightly larger head.
 - **Male / Female** bodies with different builds. The female body has a natural teardrop-shaped bust (a gentle upper slope and a fuller lower curve) that every top, sweater and coat follows.
 - **Bust physics** (since v4.2.0): the bust sits on two soft-tissue bones driven by a damped spring, so it bounces and sways a little with walking, jogging, turning, sitting down, casting and the boat's motion, then settles. Supportive tops (raincoat, hoodie, sweater, fishing vest) hold it firmer and show less of the motion than a T-shirt, tank top, bikini or bare chest.
@@ -549,6 +587,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.1.0: your restaurant and cooking
+- **Your name:** a name box in character creation; your restaurant in Harbour Town carries it (*Wayne's Restaurant*, or *Fisherman's Restaurant* when empty), on its sign, its sheet, the banner and the Map.
+- **Your restaurant opens** with Chef Lorenzo (his first quest). **KITCHEN** at the door: Cook, Fridge, Pantry and Upgrades.
+- **18 recipes** unlocked as you cook, a three-step **cooking mini-game** (chop, sear, plate) for 1 to 3 stars, a fridge of dishes that guests buy at **lunch and dinner** (in-game time), a 1 to 5 rating, takings to collect, upgrades (waiters, stove, terrace lights) and **meal buffs** when you eat a dish.
+- **4 new quests** with Lorenzo (17 in all). New save fields `kitchen` and `playerName`. Version bumped to **v6.1.0**.
 
 ### 2026-11-21, Version 6.0.0: Harbour Town, its people and a new way to move
 - **Harbour Town:** walk through the new gate behind the pier onto the island: a plaza with a well, lamps and a noticeboard, cottages, Marta's hut and Lorenzo's restaurant (opening soon). The island scenery is always shown now; whatever blocks the camera fades out.
