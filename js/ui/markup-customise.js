@@ -33,28 +33,31 @@ export const markupCustomise = `
   <div class="modal-backdrop" id="modal-customize">
     <div class="pixel-box modal-window cust-window">
       <div class="modal-header">
-        <span class="modal-title">🎨 CUSTOMISE FISHERMAN</span>
+        <span class="modal-title">🎨 CUSTOMISE YOUR ANGLER</span>
         <button class="pixel-btn green" id="cust-close" type="button">Done</button>
       </div>
       <div class="cust-body">
         <div class="cust-preview">
-          <canvas id="cust-canvas"></canvas>
-          <div class="cust-gender">
-            <button class="pixel-btn green" id="cust-gender-male" type="button">🧔 Male</button>
-            <button class="pixel-btn" id="cust-gender-female" type="button">👩 Female</button>
+          <canvas id="cust-canvas" role="img" aria-label="Your angler. Drag to turn them round."></canvas>
+          <div class="cust-tools" role="toolbar" aria-label="Look tools">
+            <button class="pixel-btn" id="cust-undo" type="button" title="Undo (Ctrl+Z)">↶ Undo</button>
+            <button class="pixel-btn" id="cust-redo" type="button" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+            <button class="pixel-btn gold" id="cust-random" type="button" aria-label="Random look">🎲 Random</button>
+            <button class="pixel-btn" id="cust-reset" type="button" aria-label="Reset the look">↺ Reset</button>
           </div>
-          <div class="cust-gender">
-            <button class="pixel-btn gold" id="cust-random" type="button">🎲 Random</button>
-            <button class="pixel-btn" id="cust-reset" type="button">↺ Reset</button>
+          <div class="cust-tools cust-view">
+            <button class="pixel-btn" id="cust-spin" type="button" aria-label="Stop turning">⏸</button>
+            <button class="pixel-btn" id="cust-back" type="button" aria-pressed="false" aria-label="Back view">⇄</button>
+            <div class="cust-faces" role="group" aria-label="Try an expression">
+              <button class="pixel-btn active" type="button" data-expr="open" aria-pressed="true" aria-label="Expression: calm">😐</button>
+              <button class="pixel-btn" type="button" data-expr="happy" aria-pressed="false" aria-label="Expression: happy">😊</button>
+              <button class="pixel-btn" type="button" data-expr="surprise" aria-pressed="false" aria-label="Expression: surprised">😮</button>
+              <button class="pixel-btn" type="button" data-expr="focus" aria-pressed="false" aria-label="Expression: focused">😤</button>
+            </div>
           </div>
-          <button class="pixel-btn" id="cust-spin" type="button">⏸ Stop</button>
-          <div class="cust-hint">Drag to rotate</div>
-          <label class="cust-name-row">Your name
-            <input id="cust-name" type="text" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Type your name" enterkeyhint="done">
-          </label>
         </div>
         <div class="cust-panel">
-          <div class="tab-row" id="cust-tabs"></div>
+          <div class="tab-row" id="cust-tabs" role="tablist" aria-label="Look categories"></div>
           <div id="cust-options"></div>
         </div>
       </div>

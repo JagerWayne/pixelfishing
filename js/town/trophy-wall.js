@@ -17,6 +17,8 @@ import { showToast } from '../ui/toasts.js';
 import { town } from './town-state.js';
 import { openTownSheet, townClose, townPay, townRefresh } from './town-nav.js';
 import { forecastText, projOn } from '../fishing/rigs.js';
+import { dressAngler } from '../save/defaults.js';
+import { lookFromShare } from '../ui/customise-history.js';
 
 /* ---- the Trophy Wall above the cabin bunk (v6.6.0): mount your heaviest fish over 18 kg or a boss you landed ---- */
 const TROPHY_MIN = 18;
@@ -60,13 +62,14 @@ export function openBunk() {
 
 /* ---- share codes (v6.6.0, Post Office): bottle notes and catch challenges as text codes, no server ---- */
 const CODE_PREFIX = 'PF1-';
-const encodeShare = o => CODE_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
-function decodeShare(code) {
+export const encodeShare = o => CODE_PREFIX + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+export function decodeShare(code) {
   try {
     const s = String(code || '').trim(); if (!s.startsWith(CODE_PREFIX) || s.length > 2000) return null;
     const o = JSON.parse(decodeURIComponent(escape(atob(s.slice(CODE_PREFIX.length)))));
     if (!o || typeof o !== 'object') return null;
     if (o.t === 'note') { const m = cleanNote(o.m); return m ? { t: 'note', m, from: cleanName(o.from) } : null; }
+    if (o.t === 'look') { const look = lookFromShare(o.l); return look ? { t: 'look', look, from: cleanName(o.from) } : null; }   // v11.0.0
     if (o.t === 'chal' && CATALOG_INDEX[o.id] && CATALOG_INDEX[o.id].category === 'Fish') { const w = Number(o.w); return Number.isFinite(w) && w > 0 && w < 5000 ? { t: 'chal', id: o.id, w: +w.toFixed(2), from: cleanName(o.from) } : null; }
   } catch (e) { return null; }
   return null;
@@ -76,7 +79,10 @@ export function shareCatchCheck(c) {
   const from = T.chal.from || 'a friend'; T.chal = null; T.chalDone++;
   townPay(250, 60, `🎯 Challenge beaten! You out-fished ${from}: +$250.`);
 }
-const copyText = t => { try { navigator.clipboard.writeText(t); showToast('📋 Code copied.'); } catch (e) { showToast('📋 Select the code and copy it.'); } };
+export const copyText = t => {
+  const no = () => showToast('📋 Select the code and copy it.');
+  try { navigator.clipboard.writeText(t).then(() => showToast('📋 Code copied.'), no); } catch (e) { no(); }
+};
 
 export const townLift = () => (!shared.onBoat && shared.playerZ > ISLAND.rampZ0 ? townGround(shared.playerZ) - 1.5 : 0);
 
@@ -84,7 +90,7 @@ export function init() {
   shared.postRows = ({ row, head, note, host }) => {
     const T = town(), me = cleanName(shared.state.playerName) || 'An angler';
     head('✉️ Share codes');
-    note('Make a code, send it to a friend in any message app, and they paste it here. No internet needed by the game.');
+    note('Make a code, send it to a friend in any message app, and they paste it here. No internet needed by the game. Look codes from Customise open here too.');
     const r1 = row('<span class="sl-n">✉️ Bottle note<small>Write a message for a friend to find.</small></span><input class="town-in" id="share-note" maxlength="140" placeholder="Your message">', [['Make code', '', () => {
       const m = cleanNote(document.getElementById('share-note').value); if (!m) { showToast('✉️ Write something first.'); return; }
       const code = encodeShare({ t: 'note', m, from: me }); document.getElementById('share-out').value = code; copyText(code);
@@ -95,6 +101,7 @@ export function init() {
     row('<span class="sl-n">📥 Open a code<small>Paste a code from a friend.</small></span><textarea class="town-in" id="share-in" rows="2" placeholder="PF1-..."></textarea>', [['Open', '', () => {
       const o = decodeShare(document.getElementById('share-in').value); if (!o) { showToast('📥 That code does not work.'); return; }
       if (o.t === 'note') { T.notes.push({ m: o.m, from: o.from }); if (T.notes.length > 10) T.notes.shift(); saveGame(); showToast(`✉️ A note from ${o.from || 'a friend'}: "${o.m}"`); }
+      else if (o.t === 'look') { shared.state.look = o.look; shared.state.anglerGender = o.look.gender; dressAngler(); saveGame(); showToast(`👕 You are wearing ${o.from ? o.from + "'s" : 'the'} look. Change it any time in Customise.`); }
       else { T.chal = { id: o.id, w: o.w, from: o.from }; saveGame(); showToast(`🎯 Challenge from ${o.from || 'a friend'}: land a ${CATALOG_INDEX[o.id].name} of ${o.w} kg or more.`); }
       townRefresh();
     }]]);

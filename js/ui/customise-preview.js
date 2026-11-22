@@ -8,18 +8,17 @@ import { AnglerAnimator } from '../angler/animator.js';
 export let custModal, CUST_TABS;
 let custCanvas;
 
-export const CUST_FRAMES = {   // v9.1.0: framed for the chibi heights (eyes at about 1.2 m)
-  outfit: { y: 0.95, z: 3.7, ly: 0.8 },
+export const CUST_FRAMES = {   // v9.1.0: framed for the chibi heights (eyes at about 1.2 m); v11.0.0: a row frames its part
   body: { y: 0.95, z: 3.7, ly: 0.8 },
   hair: { y: 1.32, z: 1.5, ly: 1.25 },
   face: { y: 1.24, z: 1.15, ly: 1.2 },
   top: { y: 0.95, z: 2.2, ly: 0.85 },
   bottom: { y: 0.5, z: 2.2, ly: 0.42 },
   shoes: { y: 0.28, z: 1.6, ly: 0.1 },
-  hat: { y: 1.45, z: 1.65, ly: 1.36 },
-  extra: { y: 0.95, z: 2.2, ly: 0.85 }
+  hat: { y: 1.45, z: 1.65, ly: 1.36 }
 };
-shared.custTab = 'outfit';
+shared.custTab = 'body';
+shared.custView = 'body';   // the framing: the tab's, then the row last touched
 export let custRenderer = null;
 export let custScene = null;
 export let custCam = null;
@@ -71,49 +70,50 @@ export function init() {
   custModal = document.getElementById('modal-customize');
   custCanvas = document.getElementById('cust-canvas');
 
+  /* v11.0.0: six tabs; every row says which part the camera frames (frame) when it is touched */
   CUST_TABS = [
-    { id: 'outfit', label: '✨ Outfits', rows: [
-      { key: 'preset', label: 'Quick outfits', kind: 'presets', list: [['fisherman', '🎣 Fisherman'], ['angler', '🦺 Vest & overalls'], ['bikini', '👙 Beach: Bikini'], ['shorts', '🩳 Beach: Shorts only'], ['raincoat', '🌧️ Raincoat day']] }] },
-    { id: 'body', label: '🧍 Body', rows: [
-      { key: 'skin', label: 'Skin tone', kind: 'swatch', list: ANGLER_OPTS.skin, hex: 'skinHex' },
-      { key: 'heightK', label: 'Height', kind: 'slider', min: 0.85, max: 1.15, step: 0.01, lo: 'Short', hi: 'Tall' },
-      { key: 'headK', label: 'Head size', kind: 'slider', min: 0.9, max: 1.15, step: 0.01, lo: 'Small', hi: 'Big' },
-      { key: 'buildK', label: 'Build', kind: 'slider', min: 0, max: 1, step: 0.02, lo: 'Slim', hi: 'Round' },
-      { key: 'ears', label: 'Ears', kind: 'chips', list: ANGLER_OPTS.ears }] },
-    { id: 'face', label: '🙂 Face', rows: [
+    { id: 'body', label: '🧍 Body', frame: 'body', rows: [
+      { key: 'name', label: 'Your name', kind: 'name', frame: 'face' },
+      { key: 'gender', label: 'Starting look', kind: 'gender', frame: 'body', note: 'Only a starting point: every hair style, outfit and colour suits both.' },
+      { key: 'heightK', label: 'Height', kind: 'slider', min: 0.85, max: 1.15, step: 0.01, lo: 'Short', hi: 'Tall', frame: 'body' },
+      { key: 'headK', label: 'Head size', kind: 'slider', min: 0.9, max: 1.15, step: 0.01, lo: 'Small', hi: 'Big', frame: 'face' },
+      { key: 'buildK', label: 'Build', kind: 'slider', min: 0, max: 1, step: 0.02, lo: 'Slim', hi: 'Round', frame: 'top' },
+      { key: 'ears', label: 'Ears', kind: 'chips', list: ANGLER_OPTS.ears, frame: 'face' }] },
+    { id: 'face', label: '🙂 Face', frame: 'face', rows: [
       { key: 'eyeShape', label: 'Eyes', kind: 'chips', list: ANGLER_OPTS.eyeShape },
-      { key: 'eyes', label: 'Eye colour', kind: 'swatch', list: ANGLER_OPTS.eyes, hex: 'eyeHex' },
       { key: 'brows', label: 'Eyebrows', kind: 'chips', list: ANGLER_OPTS.brows },
       { key: 'mouth', label: 'Mouth', kind: 'chips', list: ANGLER_OPTS.mouth },
       { key: 'nose', label: 'Nose', kind: 'chips', list: ANGLER_OPTS.nose },
       { key: 'cheeks', label: 'Cheeks', kind: 'chips', list: ANGLER_OPTS.cheeks },
-      { key: 'marks', label: 'Freckles', kind: 'chips', list: ANGLER_OPTS.marks },
+      { key: 'marks', label: 'Freckles and marks', kind: 'chips', list: ANGLER_OPTS.marks },
       { key: 'faceShape', label: 'Face shape', kind: 'chips', list: ANGLER_OPTS.faceShape },
       { key: 'facial', label: 'Facial hair', kind: 'chips', list: ANGLER_OPTS.facial },
       { key: 'glasses', label: 'Glasses', kind: 'chips', list: ANGLER_OPTS.glasses }] },
-    { id: 'hair', label: '💇 Hair', rows: [
+    { id: 'hair', label: '💇 Hair', frame: 'hair', rows: [
       { key: 'hairStyle', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hairStyle },
-      { key: 'hairColor', label: 'Hair colour', kind: 'swatch', list: ANGLER_OPTS.hairColor, hex: 'hairHex' },
       { key: 'fringe', label: 'Fringe', kind: 'chips', list: ANGLER_OPTS.fringe },
+      { key: 'hairColor', label: 'Hair colour', kind: 'swatch', list: ANGLER_OPTS.hairColor, hex: 'hairHex' },
       { key: 'fringeColor', label: 'Fringe and tips colour', kind: 'swatch', list: ANGLER_OPTS.hairColor, hex: 'fringeHex', same: true }] },
-    { id: 'top', label: '👕 Top', rows: [
-      { key: 'top', label: 'Style', kind: 'chips', list: ANGLER_OPTS.top },
-      { key: 'topPattern', label: 'Pattern', kind: 'chips', list: [['auto', 'Classic']].concat(ANGLER_OPTS.pattern) },
-      { key: 'topColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'topHex' },
-      { key: 'topAccent', label: 'Second colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'accentHex' }] },
-    { id: 'bottom', label: '👖 Bottom', rows: [
-      { key: 'bottom', label: 'Style', kind: 'chips', list: ANGLER_OPTS.bottom },
-      { key: 'bottomPattern', label: 'Pattern', kind: 'chips', list: ANGLER_OPTS.pattern },
-      { key: 'bottomColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'bottomHex' },
-      { key: 'bottomAccent', label: 'Second colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'bottomAccHex' }] },
-    { id: 'shoes', label: '🥾 Shoes', rows: [
-      { key: 'shoes', label: 'Style', kind: 'chips', list: ANGLER_OPTS.shoes },
-      { key: 'shoeColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'shoeHex' }] },
-    { id: 'hat', label: '🎩 Hat', rows: [
-      { key: 'hat', label: 'Style', kind: 'chips', list: ANGLER_OPTS.hat },
-      { key: 'hatColor', label: 'Colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'hatHex' }] },
-    { id: 'extra', label: '🎒 Extras', rows: [
-      { key: 'accessory', label: 'Accessory', kind: 'chips', list: ANGLER_OPTS.accessory },
-      { key: 'extraColor', label: 'Accessory colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'extraHex' }] }
+    { id: 'clothes', label: '👕 Clothes', frame: 'body', rows: [
+      { key: 'top', label: 'Top', kind: 'chips', list: ANGLER_OPTS.top, frame: 'top' },
+      { key: 'topPattern', label: 'Top pattern', kind: 'chips', list: [['auto', 'Classic']].concat(ANGLER_OPTS.pattern), frame: 'top' },
+      { key: 'bottom', label: 'Bottom', kind: 'chips', list: ANGLER_OPTS.bottom, frame: 'bottom' },
+      { key: 'bottomPattern', label: 'Bottom pattern', kind: 'chips', list: ANGLER_OPTS.pattern, frame: 'bottom' },
+      { key: 'shoes', label: 'Shoes', kind: 'chips', list: ANGLER_OPTS.shoes, frame: 'shoes' },
+      { key: 'hat', label: 'Hat', kind: 'chips', list: ANGLER_OPTS.hat, frame: 'hat' },
+      { key: 'accessory', label: 'Accessory', kind: 'chips', list: ANGLER_OPTS.accessory, frame: 'top' }] },
+    { id: 'colours', label: '🎨 Colours', frame: 'body', rows: [
+      { key: 'skin', label: 'Skin tone', kind: 'swatch', list: ANGLER_OPTS.skin, hex: 'skinHex', frame: 'face' },
+      { key: 'eyes', label: 'Eye colour', kind: 'swatch', list: ANGLER_OPTS.eyes, hex: 'eyeHex', frame: 'face' },
+      { key: 'topColor', label: 'Top', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'topHex', frame: 'top' },
+      { key: 'topAccent', label: 'Top, second colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'accentHex', frame: 'top' },
+      { key: 'bottomColor', label: 'Bottom', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'bottomHex', frame: 'bottom' },
+      { key: 'bottomAccent', label: 'Bottom, second colour', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'bottomAccHex', frame: 'bottom' },
+      { key: 'shoeColor', label: 'Shoes', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'shoeHex', frame: 'shoes' },
+      { key: 'hatColor', label: 'Hat', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'hatHex', frame: 'hat' },
+      { key: 'extraColor', label: 'Accessory', kind: 'swatch', list: ANGLER_OPTS.colors, hex: 'extraHex', frame: 'top' }] },
+    { id: 'presets', label: '✨ Presets', frame: 'body', rows: [
+      { key: 'preset', label: 'Outfits', kind: 'presets', list: [['fisherman', '🎣 Fisherman'], ['angler', '🦺 Vest and overalls'], ['bikini', '👙 Beach day'], ['shorts', '🩳 Swim shorts'], ['raincoat', '🌧️ Rainy dock'], ['captain', '⚓ Captain'], ['cosy', '🧶 Cosy knit']] },
+      { key: 'share', label: 'Look code', kind: 'share' }] }
   ];
 }

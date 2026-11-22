@@ -20,6 +20,7 @@ export const anglerDressStatics = {
     rig.dims = d;
     this.layoutBones(rig, d);
     const add = (parent, obj) => { parent.add(obj); rig.parts.push(obj); return obj; };
+    const fingerBones = [];   // v11.0.0: the mitten joints are bones, so they still bend once the hands are baked
 
     const C = i => new THREE.Color(ANGLER_OPTS.colors[i]);
     const LC = k => new THREE.Color(LookColor[k](look));   // v9.1.0: picked colour or palette
@@ -111,13 +112,13 @@ export const anglerDressStatics = {
       // v9.0.0 chibi mitten: a soft palm and one rounded finger block with a tip joint (the grip still curls it)
       sph(hg, 0.05, skinMat, 0, -0.045, 0, 0.72, 1.0, 0.95, 16);                    // palm (palms face the thigh)
       {
-        const fg = new THREE.Group(); fg.position.set(0, -0.085, 0); hg.add(fg);
+        const fg = new THREE.Bone(); fg.position.set(0, -0.085, 0); hg.add(fg);
         sph(fg, 0.042, skinMat, 0, -0.018, 0, 0.66, 0.85, 1.05, 14);
-        const tip = new THREE.Group(); tip.position.set(0, -0.035, 0); fg.add(tip);
+        const tip = new THREE.Bone(); tip.position.set(0, -0.035, 0); fg.add(tip);
         sph(tip, 0.035, skinMat, 0, -0.012, 0, 0.62, 0.75, 1.0, 12);
-        S.fingers.push(fg, tip);
+        S.fingers.push(fg, tip); fingerBones.push(fg, tip);
       }
-      const th = new THREE.Group(); th.position.set(-sx * 0.012, -0.03, -0.035); hg.add(th);
+      const th = new THREE.Bone(); th.position.set(-sx * 0.012, -0.03, -0.035); hg.add(th); fingerBones.push(th);
       const tm = sph(th, 0.022, skinMat, 0, -0.02, -0.012, 0.9, 1.45, 0.9, 10); tm.rotation.x = -0.5;
       S.thumb = th;
 
@@ -451,9 +452,9 @@ export const anglerDressStatics = {
         sph(rig.chest, 0.01, brass, -0.07, d.chest * 0.75, zf(yChest + 0.03 * TS) - 0.014, 1, 1, 0.5, 6);
       }
     }
-    // v8.0.0: the head, hair, face and hat are rigid on the head bone, so they are baked into one mesh per material
-    // (about 28 draw calls down to a handful for the angler and every townsperson); dress() rebuilds them anyway
-    ModelKit.mergeStatic(rig.headGroup, [], { keepShadow: true, bakeColor: true });
+    // v11.0.0: everything is baked into one skinned mesh per material look (rigid parts skinned to their bone),
+    // so a character is a handful of draw calls; the painted face stays apart for the expressions
+    this.bakeRig(rig, fingerBones);
 
     return look;
   },

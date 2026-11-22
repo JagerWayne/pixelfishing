@@ -7,7 +7,7 @@ const ORDER = [
   './render/vfx.js', './render/renderer.js', './render/post.js', './render/lights.js', './render/previews.js',
   './render/live-bait.js', './boat/stations.js', './sim/controls-state.js', './sim/joystick.js', './events.js',
   './town/aquarium.js', './save/career.js', './fishing/market.js', './save/defaults.js', './ui/customise-preview.js',
-  './ui/customise.js', './ui/cheats.js', './ui/cheat-sections.js', './save/queries.js', './save/save-game.js',
+  './ui/customise.js', './ui/customise-tools.js', './ui/cheats.js', './ui/cheat-sections.js', './save/queries.js', './save/save-game.js',
   './sim/spots.js', './ui/toasts.js', './town/talk.js', './town/resto-sheet.js', './sim/tap-walk.js',
   './town/town-state.js', './town/post-office.js', './fishing/rigs.js', './town/trophy-wall.js', './ui/map-draw.js',
   './utils.js', './fishing/sea-events.js', './ui/career-modal.js', './town/aquarium-world.js', './ui/trophies.js',

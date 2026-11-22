@@ -40,7 +40,10 @@ const _fpFwd = new THREE.Vector3(), _fpGoal = new THREE.Vector3(), _fpUp = new T
 let fpBlend = 0, fpEyeY = null, fpReadW = 0;
 export function updateFirstPersonCamera(dt) {
   const fp = !!settings.firstPerson && !shopBrowse.active;   // a shop shows the angler from outside, head and all
-  if (world.headGroup.visible === fp) world.headGroup.visible = !fp;
+  if (world.headGroup.visible === fp) {   // v11.0.0: the head is baked into the body mesh, so its bone shrinks away too
+    world.headGroup.visible = !fp;
+    world.headGroup.parent.scale.setScalar(fp ? 0.001 : 1);
+  }
   if (!fp) { fpBlend = 0; fpReadW = 0; return; }
   world.anglerGroup.updateMatrixWorld(true);
   _fpFwd.set(0, 0, -1).applyQuaternion(world.anglerGroup.quaternion);
