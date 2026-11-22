@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.4.0';
+    window.PF_VERSION = '6.5.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1470,6 +1470,9 @@
     #hud-buff-pill { pointer-events: none; display: none; padding: 3px 8px; background: rgba(48, 22, 12, 0.88); border: 2px solid #fb923c; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 11px; font-weight: bold; color: #fed7aa; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #sleep-fade { position: fixed; inset: 0; background: #020617; opacity: 0; pointer-events: none; transition: opacity 0.9s ease; z-index: 900; display: flex; align-items: center; justify-content: center; color: #e2e8f0; font: bold 18px monospace; letter-spacing: 2px; }
     #sleep-fade.on { opacity: 1; pointer-events: auto; }
+    #map-buoy-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+    #map-buoy-bar .pixel-btn { min-height: 38px; padding: 4px 10px; font-size: 12px; }
+    #map-buoy-bar .mb-l { font-size: 12px; color: #cbd5e1; font-weight: bold; }
     #town-body { display: flex; flex-direction: column; gap: 6px; }
     #town-body .sl-row { flex-wrap: wrap; cursor: default; }
     .town-note { font-size: 12px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
@@ -1609,6 +1612,10 @@
     #btn-dive-toggle { width: auto; min-width: 74px; border-radius: 28px; padding: 0 12px; font-size: 14px; flex-direction: row; gap: 6px; }
     body[data-diving="1"] #btn-dive-toggle { background: radial-gradient(circle at 35% 30%, #f97316, #9a3412); border-color: #fed7aa; }
     body:not([data-diving="1"]) #btn-dive-up, body:not([data-diving="1"]) #btn-dive-down { display: none; }
+    #btn-chum { display: none; }
+    body[data-chum="1"] #dive-pad { display: flex; }
+    body[data-chum="1"]:not([data-diving="1"]) #btn-chum { display: flex; }
+    body:not([data-dive-btn="1"]):not([data-diving="1"]) #btn-dive-toggle { display: none; }
 
     #dive-vignette {
       position: fixed; inset: 0; pointer-events: none; z-index: 8; display: none;
@@ -1831,6 +1838,7 @@
         <div id="dive-pad">
           <button class="dive-btn" id="btn-dive-up" type="button" aria-label="Swim up (R)">▲<small>UP</small></button>
           <button class="dive-btn" id="btn-dive-down" type="button" aria-label="Swim down (F)">▼<small>DOWN</small></button>
+          <button class="dive-btn" id="btn-chum" type="button" aria-label="Tip a chum bucket (C)">🪣<small>CHUM</small></button>
           <button class="dive-btn" id="btn-dive-toggle" type="button" aria-label="Dive or surface (X)"><span id="dive-toggle-icon">🤿</span><span id="dive-toggle-label">DIVE</span></button>
         </div>
         <button id="btn-primary-action" type="button">
@@ -2033,14 +2041,16 @@
         <button class="pixel-btn red" data-close="modal-map" type="button">Close</button>
       </div>
       <div class="modal-body">
+        <div id="map-buoy-bar" style="display:none;"></div>
         <div id="map-wrap">
           <canvas id="map-canvas"></canvas>
           <div class="map-tools">
             <button class="pixel-btn" id="map-zoom-in" type="button" aria-label="Zoom in">＋</button>
             <button class="pixel-btn" id="map-zoom-out" type="button" aria-label="Zoom out">－</button>
             <button class="pixel-btn gold" id="map-me" type="button" aria-label="Centre on me">⌖</button>
+            <button class="pixel-btn" id="map-buoy" type="button" aria-label="Drop a buoy">📍</button>
           </div>
-          <div class="map-hint">Drag to move • pinch to zoom</div>
+          <div class="map-hint" id="map-hint">Drag to move • pinch to zoom</div>
         </div>
         <div id="map-legend" style="margin-top:10px;"></div>
       </div>
@@ -4603,6 +4613,15 @@
       const modCost = m => Math.round(m.cost * (friendPerk('barnaby') ? 0.85 : 1));
       const fuelPrice = () => (friendPerk('rook') ? 0.4 : 0.5);
       const RELEASE_MAX_SAVE = 10;
+      /* rigs (v6.5.0, Tackle Shop): one on the line at a time, with any bait; chum is used from a stopped boat */
+      const RIGS = {
+        popper: { id: 'popper', name: 'Surface Popper', icon: '🎯', cost: 220, color: 0xef4444, desc: 'Pops and splashes on the surface: bites come 25% faster and jumpers love it, but bottom-dwellers ignore it.' },
+        jig:    { id: 'jig', name: 'Weighted Deep Jig', icon: '⚓', cost: 480, color: 0x94a3b8, desc: 'Sinks fast to the deep water: from the Open Shelf out, bites come 15% sooner and fish that dive pull 20% less on the line.' },
+        chum:   { id: 'chum', name: 'Chum Bucket (pack of 3)', icon: '🪣', cost: 140, color: 0x92400e, pack: 3, desc: 'Tip one over the stern of a stopped boat and a feeding frenzy gathers behind you.' }
+      };
+      /* map buoys (v6.5.0): up to 3, dropped on the Map, floating in the world */
+      const BUOY_KINDS = { wreck: { name: 'Wreck', icon: '⚓', hex: 0xf97316 }, boss: { name: 'Boss', icon: '🐉', hex: 0xef4444 }, drop: { name: 'Drop-off', icon: '⤵️', hex: 0x3b82f6 } };
+      const BUOY_MAX = 3;
       const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
       const rarityAtLeast = (r, min) => RARITY_ORDER.indexOf(r) >= RARITY_ORDER.indexOf(min);
       /* step types: catch {n, where pier|boat, zoneMin, minW, rarityMin, night, distinct}, deliver {rarityMin, minW},
@@ -6916,6 +6935,24 @@
             K.box(g, 0.3, 0.006, 0.2, M(0xfde68a, 0.5, 0.3), 0.02, 0.153, -0.08); K.cyl(g, 0.045, 0.045, 0.006, M(0xfacc15, 0.3, 0.7), 0.02, 0.158, 0.17, 10);
             K.box(g, 0.02, 0.005, 0.5, M(0xdc2626, 0.7), 0.2, 0.155, 0.06);
             maxDim = 0.8;
+          } else if (key === 'rig') {   // v6.5.0: a popper, a jig or a chum bucket
+            if (d.id === 'popper') {
+              const b = new THREE.Group(); b.rotation.z = Math.PI / 2; g.add(b);
+              K.cyl(b, 0.09, 0.06, 0.42, M(0xf8fafc, 0.4), 0, 0, 0, 12); K.cyl(b, 0.1, 0.09, 0.08, M(d.color, 0.4), 0, 0.22, 0, 12);
+              K.cyl(b, 0.06, 0.03, 0.12, M(d.color, 0.4), 0, -0.26, 0, 10); K.sph(b, 0.025, M(0x111827, 0.3), 0.06, 0.16, 0.06, 6, 5);
+              [-0.12, -0.3].forEach(y => { const hk = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.006, 4, 10, Math.PI * 1.4), M(0xcbd5e1, 0.3, 0.8)); hk.position.set(0, y, 0.09); b.add(hk); });
+              maxDim = 0.7;
+            } else if (d.id === 'jig') {
+              const j = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), M(d.color, 0.25, 0.85)); j.scale.set(0.5, 1.8, 0.35); j.rotation.z = 0.6; g.add(j);
+              K.sph(g, 0.07, M(0x334155, 0.3, 0.8), -0.17, 0.24, 0, 8, 6);
+              const hk = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 4, 10, Math.PI * 1.4), M(0xcbd5e1, 0.3, 0.8)); hk.position.set(0.2, -0.27, 0); g.add(hk);
+              maxDim = 0.7;
+            } else {
+              K.cyl(g, 0.2, 0.16, 0.36, M(d.color, 0.7), 0, 0.18, 0, 12); K.cyl(g, 0.19, 0.19, 0.02, M(0x7f1d1d, 0.9), 0, 0.35, 0, 12);
+              for (let i = 0; i < 6; i++) K.sph(g, 0.04, M([0xfca5a5, 0x94a3b8, 0xfde68a][i % 3], 0.8), Math.cos(i) * 0.1, 0.37, Math.sin(i) * 0.1, 6, 5);
+              const h = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.01, 4, 12, Math.PI), M(0x334155, 0.4, 0.6)); h.position.y = 0.36; g.add(h);
+              maxDim = 0.8;
+            }
           } else if (key === 'fish') {
             const m = this.buildSculptedFishMesh(d.item, textures);
             m.scale.setScalar(THREE.MathUtils.clamp(0.4 + 0.1 * Math.cbrt(d.weight), 0.4, 1.0));
@@ -8584,7 +8621,7 @@ this._scratchVec = new THREE.Vector3();
           spot.x = spot.minX + Math.random() * (spot.maxX - spot.minX);
           spot.z = spot.minZ + Math.random() * (spot.maxZ - spot.minZ);
           spot.ttl = 45 + Math.random() * 40;
-          spot.spotted = false; spot.pipSaid = false;   // a frenzy that moves needs spotting again
+          spot.spotted = false; spot.pipSaid = false; spot.chum = false;   // a frenzy that moves needs spotting again
           spot.mesh.position.set(spot.x, 0.08, spot.z);
         }
 
@@ -8705,7 +8742,7 @@ this._scratchVec = new THREE.Vector3();
           }
 
           for (const f of this.frenzies) {
-            f.mesh.visible = !!this.frenzyVisible;
+            f.mesh.visible = !!this.frenzyVisible || !!f.chum;   // a chummed frenzy shows without a sonar
             f.ttl -= dt;
             if (f.ttl <= 0) {
               this.relocateFrenzy(f);
@@ -9377,7 +9414,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let biteTimer = 0;
       let activeCatch = null;
       let tension = 0.32;
-      let fightFed = false;   // this fight uses a charge of a 'steadier line' meal
+      let fightFed = false, fightJig = false;   // this fight uses a charge of a 'steadier line' meal
       let reelProgress = 0;
       let initialLineDist = 14;
       let underpoweredTimer = 0;
@@ -9585,6 +9622,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           toggleFirstPerson(true);
         } else if (e.code === 'KeyM') {
           openMapModal();
+        } else if (e.code === 'KeyC') {
+          useChum();
         } else if (e.code === 'KeyL') {
           openLogModal();
         } else if (e.code === 'Space' || e.code === 'KeyE' || e.code === 'Enter') {
@@ -10254,6 +10293,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           story: defaultStory(),
           kitchen: defaultKitchen(),
           town: defaultTown(),
+          rig: { owned: [], eq: null, chum: 0 },
+          buoys: [],
           playerName: '',
           seenSpecies: [],
           look: AnglerFactory.defaultLook('male'),
@@ -10797,6 +10838,13 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         out.story = sanitizeStory(src.story);
         out.kitchen = sanitizeKitchen(src.kitchen);
         out.town = sanitizeTown(src.town);
+        {   // rigs and buoys (v6.5.0)
+          const r = src.rig && typeof src.rig === 'object' ? src.rig : {};
+          const owned = [...new Set((Array.isArray(r.owned) ? r.owned : []).filter(id => id === 'popper' || id === 'jig'))];
+          out.rig = { owned, eq: owned.includes(r.eq) ? r.eq : null, chum: Math.max(0, Math.min(99, Math.floor(Number(r.chum)) || 0)) };
+          out.buoys = (Array.isArray(src.buoys) ? src.buoys : []).filter(b => b && BUOY_KINDS[b.k] && Number.isFinite(+b.x) && Number.isFinite(+b.z))
+            .slice(0, BUOY_MAX).map(b => ({ k: b.k, x: Math.max(-400, Math.min(400, +b.x)), z: Math.max(-2500, Math.min(0, +b.z)) }));
+        }
         out.playerName = cleanName(src.playerName);
 
         // appearance: sanitised against the option lists; the look's gender is the source of truth
@@ -12614,6 +12662,56 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (weatherTimer < 25 && pendingWeather === null) { pendingWeather = rollWeather(); if (pendingWeather === 'STORM' && state.weather !== 'STORM') showToast('👵 Marta: "A storm is coming. Get the boat in, or get ready for the electric ones."'); }
         }
       }
+      /* ---- rigs (v6.5.0) ---- */
+      const rigState = () => state.rig || (state.rig = { owned: [], eq: null, chum: 0 });
+      const rigBiteMult = () => { const e = rigState().eq; return e === 'popper' ? 0.8 : e === 'jig' && getCurrentZone().id >= 3 ? 0.85 : 1; };
+      function rigWeight(item) {
+        if (rigState().eq !== 'popper' || item.category !== 'Fish') return 1;
+        const st = fightStyleFor({ item });
+        return st === 'jumper' ? 2.5 : (item.shape === 'fish_flat' || item.shape === 'fish_angler') ? 0.05 : 1;
+      }
+      const chumReady = () => onBoat && !dive.active && mode === 'BOAT_DRIVING' && Math.abs(boatVel) < 0.6 && rigState().chum > 0 && state.boatTier > 0;
+      function useChum() {
+        if (!chumReady()) { if (onBoat && rigState().chum > 0) showToast('🪣 Stop the boat first.'); return; }
+        const rg = rigState(), f = vfx.getNearestFrenzy(boatPos); if (!f) return;
+        rg.chum--;
+        const sp = f.spot, d = boatHalfLen + 5;
+        sp.x = boatPos.x + Math.sin(boatYaw) * d; sp.z = Math.min(-20, boatPos.z + Math.cos(boatYaw) * d);
+        sp.ttl = 75; sp.chum = true; sp.spotted = false; sp.pipSaid = true; sp.mesh.position.set(sp.x, 0.08, sp.z);
+        sfx.playSplash && sfx.playSplash(); vfx.spawnSplash(new THREE.Vector3(sp.x, 0.1, sp.z), 24, 0xfca5a5, 3);
+        saveGame(); showToast(`🪣 Chum over the stern: a feeding frenzy gathers behind the boat! (${rg.chum} left)`);
+      }
+      function chumTick() { const v = chumReady() ? '1' : '0'; if (document.body.dataset.chum !== v) document.body.dataset.chum = v; }
+
+      /* ---- map buoys (v6.5.0): dropped on the Map, floating at sea, listed with distance and bearing ---- */
+      const buoyMeshes = [];
+      function syncBuoys() {
+        buoyMeshes.forEach(m => scene.remove(m)); buoyMeshes.length = 0;
+        (state.buoys || []).forEach(b => {
+          const K = BUOY_KINDS[b.k], g = new THREE.Group(), M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, flatShading: true });
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, 0.6, 10), M(K.hex)); body.position.y = 0.2; g.add(body);
+          const band = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.1, 10), M(0xf8fafc)); band.position.y = 0.32; g.add(band);
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.2, 6), M(0x334155)); pole.position.y = 1.5; g.add(pole);
+          const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.42), new THREE.MeshBasicMaterial({ color: K.hex, side: THREE.DoubleSide })); flag.position.set(0.36, 2.35, 0); g.add(flag);
+          const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: K.hex })); lamp.position.y = 2.65; g.add(lamp);
+          g.position.set(b.x, 0, b.z); g.userData.ph = b.x * 0.3; scene.add(g); buoyMeshes.push(g);
+        });
+      }
+      function updateBuoys() {
+        if (buoyMeshes.length === 0 && (state.buoys || []).length) syncBuoys();
+        const under = !!dive.active;
+        buoyMeshes.forEach(g => { g.visible = !under; g.position.y = Math.sin(elapsed * 1.3 + g.userData.ph) * 0.08; g.rotation.z = Math.sin(elapsed * 0.9 + g.userData.ph) * 0.05; });
+      }
+      const buoyPlaces = () => (state.buoys || []).map(b => ({ icon: BUOY_KINDS[b.k].icon, name: `${BUOY_KINDS[b.k].name} buoy`, desc: 'Your own marker, dropped on the Map.', x: b.x, z: b.z, far: true }));
+      function dropBuoy(k, x, z) {
+        if (!state.buoys) state.buoys = [];
+        if (state.buoys.length >= BUOY_MAX) { showToast(`📍 You have ${BUOY_MAX} buoys already: remove one first.`); return false; }
+        if (z > -4) { showToast('📍 Buoys go on the water.'); return false; }
+        state.buoys.push({ k, x: +x.toFixed(1), z: +z.toFixed(1) }); syncBuoys(); saveGame(); sfx.playTick();
+        showToast(`📍 ${BUOY_KINDS[k].name} buoy dropped.`); return true;
+      }
+      function removeBuoy(i) { state.buoys.splice(i, 1); syncBuoys(); saveGame(); }
+
       const townLift = () => (!onBoat && playerZ > ISLAND.rampZ0 ? townGround(playerZ) - 1.5 : 0);   // the camera rises with the upper terrace
 
       /* ---- the harbour map ---- */
@@ -12646,7 +12744,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { icon: '🔭', name: 'Lookout Pavilion', desc: 'A telescope over the bay (spots frenzies, treasure and boss shadows) and a bench for reading.', x: TOWN.lookout.x, z: TOWN.lookout.z, w: 4.2, d: 4.2, col: '#0f766e' },
         { icon: '🏗️', name: 'Winch', desc: "Rook's dock winch beside the Boatyard: the dockhand job is done here.", x: TOWN.winch.x, z: TOWN.winch.z, w: 1, d: 1, col: '#f59e0b' },
         { icon: '🗼', name: 'Lighthouse', desc: 'Out at sea in the Coastal Reef, with a small jetty you can dock at and fish from.', x: 52, z: -150, far: true },
-        ...scopeMarks()
+        ...scopeMarks(),
+        ...buoyPlaces()
       ];
       function mapCompass(dx, dz) {
         const a = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
@@ -12732,8 +12831,28 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('map-zoom-in').addEventListener('click', () => mid(1.5));
         document.getElementById('map-zoom-out').addEventListener('click', () => mid(1 / 1.5));
         document.getElementById('map-me').addEventListener('click', () => { const me = mapYou(); mapCentre(me.x, me.z); });
+        // buoys: 📍 opens a small bar (pick a kind, then tap the sea), with your buoys and a ✕ to remove each
+        document.getElementById('map-buoy').addEventListener('click', () => { mapView.buoyBar = !mapView.buoyBar; mapView.placing = null; renderBuoyBar(); });
+        let downAt = null;
+        cv.addEventListener('pointerdown', e => { downAt = P.size === 1 ? local(e) : null; });
+        cv.addEventListener('pointerup', e => {
+          if (!mapView.placing || !downAt) return;
+          const p = local(e); if (Math.hypot(p.x - downAt.x, p.y - downAt.y) > 8) return;
+          const { w, h } = mapSize(), x = mapView.cx + (p.x - w / 2) / mapView.s, z = mapView.cz + (p.y - h / 2) / mapView.s;
+          if (dropBuoy(mapView.placing, x, z)) { mapView.placing = null; renderBuoyBar(); mapRedraw(); mapLegend(); }
+        });
         document.getElementById('map-legend').addEventListener('click', e => { const r = e.target.closest('.map-row'); if (!r) return; mapCentre(+r.dataset.x, +r.dataset.z); if (mapView.s < 8) mid(8 / mapView.s); });
       })();
+      function renderBuoyBar() {
+        const bar = document.getElementById('map-buoy-bar'), hint = document.getElementById('map-hint'); if (!bar) return;
+        bar.style.display = mapView.buoyBar ? 'flex' : 'none';
+        hint.textContent = mapView.placing ? `Tap the sea to drop the ${BUOY_KINDS[mapView.placing].icon} ${BUOY_KINDS[mapView.placing].name} buoy` : 'Drag to move • pinch to zoom';
+        if (!mapView.buoyBar) return;
+        const list = (state.buoys || []).map((b, i) => `<button class="pixel-btn red" data-rm="${i}" type="button">${BUOY_KINDS[b.k].icon} ✕</button>`).join('');
+        bar.innerHTML = `<span class="mb-l">Drop (${(state.buoys || []).length}/${BUOY_MAX}):</span>` + Object.entries(BUOY_KINDS).map(([k, K]) => `<button class="pixel-btn ${mapView.placing === k ? 'gold' : ''}" data-k="${k}" type="button">${K.icon} ${K.name}</button>`).join('') + (list ? `<span class="mb-l">Remove:</span>${list}` : '');
+        bar.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => { mapView.placing = mapView.placing === b.dataset.k ? null : b.dataset.k; renderBuoyBar(); }));
+        bar.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', () => { removeBuoy(+b.dataset.rm); renderBuoyBar(); mapRedraw(); mapLegend(); }));
+      }
       function drawMap() {
         const { cv, w, h } = mapSize(), dpr = Math.min(2, window.devicePixelRatio || 1);
         if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
@@ -12986,6 +13105,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         world.fishingLine.visible = true;
         waitTimer = cheats.fastBites ? 0.35 : (inFrenzy ? (0.9 + Math.random() * 1.1) : (1.8 + Math.random() * 2.4));
         if (useBuff('bite')) waitTimer *= 0.7;   // a meal from the restaurant: one charge per cast
+        waitTimer *= rigBiteMult();                // the rig on the line (v6.5.0)
         if (inFrenzy) {
           showToast('🔥 Landed in a Feeding Frenzy! Fast bites & rare odds!');
         }
@@ -13039,6 +13159,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             if (item.rarity === 'Epic') w = 2.5 * (1 + rb * 3.0) * frenzyRarityMult;
             if (item.rarity === 'Legendary') w = 1.2 * (1 + rb * 3.5) * frenzyRarityMult;
           }
+          w *= rigWeight(item);   // the popper draws jumpers and is ignored by bottom-dwellers (v6.5.0)
           return { item, weight: Math.max(0.2, w) };
         });
 
@@ -13091,6 +13212,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
         startFight(activeCatch);
         fightFed = useBuff('line');   // a meal from the restaurant: one charge per fight
+        fightJig = rigState().eq === 'jig' && fight.style === 'diver' && getCurrentZone().id >= 3;   // the deep jig tames divers out deep
         mode = 'REELING';
         tension = 0.28;
         reelProgress = 0.05;
@@ -13717,6 +13839,20 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           card.appendChild(btn);
           list.appendChild(card);
         });
+        // rigs (v6.5.0)
+        const rg = rigState();
+        if (rg.owned.length || rg.chum) {
+          const h = document.createElement('h4'); h.className = 'ql-h'; h.textContent = '🪝 Rigs'; list.appendChild(h);
+          rg.owned.forEach(id => {
+            const r = RIGS[id], eq = rg.eq === id, card = document.createElement('div');
+            card.className = `shop-card ${eq ? 'equipped' : ''}`;
+            card.innerHTML = `<div><div class="card-title"><span>${r.icon} ${r.name}</span></div><div class="card-stats">${r.desc}</div></div>`;
+            const b = document.createElement('button'); b.className = eq ? 'pixel-btn green' : 'pixel-btn gold'; b.textContent = eq ? 'Take off' : 'Equip';
+            b.onclick = () => { rg.eq = eq ? null : id; sfx.playCoin(); saveGame(); renderToolbox(); updateHUD(); showToast(eq ? `🪝 ${r.name} taken off.` : `🪝 ${r.name} on your line.`); };
+            card.appendChild(b); list.appendChild(card);
+          });
+          if (rg.chum) { const n = document.createElement('p'); n.className = 'town-note'; n.textContent = `🪣 ${rg.chum} chum bucket${rg.chum > 1 ? 's' : ''}: use them from a stopped boat (🪣 CHUM button or C).`; list.appendChild(n); }
+        }
       }
 
       /* ---- Bounty board: the active contracts are written on the papers pinned to the board (see buildBountyBoard).
@@ -13891,7 +14027,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          once to small images. To add a good, add it to shopItems() and give buildShopItem() a model.
          ========================================================================= */
       const SHOP_KINDS = {
-        tackle:   { title: '🎣 TACKLE SHOP', stand: 'shop', tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['buckets', '🪣 Buckets'], ['books', '📚 Book']] },
+        tackle:   { title: '🎣 TACKLE SHOP', stand: 'shop', tabs: [['rods', '🎣 Rods'], ['baits', '🪱 Bait'], ['rigs', '🪝 Rigs'], ['buckets', '🪣 Buckets'], ['books', '📚 Book']] },
         boatyard: { title: '⚓ BOATYARD', stand: 'boatyard', tabs: [['boats', '⛵ Boats'], ['modules', '📡 Modules'], ['fuel', '⛽ Fuel'], ['books', '📚 Book']] },
         dive:     { title: '🤿 DIVE SHOP', stand: 'dive', tabs: [['dive', '🤿 Dive gear'], ['spear', '🔱 Spear guns'], ['books', '📚 Book']] },
         fish:     { title: '🐟 FISH MARKET', stand: 'fish', list: 'fish', tabs: [['sell', '🐟 Sell'], ['books', '📚 Book']] },
@@ -13990,6 +14126,19 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                 act: () => { pay(bt.cost); state.baitStock[bt.tier] = stock + 10; state.baitTier = bt.tier; state.baitCount = state.baitStock[bt.tier]; saveGame(); updateHUD(); showToast(`Bought 10x ${bt.name}!`); } });
             }
           });
+        } else if (tab === 'rigs') {
+          const rg = rigState();
+          ['popper', 'jig'].forEach(id => {
+            const r = RIGS[id], owned = rg.owned.includes(id), eq = rg.eq === id;
+            add({ id: 'rig' + id, key: 'rig', data: r, title: `${r.icon} ${r.name}`, stats: 'Rig: one at a time, with any bait', desc: r.desc, price: owned ? null : r.cost, verb: owned ? (eq ? 'Take off' : 'Equip') : 'Buy',
+              badge: eq ? 'EQUIPPED' : owned ? 'OWNED' : '', can: owned || afford(r.cost), note: owned ? (eq ? 'On your line.' : 'In your toolbox.') : afford(r.cost) ? '' : shopNeed(r.cost),
+              confirm: owned ? (eq ? `Take the ${r.name} off your line?` : `Put the ${r.name} on your line?`) : `Buy the ${r.name} for ${shopMoney(r.cost)}? It goes on your line.`,
+              act: () => { if (!owned) { pay(r.cost); rg.owned.push(id); } rg.eq = eq ? null : id; saveGame(); updateHUD(); showToast(eq ? `🪝 ${r.name} taken off.` : `🪝 ${r.name} on your line.`); } });
+          });
+          const c = RIGS.chum;
+          add({ id: 'rigchum', key: 'rig', data: c, title: `${c.icon} ${c.name}`, stats: `You have ${rg.chum}`, desc: c.desc, price: c.cost, verb: 'Buy',
+            badge: '', can: afford(c.cost), note: afford(c.cost) ? 'Use it with the 🪣 CHUM button on a stopped boat (or C).' : shopNeed(c.cost),
+            confirm: `Buy 3 chum buckets for ${shopMoney(c.cost)}?`, act: () => { pay(c.cost); rg.chum += c.pack; saveGame(); updateHUD(); showToast(`🪣 +3 chum buckets (${rg.chum}).`); } });
         } else if (tab === 'buckets') {
           BUCKET_TIERS.forEach(bk => {
             const owned = state.bucketTier >= bk.tier, eq = state.bucketTier === bk.tier;
@@ -15232,9 +15381,9 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         const bait = getCurrentBait();
         const curStock = state.baitStock[state.baitTier] || 0;
-        document.getElementById('hud-bait').textContent = bait.infinite
+        document.getElementById('hud-bait').textContent = (bait.infinite
           ? `${bait.name} (∞)`
-          : `${bait.name} (${curStock}x)`;
+          : `${bait.name} (${curStock}x)`) + (rigState().eq ? ` + ${RIGS[rigState().eq].name}` : '');
 
         const hrs = Math.floor(state.timeOfDay * 24) % 24;
         const mins = Math.floor((state.timeOfDay * 24 * 60) % 60);
@@ -15449,6 +15598,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         let mul = 1;
         const dd = f.pos.distanceTo(diver);
         if (f.skit > 0 && dd < f.skit && f.fleeT <= 0) { f.fleeT = 1.6 + Math.random(); f.threat.copy(diver); }
+        if (f.lurk && dd < 5.5 && Math.abs(dive.vf) > 1.1 && f.fleeT <= 0) { f.fleeT = 2.8; f.threat.copy(diver); }   // a lurker bolts if you rush in
         if (spearPos && f.pos.distanceTo(spearPos) < 3.2 && f.fleeT <= 0) { f.fleeT = 2.2; f.threat.copy(spearPos); }
         if (f.fleeT > 0) {
           f.fleeT -= dt; mul = 2.7;
@@ -15590,6 +15740,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       const CELL = 7;
       const propCells = new Map();
       const swayList = [];
+      const ventList = [];          // thermal vents in the loaded cells (v6.5.0)
+      const lurkDone = new Set();   // overhangs whose lurkers came out this dive
       const diveOpened = new Set();
       let propKeyI = 1e9, propKeyJ = 1e9;
       const propRadius = () => (settings.quality === 'low' ? 3 : 5);
@@ -15749,6 +15901,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           if (kind === 'rock') addSolidFromObject(key, p, 0.8); else if (kind === 'coral') addSolidFromObject(key, p, 0.7);
           if (p.userData.sway || p.userData.pulse) swayList.push(p);
         }
+        // v6.5.0: thermal vents (rising bubbles: lift and +15% air) and reef overhangs (shy, valuable lurkers) from the Coastal Reef out
+        {
+          const vx = (i + 0.5) * CELL, vz = (j + 0.5) * CELL, hv = hash2(i + 313, j - 41);
+          if (vz < -24 && diveZoneAt(vz).id >= 2 && hv < 0.05) { const v = buildVent(); v.rotation.y = 0.001; place(v, vx, vz); ventList.push(v); addDiveSolid(key, v.position.x, v.position.z, 0.7, v.position.y - 0.2, v.position.y + 0.7); }
+          else if (vz < -24 && diveZoneAt(vz).id >= 2 && hv > 0.955) {
+            const o = buildOverhang(); o.rotation.y = 0.001; place(o, vx, vz);
+            const y = o.position.y; [-1.3, 1.3].forEach(dx => addDiveSolid(key, vx + dx, vz, 0.55, y - 0.2, y + 2.0)); addDiveSolid(key, vx, vz, 1.7, y + 1.85, y + 2.5);
+            if (!lurkDone.has(key)) { lurkDone.add(key); spawnLurkers(diveZoneAt(vz), vx, vz); }
+          }
+        }
         const cx = (i + 0.2 + hash2(i + 71, j - 3) * 0.6) * CELL, cz = (j + 0.2 + hash2(i - 5, j + 71) * 0.6) * CELL;
         if (cz < -8 && hash2(i + 501, j - 77) < 0.045 && !diveOpened.has(key)) {
           const c = buildChest(); c.userData.key = key; c.rotation.y = hash2(i, j * 3) * 6.28;
@@ -15769,9 +15931,46 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           diveRoot.remove(o);
           const si = swayList.indexOf(o); if (si >= 0) swayList.splice(si, 1);
           const ci = diveChests.indexOf(o); if (ci >= 0) diveChests.splice(ci, 1);
+          const vi = ventList.indexOf(o); if (vi >= 0) ventList.splice(vi, 1);
         });
         propCells.delete(key);
         for (let i = diveSolids.length - 1; i >= 0; i--) if (diveSolids[i].key === key) diveSolids.splice(i, 1);
+      }
+      const _bubGeo = new THREE.SphereGeometry(0.1, 6, 5), _bubMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.7 });
+      function buildVent() {
+        const g = new THREE.Group(), M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9, flatShading: true });
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.9, 7, 1, true), M(0x3f3f46)); cone.position.y = 0.4; g.add(cone);
+        const glow = new THREE.Mesh(new THREE.CircleGeometry(0.28, 10), new THREE.MeshBasicMaterial({ color: 0xfb923c })); glow.rotation.x = -Math.PI / 2; glow.position.y = 0.82; g.add(glow);
+        const bub = []; for (let k = 0; k < 9; k++) { const b = new THREE.Mesh(_bubGeo, _bubMat); b.scale.setScalar(0.6 + (k % 3) * 0.4); g.add(b); bub.push(b); }
+        g.userData.bub = bub; g.userData.usedT = -999; return g;
+      }
+      function buildOverhang() {
+        const g = new THREE.Group(), rock = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.95, flatShading: true });
+        [-1.3, 1.3].forEach(dx => { const p = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6, 0), rock); p.scale.set(0.9, 2.0, 0.9); p.position.set(dx, 1.0, 0); g.add(p); });
+        const slab = new THREE.Mesh(new THREE.DodecahedronGeometry(1.0, 0), rock); slab.scale.set(2.0, 0.45, 1.2); slab.position.y = 2.15; g.add(slab);
+        [[-0.8, 0xf472b6], [0.5, 0xfb923c], [1.1, 0xa3e635]].forEach(([x, c]) => { const k = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.4, 5), new THREE.MeshStandardMaterial({ color: c, flatShading: true })); k.position.set(x, 2.55, 0.3); g.add(k); });
+        return g;
+      }
+      /* lurkers: eels and rare fish under an overhang, worth half again as much, that bolt if you come in fast */
+      function spawnLurkers(zone, x, z) {
+        const pool = CATCH_CATALOG.filter(c => c.category === 'Fish' && c.zones.includes(zone.id) && !c.fullMoonOnly && !c.stormOnly && c.rarity !== 'Legendary' && (c.shape === 'fish_eel' || rarityAtLeast(c.rarity, 'Rare')));
+        if (!pool.length) return;
+        const n = 1 + (hash2(Math.round(x), Math.round(z)) > 0.5 ? 1 : 0);
+        for (let k = 0; k < n; k++) {
+          const f = spawnDiveFish(pool[Math.floor(Math.random() * pool.length)], zone, x + (k - 0.5) * 0.8, z + 0.2);
+          f.lurk = true; f.skit = 0; f.depthPref = 0; f.value = Math.round(f.value * 1.5); f.speed *= 1.3;
+        }
+      }
+      function updateVents(dt) {
+        ventList.forEach(v => {
+          v.userData.bub.forEach((b, k) => { const t = (elapsed * 1.4 + k * 0.83) % 7.5; b.position.set(Math.sin(t * 2 + k) * 0.15, 0.9 + t * 1.6, Math.cos(t * 1.7 + k) * 0.15); });
+          if (dt <= 0) return;
+          const dx = dive.pos.x - v.position.x, dz = dive.pos.z - v.position.z, hy = dive.pos.y - v.position.y;
+          if (dx * dx + dz * dz < 6.8 && hy > -0.5 && hy < 13) {
+            dive.vy += 1.6 * dt;   // the warm water lifts you
+            if (dive.t - v.userData.usedT > 45) { v.userData.usedT = dive.t; dive.air = Math.min(dive.airMax, dive.air + dive.airMax * 0.15); sfx.playTick(); showToast('♨️ Thermal vent: +15% air'); }
+          }
+        });
       }
       function updateProps(cx, cz, force) {
         const ci = Math.floor(cx / CELL), cj = Math.floor(cz / CELL);
@@ -15785,6 +15984,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       }
       function clearProps() {
         for (const key of [...propCells.keys()]) dropCell(key);
+        lurkDone.clear();
         propKeyI = propKeyJ = 1e9; seabedKeyX = seabedKeyZ = 1e9;
       }
 
@@ -16336,6 +16536,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         updateSeabedMesh(dive.pos.x, dive.pos.z, false);
         updateProps(dive.pos.x, dive.pos.z, false);
+        updateVents(dt);
         swayList.forEach(p => {
           if (p.userData.sway) { p.rotation.z = Math.sin(elapsed * 1.1 + p.userData.phase) * p.userData.sway; p.rotation.x = Math.cos(elapsed * 0.9 + p.userData.phase) * p.userData.sway * 0.7; }
           else if (p.userData.pulse) { const k = 0.85 + 0.15 * Math.sin(elapsed * 2 + p.userData.phase); p.scale.setScalar(k); }
@@ -16478,7 +16679,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateShopBrowse(dt);
         updateCabinFade(dt);
         updateAquarium(dt);
-        updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps(); friendPerkTick();
+        updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps(); friendPerkTick(); chumTick(); updateBuoys();
         perfCull();   // v6.3.1: what cannot be seen is not drawn
         updateTownFade(dt);
         updateStationPicker(false);
@@ -17117,7 +17318,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
                   : (isCounterPulling ? (0.34 + rod.forgiveness * 0.28) : (isPullingSameWay ? -0.18 : 0.08));
 
                 if (isHoldingAction) {
-                  const rawDelta = fishDragForce - dragRelief + 0.11, netTensionDelta = rawDelta > 0 && fightFed ? rawDelta * 0.85 : rawDelta;
+                  const rawDelta = fishDragForce - dragRelief + 0.11, netTensionDelta = rawDelta > 0 ? rawDelta * (fightFed ? 0.85 : 1) * (fightJig ? 0.8 : 1) : rawDelta;
                   tension += netTensionDelta * dt;
                   const reelEfficiency = isPassiveItem
                     ? 0.26
