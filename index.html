@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.6.2';
+    window.PF_VERSION = '6.7.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -618,69 +618,80 @@
     #station-picker button { font: inherit; font-size: 11px; font-weight: 900; letter-spacing: 0.2px; padding: 4px 7px; min-height: 30px; border-radius: 4px; background: rgba(14, 22, 36, 0.92); color: #bae6fd; border: 2px solid #38bdf8; box-shadow: 0 0 0 2px #070c14; cursor: pointer; }
     #station-picker button.on { background: #0369a1; color: #fff; border-color: #7dd3fc; }
 
-    /* ---- shop catalogue and bucket list ---- */
+    /* ---- the shop sheet (v6.7.0): one accessible, data-driven bottom sheet for every shop, stand and town counter ---- */
     #shop-ui { position: fixed; inset: 0; z-index: 14; pointer-events: none; display: none; }
     body[data-shopping="1"] #shop-ui { display: block; }
     body[data-shopping="1"] #mobile-controls, body[data-shopping="1"] .hud-stack, body[data-shopping="1"] #center-hud, body[data-shopping="1"] #joy-zone { display: none !important; }
-    #shop-sheet { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 720px; max-height: 64vh; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px calc(var(--safe-bottom, 0px) + 10px);
-      background: linear-gradient(#f7ebc6, #ecd9a0); border-top: 4px solid #8a5a2b; border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55); color: #3b2410; pointer-events: auto; font-family: "Courier New", monospace; }
-    #shop-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    #shop-name { font-size: 16px; font-weight: 900; color: #7c2d12; letter-spacing: 0.5px; margin-right: auto; }
-    #shop-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
-    #shop-tabs button { font: inherit; font-size: 14px; font-weight: 900; padding: 5px 10px; min-height: 36px; border-radius: 6px; background: #f2e2b0; color: #5b3a1a; border: 2px solid #b08a50; cursor: pointer; }
-    #shop-tabs button.on { background: #b45309; color: #fff; border-color: #7c2d12; }
-    #shop-leave { font: inherit; font-size: 18px; font-weight: 900; width: 40px; min-height: 36px; border-radius: 6px; background: #b91c1c; color: #fff; border: 2px solid #7f1d1d; cursor: pointer; }
-    #shop-book { display: flex; align-items: stretch; gap: 6px; min-height: 0; flex: 1 1 auto; overflow: hidden; }
-    #shop-book .arrow { flex: 0 0 48px; font: inherit; font-size: 40px; font-weight: 900; line-height: 1; border-radius: 10px; background: #f2e2b0; color: #7c2d12; border: 2px solid #b08a50; cursor: pointer; }
-    #shop-book .arrow:disabled { opacity: 0.3; cursor: default; }
-    #shop-spread { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; overflow: hidden; transform-origin: center; }
-    #shop-spread.flip-r { animation: pageInR 0.34s ease-out; }
-    #shop-spread.flip-l { animation: pageInL 0.34s ease-out; }
-    @keyframes pageInR { from { transform: perspective(800px) rotateY(-60deg) translateX(34px); opacity: 0; } to { transform: none; opacity: 1; } }
-    @keyframes pageInL { from { transform: perspective(800px) rotateY(60deg) translateX(-34px); opacity: 0; } to { transform: none; opacity: 1; } }
-    #shop-pic { position: relative; flex: 0 0 auto; width: min(44vw, 27vh); aspect-ratio: 1; padding: 0; border: 3px solid #8a5a2b; border-radius: 10px; background: #f4e6bf; box-shadow: 3px 3px 0 rgba(60, 36, 16, 0.35); cursor: pointer; overflow: hidden; }
-    #shop-pic img { width: 100%; height: 100%; display: block; image-rendering: auto; }
-    @media (max-height: 700px) { #shop-pic { width: min(36vw, 19vh); } }   /* v6.6.2: bigger text needs the room on short screens */
-    #shop-badge { position: absolute; left: 6px; top: 6px; padding: 2px 7px; font-size: 13px; font-weight: 900; background: #166534; color: #fff; border-radius: 4px; }
-    #shop-info { width: 100%; text-align: center; overflow: auto; min-height: 0; }
-    #shop-title { font-size: 19px; font-weight: 900; color: #3b2410; line-height: 1.2; }
-    #shop-stats { font-size: 14px; color: #92400e; margin-top: 2px; line-height: 1.25; }
-    #shop-desc { font-size: 15px; color: #4a3220; margin-top: 4px; line-height: 1.35; }
-    #shop-book-foot { display: flex; align-items: center; gap: 10px; }
-    #shop-count { font-size: 13px; color: #7c5a30; white-space: nowrap; }
-    #shop-price { font-size: 22px; font-weight: 900; color: #166534; margin-right: auto; }
-    #shop-buy, #shop-sellall { font: inherit; font-size: 17px; font-weight: 900; min-height: 52px; padding: 6px 16px; border-radius: 10px; background: #15803d; color: #fff; border: 3px solid #14532d; cursor: pointer; box-shadow: 0 3px 0 #14532d; }
-    #shop-buy { flex: 1 1 auto; }
-    #shop-buy.sell, #shop-sellall { background: #b45309; border-color: #7c2d12; box-shadow: 0 3px 0 #7c2d12; }
-    #shop-buy:disabled, #shop-sellall:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; box-shadow: none; cursor: default; font-size: 15px; }
-    #shop-sheet[data-mode="book"] #shop-listwrap, #shop-sheet[data-mode="list"] #shop-book, #shop-sheet[data-mode="list"] #shop-book-foot { display: none; }
-    #shop-listwrap { display: flex; flex-direction: column; gap: 6px; min-height: 0; flex: 1 1 auto; }
-    #shop-summary { font-size: 14px; line-height: 1.4; color: #4a3220; background: #f7efd2; border: 2px solid #c9a867; border-radius: 8px; padding: 6px 9px; }
-    #shop-summary .eco { height: 9px; margin-top: 5px; border: 2px solid #3f6212; background: #ecfccb; border-radius: 5px; overflow: hidden; }
-    #shop-summary .eco i { display: block; height: 100%; background: #16a34a; }
-    #shop-rows { flex: 1 1 auto; min-height: 90px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; -webkit-overflow-scrolling: touch; }
-    .sl-row { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 5px 9px; font: inherit; text-align: left; border-radius: 8px; background: #fbf3d8; border: 2px solid #c9a867; color: #3b2410; cursor: pointer; }
-    .sl-row img { width: 34px; height: 34px; image-rendering: pixelated; }
-    .sl-n { flex: 1; font-size: 15px; font-weight: 900; line-height: 1.25; } .sl-n small { display: block; font-size: 13px; font-weight: 700; color: #92400e; }
-    .sl-p { font-size: 17px; font-weight: 900; color: #166534; }
-    .sl-head { font-size: 14px; font-weight: 900; padding: 3px 4px; border-bottom: 3px solid; display: flex; align-items: center; gap: 6px; margin-top: 4px; } .sl-head span { width: 12px; height: 12px; border-radius: 3px; }
-    .sl-btn { font: inherit; font-size: 14px; font-weight: 900; min-height: 40px; padding: 4px 11px; border-radius: 8px; background: #15803d; color: #fff; border: 2px solid #14532d; cursor: pointer; }
-    .sl-btn.red { background: #b91c1c; border-color: #7f1d1d; }
-    .sl-btn:disabled { background: #cbb98a; color: #6b5a3a; border-color: #a89870; cursor: default; }
-    .bar { display: inline-block; vertical-align: middle; width: 54px; height: 9px; border: 2px solid #5b3a1a; border-radius: 5px; background: #ecd9a0; overflow: hidden; margin-right: 4px; } .bar i { display: block; height: 100%; }
-    #shop-rows .sl-row > .sl-n { flex: 1; min-width: 0; }
-    .sl-empty { font-size: 15px; color: #7c5a30; text-align: center; padding: 18px 8px; }
-    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.55); pointer-events: auto; z-index: 2; }
+    .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    #shop-sheet { --sh-accent: #fbbf24; position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; max-width: 760px; max-height: 66vh; max-height: 66dvh; display: flex; flex-direction: column; gap: 8px;
+      padding: 10px 12px calc(var(--safe-bottom, 0px) + 10px); background: linear-gradient(180deg, rgba(17, 25, 44, 0.97), rgba(9, 14, 27, 0.98)); color: #e2e8f0;
+      border-top: 3px solid var(--sh-accent); border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.55); pointer-events: auto; animation: shUp 0.22s ease-out; font-size: 15px; }
+    @keyframes shUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+    #shop-sheet [hidden], #town-body [hidden] { display: none !important; }
+    .sh-head, .sh-tabs, .sh-summary, .sh-foot { flex: 0 0 auto; }
+    .sh-summary { max-height: 30vh; overflow-y: auto; }
+    .sh-head { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+    .sh-icon { font-size: 24px; line-height: 1; }
+    .sh-name { flex: 1; min-width: 0; margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sh-cash { font-size: 15px; font-weight: 900; color: #fde68a; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.35); padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+    .sh-close { flex: 0 0 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(248, 113, 113, 0.5); background: rgba(185, 28, 28, 0.85); color: #fff; font: inherit; font-size: 18px; font-weight: 900; cursor: pointer; }
+    .sh-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .sh-tabs::-webkit-scrollbar { display: none; }
+    .sh-tabs [role="tab"] { flex: 0 0 auto; min-height: 42px; padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.35); background: rgba(30, 41, 59, 0.9); color: #cbd5e1; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    .sh-tabs [role="tab"][aria-selected="true"] { background: var(--sh-accent); border-color: var(--sh-accent); color: #111827; }
+    .sh-summary { font-size: 14px; line-height: 1.45; color: #cbd5e1; background: rgba(30, 41, 59, 0.75); border: 1px solid rgba(148, 163, 184, 0.22); border-left: 4px solid var(--sh-accent); border-radius: 12px; padding: 8px 12px; }
+    .sh-summary b { color: #f8fafc; }
+    .sh-summary .eco { height: 8px; margin-top: 6px; background: #1e293b; border-radius: 999px; overflow: hidden; } .sh-summary .eco i { display: block; height: 100%; background: #22c55e; }
+    .sh-body { flex: 1 1 auto; min-height: 96px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-radius: 12px; }
+    .sh-list { list-style: none; margin: 0; padding: 0 2px 4px; display: flex; flex-direction: column; gap: 8px; }
+    .sh-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; padding: 10px 12px; border-radius: 14px; background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(148, 163, 184, 0.2); }
+    .sh-row.locked { opacity: 0.92; }
+    .sh-row-main { flex: 1 1 190px; min-width: 0; display: flex; align-items: center; gap: 12px; }
+    .sh-row-main > img { width: 40px; height: 40px; image-rendering: pixelated; flex: 0 0 auto; }
+    .sh-row .sl-n { flex: 1; min-width: 0; font-size: 15.5px; font-weight: 800; color: #f8fafc; line-height: 1.3; }
+    .sh-row .sl-n small { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 600; color: #94a3b8; line-height: 1.35; }
+    .sh-row .sl-p { font-size: 16px; font-weight: 900; color: #fde68a; white-space: nowrap; }
+    .sh-thumb { flex: 0 0 76px; height: 76px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, #f8ecc9, #d9c48f); overflow: hidden; position: relative; }
+    .sh-thumb img { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.2s; } .sh-thumb img.on { opacity: 1; }
+    .sh-text { flex: 1; min-width: 0; }
+    .sh-title { margin: 0; font-size: 16.5px; font-weight: 900; color: #f8fafc; line-height: 1.25; }
+    .sh-sub { margin: 3px 0 0; font-size: 13.5px; color: #fbbf24; line-height: 1.3; }
+    .sh-desc { margin: 4px 0 0; font-size: 14px; color: #cbd5e1; line-height: 1.4; }
+    .sh-why { margin: 4px 0 0; font-size: 13px; color: #fca5a5; font-weight: 700; }
+    .sh-badge { display: inline-block; margin: 0 0 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 900; letter-spacing: 0.4px; }
+    .sh-badge.good { background: rgba(22, 163, 74, 0.2); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.45); }
+    .sh-badge.bad { background: rgba(185, 28, 28, 0.2); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.45); }
+    .sh-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; align-items: center; justify-content: flex-end; }
+    .sh-price { font-size: 17px; font-weight: 900; color: #fde68a; white-space: nowrap; }
+    .sh-btn { min-height: 44px; min-width: 44px; padding: 6px 14px; border-radius: 12px; border: 1px solid transparent; font: inherit; font-size: 15px; font-weight: 900; cursor: pointer; color: #fff; }
+    .sh-btn.buy { background: #16a34a; border-color: #4ade80; }
+    .sh-btn.sell { background: #d97706; border-color: #fbbf24; }
+    .sh-btn.danger { background: #b91c1c; border-color: #f87171; }
+    .sh-btn.ghost { background: #334155; border-color: #64748b; }
+    .sh-btn.swatch { min-width: 36px; min-height: 36px; padding: 0; border: 2px solid #0f172a; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); text-shadow: 0 0 3px #000; }
+    .sh-btn:disabled { background: #273449; border-color: #334155; color: #7b8aa3; cursor: default; }
+    .sh-group { margin: 6px 2px 0; font-size: 14px; font-weight: 900; color: #e2e8f0; display: flex; align-items: center; gap: 8px; }
+    .sh-group i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .sh-note, .sl-empty { font-size: 14.5px; color: #94a3b8; line-height: 1.45; padding: 6px 4px; }
+    .sh-note b, .sl-empty b { color: #e2e8f0; }
+    .sh-foot { display: flex; }
+    .sh-primary { flex: 1; min-height: 52px; border-radius: 14px; border: 1px solid #fbbf24; background: #d97706; color: #fff; font: inherit; font-size: 17px; font-weight: 900; cursor: pointer; }
+    .sh-primary.buy { background: #16a34a; border-color: #4ade80; }
+    .sh-primary:disabled { background: #273449; border-color: #334155; color: #7b8aa3; cursor: default; }
+    .bar { display: inline-block; vertical-align: middle; width: 56px; height: 8px; border-radius: 999px; background: #1e293b; overflow: hidden; margin-right: 4px; } .bar i { display: block; height: 100%; }
+    #shop-sheet :focus-visible, #shop-confirm :focus-visible, #town-body :focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+    #shop-confirm { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.6); pointer-events: auto; z-index: 2; }
     #shop-confirm.open { display: flex; }
-    #shop-confirm .sc-box { width: min(92vw, 380px); padding: 16px; border-radius: 10px; background: #0f172a; border: 3px solid #fbbf24; box-shadow: 0 0 0 3px #070c14, 0 10px 30px rgba(0, 0, 0, 0.7); text-align: center; font-family: inherit; }
-    #shop-confirm-title { font-size: 17px; font-weight: 900; color: #fef3c7; line-height: 1.3; }
-    #shop-confirm-sub { font-size: 13px; color: #94a3b8; margin-top: 6px; }
-    .sc-btns { display: flex; gap: 10px; margin-top: 14px; }
-    .sc-btns button { flex: 1; min-height: 52px; font: inherit; font-size: 16px; font-weight: 900; border-radius: 8px; cursor: pointer; border: 2px solid #475569; background: #1e293b; color: #e2e8f0; }
-    #shop-confirm-yes { background: #15803d; border-color: #4ade80; color: #fff; }
-    #shop-confirm-yes.sell { background: #b45309; border-color: #fbbf24; }
-    @media (max-height: 520px) { #shop-sheet { max-height: 78vh; } #shop-book { } #shop-spread { flex-direction: row; align-items: center; gap: 10px; } #shop-pic { width: min(30vh, 40vw); } #shop-info { text-align: left; max-height: 100%; } }
-    @media (max-width: 520px) { #shop-sheet[data-mode="book"] #shop-name { display: none; } #shop-head { justify-content: space-between; } }
+    #shop-confirm .sc-box { width: min(92vw, 400px); padding: 18px; border-radius: 16px; background: #0f172a; border: 1px solid rgba(251, 191, 36, 0.6); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7); text-align: center; font-family: inherit; animation: shUp 0.18s ease-out; }
+    #shop-confirm-title { font-size: 18px; font-weight: 900; color: #fef3c7; line-height: 1.35; }
+    #shop-confirm-sub { font-size: 14.5px; color: #94a3b8; margin-top: 8px; }
+    .sc-btns { display: flex; gap: 10px; margin-top: 16px; }
+    .sc-btns button { flex: 1; min-height: 52px; font: inherit; font-size: 16px; font-weight: 900; border-radius: 12px; cursor: pointer; border: 1px solid #475569; background: #1e293b; color: #e2e8f0; }
+    #shop-confirm-yes { background: #16a34a; border-color: #4ade80; color: #fff; }
+    #shop-confirm-yes.sell { background: #d97706; border-color: #fbbf24; }
+    @media (max-height: 520px) { #shop-sheet { max-height: 82vh; max-height: 82dvh; } .sh-thumb { flex-basis: 60px; height: 60px; } }
+    @media (max-width: 420px) { .sh-thumb { flex-basis: 64px; height: 64px; } .sh-desc { font-size: 13.5px; } }
+    @media (prefers-reduced-motion: reduce) { #shop-sheet, #shop-confirm .sc-box { animation: none; } .sh-thumb img { transition: none; } }
 
     #proximity-banner {
       display: none;
@@ -980,11 +991,6 @@
       color: #e0f2fe;
     }
 
-    #btn-primary-action.camera {
-      background: radial-gradient(circle at 35% 30%, #d946ef, #86198f);
-      border-color: #f5d0fe;
-      color: #fae8ff;
-    }
 
     #btn-primary-action.map { background: radial-gradient(circle at 35% 30%, #fbbf24, #b45309); border-color: #fde68a; color: #fffbeb; }
     #map-wrap { position: relative; }
@@ -1476,9 +1482,7 @@
     #map-buoy-bar .mb-l { font-size: 12px; color: #cbd5e1; font-weight: bold; }
     .town-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 6px; border: 2px solid #c9a867; background: #fffbeb; color: #3b2410; resize: vertical; }
     #town-body { display: flex; flex-direction: column; gap: 6px; }
-    #town-body .sl-row { flex-wrap: wrap; cursor: default; }
     .town-note { font-size: 14px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
-    .paint-row .sl-btn.swatch { min-width: 30px; min-height: 30px; padding: 0; border: 2px solid #1f2937; color: #fff; text-shadow: 0 0 3px #000; }
     .dice-row { display: flex; gap: 8px; justify-content: center; margin: 4px 0; }
     .die { display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center; background: #fef3c7; color: #7c2d12; border: 3px solid #92400e; border-radius: 8px; font-size: 22px; font-weight: 900; }
     .winch-bar { position: relative; height: 36px; background: #1e293b; border: 2px solid #64748b; border-radius: 6px; margin: 8px 0; overflow: hidden; }
@@ -1950,30 +1954,21 @@
 
   <!-- SHOP CATALOGUE (v4.9.0): a paper brochure for the shops that sell things, a bucket list for the Fish Market and Recycling -->
   <div id="shop-ui">
-    <div id="shop-sheet" data-mode="book">
-      <div id="shop-head">
-        <span id="shop-name"></span>
-        <div id="shop-tabs"></div>
-        <button id="shop-leave" type="button" aria-label="Close">✕</button>
-      </div>
-      <div id="shop-book">
-        <button class="arrow" id="shop-prev" type="button" aria-label="Previous page">‹</button>
-        <div id="shop-spread">
-          <button id="shop-pic" type="button" aria-label="Buy this item"><img id="shop-pic-img" alt=""><span id="shop-badge"></span></button>
-          <div id="shop-info">
-            <div id="shop-title"></div><div id="shop-stats"></div><div id="shop-desc"></div>
-          </div>
-        </div>
-        <button class="arrow" id="shop-next" type="button" aria-label="Next page">›</button>
-      </div>
-      <div id="shop-book-foot"><span id="shop-count"></span><span id="shop-price"></span><button id="shop-buy" type="button"></button></div>
-      <div id="shop-listwrap">
-        <div id="shop-summary"></div>
-        <div id="shop-rows"></div>
-        <button id="shop-sellall" type="button"></button>
-      </div>
-    </div>
-    <div id="shop-confirm">
+    <section id="shop-sheet" role="dialog" aria-modal="true" aria-labelledby="shop-name" aria-describedby="shop-hint">
+      <header class="sh-head">
+        <span id="shop-icon" class="sh-icon" aria-hidden="true"></span>
+        <h2 id="shop-name" class="sh-name"></h2>
+        <span id="shop-cash" class="sh-cash" role="status" aria-label="Your cash"></span>
+        <button id="shop-leave" class="sh-close" type="button" aria-label="Close (Esc)">✕</button>
+      </header>
+      <div id="shop-tabs" class="sh-tabs" role="tablist" aria-label="Departments"></div>
+      <div id="shop-summary" class="sh-summary" hidden></div>
+      <div id="shop-body" class="sh-body" role="tabpanel" tabindex="-1"><ul id="shop-rows" class="sh-list" role="list"></ul></div>
+      <div id="shop-foot" class="sh-foot" hidden><button id="shop-sellall" class="sh-primary" type="button"></button></div>
+      <p id="shop-hint" class="sr-only">Arrow keys switch departments and move between buttons, Escape closes.</p>
+      <p id="shop-live" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+    </section>
+    <div id="shop-confirm" role="alertdialog" aria-modal="true" aria-labelledby="shop-confirm-title" aria-describedby="shop-confirm-sub">
       <div class="sc-box">
         <div id="shop-confirm-title"></div>
         <div id="shop-confirm-sub"></div>
@@ -2028,7 +2023,7 @@
   <div class="modal-backdrop" id="modal-town">
     <div class="pixel-box modal-window" style="width: min(96vw, 560px);">
       <div class="modal-header"><span class="modal-title" id="town-title">HARBOUR TOWN</span><button class="pixel-btn red" data-close="modal-town" type="button">Close</button></div>
-      <div class="modal-body"><div id="town-body"></div></div>
+      <div class="modal-body"><ul id="town-body" class="sh-list" role="list"></ul></div>
     </div>
   </div>
   <!-- the lookout telescope view -->
@@ -4537,7 +4532,7 @@
         { tier: 3, name: 'Display Tank', maxW: 9, cap: 40, cost: 1800, decor: 5, w: 3.3, h: 1.25 },
         { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6, w: 4.3, h: 1.35 }
       ];
-      const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0, camZ: 2.9 };   // wide enough for the Grand Aquarium (v5.5.0)
+      const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0 };   // wide enough for the Grand Aquarium (v5.5.0)
       /* Harbour Town on the island terrace (v6.0): open along the whole boardwalk since v6.6.1 (the gate is a landmark) up to zMax.
          The ground is y 1.5; the hills start behind z 14.5. */
       /* v6.3.0: the terrace is wider (x up to +-xMax) and climbs a gentle ramp (rampZ0 to rampZ1, up by `up`) to an upper terrace up to zMax */
@@ -4776,7 +4771,7 @@
         { id: 'lights', name: 'Terrace lights', icon: '💡', levels: [{ v: 0, cost: 0 }, { v: 1, cost: 600 }], desc: 'A string of lights over the terrace: guests rate the place higher.' }
       ];
       const DISH_MAX = 30;
-      CABIN.galleryX = CABIN.x - 2.75; CABIN.aquaX = CABIN.x + 1.0; CABIN.camX = CABIN.galleryX - 0.25;
+      CABIN.galleryX = CABIN.x - 2.75; CABIN.aquaX = CABIN.x + 1.0;
 
       const Colliders = {
         list: [],
@@ -6008,7 +6003,7 @@
         }
 
         /* ------------------------------------------------------------------
-           PIER PROPS: catch buckets, toolbox, film camera, bounty board,
+           PIER PROPS: catch buckets, toolbox, bounty board,
            bottle gallery and tackle shop. Same footprints and orientation
            as before (fronts face +Z, origin at the base centre).
            ------------------------------------------------------------------ */
@@ -6200,74 +6195,6 @@
           const hook = add(new THREE.TorusGeometry(0.035, 0.007, 4, 10, Math.PI * 1.4), steel, 0.52, 0.01, 0.12); hook.rotation.x = Math.PI / 2;
           add(new THREE.ConeGeometry(0.025, 0.1, 6), M(0xf97316, 0.35, 0.4), 0.4, 0.03, 0.3).rotation.z = Math.PI / 2;
           return g;
-        }
-
-        static buildFourthWallCamera() {
-          const camGroup = new THREE.Group();
-          const M = (c, r = 0.5, m = 0, e = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r, metalness: m }, e));
-          const tripodMat = M(0x334155, 0.35, 0.7), bodyMat = M(0x1e293b, 0.4, 0.5), brassMat = M(0xd97706, 0.25, 0.8), woodMat = M(0x8a5a30, 0.8);
-          const lensGlassMat = M(0x38bdf8, 0.08, 0.9, { emissive: new THREE.Color(0x8b5cf6), emissiveIntensity: 0.55 });
-          const add = (geo, mat, x, y, z, parent = camGroup) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
-          const K_box = (parent, w, h, d, mat, x, y, z) => add(ModelKit.roundedBox(w, h, d, ModelKit.bevelFor(w, h, d)), mat, x, y, z, parent);
-
-          // wooden tripod with spreader and rubber feet
-          for (let i = 0; i < 3; i++) {
-            const angle = (i / 3) * Math.PI * 2 + 0.35;
-            const leg = add(new THREE.CylinderGeometry(0.03, 0.022, 1.45, 6), woodMat, Math.sin(angle) * 0.25, 0.68, Math.cos(angle) * 0.25);
-            // lean the legs outward at the bottom (feet spread, tops meet under the head)
-            leg.rotation.z = Math.sin(angle) * 0.33; leg.rotation.x = -Math.cos(angle) * 0.33;
-            add(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 6), M(0x111827, 0.9), Math.sin(angle) * 0.49, 0.02, Math.cos(angle) * 0.49);
-            // spreader chain between this leg and the next
-            const a2 = ((i + 1) / 3) * Math.PI * 2 + 0.35;
-            const x1 = Math.sin(angle) * 0.36, z1 = Math.cos(angle) * 0.36, x2 = Math.sin(a2) * 0.36, z2 = Math.cos(a2) * 0.36;
-            const len = Math.hypot(x2 - x1, z2 - z1);
-            const brace = add(new THREE.CylinderGeometry(0.008, 0.008, len, 4), tripodMat, (x1 + x2) / 2, 0.34, (z1 + z2) / 2);
-            brace.rotation.z = Math.PI / 2; brace.rotation.y = Math.atan2(z2 - z1, x2 - x1) * -1 + 0;
-          }
-          add(new THREE.CylinderGeometry(0.05, 0.05, 0.4, 8), tripodMat, 0, 1.38, 0);
-          add(new THREE.CylinderGeometry(0.09, 0.07, 0.05, 10), brassMat, 0, 1.18, 0);
-          add(new THREE.BoxGeometry(0.26, 0.14, 0.26), brassMat, 0, 1.58, 0);
-          add(new THREE.CylinderGeometry(0.014, 0.02, 0.44, 6), tripodMat, 0.15, 1.5, 0.26).rotation.x = -0.65;
-          add(new THREE.SphereGeometry(0.03, 6, 5), brassMat, 0.15, 1.34, 0.43);
-
-          const headGroup = new THREE.Group();
-          headGroup.position.set(0, 1.8, 0);
-          add(new THREE.BoxGeometry(0.38, 0.44, 0.66), bodyMat, 0, 0, 0, headGroup);
-          add(new THREE.BoxGeometry(0.4, 0.06, 0.68), brassMat, 0, -0.22, 0, headGroup);
-          // twin film magazines with film spokes
-          [-0.17, 0.17].forEach(zOff => {
-            const reel = add(new THREE.CylinderGeometry(0.22, 0.22, 0.09, 16), brassMat, 0, 0.38, zOff, headGroup);
-            reel.rotation.z = Math.PI / 2;
-            const hub = add(new THREE.CylinderGeometry(0.07, 0.07, 0.11, 8), tripodMat, 0, 0.38, zOff, headGroup); hub.rotation.z = Math.PI / 2;
-            for (let k = 0; k < 4; k++) {
-              const sp = add(new THREE.BoxGeometry(0.115, 0.03, 0.3), M(0x0f172a, 0.5), 0, 0.38, zOff, headGroup); sp.rotation.x = (k * Math.PI) / 4;
-            }
-            add(new THREE.TorusGeometry(0.2, 0.012, 5, 20), M(0x0f172a, 0.6), 0, 0.38, zOff, headGroup).rotation.y = Math.PI / 2;
-          });
-          // lens: stepped barrel, glass and matte box with flags
-          const barrel = add(new THREE.CylinderGeometry(0.14, 0.12, 0.34, 14), tripodMat, 0, 0.02, -0.46, headGroup); barrel.rotation.x = Math.PI / 2;
-          [0, 0.1].forEach((o, i) => { const ring = add(new THREE.TorusGeometry(0.135 - i * 0.01, 0.012, 5, 14), brassMat, 0, 0.02, -0.38 - o, headGroup); });
-          add(new THREE.BoxGeometry(0.36, 0.3, 0.14), bodyMat, 0, 0.02, -0.66, headGroup);
-          const glass = add(new THREE.SphereGeometry(0.11, 12, 8), lensGlassMat, 0, 0.02, -0.7, headGroup); glass.scale.z = 0.35;
-          [-1, 1].forEach(s => add(new THREE.BoxGeometry(0.01, 0.34, 0.16), M(0x0f172a, 0.6), s * 0.2, 0.02, -0.72, headGroup));
-          add(new THREE.BoxGeometry(0.34, 0.01, 0.16), M(0x0f172a, 0.6), 0, 0.2, -0.72, headGroup);
-          // viewfinder eyepiece and rear crank
-          add(new THREE.CylinderGeometry(0.05, 0.06, 0.18, 8), bodyMat, -0.22, 0.05, 0.3, headGroup).rotation.z = Math.PI / 2;
-          add(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 5), brassMat, 0.22, 0.0, 0.2, headGroup).rotation.z = Math.PI / 2;
-          add(new THREE.SphereGeometry(0.025, 6, 5), M(0x7f1d1d, 0.5), 0.29, 0.0, 0.2, headGroup);
-          const recLight = add(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshBasicMaterial({ color: 0xef4444 }), 0.17, 0.26, -0.27, headGroup);
-          camGroup.add(headGroup);
-          // ---- v3.6 detail pass: a clapperboard leaning on a leg and a coil of cable on the deck ----
-          {
-            const clap = new THREE.Group();
-            K_box(clap, 0.3, 0.22, 0.02, M(0x111827, 0.6), 0, 0.11, 0);
-            for (let k = 0; k < 5; k++) K_box(clap, 0.06, 0.05, 0.022, M(k % 2 ? 0xf8fafc : 0x111827, 0.6), -0.12 + k * 0.06, 0.25, 0);
-            for (let k = 0; k < 3; k++) K_box(clap, 0.22, 0.012, 0.022, M(0xf8fafc, 0.8), -0.02, 0.06 + k * 0.045, 0.002);
-            clap.position.set(0.3, 0, 0.18); clap.rotation.set(-0.25, 0.6, 0); camGroup.add(clap);
-            const cable = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.018, 5, 16), M(0x0f172a, 0.6)); cable.rotation.x = Math.PI / 2; cable.position.set(-0.28, 0.02, 0.22); camGroup.add(cable);
-          }
-          camGroup.userData = { headGroup, recLight };
-          return camGroup;
         }
 
         static buildBountyBoard(textures) {
@@ -6603,7 +6530,7 @@
            CABIN (v4.9.0): a walk-in room on the boardwalk. Local origin: centre of the back wall on the rail (z 0),
            x from -W/2 to W/2, z from 0 to D. The front wall and the roof are separate groups (userData.front / .roof) that
            fade out while the player is inside, so the chase camera can see in. The gallery and trophy case stand on the
-           back wall, the film camera by the door.
+           back wall, the bunk.
            ------------------------------------------------------------------ */
         static buildCabin(textures) {
           const g = new THREE.Group(), K = this.propKit(textures), C = CABIN;
@@ -7578,8 +7505,6 @@
           aquarium.position.set(CABIN.aquaX, 1.56, 0.5);
           pierGroup.add(aquarium);
 
-          // 3D Fourth-Wall Film Camera with Back to the Sea, Facing South (+Z)
-          const filmCamera = null;   // v6.6.2: the Director's camera is gone; filters are in the side drawer (🎬 Filter)
 
           // Recycling stand (three skips) and the walk-in cabin
           const recycleStand = this.buildRecycleStand(textures);
@@ -7894,9 +7819,9 @@
             };
           }
 
-          // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The film camera (it turns to
-          // face you), the aquarium's water and fish (they change) and the secret seagull stay separate.
-          ModelKit.mergeStatic(pierGroup, [filmCamera, aquarium, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
+          // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The aquarium's water and fish
+          // (they change), the bounty papers, the cabin's fading front and roof and the secret seagull stay separate.
+          ModelKit.mergeStatic(pierGroup, [aquarium, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof]);
           scene.add(pierGroup);
 
           const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -8441,7 +8366,6 @@
             bucketCollider,
             boatRects,
             shoreZ,
-            filmCamera,
             bountyPapers: bountyBoard.userData.papers,
             cabin,
             islandScenery,
@@ -9069,7 +8993,7 @@ const mainCanvas = document.getElementById('game-canvas');
         shadowMarkT -= dt;
         if (shadowMarkT <= 0) {
           shadowMarkT = 0.5;
-          [world.anglerGroup, playerBoatMesh, pierBucketMesh, world.filmCamera, world.aquarium && world.aquarium.userData.decorGroup].forEach(g => {
+          [world.anglerGroup, playerBoatMesh, pierBucketMesh, world.aquarium && world.aquarium.userData.decorGroup].forEach(g => {
             if (g) g.traverse(o => { if (o.isMesh && !o.castShadow && !(o.material && o.material.transparent)) { o.castShadow = true; o.receiveShadow = true; } });
           });
         }
@@ -11917,16 +11841,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       /* ---- the restaurant sheet (shop sheet kind 'resto') ---- */
       function restoRender() {
-        const k = kitchen(), tab = shopBrowse.tab, host = shopEl('shop-rows'), btn = shopEl('shop-sellall');
+        const k = kitchen(), tab = shopBrowse.tab, U = ShopUI.begin();
         const rating = restoRating(), t = state.timeOfDay;
-        shopEl('shop-summary').innerHTML = `<b>Rating ${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))} ${rating}</b> • ${restoTables()} tables • ${k.dishes.length} / ${DISH_MAX} dishes ready • served ${k.served}<br>${inService(t) ? '🔔 Service is on: guests are eating.' : 'Lunch 11:00 to 14:00, dinner 17:30 to 21:00.'}${k.buff ? ` • ${buffLabel(k.buff.type, k.buff.n)}` : ''}${k.espresso > 0 ? ` • ☕ ${Math.ceil(k.espresso / 60)} h` : ''}`;
-        host.innerHTML = ''; btn.style.display = 'none';
-        const mk = (html, buttons) => {
-          const r = document.createElement('div'); r.className = 'sl-row'; r.innerHTML = html;
-          (buttons || []).forEach(([label, cls, fn, dis]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sl-btn ' + (cls || ''); b.textContent = label; b.disabled = !!dis; b.addEventListener('click', fn); r.appendChild(b); });
-          host.appendChild(r);
-        };
-        const msg = m => host.insertAdjacentHTML('beforeend', `<p class="sl-empty">${m}</p>`);
+        U.summary(`<b>Rating ${'★'.repeat(Math.round(rating))}${'☆'.repeat(5 - Math.round(rating))} ${rating}</b> • ${restoTables()} tables • ${k.dishes.length} / ${DISH_MAX} dishes ready • served ${k.served}<br>${inService(t) ? '🔔 Service is on: guests are eating.' : 'Lunch 11:00 to 14:00, dinner 17:30 to 21:00.'}${k.buff ? ` • ${buffLabel(k.buff.type, k.buff.n)}` : ''}${k.espresso > 0 ? ` • ☕ ${Math.ceil(k.espresso / 60)} h` : ''}`);
+        const mk = U.row, msg = U.note;
         if (tab === 'cook') {
           RECIPES.forEach(r => {
             if (!recipeUnlocked(r)) { mk(`<span class="sl-n">🔒 ${r.name}<small>Unlocks after ${r.at} dishes cooked (${k.cooked} so far).</small></span>`); return; }
@@ -11936,16 +11854,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             mk(`<span class="sl-n">${r.icon} ${r.name}<small>${recipeNeedText(r)} • sells for about ${shopMoney(dishPrice({ id: r.id, stars: 2 }, rating))}${batch ? ` • ×3 at ${'⭐'.repeat(batchStars(r))}` : st ? ` • 3-star dishes: ${st[0]} / 3 for Cook ×3` : ''}</small></span>`, btns);
           });
         } else if (tab === 'fridge') {
-          if (restoOpen()) host.insertAdjacentHTML('beforeend', `<p class="sl-empty" style="padding:6px 8px;text-align:left;">⭐ Today's cravings (double pay with the dish in the fridge):<br>${cravingLines().join('<br>')}</p>`);
+          if (restoOpen()) msg(`⭐ <b>Today's cravings</b> (double pay with the dish in the fridge):<br>${cravingLines().join('<br>')}`);
           if (!k.dishes.length) msg('The fridge is empty. Cook something on the Cook tab.');
           const groups = {}; k.dishes.forEach(d => { const key = d.id + ':' + d.stars; (groups[key] = groups[key] || { d, n: 0 }).n++; });
           Object.values(groups).forEach(({ d, n }) => {
             const r = RECIPE_BY_ID[d.id];
             mk(`<span class="sl-n">${r.icon} ${r.name} ${'⭐'.repeat(d.stars)}<small>x${n} • guests pay about ${shopMoney(dishPrice(d, rating))} • eat it: ${BUFFS[r.buff].what}, ${BUFFS[r.buff].n} ${BUFFS[r.buff].unit[BUFFS[r.buff].n === 1 ? 0 : 1]}</small></span>`,
-              [['Eat', '', () => { const i = k.dishes.findIndex(x => x.id === d.id && x.stars === d.stars); if (i < 0) return; k.dishes.splice(i, 1); eatDish(r.buff); saveGame(); refreshShopBrowse(); }]]);
+              [['Eat', 'ghost', () => { const i = k.dishes.findIndex(x => x.id === d.id && x.stars === d.stars); if (i < 0) return; k.dishes.splice(i, 1); eatDish(r.buff); saveGame(); refreshShopBrowse(); }]]);
           });
-          btn.style.display = ''; btn.disabled = k.bank < 1;
-          btn.textContent = k.bank >= 1 ? `Collect ${shopMoney(k.bank)}` : 'No takings yet';
+          U.primary(k.bank >= 1 ? `Collect ${shopMoney(k.bank)}` : 'No takings yet', restoCollect, k.bank < 1);
         } else if (tab === 'pantry') {
           const pm = friendPerk('lorenzo') ? 0.85 : 1;   // Lorenzo's friendship perk
           mk(`<span class="sl-n">☕ Harbour Espresso<small>Read twice as fast on a bench for 12 hours${k.espresso > 0 ? ` • ${Math.ceil(k.espresso / 60)} h left` : ''} • ${shopMoney(ESPRESSO.cost)}</small></span>`,
@@ -12231,16 +12148,16 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function townRefresh() {
         const host = document.getElementById('town-body'); if (!townUI.render) return;
         document.getElementById('town-title').textContent = townUI.title;
+        const top = host.scrollTop, a = document.activeElement, key = a && host.contains(a) && a.dataset ? a.dataset.k : null;
         host.innerHTML = '';
-        const row = (html, buttons, cls) => {
-          const r = document.createElement('div'); r.className = 'sl-row ' + (cls || ''); r.innerHTML = html;
-          (buttons || []).forEach(([label, bcls, fn, dis, style]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sl-btn ' + (bcls || ''); b.textContent = label; b.disabled = !!dis; if (style) b.setAttribute('style', style); b.addEventListener('click', e => { e.stopPropagation(); fn(); }); r.appendChild(b); });
-          host.appendChild(r); return r;
-        };
-        const head = t => host.insertAdjacentHTML('beforeend', `<h4 class="ql-h">${t}</h4>`);
-        const note = t => host.insertAdjacentHTML('beforeend', `<p class="town-note">${t}</p>`);
+        let n = 0;   // the same cards as the shop sheet (ShopUI.makeRow): every button names what it acts on
+        const row = (html, buttons, cls) => { const r = ShopUI.makeRow(html, buttons, cls, null, n++); host.appendChild(r); return r; };
+        const head = t => host.insertAdjacentHTML('beforeend', `<li class="sh-group"><span role="heading" aria-level="3">${t}</span></li>`);
+        const note = t => host.insertAdjacentHTML('beforeend', `<li class="sh-note">${t}</li>`);
         townUI.render({ host, row, head, note });
         host.querySelectorAll('input, textarea').forEach(el => el.addEventListener('keydown', e => e.stopPropagation()));   // typing does not steer the angler
+        host.scrollTop = top;
+        if (key) { const b = host.querySelector(`[data-k="${key}"]`); if (b && !b.disabled) b.focus({ preventScroll: true }); }
       }
       const townClose = () => { cancelAnimationFrame(townUI.raf); document.getElementById('modal-town').classList.remove('open'); };
       function townPay(cash, xp, msg) {
@@ -12556,7 +12473,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             const p = T.paint[tier] || { hull: -1, trim: -1, flag: -1 };
             head(`${BOAT_ICONS[tier]} ${BOAT_TIERS[tier].name}`);
             [['hull', 'Hull'], ['trim', 'Trim'], ['flag', 'Pennant']].forEach(([part, label]) => {
-              const sw = BOAT_PAINTS.map(([nm, hex], ci) => [ci === p[part] ? '✓' : ' ', 'swatch', () => paintBoat(tier, part, ci), false, `background:#${hex.toString(16).padStart(6, '0')};`]);
+              const sw = BOAT_PAINTS.map(([nm, hex], ci) => [ci === p[part] ? '✓' : ' ', 'swatch', () => paintBoat(tier, part, ci), false, `background:#${hex.toString(16).padStart(6, '0')};`, `${label} colour ${nm}${ci === p[part] ? ' (current)' : ''}`]);
               const r = row(`<span class="sl-n">${label}<small>${p[part] >= 0 ? BOAT_PAINTS[p[part]][0] : part === 'flag' ? 'none' : 'factory colour'}</small></span>`, sw.concat([['Reset', 'red', () => paintBoat(tier, part, -1), p[part] < 0]]), 'paint-row');
               r.title = label;
             });
@@ -14401,40 +14318,118 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         } else if (shopBrowse.viewOff) { camera.clearViewOffset(); shopBrowse.viewOff = false; }
       }
 
-      /* ---- the sheet ---- */
+      /* =========================================================================
+         SHOP SHEET (v6.7.0): one data-driven, accessible sheet for every shop and stand (the town counters share its rows).
+         A sheet's content is only described through the builder, never by touching the DOM:
+           const U = ShopUI.begin();                     clears the body (keeps scroll and focus on a refresh)
+           U.summary(html)                               the info card on top (optional)
+           U.head(text, colour) / U.note(html)           a group heading / a line of text in the list
+           U.row(html, actions)                          a card: html (an <img> and a .sl-n block), actions [[label, kind, onClick, disabled, style, ariaLabel]]
+           U.item(it)                                    a catalogue card from shopItems(): picture, badge, stats, description, price, action
+           U.primary(label, onClick, disabled, kind)     the big button at the bottom
+         kinds: 'buy' (default, also 'green' / ''), 'sell', 'danger' (also 'red'), 'ghost', 'swatch'.
+         Accessibility: the sheet is a modal dialog; the departments are a real tablist (arrows, Home / End, 1-5); arrow up /
+         down move between buttons; focus stays inside and comes back after a confirmation; Esc closes; every button says
+         what it acts on; results are announced in a live region; buttons are at least 44 px; reduced motion is respected.
+         ========================================================================= */
       const shopEl = id => document.getElementById(id);
+      const ShopUI = (() => {
+        const thumbs = []; let thumbT = 0;
+        function pumpThumbs() {
+          thumbT = 0; const job = thumbs.shift(); if (!job) return;
+          if (job.img.isConnected) { const url = shopPictureFor(job.it); if (url) { job.img.src = url; job.img.classList.add('on'); } }
+          if (thumbs.length) thumbT = setTimeout(pumpThumbs, 16);
+        }
+        const KIND = { '': 'buy', green: 'buy', buy: 'buy', sell: 'sell', red: 'danger', danger: 'danger', ghost: 'ghost', swatch: 'swatch' };
+        const plain = html => { const d = document.createElement('div'); d.innerHTML = html; const n = d.querySelector('.sl-n, .sh-title'); const t = n ? (n.firstChild ? n.firstChild.textContent : n.textContent) : d.textContent; return (t || '').replace(/\s+/g, ' ').trim(); };
+        /* a card with actions; shared by the shop sheet and the town sheets (guard: ignore a touch's follow-up click) */
+        function makeRow(html, actions, extraCls, guard, keyBase) {
+          const r = document.createElement('li'); r.className = 'sh-row ' + (extraCls || '');
+          const main = document.createElement('div'); main.className = 'sh-row-main'; main.innerHTML = html; r.appendChild(main);
+          const name = plain(html);
+          if (actions && actions.length) {
+            const box = document.createElement('div'); box.className = 'sh-actions';
+            actions.forEach(([label, kind, fn, dis, style, aria], i) => {
+              const b = document.createElement('button'); b.type = 'button'; b.className = 'sh-btn ' + (KIND[kind || ''] || 'buy');
+              b.textContent = label; b.disabled = !!dis; if (style) b.setAttribute('style', style);
+              b.setAttribute('aria-label', aria || (name ? `${String(label).trim()}: ${name}` : String(label).trim()));
+              if (keyBase != null) b.dataset.k = keyBase + ':' + i;
+              b.addEventListener('click', e => { e.stopPropagation(); if (guard && !guard()) return; fn(b); });
+              box.appendChild(b);
+            });
+            r.appendChild(box);
+          }
+          return r;
+        }
+        const guardShop = () => shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0);
+        function begin() {
+          const host = shopEl('shop-rows'), sum = shopEl('shop-summary'), foot = shopEl('shop-foot'), pb = shopEl('shop-sellall');
+          clearTimeout(thumbT); thumbT = 0; thumbs.length = 0;
+          host.innerHTML = ''; sum.innerHTML = ''; sum.hidden = true; foot.hidden = true; pb.onclick = null;
+          let n = 0;
+          return {
+            host,
+            summary(html) { sum.innerHTML = html; sum.hidden = false; },
+            head(text, colour) { const h = document.createElement('li'); h.className = 'sh-group'; h.innerHTML = `${colour ? `<i style="background:${colour}" aria-hidden="true"></i>` : ''}<span role="heading" aria-level="3">${text}</span>`; host.appendChild(h); },
+            note(html) { const p = document.createElement('li'); p.className = 'sh-note'; p.innerHTML = html; host.appendChild(p); },
+            row(html, actions) { const r = makeRow(html, actions, '', guardShop, n++); host.appendChild(r); return r; },
+            item(it) {
+              const k = n++, r = document.createElement('li'); r.className = 'sh-row sh-item' + (it.can ? '' : ' locked');
+              const good = /EQUIPPED|OWNED|INSTALLED|ACTIVE|FINISHED/.test(it.badge || '');
+              const price = it.priceText || (it.price != null ? shopMoney(it.price) : '');
+              const whyId = `sh-why-${k}`;
+              r.innerHTML = `<div class="sh-row-main"><div class="sh-thumb" aria-hidden="true"><img alt=""></div><div class="sh-text">${it.badge ? `<span class="sh-badge ${good ? 'good' : 'bad'}">${good ? '✔ ' : '🔒 '}${it.badge}</span>` : ''}<h3 class="sh-title">${it.title}</h3>${it.stats ? `<p class="sh-sub">${it.stats}</p>` : ''}${it.desc ? `<p class="sh-desc">${it.desc}</p>` : ''}${!it.can && it.note ? `<p class="sh-why" id="${whyId}">${it.note}</p>` : it.note ? `<p class="sh-desc">${it.note}</p>` : ''}</div></div>`;
+              const box = document.createElement('div'); box.className = 'sh-actions';
+              if (price && it.can) box.insertAdjacentHTML('beforeend', `<span class="sh-price" aria-hidden="true">${price}</span>`);
+              const b = document.createElement('button'); b.type = 'button'; b.dataset.k = k + ':0';
+              b.className = 'sh-btn ' + (it.verb === 'Sell' ? 'sell' : 'buy');
+              b.textContent = it.can ? it.verb : (good ? (it.badge.charAt(0) + it.badge.slice(1).toLowerCase()) : 'Locked');
+              b.disabled = !it.can;
+              b.setAttribute('aria-label', it.can ? `${it.verb} ${it.title}${price && it.priceText !== 'FREE' ? ' for ' + price : ''}` : `${it.title}: ${it.badge ? it.badge.toLowerCase() : 'not available'}${it.note ? '. ' + it.note : ''}`);
+              if (!it.can && it.note) b.setAttribute('aria-describedby', whyId);
+              b.addEventListener('click', e => { e.stopPropagation(); if (guardShop()) shopAsk(it); });
+              box.appendChild(b); r.appendChild(box); host.appendChild(r);
+              thumbs.push({ img: r.querySelector('img'), it }); if (!thumbT) thumbT = setTimeout(pumpThumbs, 20);
+              return r;
+            },
+            primary(label, onClick, disabled, kind) { foot.hidden = false; pb.textContent = label; pb.disabled = !!disabled; pb.className = 'sh-primary ' + (kind || 'sell'); pb.onclick = () => { if (guardShop()) onClick(); }; }
+          };
+        }
+        function announce(text) { const el = shopEl('shop-live'); if (!el) return; el.textContent = ''; setTimeout(() => { el.textContent = text; }, 30); }
+        return { begin, makeRow, announce };
+      })();
+
+      /* ---- the sheet: header, departments (tabs) and the body ---- */
       function shopSheetRender() {
         const sk = SHOP_KINDS[shopBrowse.kind], sheet = shopEl('shop-sheet');
-        sheet.dataset.mode = sk.list ? 'list' : 'book';
-        shopEl('shop-name').textContent = sk.title;
+        const accent = (SHORE_SHOPS[shopBrowse.kind] && SHORE_SHOPS[shopBrowse.kind].color) || { tackle: '#ef4444', fish: '#38bdf8', recycle: '#22c55e', aqua: '#22d3ee', resto: '#dc2626' }[shopBrowse.kind] || '#fbbf24';
+        sheet.style.setProperty('--sh-accent', accent);
+        const m = /^(\S+)\s+(.*)$/.exec(sk.title) || [null, '', sk.title];
+        shopEl('shop-icon').textContent = m[1]; shopEl('shop-name').textContent = m[2].split(':')[0];
         const tabs = shopEl('shop-tabs'); tabs.innerHTML = '';
         (sk.tabs || []).forEach(([id, label]) => {
-          const b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (id === shopBrowse.tab) b.classList.add('on');
-          b.addEventListener('click', () => setShopTab(id)); tabs.appendChild(b);
+          const b = document.createElement('button'); b.type = 'button'; b.id = 'shop-tab-' + id; b.setAttribute('role', 'tab');
+          b.setAttribute('aria-selected', String(id === shopBrowse.tab)); b.setAttribute('aria-controls', 'shop-body'); b.tabIndex = id === shopBrowse.tab ? 0 : -1;
+          b.textContent = label; b.addEventListener('click', () => setShopTab(id, true)); tabs.appendChild(b);
         });
-        tabs.style.display = (sk.tabs || []).length > 1 ? 'flex' : 'none';
-        if (sk.list) shopRenderList(); else shopPageRender();
+        tabs.hidden = (sk.tabs || []).length < 2;
+        shopEl('shop-body').setAttribute('aria-labelledby', (sk.tabs || []).length ? 'shop-tab-' + shopBrowse.tab : 'shop-name');
+        shopBodyRender();
       }
-      function shopPageRender() {
-        const it = shopBrowse.items[shopBrowse.idx], n = shopBrowse.items.length, buy = shopEl('shop-buy');
-        shopEl('shop-prev').disabled = shopBrowse.idx <= 0; shopEl('shop-next').disabled = shopBrowse.idx >= n - 1;
-        shopEl('shop-count').textContent = n ? `Page ${shopBrowse.idx + 1} of ${n}` : '';
-        if (!it) { shopEl('shop-title').textContent = 'Nothing on this page'; buy.disabled = true; buy.textContent = '-'; return; }
-        const url = shopPictureFor(it);
-        const img = shopEl('shop-pic-img'); img.src = url; img.style.visibility = url ? 'visible' : 'hidden';
-        { const good = /EQUIPPED|OWNED|INSTALLED|ACTIVE/.test(it.badge); shopEl('shop-badge').textContent = it.badge ? (good ? '✔ ' : '🔒 ') + it.badge : ''; shopEl('shop-badge').style.background = good ? '#166534' : '#7f1d1d'; }
-        shopEl('shop-badge').style.display = it.badge ? '' : 'none';
-        shopEl('shop-title').textContent = it.title;
-        shopEl('shop-stats').textContent = it.stats;
-        shopEl('shop-desc').textContent = it.desc;
-        const price = it.priceText || (it.price != null ? shopMoney(it.price) : '');
-        shopEl('shop-price').textContent = price;
-        buy.disabled = !it.can; buy.classList.toggle('sell', it.verb === 'Sell');
-        buy.textContent = it.can ? `${it.verb}${price && it.priceText !== 'FREE' ? ' for ' + price : ''}` : (it.note || it.badge || 'Not available');
-        const spread = shopEl('shop-spread');
-        if (shopBrowse.dir) { spread.classList.remove('flip-r', 'flip-l'); void spread.offsetWidth; spread.classList.add(shopBrowse.dir > 0 ? 'flip-r' : 'flip-l'); shopBrowse.dir = 0; }
-        // warm the next page's picture while the player reads
-        const nx = shopBrowse.items[shopBrowse.idx + 1]; if (nx) setTimeout(() => { if (shopBrowse.active) shopPictureFor(nx); }, 60);
+      function shopCashRender() { const c = shopEl('shop-cash'); if (c) c.textContent = shopMoney(state.cash); }
+      function shopBodyRender() {
+        shopCashRender();
+        const sk = SHOP_KINDS[shopBrowse.kind];
+        if (shopBrowse.tab === 'books' || !sk.list) catalogueRender();
+        else if (sk.list === 'aqua') aquaRender();
+        else if (sk.list === 'resto') restoRender();
+        else shopListRender();
+      }
+      /* a catalogue department: every good of the tab as a card (the pictures are rendered one by one, then cached) */
+      function catalogueRender() {
+        const U = ShopUI.begin(); shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab);
+        if (!shopBrowse.items.length) U.note('Nothing here yet.');
+        shopBrowse.items.forEach(it => U.item(it));
       }
       /* the bucket list for the Fish Market (fish) and Recycling (junk, by skip) */
       function shopListRows() {
@@ -14443,73 +14438,47 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         return { rows, total: rows.reduce((s, e) => s + sellValue(e), 0), kg: rows.reduce((s, e) => s + e.weight, 0), pred };
       }
       function shopListRender() {
-        const sk = SHOP_KINDS[shopBrowse.kind], L = shopListRows(), host = shopEl('shop-rows'), cod = catchOfDay();
+        const sk = SHOP_KINDS[shopBrowse.kind], L = shopListRows(), cod = catchOfDay(), U = ShopUI.begin();
         const fish = sk.list === 'fish';
-        let head;
         if (fish) {
           const mk = marketFor(state.dayCount || 0), nm = ids => ids.map(id => `${CATALOG_INDEX[id].name} x${mk.mult[id].toFixed(1)}`).join(', ');
-          head = `<b>${L.rows.length} fish</b> • ${L.kg.toFixed(1)} kg in your ${BUCKET_TIERS[state.bucketTier - 1].name} • worth <b>${shopMoney(L.total)}</b><br>🔥 Hot: ${nm(mk.hot)}<br>📉 Glut: ${nm(mk.glut)}<br>⭐ Catch of the Day: <b>${cod.name}</b> pays x3`;
+          U.summary(`<b>${L.rows.length} fish</b> • ${L.kg.toFixed(1)} kg in your ${BUCKET_TIERS[state.bucketTier - 1].name} • worth <b>${shopMoney(L.total)}</b><br>🔥 Hot: ${nm(mk.hot)}<br>📉 Glut: ${nm(mk.glut)}<br>⭐ Catch of the Day: <b>${cod.name}</b> pays x3`);
         } else {
           const eco = (state.junkRecycledKg || 0) % 100;
-          head = `<b>${L.rows.length} piece${L.rows.length === 1 ? '' : 's'}</b> of junk and seaweed • ${L.kg.toFixed(1)} kg • worth <b>${shopMoney(L.total)}</b><br>🏛️ The Mayor pays $1,000 for every 100 kg recycled: ${eco.toFixed(1)} / 100 kg<div class="eco"><i style="width:${Math.min(100, eco)}%"></i></div>`;
+          U.summary(`<b>${L.rows.length} piece${L.rows.length === 1 ? '' : 's'}</b> of junk and seaweed • ${L.kg.toFixed(1)} kg • worth <b>${shopMoney(L.total)}</b><br>🏛️ The Mayor pays $1,000 for every 100 kg recycled: ${eco.toFixed(1)} / 100 kg<div class="eco" role="progressbar" aria-label="Recycled towards the Mayor's award" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(eco)}"><i style="width:${Math.min(100, eco)}%"></i></div>`);
         }
-        shopEl('shop-summary').innerHTML = head;
-        host.innerHTML = '';
         const addRow = entry => {
-          const m = marketMult(entry.id), v = sellValue(entry), r = document.createElement('button'); r.type = 'button'; r.className = 'sl-row';
-          r.innerHTML = `<img src="${ITEM_ICONS[entry.id] || ''}" alt=""><span class="sl-n">${entry.name}${entry.id === cod.id ? ' ⭐' : ''}<small>${entry.weight.toFixed(2)} kg${m > 1.1 ? ' • ▲ hot' : m < 0.9 && isFishEntry(entry) ? ' • ▼ glut' : ''}</small></span><span class="sl-p">+${shopMoney(v)}</span>`;
-          r.addEventListener('click', () => shopAskSell(entry, fish)); host.appendChild(r);
+          const m = marketMult(entry.id), v = sellValue(entry);
+          U.row(`<img src="${ITEM_ICONS[entry.id] || ''}" alt=""><span class="sl-n">${entry.name}${entry.id === cod.id ? ' ⭐' : ''}<small>${entry.weight.toFixed(2)} kg${m > 1.1 ? ' • ▲ hot' : m < 0.9 && isFishEntry(entry) ? ' • ▼ glut' : ''}</small></span><span class="sl-p">${shopMoney(v)}</span>`,
+            [[fish ? 'Sell' : 'Recycle', 'sell', () => shopAskSell(entry, fish), false, null, `${fish ? 'Sell' : 'Recycle'} ${entry.name}, ${entry.weight.toFixed(2)} kilograms, for ${shopMoney(v)}`]]);
         };
-        if (!L.rows.length) host.innerHTML = `<p class="sl-empty">${fish ? 'No fish in your bucket. Cast a line, then come back to sell your catch.' : 'No junk or seaweed in your bucket. Fish some up and bring it here.'}</p>`;
+        if (!L.rows.length) U.note(fish ? 'No fish in your bucket. Cast a line, then come back to sell your catch.' : 'No junk or seaweed in your bucket. Fish some up and bring it here.');
         else if (fish) L.rows.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(addRow);
         else ['flora', 'metal', 'other'].forEach(k => {
           const g = L.rows.filter(e => SKIP_OF(e) === k); if (!g.length) return;
-          const h = document.createElement('div'); h.className = 'sl-head'; h.style.borderColor = SKIPS[k][2]; h.innerHTML = `<span style="background:${SKIPS[k][2]}"></span>${SKIPS[k][1]} ${SKIPS[k][0]} skip (${g.length})`; host.appendChild(h);
+          U.head(`${SKIPS[k][1]} ${SKIPS[k][0]} skip (${g.length})`, SKIPS[k][2]);
           g.slice().sort((a, b) => sellValue(b) - sellValue(a)).forEach(addRow);
         });
-        const all = shopEl('shop-sellall'); all.style.display = ''; all.disabled = !L.rows.length;
-        all.textContent = L.rows.length ? `${fish ? 'Sell all fish' : 'Recycle all'} for ${shopMoney(L.total)}` : (fish ? 'No fish to sell' : 'Nothing to recycle');
+        U.primary(L.rows.length ? `${fish ? 'Sell all fish' : 'Recycle all'} for ${shopMoney(L.total)}` : (fish ? 'No fish to sell' : 'Nothing to recycle'), shopAskAll, !L.rows.length);
       }
       function shopAskSell(entry, fish) {
         const v = sellValue(entry);
-        shopAsk({ confirm: `${fish ? 'Sell' : 'Recycle'} ${entry.name} (${entry.weight.toFixed(2)} kg) for ${shopMoney(v)}?`, price: v, verb: 'Sell', can: true,
+        shopAsk({ title: entry.name, confirm: `${fish ? 'Sell' : 'Recycle'} ${entry.name} (${entry.weight.toFixed(2)} kg) for ${shopMoney(v)}?`, price: v, verb: 'Sell', can: true,
           act: () => { const i = state.bucket.indexOf(entry); if (i >= 0) { sellBucketEntry(i); showToast(`${fish ? 'Sold' : 'Recycled'} ${entry.name} for ${shopMoney(v)}`); } } });
       }
       function aquaAskCollect() {
         const aq = state.aquarium; if (aq.tickets < 1) return;
-        shopAsk({ confirm: `Collect ${shopMoney(aq.tickets)} in visitor tickets?`, price: aq.tickets, verb: 'Sell', can: true, act: aquariumCollect });
+        shopAsk({ title: 'visitor tickets', confirm: `Collect ${shopMoney(aq.tickets)} in visitor tickets?`, price: aq.tickets, verb: 'Sell', can: true, act: aquariumCollect });
       }
-      function shopAskPrimary() { if (shopBrowse.tab === 'books') return; const L = SHOP_KINDS[shopBrowse.kind].list; if (L === 'aqua') aquaAskCollect(); else if (L === 'resto') restoCollect(); else shopAskAll(); }
+      function shopAskPrimary() { const pb = shopEl('shop-sellall'); if (!shopEl('shop-foot').hidden && !pb.disabled && pb.onclick) pb.onclick(); }
       function shopAskAll() {
         const sk = SHOP_KINDS[shopBrowse.kind], fish = sk.list === 'fish', L = shopListRows();
         if (!L.rows.length) return;
-        shopAsk({ confirm: `${fish ? 'Sell all' : 'Recycle all'} ${L.rows.length} ${fish ? 'fish' : 'pieces'} for ${shopMoney(L.total)}?`, price: L.total, verb: 'Sell', can: true,
+        shopAsk({ title: fish ? 'all your fish' : 'all your junk', confirm: `${fish ? 'Sell all' : 'Recycle all'} ${L.rows.length} ${fish ? 'fish' : 'pieces'} for ${shopMoney(L.total)}?`, price: L.total, verb: 'Sell', can: true,
           act: () => sellBucketWhere(L.pred, fish ? 'Sold' : 'Recycled') });
       }
 
-
-
-      /* ---- books: the shelf in every shop, and the reading list on a bench ---- */
-      function shopRenderList() {
-        if (shopBrowse.tab === 'books') bookShelfRender();
-        else if (SHOP_KINDS[shopBrowse.kind].list === 'aqua') aquaRender();
-        else if (SHOP_KINDS[shopBrowse.kind].list === 'resto') restoRender();
-        else shopListRender();
-      }
-      function bookShelfRender() {
-        const b = BOOKS[SHOP_BOOK[shopBrowse.kind]], host = shopEl('shop-rows'); if (!b) return;
-        shopEl('shop-sellall').style.display = 'none';
-        shopEl('shop-summary').innerHTML = `<b>📚 ${b.title}</b> • ${shopMoney(b.cost)}<br>${b.desc}`;
-        host.innerHTML = '';
-        b.perks.forEach(p => host.insertAdjacentHTML('beforeend', `<div class="sl-row"><span class="sl-n">${p.kind === 'est' ? 'Underwater weight guess' : p.label}<small>${bookPerkText(b, p)}</small></span></div>`));
-        const row = document.createElement('div'); row.className = 'sl-row';
-        const own = bookOwned(b.id);
-        row.innerHTML = `<span class="sl-n">${b.icon} ${b.title}<small>${own ? (bookProgress(b.id) >= 1 ? 'Finished' : `${bookPages(b.id).toFixed(1)} / ${BOOK_PAGES} pages read`) : 'Not owned'}</small></span>`;
-        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'sl-btn'; btn.disabled = own || state.cash < b.cost;
-        btn.textContent = own ? 'Owned' : `Buy ${shopMoney(b.cost)}`;
-        btn.addEventListener('click', () => shopAsk({ confirm: `Buy "${b.title}" for ${shopMoney(b.cost)}?`, price: b.cost, verb: 'Buy', can: true, act: () => buyBook(b.id) }));
-        row.appendChild(btn); host.appendChild(row);
-      }
+      /* ---- the reading list on a bench ---- */
       function openBooksModal() {
         const host = document.getElementById('books-list'); host.innerHTML = '';
         const owned = Object.keys(BOOKS).filter(bookOwned);
@@ -14528,28 +14497,22 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         document.getElementById('modal-books').classList.add('open');
       }
 
-      /* ---- the aquarium sheet: Fish | Add | Care | Shop (same paper sheet as the shop lists) ---- */
+      /* ---- the aquarium sheet: Fish | Add | Care | Decor ---- */
       function aquaRender() {
-        const aq = state.aquarium, tab = shopBrowse.tab, host = shopEl('shop-rows'), btn = shopEl('shop-sellall');
+        const aq = state.aquarium, tab = shopBrowse.tab, U = ShopUI.begin();
         const t = aquaTankOf(aq), used = aquaUsed(aq), happy = aquaHappy(aq), inc = aquaIncome(aq);
-        const bar = (v, c) => `<span class="bar"><i style="width:${Math.round(v)}%;background:${c}"></i></span>`;
-        shopEl('shop-summary').innerHTML = `<b>${t.name}</b> • ${aq.fish.length} fish • room ${used.toFixed(1)} / ${t.cap} • biggest fish ${t.maxW} kg<br>🍤 Food ${bar(aq.food, '#f59e0b')} 🧽 Clean ${bar(aq.clean, '#22d3ee')} 😊 Happy ${bar(happy, happy < 35 ? '#ef4444' : '#22c55e')}<br>🎟️ ${shopMoney(aq.tickets)} waiting • ${shopMoney(inc)} a day • the bank holds ${shopMoney(aquaBankCap(aq))}${happy < 35 ? '<br>😟 The fish are unhappy and earn nothing: feed them and clean the tank.' : ''}`;
-        host.innerHTML = ''; btn.style.display = 'none';
-        const mk = (html, buttons) => {
-          const r = document.createElement('div'); r.className = 'sl-row'; r.innerHTML = html;
-          (buttons || []).forEach(([label, cls, fn, dis]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sl-btn ' + (cls || ''); b.textContent = label; b.disabled = !!dis; b.addEventListener('click', fn); r.appendChild(b); });
-          host.appendChild(r);
-        };
+        const bar = (v, c, label) => `<span class="bar" role="img" aria-label="${label} ${Math.round(v)}%"><i style="width:${Math.round(v)}%;background:${c}"></i></span>`;
+        U.summary(`<b>${t.name}</b> • ${aq.fish.length} fish • room ${used.toFixed(1)} / ${t.cap} • biggest fish ${t.maxW} kg<br>🍤 Food ${bar(aq.food, '#f59e0b', 'Food')} 🧽 Clean ${bar(aq.clean, '#22d3ee', 'Clean')} 😊 Happy ${bar(happy, happy < 35 ? '#ef4444' : '#22c55e', 'Happy')}<br>🎟️ ${shopMoney(aq.tickets)} waiting • ${shopMoney(inc)} a day • the bank holds ${shopMoney(aquaBankCap(aq))}${happy < 35 ? '<br>😟 The fish are unhappy and earn nothing: feed them and clean the tank.' : ''}`);
+        const mk = U.row, msg = U.note;
         const icon = id => `<img src="${ITEM_ICONS[id] || ''}" alt="">`;
-        const msg = t2 => { host.insertAdjacentHTML('beforeend', `<p class="sl-empty">${t2}</p>`); };
         if (tab === 'fish') {
           if (!aq.fish.length) msg('The tank is empty. Catch a small fish, keep it in your bucket and add it on the Add tab. Big fish will not fit.');
-          aq.fish.forEach((f, i) => {
+          aq.fish.forEach(f => {
             const it = CATALOG_INDEX[f.id], form = AQUARIUM_FORMS[f.form] || AQUARIUM_FORMS.normal;
             const seaGood = f.form !== 'normal' && !f.g, hz = (it.zones || [1])[0];
             mk(`${icon(f.id)}<span class="sl-n">${form.name ? form.name + ' ' : ''}${it.name}<small>${f.w.toFixed(2)} kg • worth ${shopMoney(f.v)}${f.g ? ' • growing' : ''}${form.mult > 1 ? ' • x' + form.mult + ' tickets' : ''}${seaGood ? ` • release to sea: +1.5% rare fish in ${ZONES[hz - 1].name}` : ''}</small></span>`,
-              [['Bucket', '', () => shopAsk({ confirm: `Take ${it.name} (${f.w.toFixed(2)} kg) out of the tank and back into your bucket?`, price: null, verb: 'Take out', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumTakeOut(j); } })],
-               [seaGood ? 'Release to sea' : 'Release', seaGood ? '' : 'red', () => shopAsk({ confirm: seaGood ? `Release your ${form.name} ${it.name} to the sea? Rare fish become a little more common in ${ZONES[hz - 1].name} (now +${(releaseBonus(hz) * 100).toFixed(1)}%, up to +15%).` : `Release ${it.name} into the sea? It will not come back.`, price: null, verb: 'Release', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumRelease(j); } })]]);
+              [['Bucket', 'ghost', () => shopAsk({ title: it.name, confirm: `Take ${it.name} (${f.w.toFixed(2)} kg) out of the tank and back into your bucket?`, price: null, verb: 'Take out', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumTakeOut(j); } })],
+               [seaGood ? 'Release to sea' : 'Release', seaGood ? 'buy' : 'danger', () => shopAsk({ title: it.name, confirm: seaGood ? `Release your ${form.name} ${it.name} to the sea? Rare fish become a little more common in ${ZONES[hz - 1].name} (now +${(releaseBonus(hz) * 100).toFixed(1)}%, up to +15%).` : `Release ${it.name} into the sea? It will not come back.`, price: null, verb: 'Release', can: true, act: () => { const j = aq.fish.indexOf(f); if (j >= 0) aquariumRelease(j); } })]]);
           });
         } else if (tab === 'add') {
           const fish = state.bucket.filter(e => e.category === 'Fish');
@@ -14557,16 +14520,15 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           fish.forEach(e => {
             const c = aquariumCanHold(e, aq);
             mk(`${icon(e.id)}<span class="sl-n">${e.name}<small>${Number(e.weight).toFixed(2)} kg • ${c.ok ? 'fits the tank' : c.reason}</small></span>`,
-              [['Add', '', () => shopAsk({ confirm: `Put ${e.name} (${Number(e.weight).toFixed(2)} kg) in your aquarium?`, price: null, verb: 'Add', can: true, act: () => aquariumAdd(e) }), !c.ok]]);
+              [['Add', '', () => shopAsk({ title: e.name, confirm: `Put ${e.name} (${Number(e.weight).toFixed(2)} kg) in your aquarium?`, price: null, verb: 'Add', can: true, act: () => aquariumAdd(e) }), !c.ok]]);
           });
         } else if (tab === 'care') {
-          mk(`<span class="sl-n">🍤 Fish flakes<small>Free. Food +35.</small></span>`, [['Feed', '', () => { aquariumFeed(false); refreshShopBrowse(); }]]);
-          mk(`<span class="sl-n">🥫 Premium pellets<small>Fills the food bar. ${aq.pellets} left${aq.pellets ? '' : ' (sold at the Aquarium Shop)'}.</small></span>`, [['Feed', '', () => { aquariumFeed(true); refreshShopBrowse(); }, aq.pellets < 1]]);
-          mk(`<span class="sl-n">🧽 Clean the tank<small>Free. Scrubs the glass and the water.</small></span>`, [['Clean', '', () => { aquariumClean(false); refreshShopBrowse(); }]]);
-          mk(`<span class="sl-n">🧴 Deep clean<small>Spotless, and the tank stays clean twice as long for 3 days. ${aq.kits} kit${aq.kits === 1 ? '' : 's'} left${aq.cleanBoost ? ` • active: ${aq.cleanBoost} day${aq.cleanBoost === 1 ? '' : 's'}` : ''}.</small></span>`, [['Use', '', () => { aquariumClean(true); refreshShopBrowse(); }, aq.kits < 1]]);
+          mk(`<span class="sl-n">🍤 Fish flakes<small>Free. Food +35.</small></span>`, [['Feed', '', () => { aquariumFeed(false); ShopUI.announce('Fed the fish.'); refreshShopBrowse(); }]]);
+          mk(`<span class="sl-n">🥫 Premium pellets<small>Fills the food bar. ${aq.pellets} left${aq.pellets ? '' : ' (sold at the Aquarium Shop)'}.</small></span>`, [['Feed', '', () => { aquariumFeed(true); ShopUI.announce('Fed premium pellets.'); refreshShopBrowse(); }, aq.pellets < 1]]);
+          mk(`<span class="sl-n">🧽 Clean the tank<small>Free. Scrubs the glass and the water.</small></span>`, [['Clean', '', () => { aquariumClean(false); ShopUI.announce('Tank cleaned.'); refreshShopBrowse(); }]]);
+          mk(`<span class="sl-n">🧴 Deep clean<small>Spotless, and the tank stays clean twice as long for 3 days. ${aq.kits} kit${aq.kits === 1 ? '' : 's'} left${aq.cleanBoost ? ` • active: ${aq.cleanBoost} day${aq.cleanBoost === 1 ? '' : 's'}` : ''}.</small></span>`, [['Use', '', () => { aquariumClean(true); ShopUI.announce('Deep clean done.'); refreshShopBrowse(); }, aq.kits < 1]]);
           mk(`<span class="sl-n">🐣 Breeding<small>Two or more happy fish of one species can have fry now and then (maybe a rare colour). ${aq.bred} hatched, ${aq.forms.length} colour form${aq.forms.length === 1 ? '' : 's'} so far.</small></span>`);
-          btn.style.display = ''; btn.disabled = aq.tickets < 1;
-          btn.textContent = aq.tickets >= 1 ? `Collect ${shopMoney(aq.tickets)}` : 'Nothing to collect yet';
+          U.primary(aq.tickets >= 1 ? `Collect ${shopMoney(aq.tickets)}` : 'Nothing to collect yet', aquaAskCollect, aq.tickets < 1);
         } else if (tab === 'decor') {
           const owned = AQUARIUM_DECOR.filter(d => aquaDecorOwned(d.id)), full = aq.decor.length >= t.decor;
           msg(`${aq.decor.length} / ${t.decor} slots used.`);
@@ -14574,32 +14536,29 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           owned.forEach(d => {
             const on = aq.decor.includes(d.id);
             mk(`<span class="sl-n">${d.icon} ${d.name}<small>+${d.charm} charm • ${on ? 'in the tank' : 'stored'}</small></span>`,
-              [on ? ['Remove', '', () => { aquariumRemoveDecor(d.id); refreshShopBrowse(); }] : ['Place', '', () => { aquariumPlaceDecor(d.id); refreshShopBrowse(); }, full]]);
+              [on ? ['Remove', 'ghost', () => { aquariumRemoveDecor(d.id); refreshShopBrowse(); }] : ['Place', '', () => { aquariumPlaceDecor(d.id); refreshShopBrowse(); }, full]]);
           });
         }
       }
 
       /* ---- state changes ---- */
-      function shopSelect(i, dir) {
-        const n = shopBrowse.items.length; if (!n) return;
-        const j = THREE.MathUtils.clamp(i, 0, n - 1); if (j === shopBrowse.idx) return;
-        shopBrowse.dir = dir || (j > shopBrowse.idx ? 1 : -1); shopBrowse.idx = j;
-        sfx.playTick(); shopPageRender();
-      }
-      function setShopTab(tab) {
+      function setShopTab(tab, focusTab) {
         if (shopBrowse.tab === tab) return;
-        if (SHOP_KINDS[shopBrowse.kind].list) { shopBrowse.tab = tab; closeShopConfirm(); shopSheetRender(); sfx.playTick(); return; }
-        shopBrowse.tab = tab; shopBrowse.idx = 0; shopBrowse.items = shopItems(shopBrowse.kind, tab);
-        closeShopConfirm(); shopBrowse.dir = 1; shopSheetRender(); sfx.playTick();
+        shopBrowse.tab = tab; closeShopConfirm(); shopSheetRender(); sfx.playTick();
+        shopEl('shop-body').scrollTop = 0;
+        if (focusTab) { const b = shopEl('shop-tab-' + tab); if (b) b.focus(); }
       }
+      let shopReturnFocus = null;
       function enterShopBrowse(kind) {
         if (!SHOP_KINDS[kind] || shopBrowse.active) return;
         const sk = SHOP_KINDS[kind];
-        shopBrowse.active = true; shopBrowse.kind = kind; shopBrowse.tab = sk.tabs ? sk.tabs[0][0] : ''; shopBrowse.idx = 0; shopBrowse.dir = 0;
-        shopBrowse.items = sk.tabs && !sk.list ? shopItems(kind, shopBrowse.tab) : [];
+        shopBrowse.active = true; shopBrowse.kind = kind; shopBrowse.tab = sk.tabs ? sk.tabs[0][0] : ''; shopBrowse.items = [];
         mode = 'SHOP_BROWSE'; releaseAllInputs();
+        shopReturnFocus = document.activeElement;
         document.body.dataset.shopping = '1';
         shopSheetRender(); sfx.playTick();
+        ShopUI.announce(`${shopEl('shop-name').textContent} open.`);
+        requestAnimationFrame(() => { const f = shopEl('shop-tab-' + shopBrowse.tab) || shopEl('shop-leave'); if (f && shopBrowse.active) f.focus({ preventScroll: true }); });
       }
       function leaveShopBrowse() {
         if (!shopBrowse.active) return;
@@ -14607,72 +14566,88 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         shopBrowse.active = false; shopBrowse.items = [];
         delete document.body.dataset.shopping;
         if (mode === 'SHOP_BROWSE') mode = 'PIER_IDLE';
+        if (document.activeElement && shopEl('shop-ui').contains(document.activeElement)) document.activeElement.blur();
+        if (shopReturnFocus && shopReturnFocus.isConnected && shopReturnFocus !== document.body) try { shopReturnFocus.focus({ preventScroll: true }); } catch (e) {}
+        shopReturnFocus = null;
         updateShopBrowse(0);
         updateHUD(); updatePrimaryActionButton();
       }
-      /* after anything changed (a purchase, a sale, a cheat): recompute the goods and redraw the page or the list */
+      /* after anything changed (a purchase, a sale, a cheat): redraw, keeping the scroll position and the focused button */
       function refreshShopBrowse() {
         if (!shopBrowse.active) return;
-        const sk = SHOP_KINDS[shopBrowse.kind];
-        if (sk.tabs && !sk.list) { shopBrowse.items = shopItems(shopBrowse.kind, shopBrowse.tab); shopBrowse.idx = Math.min(shopBrowse.idx, Math.max(0, shopBrowse.items.length - 1)); }
-        if (sk.list) shopRenderList(); else shopPageRender();
+        const body = shopEl('shop-body'), top = body.scrollTop, a = document.activeElement, key = a && a.dataset ? a.dataset.k : null;
+        shopBodyRender();
+        body.scrollTop = top;
+        if (key) {   // the same button, or (bought, now disabled) the next one that can still be used
+          const all = [...body.querySelectorAll('button[data-k]')], b = body.querySelector(`[data-k="${key}"]`), i = all.indexOf(b);
+          const next = b && !b.disabled ? b : (i >= 0 ? all.slice(i + 1).concat(all.slice(0, i).reverse()).find(x => !x.disabled) : null);
+          (next || shopEl('shop-tab-' + shopBrowse.tab) || shopEl('shop-leave')).focus({ preventScroll: true });
+        }
       }
-      /* tapping the picture or the button: confirm first */
-      function shopActivate() {
-        const it = shopBrowse.items[shopBrowse.idx]; if (!it) return;
-        if (!it.can) { showToast(it.note || it.badge || 'Not available.'); return; }
-        shopAsk(it);
-      }
+      /* every purchase or sale is confirmed first; focus moves into the question and back afterwards */
+      let confirmReturn = null;
       function shopAsk(it) {
+        if (!it.can) { showToast(it.note || it.badge || 'Not available.'); return; }
         const after = it.price != null && it.verb !== 'Sell' ? state.cash - it.price : state.cash + (it.price || 0);
         shopEl('shop-confirm-title').textContent = it.confirm;
         shopEl('shop-confirm-sub').textContent = it.price != null ? `Cash ${shopMoney(state.cash)} → ${shopMoney(after)}` : '';
         const yes = shopEl('shop-confirm-yes'); yes.textContent = it.verb === 'Sell' ? 'Yes' : it.verb;
         yes.classList.toggle('sell', it.verb === 'Sell');
+        confirmReturn = document.activeElement;
         shopBrowse.pending = it; shopBrowse.armedAt = performance.now() + 450;   // ignore the touch's own follow-up click
         shopEl('shop-confirm').classList.add('open');
+        requestAnimationFrame(() => yes.focus({ preventScroll: true }));
       }
-      function closeShopConfirm() { shopBrowse.pending = null; const c = shopEl('shop-confirm'); if (c) c.classList.remove('open'); }
+      function closeShopConfirm() {
+        const was = !!shopBrowse.pending; shopBrowse.pending = null; const c = shopEl('shop-confirm'); if (c) c.classList.remove('open');
+        if (was && confirmReturn && confirmReturn.isConnected && shopBrowse.active) confirmReturn.focus({ preventScroll: true });
+        confirmReturn = null;
+      }
       function shopConfirmYes() {
         if (performance.now() < (shopBrowse.armedAt || 0)) return;
         const it = shopBrowse.pending; closeShopConfirm();
         if (!it || !it.can) return;
         it.act();
+        ShopUI.announce(`${it.verb === 'Sell' ? 'Done' : it.verb}: ${it.title || ''}. Cash ${shopMoney(state.cash)}.`);
         refreshShopBrowse();
       }
-      shopEl('shop-prev').addEventListener('click', () => shopSelect(shopBrowse.idx - 1, -1));
-      shopEl('shop-next').addEventListener('click', () => shopSelect(shopBrowse.idx + 1, 1));
-      shopEl('shop-pic').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
-      shopEl('shop-buy').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopActivate(); });
-      shopEl('shop-sellall').addEventListener('click', () => { if (shopBrowse.active && !shopBrowse.pending && performance.now() > (shopBrowse.armedAt || 0)) shopAskPrimary(); });
       shopEl('shop-leave').addEventListener('click', () => leaveShopBrowse());
       shopEl('shop-confirm-no').addEventListener('click', () => { if (performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
       shopEl('shop-confirm-yes').addEventListener('click', shopConfirmYes);
       shopEl('shop-confirm').addEventListener('click', e => { if (e.target.id === 'shop-confirm' && performance.now() >= (shopBrowse.armedAt || 0)) closeShopConfirm(); });
-      // swipe the page to turn it
-      {
-        let sw = null; const pg = shopEl('shop-book');
-        pg.addEventListener('pointerdown', e => { sw = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
-        pg.addEventListener('pointerup', e => {
-          if (!sw || e.pointerId !== sw.id) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
-          if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) shopSelect(shopBrowse.idx + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-        });
-        pg.addEventListener('pointercancel', () => { sw = null; });
+      /* keys while a sheet is open: the game never sees them */
+      const focusables = root => [...root.querySelectorAll('button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')].filter(el => !el.disabled && el.offsetParent !== null);
+      function trapTab(root, e) {
+        const f = focusables(root); if (!f.length) return;
+        const i = f.indexOf(document.activeElement), n = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i < 0 || i >= f.length - 1 ? 0 : i + 1);
+        e.preventDefault(); f[n].focus();
       }
       window.addEventListener('keydown', e => {
         if (!shopBrowse.active) return;
+        const t = e.target, onBtn = t && t.tagName === 'BUTTON' && shopEl('shop-ui').contains(t);
         if (shopBrowse.pending) {
-          if (e.code === 'Escape') { closeShopConfirm(); e.stopImmediatePropagation(); }
-          else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); shopConfirmYes(); e.stopImmediatePropagation(); }
-          return;
+          if (e.code === 'Escape') closeShopConfirm();
+          else if (e.code === 'Tab') trapTab(shopEl('shop-confirm'), e);
+          else if (e.code === 'KeyE' || ((e.code === 'Enter' || e.code === 'Space') && !onBtn)) { e.preventDefault(); shopConfirmYes(); }
+          e.stopImmediatePropagation(); return;
         }
-        const book = !SHOP_KINDS[shopBrowse.kind].list;
-        if (e.code === 'Escape') { leaveShopBrowse(); e.stopImmediatePropagation(); }
-        else if (book && (e.code === 'ArrowLeft' || e.code === 'KeyA')) { shopSelect(shopBrowse.idx - 1, -1); e.stopImmediatePropagation(); }
-        else if (book && (e.code === 'ArrowRight' || e.code === 'KeyD')) { shopSelect(shopBrowse.idx + 1, 1); e.stopImmediatePropagation(); }
-        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); if (book) shopActivate(); else shopAskPrimary(); e.stopImmediatePropagation(); }
-        else if (/^Digit[1-4]$/.test(e.code)) { const t = (SHOP_KINDS[shopBrowse.kind].tabs || [])[+e.code.slice(5) - 1]; if (t) setShopTab(t[0]); e.stopImmediatePropagation(); }
+        const tabs = [...shopEl('shop-tabs').querySelectorAll('[role="tab"]')], ids = (SHOP_KINDS[shopBrowse.kind].tabs || []).map(x => x[0]), ti = ids.indexOf(shopBrowse.tab);
+        if (e.code === 'Escape') leaveShopBrowse();
+        else if (e.code === 'Tab') trapTab(shopEl('shop-sheet'), e);
+        else if (t && t.getAttribute && t.getAttribute('role') === 'tab' && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.code)) {
+          e.preventDefault(); const j = e.code === 'Home' ? 0 : e.code === 'End' ? ids.length - 1 : (ti + (e.code === 'ArrowRight' ? 1 : -1) + ids.length) % ids.length;
+          setShopTab(ids[j], true);
+        } else if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && tabs.length > 1 && !onBtn) { e.preventDefault(); setShopTab(ids[(ti + (e.code === 'ArrowRight' ? 1 : -1) + ids.length) % ids.length], true); }
+        else if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+          e.preventDefault(); const f = focusables(shopEl('shop-sheet')).filter(el => el.getAttribute('role') !== 'tab' || el.tabIndex === 0), i = f.indexOf(document.activeElement);
+          const n = i < 0 ? 0 : Math.max(0, Math.min(f.length - 1, i + (e.code === 'ArrowDown' ? 1 : -1))); if (f[n]) { f[n].focus(); f[n].scrollIntoView({ block: 'nearest' }); }
+        } else if (/^Digit[1-5]$/.test(e.code)) { const id = ids[+e.code.slice(5) - 1]; if (id) setShopTab(id, true); }
+        else if (e.code === 'KeyE' && onBtn) { e.preventDefault(); t.click(); }
+        else if (e.code === 'KeyE') { e.preventDefault(); const pb = shopEl('shop-sellall'); if (!shopEl('shop-foot').hidden && !pb.disabled) shopAskPrimary(); else { const f = focusables(shopEl('shop-body'))[0]; if (f) f.focus(); } }
+        else if ((e.code === 'Enter' || e.code === 'Space') && !onBtn) { e.preventDefault(); const f = focusables(shopEl('shop-body'))[0]; if (f) f.focus(); }
+        e.stopImmediatePropagation();
       }, true);
+
 
 
       function processEcoCleanupReward(soldItems) {
@@ -16854,19 +16829,6 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
         sfx.updateAmbient(dt, weather.id, !onBoat || getDistanceMeters() < 60);
 
-        if (world.filmCamera && world.filmCamera.userData) {
-          const { headGroup, recLight } = world.filmCamera.userData;
-          // Track the angler smoothly in world space (the lens points along local -Z)
-          const camWorldPos = new THREE.Vector3();
-          world.filmCamera.getWorldPosition(camWorldPos);
-          const dx = world.anglerGroup.position.x - camWorldPos.x;
-          const dz = world.anglerGroup.position.z - camWorldPos.z;
-          const worldTargetYaw = Math.atan2(-dx, -dz);
-          const localTargetYaw = worldTargetYaw - world.filmCamera.rotation.y;
-          const yawDiff = Math.atan2(Math.sin(localTargetYaw - headGroup.rotation.y), Math.cos(localTargetYaw - headGroup.rotation.y));
-          headGroup.rotation.y += yawDiff * Math.min(1, dt * 6.0);
-          recLight.visible = Math.floor(elapsed * 2.5) % 2 === 0;
-        }
 
         // Advance Day-Night Cycle
         const prevFullMoon = isFullMoonNight();
