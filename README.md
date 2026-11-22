@@ -56,7 +56,7 @@ Fish are only worth keeping if they fit: your bucket has a weight capacity, and 
 
 | Action | Touch | Keyboard |
 |---|---|---|
-| Walk / run | Thumbstick, **steered like a car**: left / right turns the angler on the spot (any angle), up walks forward, down backs up slowly. A light push walks (up to 2.4 m/s), a **full push runs** (3.8 m/s). The camera stays behind him and turns with him. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `A` `D` turn, `W` `S` forward / back; hold `Shift` to run |
+| Walk / run | Thumbstick, **steered like a car**: left / right turns the angler on the spot (any angle), up walks forward, **down turns him round** (the camera swings round behind him) and he walks that way. A light push walks (up to 2.4 m/s), a **full push runs** (3.8 m/s). The camera stays behind him and turns with him. Or **tap the ground** (or a shop, or someone) to walk there by yourself | `A` `D` turn, `W` forward, `S` turn round and walk; hold `Shift` to run |
 | Look around | **Drag on the screen** to look around (it swings back behind the angler when you walk; in first person dragging turns you). Tap the **compass** to look straight ahead again | none |
 | Talk to someone | Walk up to them: the action button says **💬 TALK** | `E` |
 | Open the menu | **☰** (top right): a **side drawer** with Map, Bag, Log, Settings, Career, Records, Look, Sound, View (first / third person), Quests and Exit | none |
@@ -362,7 +362,7 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 
 ## Harbour Town, its people and the story
 
-Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (straight behind the pier), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
+Behind the boardwalk, open along its whole length since v6.6.1 (the **🏘️ Harbour Town** gate straight behind the pier remains as a landmark), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
 
 **Town Projects (v6.6.0, noticeboard):** late-game investments for the town.
 | Project | Cost | What it does |
@@ -398,7 +398,7 @@ Behind the boardwalk, through the **🏘️ Harbour Town** gate in the seawall (
 - **🌿 Herb & shell foraging:** gather 5 herbs on Lighthouse Hill or 5 shells around the tide pool; herbs go to Talia's greenhouse.
 - **🏗️ Dockhand winch assist:** at the winch, hoist 5 crates: press **HOIST** when the swinging hook is over the green (3 good ones pass; the green shrinks each crate).
 
-**People.** Nine townsfolk live here, each with a day routine (they walk between their spots through the gate and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
+**People.** Nine townsfolk live here, each with a day routine (they walk between their spots across the town and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
 
 **Friendship (v6.4.0).** Each townsperson likes you a little more for every finished quest (+3), the first chat of the day (+1), a restaurant craving served (+2), one of Ines' commissions (+2) and a dice win against them (+1). Hearts show in the chat, on the noticeboard and in the Quests list. At **8 points** their **perk** is yours for good:
 | Friend | Perk |
@@ -655,6 +655,10 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.6.1: an open town front, turn round with the stick
+- **No more hedges** between the boardwalk and Harbour Town: walk up into town anywhere along the boardwalk (a paved strip and a flush seawall join them). The stone gate stays as a landmark. Tap-to-walk and the townsfolk cross the front near where they are going.
+- **Pull the stick down (or `S`) and the angler turns round**, the camera swinging round behind him, then walks that way; let go and pull down again to turn back. Version bumped to **v6.6.1**.
 
 ### 2026-11-22, Version 6.6.0: town projects, the Trophy Wall and share codes
 - **Town Projects** on the noticeboard: Weather Station ($4,000, 3-day forecast; each day now has a weather outlook), Pier Smokehouse ($5,500, overflow catches become smoked fillets, up to 25 kg) and Lighthouse Fast-Travel Slip ($8,000, launch your boat at the lighthouse jetty).

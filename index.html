@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.6.0';
+    window.PF_VERSION = '6.6.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -4536,7 +4536,7 @@
         { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6, w: 4.3, h: 1.35 }
       ];
       const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0, camZ: 2.9 };   // wide enough for the Grand Aquarium (v5.5.0)
-      /* Harbour Town on the island terrace (v6.0): through the gate in the seawall (x within +-gateHW) up to zMax.
+      /* Harbour Town on the island terrace (v6.0): open along the whole boardwalk since v6.6.1 (the gate is a landmark) up to zMax.
          The ground is y 1.5; the hills start behind z 14.5. */
       /* v6.3.0: the terrace is wider (x up to +-xMax) and climbs a gentle ramp (rampZ0 to rampZ1, up by `up`) to an upper terrace up to zMax */
       const ISLAND = { gateHW: 1.3, zGate: 5.8, zIn: 6.8, zMax: 23.6, xMax: 37.6, rampZ0: 14.0, rampZ1: 17.0, up: 1.2, plaza: { x: 0, z: 9.7, r: 2.6 } };
@@ -7037,10 +7037,7 @@
           K.box(root, 2 * G + 1.3, 0.16, 0.36, K.darkWood, 0, 4.1, 6.3);
           K.box(root, 2.4, 0.42, 0.06, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🏘️ HARBOUR TOWN', 320, 64) }), 0, 3.8, 6.1);
           Colliders.box('gate pillar W', -(G + 0.3), 6.3, 0.25, 0.25, W); Colliders.box('gate pillar E', G + 0.3, 6.3, 0.25, 0.25, W);
-          // low hedges along the terrace front, broken by the gate
-          [-1, 1].forEach(sx => {
-            for (let x = G + 0.7; x < ISLAND.xMax + 0.6; x += 1.2) { const hb = K.box(root, 1.25, 0.6 + (Math.round(x * 3) % 3) * 0.06, 0.6, (Math.round(x) % 2) ? hedgeM : hedgeL, sx * (x + 0.55), 1.8, 6.85); hb.castShadow = true; }
-          });
+          // v6.6.1: no hedges along the terrace front any more: the whole boardwalk opens onto the town (the gate stays as a landmark)
           // the plaza: round paving, a well, two lamps and the noticeboard
           const P = ISLAND.plaza;
           const pave = new THREE.Mesh(new THREE.CylinderGeometry(P.r, P.r, 0.06, 28), M(0xb8b0a2, 0.95)); pave.position.set(P.x, 1.52, P.z); pave.receiveShadow = true; root.add(pave);
@@ -7306,7 +7303,11 @@
           // Stone Seawall Retaining Curb Separating Sandy Beach from Grassy Terrace (Z = 6.2)
           const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, flatShading: true });
           const seawall = new THREE.Mesh(new THREE.BoxGeometry(2 * 40 + 2, 1.35, 0.7), stoneMat);
-          seawall.position.set(0, 0.95, 6.2);
+          seawall.position.set(0, 1.5 - 0.675, 6.2);   // v6.6.1: flush with the terrace, a curb you step over
+          {   // v6.6.1: a paved strip from the boardwalk's back edge onto the terrace, so the open town front has no gap
+            const strip = new THREE.Mesh(new THREE.BoxGeometry(2 * BW_HALF, 0.3, 1.2), new THREE.MeshStandardMaterial({ color: 0xa8a29e, roughness: 0.95, flatShading: true }));
+            strip.position.set(0, 1.52 - 0.15, 6.25); strip.receiveShadow = true; scene.add(strip);
+          }
           scene.add(seawall);
 
           // Stone Pier Abutment & Timber Ramp Steps Connecting Terrace (Z = 6.2) to Pier (Z = 3.2)
@@ -9400,7 +9401,8 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       const WALK_SPEED = 4.2;   // reference speed (m/s) the walk step code scales by
       /* Movement (v6.0): the stick is camera-relative, the angler speeds up and slows down smoothly, a light push walks
          and a full push (or Shift) runs; a tap on the ground walks there by itself; dragging on the screen orbits the camera. */
-      const MOVE = { walk: 2.4, run: 3.8, auto: 2.8, back: 0.6, turn: 2.4, runAt: 0.9, accel: 10, brake: 14 };   // v6.1.1: steer like a car, slower
+      const MOVE = { walk: 2.4, run: 3.8, auto: 2.8, back: 0.6, turn: 2.4, uturn: 8, runAt: 0.9, accel: 10, brake: 14 };
+      const revTurn = { on: false, yaw: 0 };   // v6.6.1: stick down turns round (see the steering block)   // v6.1.1: steer like a car, slower
       const walkVel = { x: 0, z: 0 };
       const camOrbit = { yaw: 0, look: 0, steerT: 0 };   // camera angle (follows the angler's facing) + a look-around offset from dragging
       let autoWalk = null;                    // { pts: [{x, z}...], stuck, lastD } while walking to a tapped spot
@@ -11564,7 +11566,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const night = state.timeOfDay < 0.27 || state.timeOfDay > 0.8;
         npcState.list.forEach(n => {
           const spot = npcSpotNow(n.d);
-          if (!n.goal || n.goal.x !== spot.x || n.goal.z !== spot.z) {   // a new place to be: plan the walk there (through the gate and the pier mouth)
+          if (!n.goal || n.goal.x !== spot.x || n.goal.z !== spot.z) {   // a new place to be: plan the walk there (across the town front and the pier mouth)
             n.goal = spot; n.pts = planRoute({ x: spot.x, z: spot.z }, { x: n.x, z: n.z }); n.hidden = false;
           }
           let speed = 0;
@@ -12026,7 +12028,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       function clampWalkable(x, z) {
         if (z < 0.45 && x >= -PIER_WALK - 0.02) return { x: THREE.MathUtils.clamp(x, -PIER_WALK + 0.1, PIER_WALK - 0.1), z: THREE.MathUtils.clamp(z, -10.5, 0.4) };
         if (z < 0.45) return { x: THREE.MathUtils.clamp(x, PLATFORM.xOut + 0.2, PLATFORM.xIn - 0.1), z: THREE.MathUtils.clamp(z, PLATFORM.zMin + 0.2, PLATFORM.zMax) };
-        if (z > ISLAND.zGate + 0.4) return { x: THREE.MathUtils.clamp(x, -ISLAND.xMax + 0.2, ISLAND.xMax - 0.2), z: THREE.MathUtils.clamp(z, ISLAND.zIn + 0.2, ISLAND.zMax - 0.1) };
+        if (z > ISLAND.zIn) return { x: THREE.MathUtils.clamp(x, -ISLAND.xMax + 0.2, ISLAND.xMax - 0.2), z: Math.min(z, ISLAND.zMax - 0.1) };
+        if (z > ISLAND.zGate - 0.2) return { x: THREE.MathUtils.clamp(x, -(BW_HALF - 0.8), BW_HALF - 0.8), z };   // the open front between boardwalk and town
         return { x: THREE.MathUtils.clamp(x, -(BW_HALF - 0.8), BW_HALF - 0.8), z: THREE.MathUtils.clamp(z, 0.5, 5.7) };
       }
       /* where a tap leads: a shop or stand tapped on its building leads to the spot in front of it */
@@ -12038,12 +12041,20 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
         return clampWalkable(x, z);
       }
+      /* a clear x to cross between the boardwalk and the town (nothing solid in the strip z 4.7 to 7.4) */
+      function frontCrossX(want) {
+        const lim = BW_HALF - 1.5, ok = x => !walkColliders.some(c => (c.kind === 'box' ? Math.abs(x - c.x) < c.hx + 0.45 && c.z + c.hz > 4.7 && c.z - c.hz < 7.4 : Math.abs(x - c.x) < c.r + 0.45 && c.z + c.r > 4.7 && c.z - c.r < 7.4));
+        const w = THREE.MathUtils.clamp(want, -lim, lim);
+        for (let k = 0; k <= 32; k++) for (const sgn of [1, -1]) { const x = w + sgn * k * 0.5; if (Math.abs(x) <= lim && ok(x)) return x; }
+        return 0;
+      }
       function planRoute(to, fromPt) {
         const pts = [], from = fromPt ? { x: fromPt.x, z: fromPt.z } : { x: playerX, z: playerZ }, a0 = zoneOf(from.x, from.z), b0 = zoneOf(to.x, to.z);
-        const gateOut = { x: 0, z: ISLAND.zGate - 0.4 }, gateIn = { x: 0, z: ISLAND.zIn + 0.4 };
-        // the town joins everything else through the gate: route via the gate, then treat that side as the boardwalk
+        // v6.6.1: the town front is open, so cross it near where you are going (clear of benches, posts and the gate pillars)
+        const cx = frontCrossX(b0 === 'town' ? to.x : a0 === 'town' && b0 === 'board' ? to.x : a0 === 'town' ? 0 : to.x);
+        const gateOut = { x: cx, z: ISLAND.zGate - 0.4 }, gateIn = { x: cx, z: ISLAND.zIn + 0.4 };
         let a = a0, b = b0;
-        if (a0 === 'town' && b0 !== 'town') { pts.push(...townPath(from, gateIn), gateOut); a = 'board'; from.x = 0; from.z = gateOut.z; }
+        if (a0 === 'town' && b0 !== 'town') { pts.push(...townPath(from, gateIn), gateOut); a = 'board'; from.x = cx; from.z = gateOut.z; }
         if (b0 === 'town' && a0 !== 'town') b = 'board';
         const pierMouth = x => ({ x: THREE.MathUtils.clamp(x, -PIER_WALK + 0.4, PIER_WALK - 0.4), z: 0.9 });
         const stairTop = { x: -PIER_WALK + 0.2, z: -5.6 }, stairFoot = { x: PLATFORM.xIn - 0.3, z: -5.6 };
@@ -17022,12 +17033,22 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
               const turnIn = Math.sign(moveX) * Math.pow(Math.abs(moveX), 1.4);
               playerYaw -= turnIn * MOVE.turn * dt;
               if (Math.abs(turnIn) > 0.05) camOrbit.steerT = 0.6;
-              const walk = -moveZ;
+              let walk = -moveZ;
+              // v6.6.1: pulling back turns the angler round (and the camera with him), then he walks that way
+              if (moveZ < 0.2) revTurn.on = false;
+              else if (!revTurn.on && moveZ > 0.45 && Math.abs(moveX) < 0.75) { revTurn.on = true; revTurn.yaw = playerYaw + Math.PI; }
+              if (revTurn.on) {
+                revTurn.yaw -= turnIn * MOVE.turn * dt;   // steering still works while turned round
+                const d = Math.atan2(Math.sin(revTurn.yaw - playerYaw), Math.cos(revTurn.yaw - playerYaw));
+                playerYaw += THREE.MathUtils.clamp(d, -MOVE.uturn * dt, MOVE.uturn * dt);
+                walk = Math.abs(d) < 0.7 ? moveZ : 0;
+                camOrbit.steerT = 0.6;
+              }
               moveX = -Math.sin(playerYaw) * walk;
               moveZ = -Math.cos(playerYaw) * walk;
               stickMag = Math.abs(walk);
               speedGoal = usingKeys ? speedGoal : (stickMag < MOVE.runAt ? MOVE.walk * stickMag / MOVE.runAt : MOVE.run);
-              if (walk < 0) speedGoal *= MOVE.back;   // backing up is slower
+              if (walk < 0) speedGoal *= MOVE.back;   // (only when backing straight down is not a turn: never with the stick since v6.6.1)
             }
             camOrbit.steerT = Math.max(0, camOrbit.steerT - dt);
             if (autoWalk && stickMag <= 0.08) {   // tap-to-walk: head for the next point of the route
@@ -17058,14 +17079,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             // Small invisible border at the farthest end of the pier (Z = -10.59) so the fisherman doesn't step onto the very tip
             // walking pace: about 3 m/s at full stick (a brisk walk); diagonals are no faster than straight lines
             let nextZ = THREE.MathUtils.clamp(playerZ + moveZ * WALK_SPEED * dt, -10.59, ISLAND.zMax);
-            // the boardwalk's back edge and the terrace's front hedge can only be crossed through the town gate
-            if (nextZ > ISLAND.zGate && playerZ <= ISLAND.zGate && Math.abs(playerX) > ISLAND.gateHW) nextZ = ISLAND.zGate;
-            if (nextZ < ISLAND.zIn && playerZ >= ISLAND.zIn && Math.abs(playerX) > ISLAND.gateHW) nextZ = ISLAND.zIn;
+            // v6.6.1: the boardwalk opens onto the town along its whole width; past the boardwalk's ends the terrace edge stops you
+            if (nextZ < ISLAND.zIn && playerZ >= ISLAND.zIn && Math.abs(playerX) > BW_HALF - 0.7) nextZ = ISLAND.zIn;
 
             const onDock = playerX < -PIER_WALK - 0.02 && playerZ < 0.4;   // on the stairs or the mooring platform
             const getPierXBounds = zVal => {
               if (zVal > ISLAND.zIn - 1e-3) return [-ISLAND.xMax, ISLAND.xMax];                 // Harbour Town
-              if (zVal > ISLAND.zGate + 1e-3) return [-ISLAND.gateHW, ISLAND.gateHW];           // the gate
+              if (zVal > ISLAND.zGate + 1e-3) return [-(BW_HALF - 0.7), BW_HALF - 0.7];       // the open town front (v6.6.1)
               if (zVal >= 0.45) return [-(BW_HALF - 0.7), BW_HALF - 0.7];
               // stairs and mooring platform (port side): past the foot of the stairs only the platform itself is walkable
               if (onDock) return zVal < -6.55 ? [PLATFORM.xOut, PLATFORM.xIn] : [PLATFORM.xOut, PIER_WALK];
