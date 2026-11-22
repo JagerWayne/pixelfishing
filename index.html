@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.2.1';
+    window.PF_VERSION = '6.3.0';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -1462,6 +1462,22 @@
     #hud-buff-pill { pointer-events: none; display: none; padding: 3px 8px; background: rgba(48, 22, 12, 0.88); border: 2px solid #fb923c; box-shadow: 0 0 0 2px #070c14; border-radius: 4px; font-size: 11px; font-weight: bold; color: #fed7aa; align-self: flex-start; max-width: 92vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     #sleep-fade { position: fixed; inset: 0; background: #020617; opacity: 0; pointer-events: none; transition: opacity 0.9s ease; z-index: 900; display: flex; align-items: center; justify-content: center; color: #e2e8f0; font: bold 18px monospace; letter-spacing: 2px; }
     #sleep-fade.on { opacity: 1; pointer-events: auto; }
+    #town-body { display: flex; flex-direction: column; gap: 6px; }
+    #town-body .sl-row { flex-wrap: wrap; cursor: default; }
+    .town-note { font-size: 12px; color: #e2e8f0; margin: 2px 2px 6px; line-height: 1.4; }
+    .paint-row .sl-btn.swatch { min-width: 30px; min-height: 30px; padding: 0; border: 2px solid #1f2937; color: #fff; text-shadow: 0 0 3px #000; }
+    .dice-row { display: flex; gap: 8px; justify-content: center; margin: 4px 0; }
+    .die { display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center; background: #fef3c7; color: #7c2d12; border: 3px solid #92400e; border-radius: 8px; font-size: 22px; font-weight: 900; }
+    .winch-bar { position: relative; height: 36px; background: #1e293b; border: 2px solid #64748b; border-radius: 6px; margin: 8px 0; overflow: hidden; }
+    .winch-zone { position: absolute; top: 0; bottom: 0; background: rgba(34, 197, 94, 0.55); }
+    .winch-hook { position: absolute; top: 2px; bottom: 2px; width: 6px; margin-left: -3px; background: #facc15; border-radius: 3px; }
+    #scope-ui { position: fixed; inset: 0; display: none; z-index: 800; pointer-events: none; }
+    #scope-ui.open { display: block; }
+    .scope-ring { position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, transparent 0, transparent 40vmin, rgba(2, 6, 23, 0.94) 41vmin); }
+    .scope-cross { position: absolute; left: 50%; top: 45%; width: 30px; height: 30px; transform: translate(-50%, -50%); border: 2px solid rgba(250, 204, 21, 0.8); border-radius: 50%; }
+    .scope-bar { position: absolute; left: 0; right: 0; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; gap: 14px; pointer-events: auto; }
+    .scope-bar .pixel-btn { min-width: 64px; min-height: 52px; font-size: 18px; }
+    body[data-scope="1"] #mobile-controls, body[data-scope="1"] .hud-stack, body[data-scope="1"] #center-hud, body[data-scope="1"] #joy-zone, body[data-scope="1"] .hud-top, body[data-scope="1"] #proximity-banner { display: none !important; }
     #hud-quest-pill.ready { border-color: #4ade80; color: #bbf7d0; background: rgba(6, 40, 20, 0.9); }
     #modal-talk { background: rgba(4, 8, 16, 0.25); align-items: flex-end; }
     #talk-box { width: min(96vw, 560px); padding: 12px 14px calc(12px + var(--safe-bottom)); background: var(--bg-panel-solid); margin-bottom: 8px; cursor: pointer; }
@@ -1986,6 +2002,18 @@
       <div class="modal-header"><span class="modal-title">📜 QUESTS</span><button class="pixel-btn red" data-close="modal-quests" type="button">Close</button></div>
       <div class="modal-body"><div id="quest-list"></div></div>
     </div>
+  </div>
+
+  <!-- HARBOUR TOWN (v6.3.0): one sheet for the noticeboard, Post Office, tavern, traps, workshop and greenhouse -->
+  <div class="modal-backdrop" id="modal-town">
+    <div class="pixel-box modal-window" style="width: min(96vw, 560px);">
+      <div class="modal-header"><span class="modal-title" id="town-title">HARBOUR TOWN</span><button class="pixel-btn red" data-close="modal-town" type="button">Close</button></div>
+      <div class="modal-body"><div id="town-body"></div></div>
+    </div>
+  </div>
+  <!-- the lookout telescope view -->
+  <div id="scope-ui"><div class="scope-ring"></div><div class="scope-cross"></div>
+    <div class="scope-bar"><button id="scope-left" class="pixel-btn" type="button" aria-label="Look left">◀</button><button id="scope-close" class="pixel-btn red" type="button">Close</button><button id="scope-right" class="pixel-btn" type="button" aria-label="Look right">▶</button></div>
   </div>
 
   <!-- MAP: the harbour from above, where you are and which way you face, every landmark with what it is for -->
@@ -4490,15 +4518,34 @@
       const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0, camZ: 2.9 };   // wide enough for the Grand Aquarium (v5.5.0)
       /* Harbour Town on the island terrace (v6.0): through the gate in the seawall (x within +-gateHW) up to zMax.
          The ground is y 1.5; the hills start behind z 14.5. */
-      const ISLAND = { gateHW: 1.3, zGate: 5.8, zIn: 6.8, zMax: 13.9, xMax: 26.2, plaza: { x: 0, z: 9.7, r: 2.6 } };
+      /* v6.3.0: the terrace is wider (x up to +-xMax) and climbs a gentle ramp (rampZ0 to rampZ1, up by `up`) to an upper terrace up to zMax */
+      const ISLAND = { gateHW: 1.3, zGate: 5.8, zIn: 6.8, zMax: 23.6, xMax: 37.6, rampZ0: 14.0, rampZ1: 17.0, up: 1.2, plaza: { x: 0, z: 9.7, r: 2.6 } };
+      /* the ground height of the town at depth z (1.5 on the lower terrace, 2.7 on the upper one) */
+      const townGround = z => 1.5 + ISLAND.up * Math.min(1, Math.max(0, (z - ISLAND.rampZ0) / (ISLAND.rampZ1 - ISLAND.rampZ0)));
+      /* keeps the island's hills and sand under the town terraces, blending back to the hills outside them */
+      const townFlatten = (x, z, y) => { const m = 1 - (1 - THREE.MathUtils.smoothstep(Math.abs(x), 40.5, 48)) * (1 - THREE.MathUtils.smoothstep(z, 25.5, 32)); return THREE.MathUtils.lerp(Math.min(y, townGround(z) - 0.08), y, m); };
       const TOWN = {
         rook:  { x: -17.5, z: 11.6, w: 3.4, d: 2.8, name: "Rook's house" },
         pip:   { x: -6.5,  z: 11.9, w: 3.0, d: 2.6, name: "Pip's home" },
         ines:  { x: 7.0,   z: 11.9, w: 3.2, d: 2.6, name: "Ines' cottage" },
         resto: { x: 17.5,  z: 11.5, w: 5.0, d: 3.0, name: "Lorenzo's" },
         hut:   { x: -23.6, z: 12.1, w: 2.4, d: 2.0, name: "Marta's hut" },
-        board: { x: 3.4, z: 8.0 }, well: { x: 0, z: 9.7 }
+        board: { x: 3.4, z: 8.0 }, well: { x: 0, z: 9.7 },
+        // v6.3.0 districts: Market Square & Artisan Quarter (east), Lighthouse Hill (west), the upper terrace
+        post:   { x: 28.6, z: 12.7, w: 3.8, d: 2.6, name: 'Post Office' },
+        shop:   { x: 35.0, z: 12.6, w: 3.6, d: 2.8, name: "Barnaby's Workshop" },
+        tavern: { x: 24.0, z: 20.4, w: 5.2, d: 3.4, name: "Sailors' Rest" },
+        talia:  { x: -23.6, z: 20.6, w: 3.0, d: 2.4, name: "Talia's greenhouse" },
+        market: { x: 31.6, z: 9.2, r: 2.2 },
+        lookout: { x: -33.2, z: 20.6, r: 1.9 }, lookoutBench: { x: -33.2, z: 21.55 }, scope: { x: -33.2, z: 19.25 },
+        garden: { x: -28.6, z: 18.6, w: 3.8 },
+        pool:   { x: 34.0, z: 19.8, r: 2.3 },
+        winch:  { x: -22.8, z: 1.4 }
       };
+      const JOB_LANTERNS = [{ x: -12.5, z: 15.2 }, { x: -24.4, z: 15.4 }, { x: -29.4, z: 22.8 }, { x: 9.5, z: 15.2 }, { x: 19.4, z: 17.8 }, { x: 30.4, z: 15.4 }];
+      const JOB_KIND_IDS = ['mail', 'cleanup', 'lantern', 'forage', 'winch'];
+      const BOAT_PAINTS = [['Signal red', 0xb91c1c], ['Sunset orange', 0xea580c], ['Sun yellow', 0xeab308], ['Kelp green', 0x15803d], ['Lagoon teal', 0x0f766e],
+        ['Harbour blue', 0x1d4ed8], ['Navy', 0x1e293b], ['Royal purple', 0x6d28d9], ['Coral pink', 0xdb2777], ['Pearl white', 0xf1f5f9], ['Charcoal', 0x374151], ['Varnished oak', 0xb45309]];
       const NPCS = {
         marta: { name: 'Old Marta', icon: '👵', role: 'Lighthouse keeper',
           look: { gender: 'female', skin: 1, hairStyle: 'bun', hairColor: 7, facial: 'none', glasses: 'round', top: 'slicker', topColor: 3, topAccent: 10, bottom: 'skirt', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 's', build: 'slim' },
@@ -4506,7 +4553,7 @@
           chat: ['The sea gives, and the sea takes. Mostly it takes bait.', 'Forty years I kept that light. It still blinks at me every night, like an old friend.', 'Storms come from the north-west here. Watch the sky, not the clock.', 'If you hear singing from the deep at night, keep your line taut.'] },
         rook: { name: 'Captain Rook', icon: '🧔', role: 'Boatyard owner',
           look: { gender: 'male', skin: 2, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'sweater', topColor: 1, topAccent: 0, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 1, height: 'l', build: 'broad' },
-          home: { x: TOWN.rook.x, z: TOWN.rook.z - TOWN.rook.d / 2 - 0.7 }, spots: [{ x: -14.4, z: 4.9 }, { x: 1.9, z: 8.3 }, { x: -9.4, z: 4.9 }],
+          home: { x: TOWN.rook.x, z: TOWN.rook.z - TOWN.rook.d / 2 - 0.7 }, spots: [{ x: -14.4, z: 4.9 }, { x: 0.4, z: 8.1 }, { x: -9.4, z: 4.9 }],
           chat: ['A boat is only as good as the one steering it. Mine are better than that, mind you.', 'Fuel up before you head out. The tow fee hurts more than the fuel.', 'Bigger hulls ride the swell out in the Shelf. Small ones just bounce.', 'I once caught a marlin with a broom handle. Well. Nearly.'] },
         pip: { name: 'Pip', icon: '🧒', role: 'Young angler',
           look: { gender: 'male', skin: 0, hairStyle: 'wavy', hairColor: 4, facial: 'none', glasses: 'none', top: 'tee', topColor: 2, topAccent: 3, bottom: 'shorts', bottomColor: 1, shoes: 'sneakers', shoeColor: 2, hat: 'cap', hatColor: 3, height: 'xs', build: 'slim' },
@@ -4519,7 +4566,23 @@
         lorenzo: { name: 'Chef Lorenzo', icon: '👨‍🍳', role: 'Chef',
           look: { gender: 'male', skin: 1, hairStyle: 'short', hairColor: 0, facial: 'mustache', glasses: 'none', top: 'tee', topColor: 0, topAccent: 2, bottom: 'jeans', bottomColor: 9, shoes: 'sneakers', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'broad' },
           home: { x: TOWN.resto.x, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.8 }, spots: [{ x: TOWN.resto.x + 3.3, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.7 }, { x: 9.4, z: 4.9 }],
-          chat: ['Your restaurant is a boat on dry land: everyone must row together.', 'Fresh fish, a little lemon, nothing else. The secret is: no secret.', 'You catch them, I cook them. A beautiful arrangement.', 'Bring me something rare one day and I will make you a dish to remember.'] }
+          chat: ['Your restaurant is a boat on dry land: everyone must row together.', 'Fresh fish, a little lemon, nothing else. The secret is: no secret.', 'You catch them, I cook them. A beautiful arrangement.', 'Bring me something rare one day and I will make you a dish to remember.'] },
+        maren: { name: 'Maren', icon: '📮', role: 'Postmistress & cartographer',
+          look: { gender: 'female', skin: 0, hairStyle: 'bun', hairColor: 3, facial: 'none', glasses: 'round', top: 'sweater', topColor: 5, topAccent: 0, bottom: 'skirt', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'slim' },
+          home: { x: 31.6, z: 11.0 }, spots: [{ x: 31.6, z: 11.0 }, { x: -1.6, z: 8.2 }, { x: 26.4, z: 8.0 }],
+          chat: ['Every bottle that washes up has travelled further than most people ever will.', 'My charts say the Shelf drops away past six hundred metres. My knees say I will never check.', 'A parcel for the lighthouse jetty pays double. The sea is not in a hurry, but I am.', 'I draw the coastline from memory. It changes a little every winter.'] },
+        barnaby: { name: 'Barnaby', icon: '🔨', role: 'Retired shipwright',
+          look: { gender: 'male', skin: 2, hairStyle: 'short', hairColor: 8, facial: 'mustache', glasses: 'round', top: 'vest', topColor: 9, topAccent: 1, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 9, height: 'm', build: 'broad' },
+          home: { x: 35.6, z: 8.5 }, spots: [{ x: 35.6, z: 8.5 }, { x: -26.2, z: 4.0 }, { x: 21.6, z: 7.6 }],
+          chat: ['Forty hulls I built. Every one of them still floats, except the ones that sank, which were not my fault.', 'A good coat of paint is half the seaworthiness. The other half is not hitting rocks.', 'Bring me driftwood and I will make you something worth mounting.', 'Rook buys his boats new. I tell him every boat was new once.'] },
+        talia: { name: 'Talia', icon: '🌿', role: 'Botanist & tide-pool keeper',
+          look: { gender: 'female', skin: 3, hairStyle: 'ponytail', hairColor: 2, facial: 'none', glasses: 'none', top: 'tee', topColor: 3, topAccent: 5, bottom: 'shorts', bottomColor: 3, shoes: 'sneakers', shoeColor: 3, hat: 'bucket', hatColor: 3, height: 's', build: 'slim' },
+          home: { x: -21.2, z: 19.0 }, spots: [{ x: -21.2, z: 19.0 }, { x: -26.0, z: 16.2 }, { x: 29.6, z: 17.2 }],
+          chat: ['Seaweed is not a weed. It is a forest that has learned to swim.', 'Crabs walk sideways because forward was already taken.', 'Rosemary, thyme and a little sea fennel: fish cannot resist my lures.', 'The tide pool is a whole ocean in a bowl. Look closely.'] },
+        salty: { name: 'Old Salty', icon: '🍺', role: 'Tavern keeper',
+          look: { gender: 'male', skin: 1, hairStyle: 'short', hairColor: 7, facial: 'beard', glasses: 'none', top: 'slicker', topColor: 6, topAccent: 10, bottom: 'jeans', bottomColor: 9, shoes: 'boots', shoeColor: 10, hat: 'cap', hatColor: 6, height: 'l', build: 'broad' },
+          home: { x: 27.4, z: 18.2 }, spots: [{ x: 27.4, z: 18.2 }, { x: -8.6, z: 8.0 }, { x: 23.6, z: 7.6 }],
+          chat: ['The tavern opens at four. The stories start at five. The truth, around midnight.', 'Big shadows like a storm, they say. Bigger ones like a full moon.', 'Ship, captain, crew, then cargo. Remember the order and you will win my money.', 'I have seen a fish as long as the pier. Well. Half the pier.'] }
       };
       const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
       const rarityAtLeast = (r, min) => RARITY_ORDER.indexOf(r) >= RARITY_ORDER.indexOf(min);
@@ -4593,14 +4656,48 @@
         { id: 'legend', giver: 'marta', chapter: 4, title: 'The Legend of the Deep', needs: ['bottles', 'light3', 'faraway'],
           intro: ['Ines told me what the bottles say. I have seen it too, once, from the light.', 'At night, out in the Abyssal Trench, something enormous bites. Land a Legendary fish there, after dark.'],
           steps: [{ t: 'catch', n: 1, rarityMin: 'Legendary', zoneMin: 4, night: true, text: 'Land a Legendary fish in the Trench at night' }],
-          outro: ['You did it. Forty years I watched for that shadow. Harbour Town will tell this story for a long time.'], reward: { cash: 2000, xp: 600, flag: 'legend' } }
+          outro: ['You did it. Forty years I watched for that shadow. Harbour Town will tell this story for a long time.'], reward: { cash: 2000, xp: 600, flag: 'legend' } },
+        // Chapter 5: the new neighbours of the Market Square (v6.3.0)
+        { id: 'post1', giver: 'maren', chapter: 5, title: 'Letters for the Harbour', needs: ['welcome'],
+          intro: ['Oh, hello! I am Maren. I run the Post Office and draw the charts of the bay.', 'The mail never stops and my legs are not what they were. Take a parcel run for me, from the noticeboard or my counter?'],
+          steps: [{ t: 'job', kind: 'mail', n: 1, text: 'Finish a mail runner job' }],
+          outro: ['Delivered, and on time! You will make a fine runner. Here, for your boots.'], reward: { cash: 120, xp: 60 } },
+        { id: 'post2', giver: 'maren', chapter: 5, title: 'Messages in Bottles', needs: ['post1'],
+          intro: ['People throw letters into the sea and the sea brings them here, eventually.', 'Find me three more bottle messages. I will keep copies at the office.'],
+          steps: [{ t: 'bottle', n: 3, text: 'Find 3 bottle messages' }],
+          outro: ['Such lovely letters. I have stamped each one. Take this for your trouble.'], reward: { cash: 220, xp: 110 } },
+        { id: 'paint1', giver: 'barnaby', chapter: 5, title: 'A Fresh Coat', needs: ['firstboat'],
+          intro: ['Barnaby. Shipwright, retired. Woodcarver, not retired.', 'That boat of yours looks like every other boat. Come to my workshop and give her some colour.'],
+          steps: [{ t: 'paint', n: 1, text: "Paint a boat at Barnaby's Workshop" }],
+          outro: ['Now that is a boat people will wave at. Here, a little something from the shavings jar.'], reward: { cash: 120, xp: 60 } },
+        { id: 'timber', giver: 'barnaby', chapter: 5, title: 'Timber from the Tide', needs: ['paint1'],
+          intro: ['Good timber is scarce, but the sea delivers driftwood and wreckage to anyone patient.', 'Haul up 4 pieces of junk for my workshop.'],
+          steps: [{ t: 'catch', n: 4, cat: 'Junk', text: 'Haul up 4 pieces of junk' }],
+          outro: ['Oak! And brass! I will carve something fine from this one day. Thank you.'], reward: { cash: 260, xp: 120 } },
+        // Chapter 6: tides and tales (v6.3.0)
+        { id: 'pool1', giver: 'talia', chapter: 6, title: 'Life in the Tide Pool', needs: ['welcome'],
+          intro: ['Hi, I am Talia. I keep the tide pool and the herb garden up on the hill.', 'Set a crab trap in the pool, then come back the next day and haul it up. Twice, please, for my count.'],
+          steps: [{ t: 'trap', n: 2, text: 'Haul up 2 crab traps (tide pool)' }],
+          outro: ['A healthy pool! Crabs, weed, the odd lobster. Thank you for helping me count.'], reward: { cash: 140, xp: 70 } },
+        { id: 'herbs', giver: 'talia', chapter: 6, title: 'Herbs of the Hill', needs: ['pool1'],
+          intro: ['My lures need fresh hillside herbs, and Lorenzo needs them for his sauces.', 'Take a foraging job from the noticeboard and bring in a basket.'],
+          steps: [{ t: 'job', kind: 'forage', n: 1, text: 'Finish a foraging job' }],
+          outro: ['Wonderful! The greenhouse smells like summer. Come by any time for a herbal lure.'], reward: { cash: 180, xp: 90 } },
+        { id: 'dice1', giver: 'salty', chapter: 6, title: 'A Roll of the Dice', needs: ['welcome'],
+          intro: ["Arr. Old Salty, at your service. Sailors' Rest opens at four.", 'Beat anyone in this town at Ship, Captain and Crew and I will tell you a secret.'],
+          steps: [{ t: 'dice', n: 1, text: "Win a game of dice at Sailors' Rest" }],
+          outro: ['Ha! Lucky hands. The secret? The big shadows come out on the Open Shelf. Watch for them.'], reward: { cash: 120, xp: 60 } },
+        { id: 'shadow', giver: 'salty', chapter: 6, title: 'The Shadow Rumour', needs: ['dice1'],
+          intro: ['They say you can see the big ones from the hill, if you know where to look.', 'Go up to the lookout and spot something out at sea through the telescope.'],
+          steps: [{ t: 'scope', n: 1, text: 'Spot something at sea through the lookout telescope' }],
+          outro: ['You saw it with your own eyes! Now go and catch it, and come and tell me the story.'], reward: { cash: 250, xp: 120 } }
       ];
       const QUEST_BY_ID = Object.fromEntries(QUESTS.map(q => [q.id, q]));
       /* the player's name (character creation) names the restaurant: "Wayne's Restaurant" */
       const cleanName = v => String(v == null ? '' : v).replace(/[\u0000-\u001f<>&"\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
       const restoName = () => { const n = cleanName(state.playerName); return n ? `${n}'s Restaurant` : "Fisherman's Restaurant"; };
       const PANTRY = { bread: { name: 'Bread', icon: '🍞', cost: 4 }, lemon: { name: 'Lemon', icon: '🍋', cost: 3 }, rice: { name: 'Rice', icon: '🍚', cost: 5 },
-        potato: { name: 'Potato', icon: '🥔', cost: 3 }, spices: { name: 'Spices', icon: '🌶️', cost: 6 } };
+        potato: { name: 'Potato', icon: '🥔', cost: 3 }, spices: { name: 'Spices', icon: '🌶️', cost: 6 }, shellfish: { name: 'Shellfish', icon: '🦀', cost: 0, trap: true } };
       /* fish: one requirement per fish needed ({ minW, rarityMin, cat }); at: dishes cooked before it unlocks */
       const RECIPES = [
         { id: 'grilled', name: 'Grilled Fish', icon: '🐟', fish: [{}], pantry: { lemon: 1 }, value: 28, at: 0, buff: 'bite' },
@@ -4612,6 +4709,7 @@
         { id: 'cakes', name: 'Fishcakes', icon: '🧆', fish: [{}, {}], pantry: { potato: 1, bread: 1 }, value: 58, at: 3, buff: 'line' },
         { id: 'kebab', name: 'Spiced Kebab', icon: '🍢', fish: [{ minW: 2 }], pantry: { spices: 1, bread: 1 }, value: 70, at: 8, buff: 'bite' },
         { id: 'sushi', name: 'Sushi Platter', icon: '🍣', fish: [{ rarityMin: 'Uncommon', minW: 0.5 }], pantry: { rice: 1 }, value: 95, at: 8, buff: 'breath' },
+        { id: 'bisque', name: 'Crab & Lobster Bisque', icon: '🦞', fish: [{}], pantry: { shellfish: 2, bread: 1 }, value: 140, at: 8, buff: 'line' },
         { id: 'pie', name: 'Fish Pie', icon: '🥧', fish: [{}, {}], pantry: { potato: 2, bread: 1 }, value: 80, at: 8, buff: 'line' },
         { id: 'baked', name: 'Baked Whole Fish', icon: '🍽️', fish: [{ minW: 3 }], pantry: { lemon: 1, spices: 1 }, value: 120, at: 15, buff: 'bite' },
         { id: 'paella', name: 'Seafood Paella', icon: '🥘', fish: [{ rarityMin: 'Uncommon' }, {}], pantry: { rice: 2, spices: 1 }, value: 150, at: 15, buff: 'line' },
@@ -5513,7 +5611,19 @@
            BOATS: shared lofted hull + three detailed vessels.
            Bow points toward -Z, up is +Y, origin near the waterline centre.
            ------------------------------------------------------------------ */
+        /* boat paint (v6.3.0, Barnaby's Workshop): the hull and trim bands take the chosen colours while a boat is built */
         static loftHull(o) {
+          const P = this._paint;
+          if (P && Array.isArray(o.bands) && o.bands.length >= 3) {
+            const five = o.bands.length >= 5;
+            o = Object.assign({}, o, { bands: o.bands.map((b, i) => {
+              const ci = (i === 2 || (five && i === 4)) ? P.hull : (five ? i === 3 : i === 1) ? P.trim : -1;
+              return ci >= 0 ? Object.assign({}, b, { color: '#' + BOAT_PAINTS[ci][1].toString(16).padStart(6, '0') }) : b;
+            }) });
+          }
+          const h = this.loftHullBase(o); this._lastHull = h; return h;
+        }
+        static loftHullBase(o) {
           // o: L, beam, draft, depth (keel->sheer at midship), bowRise, sternRise, sternW, bands:[{y0,y1,color}], planks
           const NZ = 52, NP = 20;   // finer loft: smoother hull and crisp paint bands
           const pos = [], col = [], idx = [];
@@ -5586,7 +5696,24 @@
           return { geo: g, transom: tg, halfW, sheerY, keelY, sternTop: { y: topY, x: topX, z: zT } };
         }
 
-        static buildBoatMesh(tier, textures) {
+        /* paint: undefined = the saved paint for this tier, null = factory colours */
+        static buildBoatMesh(tier, textures, paint) {
+          let P = paint === undefined ? null : paint;
+          if (paint === undefined) { try { P = (state.town && state.town.paint && state.town.paint[tier]) || null; } catch (e) { P = null; } }
+          this._paint = P; this._lastHull = null;
+          const g = this.buildBoatMeshBase(tier, textures), H = this._lastHull;
+          this._paint = null;
+          if (P && P.flag >= 0 && H && H.sternTop) {   // a pennant on a short pole at the stern, flying aft
+            const st = H.sternTop, px = Math.max(0.15, Math.abs(st.x) * 0.75);
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 1.1, 6), new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.6, roughness: 0.4 }));
+            pole.position.set(px, st.y + 0.55, st.z - 0.08); g.add(pole);
+            const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(0.55, -0.11); sh.lineTo(0, -0.24); sh.lineTo(0, 0);
+            const flag = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ color: BOAT_PAINTS[P.flag][1], side: THREE.DoubleSide, roughness: 0.8 }));
+            flag.rotation.y = -Math.PI / 2; flag.position.set(px, st.y + 1.08, st.z - 0.08); g.add(flag);
+          }
+          return g;
+        }
+        static buildBoatMeshBase(tier, textures) {
           const group = new THREE.Group();
           if (tier === 0) return group;
           const M = (color, rough = 0.6, metal = 0, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra));
@@ -6928,6 +7055,109 @@
           }
         }
 
+        /* Harbour Town districts (v6.3.0): the Market Square and Artisan Quarter to the east (Post Office, Barnaby's
+           Workshop, the tide pool with its crab traps up on the terrace, Sailors' Rest tavern), Lighthouse Hill to the west
+           (Talia's greenhouse, the herb garden, the Lookout Pavilion with its telescope and bench), street lanterns and the
+           dockhand's winch on the boardwalk. Buildings fade (townFade) and everything solid has a walk collider. */
+        static buildTownDistricts(root, fade, textures) {
+          const K = this.propKit(textures), M = K.M, W = COL.WALK, out = { lanterns: [], trapFloats: [] };
+          const sign = (parent, text, w, x, y, z, px = 288) => K.box(parent, w, w * 0.18, 0.05, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture(text, px, 52) }), x, y, z);
+          const stoneD = M(0x6b7280, 0.95), pave = M(0xb8b0a2, 0.95);
+          // houses: the cottage model with a sign over the door, facing the sea
+          const house = (t, wall, roof, seed, label) => {
+            const ct = this.buildCottage(t.w, t.d, wall, roof, seed);
+            ct.position.set(t.x, townGround(t.z), t.z); ct.rotation.y = Math.PI; ct.userData.townFade = true; root.add(ct); fade.push(ct);
+            sign(ct, label, Math.min(2.4, t.w * 0.62), 0, 2.08, t.d / 2 + 0.1);
+            Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, W);
+            return ct;
+          };
+          house(TOWN.post, 0xfef9c3, 0x1d4ed8, 3, '📮 POST OFFICE');
+          { const ct = house(TOWN.shop, 0xd6b48a, 0x7c2d12, 4, '🔨 WORKSHOP'); K.box(ct, 0.9, 0.5, 0.5, K.darkWood, TOWN.shop.w / 2 - 0.6, 0.55, TOWN.shop.d / 2 + 0.45); }
+          { const ct = house(TOWN.tavern, 0xa16207, 0x334155, 5, "🍺 SAILORS' REST");
+            [-1, 1].forEach(sx => K.cyl(ct, 0.28, 0.28, 0.62, M(0x7c2d12, 0.85), sx * (TOWN.tavern.w / 2 - 0.45), 0.61, TOWN.tavern.d / 2 + 0.45, 10));
+            Colliders.circle('barrel', TOWN.tavern.x + TOWN.tavern.w / 2 - 0.45, TOWN.tavern.z - TOWN.tavern.d / 2 - 0.45, 0.32, W);
+            Colliders.circle('barrel', TOWN.tavern.x - TOWN.tavern.w / 2 + 0.45, TOWN.tavern.z - TOWN.tavern.d / 2 - 0.45, 0.32, W); }
+          house(TOWN.talia, 0xdcfce7, 0x15803d, 6, '🌿 TALIA');
+          // the Market Square: paving, a fish-crate stall and bunting
+          {
+            const S = TOWN.market, y = townGround(S.z);
+            const p = new THREE.Mesh(new THREE.CylinderGeometry(S.r, S.r, 0.06, 26), pave); p.position.set(S.x, y + 0.02, S.z); p.receiveShadow = true; root.add(p);
+            const st = new THREE.Group(); st.position.set(S.x + 0.2, y, S.z + 0.2); root.add(st);
+            K.box(st, 1.6, 0.7, 0.7, K.wood, 0, 0.35, 0); [[-0.5, 0x60a5fa], [0, 0xf8fafc], [0.5, 0xf87171]].forEach(([x, c]) => K.box(st, 0.42, 0.16, 0.5, M(c, 0.8), x, 0.78, 0));
+            [-0.75, 0.75].forEach(x => K.cyl(st, 0.04, 0.04, 1.8, K.darkWood, x, 0.9, -0.3, 6)); K.box(st, 1.8, 0.05, 0.9, M(0x0e7490, 0.8), 0, 1.8, 0);
+            Colliders.box('market stall', S.x + 0.2, S.z + 0.2, 0.85, 0.4, W);
+          }
+          // cobbles: the hill path west and the lane east
+          const cob = (x, z, i) => { const s = new THREE.Mesh(ModelKit.roundedBox(0.9 + (i % 2) * 0.3, 0.07, 0.7, 0.03), i % 2 ? pave : M(0x9ca3af, 0.95)); s.position.set(x, townGround(z) + 0.02, z); s.rotation.y = i * 0.5; root.add(s); };
+          for (let i = 0; i < 13; i++) { const t = i / 12; cob(-20.5 - t * 12.5 + Math.sin(t * 5) * 0.6, 9.6 + t * 10.0, i); }
+          for (let i = 0; i < 10; i++) cob(21.5 + i * 1.05, 8.4 + Math.sin(i * 0.8) * 0.25, i + 1);
+          for (let i = 0; i < 8; i++) { const t = i / 7; cob(26.5 + t * 2.5, 15.0 + t * 2.6, i); }
+          // Lookout Pavilion: a six-post gazebo with a roof, a bench (reading spot) and a brass telescope pointing out to sea
+          {
+            const L = TOWN.lookout, y = townGround(L.z), g = new THREE.Group(); g.position.set(L.x, y, L.z); g.userData.townFade = true; root.add(g); fade.push(g);
+            K.cyl(g, L.r + 0.2, L.r + 0.3, 0.06, stoneD, 0, 0.03, 0, 6);
+            for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, px = Math.cos(a) * L.r, pz = Math.sin(a) * L.r;
+              K.cyl(g, 0.07, 0.08, 2.3, M(0xf8fafc, 0.8), px, 1.3, pz, 8); if (pz > -0.5) Colliders.circle('pavilion post', L.x + px, L.z + pz, 0.12, W); }
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(L.r + 0.6, 1.1, 6), M(0x0f766e, 0.8)); roof.position.y = 3.0; roof.rotation.y = Math.PI / 6; g.add(roof);
+            K.sph(g, 0.12, M(0xfacc15, 0.4, 0.5), 0, 3.6, 0, 8, 6);
+            const bench = new THREE.Group(); bench.position.set(0, 0.06, TOWN.lookoutBench.z - L.z); g.add(bench);
+            for (let k = 0; k < 3; k++) K.box(bench, 1.6, 0.05, 0.13, K.wood, 0, 0.46, -0.16 + k * 0.15);
+            for (let k = 0; k < 2; k++) { const bk = K.box(bench, 1.6, 0.12, 0.04, K.wood, 0, 0.66 + k * 0.17, 0.27); bk.rotation.x = -0.18; }
+            [-0.68, 0.68].forEach(lx => { K.box(bench, 0.07, 0.44, 0.07, K.iron, lx, 0.22, -0.18); K.box(bench, 0.07, 0.95, 0.07, K.iron, lx, 0.47, 0.25); });
+            Colliders.box('bench', L.x, TOWN.lookoutBench.z + 0.05, 0.82, 0.35, W);
+            const sc = TOWN.scope, tg = new THREE.Group(); tg.position.set(sc.x - L.x, 0.06, sc.z - L.z); g.add(tg);
+            [0, 2.1, 4.2].forEach(a => { const leg = K.cyl(tg, 0.025, 0.025, 1.25, K.darkWood, Math.sin(a) * 0.25, 0.58, Math.cos(a) * 0.25, 5); leg.rotation.set(Math.cos(a) * 0.38, 0, -Math.sin(a) * 0.38); });
+            const tube = new THREE.Group(); tube.position.y = 1.2; tube.rotation.x = 0.12; tg.add(tube);
+            const brass = M(0xb8860b, 0.35, 0.8);
+            K.cyl(tube, 0.07, 0.05, 1.0, brass, 0, 0, 0, 10).rotation.x = Math.PI / 2; K.cyl(tube, 0.085, 0.085, 0.12, brass, 0, 0, -0.5, 10).rotation.x = Math.PI / 2;
+            Colliders.circle('telescope', sc.x, sc.z, 0.32, W);
+          }
+          // herb garden: three raised beds of herbs on Lighthouse Hill
+          {
+            const G = TOWN.garden, y = townGround(G.z), herb = [0x16a34a, 0x65a30d, 0x15803d, 0x4d7c0f];
+            for (let b = 0; b < 3; b++) {
+              const bz = G.z - 1.0 + b * 1.0, bed = new THREE.Group(); bed.position.set(G.x, y, bz); root.add(bed);
+              K.box(bed, G.w, 0.28, 0.6, K.darkWood, 0, 0.14, 0); K.box(bed, G.w - 0.12, 0.05, 0.5, M(0x3f2a14, 1), 0, 0.29, 0);
+              for (let i = 0; i < 7; i++) K.sph(bed, 0.13 + (i % 3) * 0.03, M(herb[(i + b) % 4], 0.9), -G.w / 2 + 0.3 + i * (G.w - 0.6) / 6, 0.4, (i % 2 ? 0.1 : -0.1), 6, 5);
+              Colliders.box('herb bed', G.x, bz, G.w / 2 + 0.05, 0.32, W);
+            }
+          }
+          // the tide pool on the east terrace: a ring of rocks around clear water, with three trap floats
+          {
+            const P = TOWN.pool, y = townGround(P.z);
+            const water = new THREE.Mesh(new THREE.CircleGeometry(P.r, 28), M(0x1d7f9f, 0.15, 0.1, { transparent: true, opacity: 0.88 }));
+            water.rotation.x = -Math.PI / 2; water.position.set(P.x, y + 0.03, P.z); root.add(water);
+            const sand = new THREE.Mesh(new THREE.CircleGeometry(P.r * 0.7, 20), M(0xd6c08a, 0.9)); sand.rotation.x = -Math.PI / 2; sand.position.set(P.x, y + 0.02, P.z); root.add(sand);
+            for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, rk = this.buildRock(0.3 + (i % 3) * 0.1, i * 3.7, 0x78716c, 0); rk.position.set(P.x + Math.cos(a) * (P.r + 0.15), y + 0.05, P.z + Math.sin(a) * (P.r + 0.15)); root.add(rk); }
+            Colliders.circle('tide pool', P.x, P.z, P.r + 0.3, W);
+            for (let i = 0; i < 3; i++) {
+              const a = Math.PI * (0.65 + i * 0.35), f = new THREE.Group(); f.position.set(P.x + Math.cos(a) * P.r * 0.55, y + 0.08, P.z + Math.sin(a) * P.r * 0.55); root.add(f);
+              K.sph(f, 0.11, M(0xf97316, 0.6), 0, 0.05, 0, 8, 6); K.cyl(f, 0.01, 0.01, 0.3, K.iron, 0, 0.2, 0, 4);
+              f.visible = false; out.trapFloats.push(f);
+            }
+          }
+          // street lanterns along the hill path, the upper terrace and the market (the night watch lights them)
+          JOB_LANTERNS.forEach(p => {
+            const y = townGround(p.z), g = new THREE.Group(); g.position.set(p.x, y, p.z); root.add(g);
+            K.cyl(g, 0.05, 0.07, 2.2, K.iron, 0, 1.1, 0, 8); K.box(g, 0.3, 0.05, 0.3, K.iron, 0, 2.22, 0);
+            const glass = M(0x334155, 0.3, 0.2, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0 });
+            K.box(g, 0.22, 0.3, 0.22, glass, 0, 2.05, 0); K.box(g, 0.28, 0.04, 0.28, K.iron, 0, 1.89, 0);
+            Colliders.circle('lantern', p.x, p.z, 0.12, W);
+            out.lanterns.push({ g, glass });
+          });
+          // the dockhand's winch on the boardwalk: a small crane over a stack of crates
+          {
+            const Wn = TOWN.winch, g = new THREE.Group(); g.position.set(Wn.x, 1.5, Wn.z); root.add(g);
+            K.cyl(g, 0.12, 0.16, 2.6, M(0xf59e0b, 0.6, 0.3), 0, 1.3, 0, 8);
+            const arm = K.box(g, 0.12, 0.12, 2.0, M(0xf59e0b, 0.6, 0.3), 0, 2.5, -0.8); arm.rotation.x = -0.12;
+            K.cyl(g, 0.01, 0.01, 1.2, K.iron, 0, 1.95, -1.7, 4); K.box(g, 0.5, 0.4, 0.5, K.wood, 0, 1.2, -1.7);
+            K.cyl(g, 0.22, 0.22, 0.3, K.iron, 0.18, 0.8, 0, 10).rotation.z = Math.PI / 2;
+            [[0.8, 0.2, 0], [0.8, 0.62, 0], [1.3, 0.2, 0.2]].forEach(([x, yy, z]) => K.box(g, 0.48, 0.42, 0.48, K.wood, x, yy, z));
+            Colliders.circle('winch', Wn.x, Wn.z, 0.3, W); Colliders.box('crates', Wn.x + 1.05, Wn.z + 0.1, 0.55, 0.35, W);
+          }
+          return out;
+        }
+
         static buildCottage(w, d, wallHex, roofHex, seed) {
           const g = new THREE.Group();
           const M = (c, r = 0.85, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r, flatShading: true }, extra));
@@ -6985,6 +7215,8 @@
               // Rolling coastal hills rising behind the harbor terrace
               y = 1.48 + Math.pow((worldZ - 14.5) * 0.25, 1.38) + Math.cos(x * 0.06) * 1.4;
             }
+            if (worldZ > 14.5 && Math.abs(x) < 140) y = 1.2;   // v6.3.0: the hills heightfield covers this; keep the sand well under it
+            else if (worldZ > 6.2) y = townFlatten(x, worldZ, y);
             sPos.setY(i, y);
           }
           shoreGeo.computeVertexNormals();
@@ -6997,14 +7229,24 @@
 
           // Grassy Harbor Terrace Lawn (Z = 6.2 to 22) matching pier deck elevation (Y = 1.48)
           const grassMat = new THREE.MeshStandardMaterial({ map: textures.grass, roughness: 0.85, flatShading: true });
-          const terraceGeo = new THREE.BoxGeometry(56, 1.2, 16);
-          const terraceMesh = new THREE.Mesh(terraceGeo, grassMat);
-          terraceMesh.position.set(0, 0.90, 14.2);
+          // v6.3.0: wider (x +-40), with a ramp up to an upper terrace 1.2 m higher (see ISLAND, townGround)
+          const TERR_HW = 40;
+          const terraceMesh = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 1.2, 17 - 6.2), grassMat);
+          terraceMesh.position.set(0, 0.90, (6.2 + 17) / 2);
           scene.add(terraceMesh);
+          const upperTerrace = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 1.2 + ISLAND.up, 25.4 - ISLAND.rampZ1), grassMat);
+          upperTerrace.position.set(0, 0.3 + (1.2 + ISLAND.up) / 2, (ISLAND.rampZ1 + 25.4) / 2);
+          scene.add(upperTerrace);
+          {
+            const run = ISLAND.rampZ1 - ISLAND.rampZ0, a = Math.atan2(ISLAND.up, run);
+            const ramp = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 0.3, Math.hypot(run, ISLAND.up) + 0.08), grassMat);
+            ramp.rotation.x = -a; ramp.position.set(0, 1.5 + ISLAND.up / 2 - 0.15 / Math.cos(a), (ISLAND.rampZ0 + ISLAND.rampZ1) / 2);
+            scene.add(ramp);
+          }
 
           // Stone Seawall Retaining Curb Separating Sandy Beach from Grassy Terrace (Z = 6.2)
           const stoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, flatShading: true });
-          const seawall = new THREE.Mesh(new THREE.BoxGeometry(2 * BW_HALF + 6, 1.35, 0.7), stoneMat);
+          const seawall = new THREE.Mesh(new THREE.BoxGeometry(2 * 40 + 2, 1.35, 0.7), stoneMat);
           seawall.position.set(0, 0.95, 6.2);
           scene.add(seawall);
 
@@ -7028,7 +7270,7 @@
               const k = THREE.MathUtils.smoothstep(z, 15, 34);
               const n = this.noise2(x * 0.035, z * 0.05) * 9 + this.noise2(x * 0.09 + 7, z * 0.09) * 3.5 + this.noise2(x * 0.25, z * 0.25) * 0.8;
               const ridge = Math.max(0, Math.sin(x * 0.028 + 0.8)) * 7 * THREE.MathUtils.smoothstep(z, 30, 70);
-              return Math.max(shoreY(x, z) + 0.15, 1.5 + k * (n * 0.8 + ridge + (z - 15) * 0.12));
+              return townFlatten(x, z, Math.max(shoreY(x, z) + 0.15, 1.5 + k * (n * 0.8 + ridge + (z - 15) * 0.12)));
             };
             for (let i = 0; i < hp.count; i++) {
               const x = hp.getX(i), z = hp.getZ(i) + 14.5 + D / 2;
@@ -7057,8 +7299,8 @@
 
           // Coastal Boulders Framing Both Ends of the Seawall
           [
-            [-(BW_HALF + 1.4), 1.3, 6.8, 1.3], [BW_HALF + 1.4, 1.3, 6.8, 1.4], [-(BW_HALF + 3.6), 1.5, 9.2, 1.7],
-            [BW_HALF + 3.6, 1.5, 9.2, 1.6], [-(BW_HALF + 6.2), 1.8, 12.0, 2.1], [BW_HALF + 6.2, 1.8, 12.0, 2.0]
+            [-41.4, 1.3, 6.8, 1.3], [41.4, 1.3, 6.8, 1.4], [-43.6, 1.5, 9.2, 1.7],
+            [43.6, 1.5, 9.2, 1.6], [-46.2, 1.8, 12.0, 2.1], [46.2, 1.8, 12.0, 2.0]
           ].forEach(([rx, ry, rz, rad]) => {
             const rock = this.buildRock(rad, rx * 0.37 + rz, 0x6b7280, 1);
             rock.scale.set(1.2, 0.95, 1.1);
@@ -7081,7 +7323,7 @@
               [-21.5, 9.0, 4.8, 0.6], [22.0, 9.5, 5.3, -0.6], [-25.5, 15.5, 5.6, -0.3], [25.0, 16.0, 4.9, 0.3]
             ].forEach(([tx, tz, h, lean], i) => {
               const palm = this.buildPalm(h, lean, i * 1.3, mats);
-              palm.position.set(tx, 1.5, tz);
+              palm.position.set(tx, Math.abs(tx) < 40 && tz < 25 ? townGround(tz) : 1.5, tz);
               islandScenery.add(palm); palm.userData.fade = true;
               if (Math.abs(tx) < ISLAND.xMax + 0.5 && tz < ISLAND.zMax + 0.5) Colliders.circle('palm', tx, tz, 0.32, COL.WALK);
             });
@@ -7096,6 +7338,7 @@
             Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, COL.WALK);
           });
           const restoProps = this.buildHarbourTown(islandScenery, townFade, textures);
+          const districtProps = this.buildTownDistricts(islandScenery, townFade, textures);
           // a stone path from the pier ramp across the terrace
           for (let i = 0; i < 9; i++) {
             const st = new THREE.Mesh(ModelKit.roundedBox(1.1 + (i % 2) * 0.3, 0.08, 0.8, 0.03), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xa8a29e : 0x9ca3af, roughness: 0.95, flatShading: true }));
@@ -8116,7 +8359,7 @@
           fishShadow.visible = false;
           scene.add(fishShadow);
 
-          const rescueBoat = this.buildBoatMesh(2, textures);
+          const rescueBoat = this.buildBoatMesh(2, textures, null);
           rescueBoat.traverse(obj => {
             if (obj.isMesh) {
               obj.material = new THREE.MeshStandardMaterial({ color: 0xf97316, flatShading: true });
@@ -8141,6 +8384,7 @@
             cabin,
             islandScenery,
             resto: restoProps,
+            district: districtProps,
             townFade: islandScenery.children.filter(o => o.userData.fade || o.userData.townFade),
             skyGroup,
             sunOrb,
@@ -8316,6 +8560,7 @@ this._scratchVec = new THREE.Vector3();
           spot.x = spot.minX + Math.random() * (spot.maxX - spot.minX);
           spot.z = spot.minZ + Math.random() * (spot.maxZ - spot.minZ);
           spot.ttl = 45 + Math.random() * 40;
+          spot.spotted = false;   // a frenzy that moves needs spotting again
           spot.mesh.position.set(spot.x, 0.08, spot.z);
         }
 
@@ -9066,10 +9311,12 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       /* ---- rest spots: bench seats and railing stretches (see findRestSpot) ---- */
       const restState = { idle: 0, spot: null, last: null, w: 0 };
       const BENCH_SEATS = [-4.6, 4.6].flatMap(cx => [cx - 0.4, cx + 0.4]).map(x => ({ kind: 'bench', x, z: 5.27, yaw: 0, seatH: 0.53 }));
+      // the Lookout Pavilion's bench (v6.3.0): fz is where you stand in front of it
+      BENCH_SEATS.push(...[-0.4, 0.4].map(dx => ({ kind: 'bench', x: TOWN.lookoutBench.x + dx, z: TOWN.lookoutBench.z + 0.02, yaw: 0, seatH: 0.59, fz: TOWN.lookoutBench.z - 0.45 })));
       function findRestSpot(px, pz) {
         // bench: in front of one of the two benches at the back of the boardwalk
         let best = null, bd = 0.62;
-        BENCH_SEATS.forEach(s => { const d = Math.hypot(px - s.x, (pz - 4.8) * 1.6); if (pz > 4.3 && d < bd) { bd = d; best = s; } });
+        BENCH_SEATS.forEach(s => { const fz = s.fz || 4.8, d = Math.hypot(px - s.x, (pz - fz) * 1.6); if (pz > fz - 0.5 && pz < fz + 0.7 && d < bd) { bd = d; best = s; } });
         if (best) return best;
         // pier sides: along the walking limit, away from the stairs, bucket, toolbox, bollards, rod rack and lamp posts
         if (Math.abs(px) > PIER_WALK - 0.15 && pz < -0.3 && pz > -10.9) {
@@ -9175,7 +9422,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let moveLatch = false;
       const MOVE_KEYS = ['KeyA', 'KeyD', 'KeyW', 'KeyS', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
       const moveHeld = () => joyState.x !== 0 || joyState.y !== 0 || MOVE_KEYS.some(k => keys[k]);
-      function moveLatched() { if (moveLatch && !moveHeld()) moveLatch = false; return moveLatch || !!fightEnd; }
+      function moveLatched() { if (moveLatch && !moveHeld()) moveLatch = false; return moveLatch || !!fightEnd || scope.on || sleepState.on; }
       function releaseAllInputs() {
         for (const k in keys) keys[k] = false;
         resetJoystick();
@@ -9965,6 +10212,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
           bookSel: null,
           story: defaultStory(),
           kitchen: defaultKitchen(),
+          town: defaultTown(),
           playerName: '',
           seenSpecies: [],
           look: AnglerFactory.defaultLook('male'),
@@ -10507,6 +10755,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
         out.bookSel = typeof src.bookSel === 'string' && BOOKS[src.bookSel] ? src.bookSel : null;
         out.story = sanitizeStory(src.story);
         out.kitchen = sanitizeKitchen(src.kitchen);
+        out.town = sanitizeTown(src.town);
         out.playerName = cleanName(src.playerName);
 
         // appearance: sanitised against the option lists; the look's gender is the source of truth
@@ -10662,7 +10911,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       /* a new day: the day count, the aquarium's daily care and a save (the market, moon and weather follow the day number) */
       function dayRollover(quiet) {
         state.dayCount = (state.dayCount || 0) + 1;
-        aquariumDay();
+        aquariumDay(); ensureJobs();
         saveGame();
         if (!quiet) { const newMoon = getMoonPhase(); showToast(`🌅 Day ${state.dayCount + 1} • Tonight: ${newMoon.icon} ${newMoon.name}`); }
       }
@@ -10683,7 +10932,7 @@ function replaceSceneMesh(parent, oldObj, newObj) {
             const m = Math.min(10, left); left -= m;
             state.timeOfDay += m / 1440;
             if (state.timeOfDay >= 1) { state.timeOfDay -= 1; dayRollover(true); }
-            updateRestaurant(m);
+            updateRestaurant(m); townClock(m);
           }
           state.timeOfDay = BED.wake;
           weatherTimer = 0;   // the morning brings its own weather
@@ -11152,6 +11401,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           else if (type === 'talk' && st.t === 'talk' && data.npc === st.npc) questAdvance(id);
           else if (type === 'cook' && st.t === 'cook' && (!st.stars || data.stars >= st.stars) && (!st.minValue || data.recipe.value >= st.minValue)) { a.n++; if (a.n >= (st.n || 1)) questAdvance(id); else { saveGame(); updateQuestPill(); } }
           else if (type === 'serve' && st.t === 'serve') { a.n++; if (a.n >= st.n) questAdvance(id); else saveGame(); }
+          else if (['job', 'trap', 'dice', 'scope', 'paint'].includes(type) && st.t === type && (!st.kind || st.kind === data.kind)) { a.n++; if (a.n >= (st.n || 1)) questAdvance(id); else { saveGame(); updateQuestPill(); } }
         });
       }
       let questTickT = 0;
@@ -11208,7 +11458,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (t < 0.27 || t > 0.8) return d.home;
         return d.spots[Math.floor((t - 0.27) / 0.12) % d.spots.length];
       }
-      const npcGround = z => z > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((z - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
+      const npcGround = z => z > ISLAND.rampZ0 ? townGround(z) : z > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((z - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
       function updateNpcs(dt) {
         if (!world || onBoat && !npcState.built) return;
         if (!npcState.built) buildNpcs();
@@ -11333,7 +11583,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          LORENZO'S RESTAURANT (v6.1): cook catches into dishes (a three-step timing mini-game), keep them in the fridge,
          and guests buy them at lunch and dinner (in-game time). Everything lives in state.kitchen (sanitizeKitchen).
          ========================================================================= */
-      function defaultKitchen() { return { pantry: { bread: 0, lemon: 0, rice: 0, potato: 0, spices: 0 }, dishes: [], cooked: 0, served: 0, bank: 0, tables: 0, stove: 0, lights: 0, buff: null, acc: 0, espresso: 0 }; }
+      function defaultKitchen() { return { pantry: { bread: 0, lemon: 0, rice: 0, potato: 0, spices: 0, shellfish: 0 }, dishes: [], cooked: 0, served: 0, bank: 0, tables: 0, stove: 0, lights: 0, buff: null, acc: 0, espresso: 0 }; }
       function sanitizeKitchen(src) {
         const k = defaultKitchen(); if (!src || typeof src !== 'object') return k;
         const num = (v, lo, hi) => { v = Math.floor(Number(v)); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
@@ -11533,7 +11783,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         } else if (tab === 'pantry') {
           mk(`<span class="sl-n">☕ Harbour Espresso<small>Read twice as fast on a bench for 12 hours${k.espresso > 0 ? ` • ${Math.ceil(k.espresso / 60)} h left` : ''} • ${shopMoney(ESPRESSO.cost)}</small></span>`,
             [['Drink', '', () => shopAsk({ confirm: `Drink a Harbour Espresso for ${shopMoney(ESPRESSO.cost)}?`, price: ESPRESSO.cost, verb: 'Buy', can: state.cash >= ESPRESSO.cost, act: () => { state.cash = +(state.cash - ESPRESSO.cost).toFixed(2); k.espresso = ESPRESSO.minutes; sfx.playCoin(); saveGame(); updateHUD(); updateBuffPill(); updateReadPill(); showToast('☕ Harbour Espresso: you read twice as fast for 12 hours.'); } }), state.cash < ESPRESSO.cost]]);
-          Object.entries(PANTRY).forEach(([id, p]) => mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id]} in stock • ${shopMoney(p.cost)} each</small></span>`,
+          Object.entries(PANTRY).forEach(([id, p]) => p.trap ? mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id] || 0} in stock • from your crab traps in the tide pool</small></span>`) : mk(`<span class="sl-n">${p.icon} ${p.name}<small>${k.pantry[id]} in stock • ${shopMoney(p.cost)} each</small></span>`,
             [['+5', '', () => shopAsk({ confirm: `Buy 5 ${p.name.toLowerCase()} for ${shopMoney(p.cost * 5)}?`, price: p.cost * 5, verb: 'Buy', can: state.cash >= p.cost * 5, act: () => { state.cash = +(state.cash - p.cost * 5).toFixed(2); k.pantry[id] += 5; sfx.playCoin(); saveGame(); updateHUD(); } }), state.cash < p.cost * 5]]));
         } else if (tab === 'upgrades') {
           RESTO_UP.forEach(u => {
@@ -11613,7 +11863,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
       /* where a tap leads: a shop or stand tapped on its building leads to the spot in front of it */
       function tapDestination(x, z) {
         for (const p of MAP_PLACES()) {
-          if (p.far || !p.w || ['Cabin', 'Pier end', 'Mooring platform', 'Benches', 'Harbour Town'].includes(p.name)) continue;
+          if (p.far || !p.w || ['Cabin', 'Pier end', 'Mooring platform', 'Benches', 'Harbour Town', 'Market Square', 'Herb garden'].includes(p.name)) continue;
           if (Math.abs(x - p.x) <= p.w / 2 + 0.3 && Math.abs(z - p.z) <= p.d / 2 + 0.3)
             return { x: p.x, z: p.z > ISLAND.zGate ? p.z - p.d / 2 - 0.75 : p.z + p.d / 2 + 0.85 };   // town houses face the sea
         }
@@ -11624,7 +11874,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         const gateOut = { x: 0, z: ISLAND.zGate - 0.4 }, gateIn = { x: 0, z: ISLAND.zIn + 0.4 };
         // the town joins everything else through the gate: route via the gate, then treat that side as the boardwalk
         let a = a0, b = b0;
-        if (a0 === 'town' && b0 !== 'town') { pts.push(gateIn, gateOut); a = 'board'; from.x = 0; from.z = gateOut.z; }
+        if (a0 === 'town' && b0 !== 'town') { pts.push(...townPath(from, gateIn), gateOut); a = 'board'; from.x = 0; from.z = gateOut.z; }
         if (b0 === 'town' && a0 !== 'town') b = 'board';
         const pierMouth = x => ({ x: THREE.MathUtils.clamp(x, -PIER_WALK + 0.4, PIER_WALK - 0.4), z: 0.9 });
         const stairTop = { x: -PIER_WALK + 0.2, z: -5.6 }, stairFoot = { x: PLATFORM.xIn - 0.3, z: -5.6 };
@@ -11633,20 +11883,24 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         if (b === 'dock' && a !== 'dock') pts.push(stairTop, stairFoot);
         if (a === 'dock' && b !== 'dock') pts.unshift(stairFoot, stairTop);
         if (CABIN && Math.abs(to.x - CABIN.x) < CABIN.w / 2 && to.z < CABIN.d + 0.2 && !(Math.abs(from.x - CABIN.x) < CABIN.w / 2 && from.z < CABIN.d + 0.2)) pts.push({ x: CABIN.x, z: CABIN.d + 0.9 }, { x: CABIN.x, z: CABIN.d - 0.6 });
-        if (b0 === 'town' && a0 !== 'town') pts.push(gateOut, gateIn);
-        pts.push(to);
+        if (b0 === 'town' && a0 !== 'town') pts.push(gateOut, gateIn, ...townPath(gateIn, to));   // around the buildings (townPath)
+        else if (a0 === 'town' && b0 === 'town') pts.push(...townPath(from, to));
+        else pts.push(to);
         return pts;
       }
       function tapToWalk(clientX, clientY) {
-        if (mode !== 'PIER_IDLE' || onBoat || isAnyModalOpen() || shopBrowse.active || standFocus.stand || settings.firstPerson) return;
+        if (mode !== 'PIER_IDLE' || onBoat || isAnyModalOpen() || shopBrowse.active || standFocus.stand || settings.firstPerson || scope.on) return;
         const r = renderer.domElement.getBoundingClientRect();
         _tapNdc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
         _tapRay.setFromCamera(_tapNdc, camera);
+        _tapPlane.constant = -1.5;
         if (!_tapRay.ray.intersectPlane(_tapPlane, _tapHit)) return;
+        for (let k = 0; k < 2 && _tapHit.z > ISLAND.rampZ0; k++) { _tapPlane.constant = -townGround(_tapHit.z); _tapRay.ray.intersectPlane(_tapPlane, _tapHit); }   // the upper terrace is higher
+        _tapPlane.constant = -1.5;
         const to = tapDestination(_tapHit.x, _tapHit.z);
         if (Math.hypot(to.x - playerX, to.z - playerZ) < 0.3) return;
         autoWalk = { pts: planRoute(to), stuck: 0, lastD: 1e9 };
-        tapMarker.position.set(to.x, 1.52, to.z); tapMarker.visible = true; tapMarker.material.opacity = 0.85;
+        tapMarker.position.set(to.x, to.z > ISLAND.zIn ? townGround(to.z) + 0.03 : 1.52, to.z); tapMarker.visible = true; tapMarker.material.opacity = 0.85;
         sfx.playTick();
       }
       (function wireViewTouch() {
@@ -11660,6 +11914,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const dx = e.clientX - camDrag.x; camDrag.x = e.clientX; camDrag.y = e.clientY;
           if (!camDrag.moved && Math.hypot(e.clientX - camDrag.sx, e.clientY - camDrag.sy) > 9) camDrag.moved = true;
           if (!camDrag.moved) return;
+          if (scope.on) { scope.yaw -= dx * 0.0022; scope.auto = false; scope.idle = 0; return; }   // the telescope pans
           if (settings.firstPerson && !onBoat) playerYaw -= dx * 0.006;          // first person: look around
           else if (!onBoat && !standFocus.stand) camOrbit.look = THREE.MathUtils.clamp(camOrbit.look - dx * 0.008, -Math.PI, Math.PI);   // third person: look around
         });
@@ -11673,7 +11928,520 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         // the compass resets the camera to look out to sea
         const cmp = document.getElementById('hud-compass');
         if (cmp) { cmp.style.pointerEvents = 'auto'; cmp.addEventListener('click', () => { camOrbit.look = 0; sfx.playTick(); }); }
+        // the telescope's buttons: hold to pan, Close to step back
+        [['scope-left', 1], ['scope-right', -1]].forEach(([id, dir]) => {
+          const b = document.getElementById(id); if (!b) return;
+          b.addEventListener('pointerdown', e => { e.preventDefault(); scope.hold = dir; });
+          ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, () => { scope.hold = 0; }));
+        });
+        const sc = document.getElementById('scope-close'); if (sc) sc.addEventListener('click', closeScope);
       })();
+
+      /* =========================================================================
+         HARBOUR TOWN LIFE (v6.3.0): town jobs (noticeboard and Post Office), the lookout telescope, dice at Sailors' Rest,
+         crab traps in the tide pool, boat paint at Barnaby's Workshop, Talia's greenhouse and the Post Office counter.
+         Everything is saved in state.town (sanitizeTown); places are SPOTS entries; walking routes use townPath.
+         ========================================================================= */
+      function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1 }; }
+      function sanitizeTown(src) {
+        const T = defaultTown(); if (!src || typeof src !== 'object') return T;
+        const num = (v, lo, hi, d = lo) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
+        const int = (v, lo, hi) => Math.floor(num(v, lo, hi));
+        T.rep = int(src.rep, 0, 1e5); T.jobsDone = int(src.jobsDone, 0, 1e6); T.herbs = int(src.herbs, 0, 999); T.stamps = int(src.stamps, 0, 6);
+        T.scopeDay = int(src.scopeDay, -1, 1e6); T.mapDay = int(src.mapDay, -1, 1e6); T.litDay = int(src.litDay, -1, 1e6);
+        T.lit = (Array.isArray(src.lit) ? src.lit : []).filter(i => Number.isInteger(i) && i >= 0 && i < JOB_LANTERNS.length).slice(0, JOB_LANTERNS.length);
+        if (src.dice && typeof src.dice === 'object') T.dice = { played: int(src.dice.played, 0, 1e6), won: int(src.dice.won, 0, 1e6) };
+        T.traps = [0, 1, 2].map(i => { const t = Array.isArray(src.traps) ? src.traps[i] : null; return t && typeof t === 'object' ? { day: int(t.day, 0, 1e6) } : null; });
+        if (src.paint && typeof src.paint === 'object') Object.keys(src.paint).forEach(k => {
+          const tier = Number(k), p = src.paint[k]; if (!Number.isInteger(tier) || tier < 1 || tier >= BOAT_TIERS.length || !p || typeof p !== 'object') return;
+          const c = v => (Number.isInteger(v) && v >= 0 && v < BOAT_PAINTS.length ? v : -1);
+          T.paint[tier] = { hull: c(p.hull), trim: c(p.trim), flag: c(p.flag) };
+        });
+        const J = src.jobs;
+        if (J && typeof J === 'object' && Array.isArray(J.list)) {
+          T.jobs.day = int(J.day, -1, 1e6);
+          T.jobs.list = J.list.filter(j => j && JOB_KIND_IDS.includes(j.kind)).slice(0, 3).map(j => sanitizeJob(j)).filter(Boolean);
+          if (J.active && JOB_KIND_IDS.includes(J.active.kind)) T.jobs.active = sanitizeJob(J.active);
+        }
+        return T;
+      }
+      function sanitizeJob(j) {
+        const num = (v, lo, hi) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
+        const out = { kind: j.kind, id: String(j.id || '').slice(0, 24), pay: Math.round(num(j.pay, 10, 500)), xp: Math.round(num(j.xp, 0, 200)), status: ['open', 'active', 'done', 'failed'].includes(j.status) ? j.status : 'open',
+          stage: Math.floor(num(j.stage, 0, 5)), n: Math.floor(num(j.n, 0, 20)), need: Math.floor(num(j.need, 1, 20)), left: num(j.left, 0, 2000), to: typeof j.to === 'string' ? j.to.slice(0, 16) : '', variant: j.variant === 'shells' ? 'shells' : 'herbs' };
+        out.pts = (Array.isArray(j.pts) ? j.pts : []).slice(0, 8).filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(p => ({ x: +p.x, z: +p.z }));
+        return out;
+      }
+      const town = () => state.town || (state.town = defaultTown());
+      const REP_TITLES = [[0, 'Newcomer'], [3, 'Familiar face'], [8, 'Helping hand'], [15, 'Local'], [25, 'Pillar of the town'], [40, 'Harbour hero']];
+      const repTitle = r => REP_TITLES.filter(([n]) => r >= n).pop()[1];
+      const PAINT_COST = 40;
+      /* daily pseudo-random numbers, the same all day */
+      function dayRng(seed) { let a = (seed * 2654435761) >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+      /* ---- walking around town: a few open-lane waypoints, joined where nothing solid is in the way ---- */
+      const townNav = { nodes: null, adj: null, cols: null };
+      function townBlocked(x, z, m = 0.3) {
+        for (const c of townNav.cols) {
+          if (c.kind === 'box') { if (Math.abs(x - c.x) < c.hx + m && Math.abs(z - c.z) < c.hz + m) return true; }
+          else if (Math.hypot(x - c.x, z - c.z) < c.r + m) return true;
+        }
+        return x < -ISLAND.xMax + 0.2 || x > ISLAND.xMax - 0.2 || z > ISLAND.zMax - 0.1 || z < ISLAND.zIn + 0.1;
+      }
+      function townSegClear(a, b) {
+        const d = Math.hypot(b.x - a.x, b.z - a.z), n = Math.max(1, Math.ceil(d / 0.3));
+        for (let i = 1; i < n; i++) { const t = i / n; if (townBlocked(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, 0.26)) return false; }
+        return true;
+      }
+      function townNavInit() {
+        townNav.cols = walkColliders.filter(c => c.z > ISLAND.zGate - 1);
+        const N = [];
+        [-35, -27, -20, -12, -4, 0, 4, 10, 14, 21, 25, 30, 36].forEach(x => N.push({ x, z: 7.55 }));
+        [-36, -28, -20.5, -12, -3, 3, 12, 21, 25.5, 31.5, 37].forEach(x => N.push({ x, z: 14.6 }));
+        [-36.5, -30, -21, -15, -5, 5, 15, 21, 28.5, 37].forEach(x => N.push({ x, z: 17.4 }));
+        [-36.5, -28, -20, -10, 0, 10, 20, 29, 37].forEach(x => N.push({ x, z: 23.0 }));
+        [[-3, 10.4], [3, 10.6], [-11.6, 9.6], [12.6, 9.8], [21.8, 11.6], [31.4, 11.0], [-20.5, 10], [-26.5, 11.4], [-33.2, 21.4]].forEach(([x, z]) => N.push({ x, z }));
+        townNav.nodes = N.filter(p => !townBlocked(p.x, p.z));
+        townNav.adj = townNav.nodes.map((a, i) => townNav.nodes.map((b, j) => (i !== j && Math.hypot(a.x - b.x, a.z - b.z) < 14 && townSegClear(a, b) ? Math.hypot(a.x - b.x, a.z - b.z) : 0)));
+      }
+      /* points to walk from a to b inside the town (b included, a not): straight if clear, else through the waypoints */
+      function townPath(a, b) {
+        if (!townNav.nodes) townNavInit();
+        if (townSegClear(a, b)) return [{ x: b.x, z: b.z }];
+        const N = townNav.nodes, n = N.length, dist = new Array(n + 2).fill(Infinity), prev = new Array(n + 2).fill(-1), done = new Array(n + 2).fill(false);
+        const S = n, E = n + 1, P = i => (i === S ? a : i === E ? b : N[i]);
+        const edge = (i, j) => {
+          if (i < n && j < n) return townNav.adj[i][j];
+          const p = P(i), q = P(j), d = Math.hypot(p.x - q.x, p.z - q.z);
+          return (i === S && j === E) ? 0 : (d < 16 && townSegClear(p, q) ? d : 0);
+        };
+        dist[S] = 0;
+        for (;;) {
+          let u = -1; for (let i = 0; i < n + 2; i++) if (!done[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
+          if (u < 0 || u === E) break; done[u] = true;
+          for (let v = 0; v < n + 2; v++) { if (done[v] || v === S) continue; const w = edge(u, v); if (w > 0 && dist[u] + w < dist[v]) { dist[v] = dist[u] + w; prev[v] = u; } }
+        }
+        if (prev[E] < 0) return [{ x: b.x, z: b.z }];
+        const out = []; for (let v = E; v !== S && v >= 0; v = prev[v]) out.unshift({ x: P(v).x, z: P(v).z });
+        return out;
+      }
+
+      /* ---- the town sheet: one bottom sheet for the noticeboard, Post Office, tavern, traps, workshop and greenhouse ---- */
+      const townUI = { title: '', render: null, raf: 0 };
+      function openTownSheet(title, render) {
+        townUI.title = title; townUI.render = render;
+        townRefresh(); document.getElementById('modal-town').classList.add('open');
+      }
+      function townRefresh() {
+        const host = document.getElementById('town-body'); if (!townUI.render) return;
+        document.getElementById('town-title').textContent = townUI.title;
+        host.innerHTML = '';
+        const row = (html, buttons, cls) => {
+          const r = document.createElement('div'); r.className = 'sl-row ' + (cls || ''); r.innerHTML = html;
+          (buttons || []).forEach(([label, bcls, fn, dis, style]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sl-btn ' + (bcls || ''); b.textContent = label; b.disabled = !!dis; if (style) b.setAttribute('style', style); b.addEventListener('click', e => { e.stopPropagation(); fn(); }); r.appendChild(b); });
+          host.appendChild(r); return r;
+        };
+        const head = t => host.insertAdjacentHTML('beforeend', `<h4 class="ql-h">${t}</h4>`);
+        const note = t => host.insertAdjacentHTML('beforeend', `<p class="town-note">${t}</p>`);
+        townUI.render({ host, row, head, note });
+      }
+      const townClose = () => { cancelAnimationFrame(townUI.raf); document.getElementById('modal-town').classList.remove('open'); };
+      function townPay(cash, xp, msg) {
+        if (cash) { state.cash = +(state.cash + cash).toFixed(2); bumpStat('earned', cash); }
+        if (xp) addXp(xp);
+        sfx.playCoin(); saveGame(); updateHUD(); if (msg) showToast(msg);
+      }
+
+      /* ---- town jobs: three a day, one at a time ---- */
+      const JOB_KINDS = {
+        mail:    { icon: '📦', name: 'Cargo & mail runner', pay: [45, 90], xp: 20, desc: j => `Collect a parcel at the Post Office and bring it to ${mailStop(j.to).name} within ${Math.round(j.left / 60) || mailStop(j.to).hours} hours.` },
+        cleanup: { icon: '🧹', name: 'Harbour cleanup crew', pay: [40, 70], xp: 18, desc: () => 'Pick up 5 pieces of washed-up litter along the boardwalk and the east terrace.' },
+        lantern: { icon: '🏮', name: 'Night watch: lantern lighter', pay: [60, 100], xp: 24, desc: () => `Light the ${JOB_LANTERNS.length} street lanterns between 18:00 and 22:00.` },
+        forage:  { icon: '🌿', name: 'Herb & shell foraging', pay: [35, 65], xp: 16, desc: j => (j.variant === 'shells' ? 'Gather 5 shells around the tide pool for Talia and Lorenzo.' : 'Gather 5 coastal herbs on Lighthouse Hill for Talia and Lorenzo.') },
+        winch:   { icon: '🏗️', name: 'Dockhand winch assist', pay: [50, 85], xp: 20, desc: () => "Help Rook hoist 5 heavy crates at the winch beside the Boatyard: press HOIST when the hook is in the green." }
+      };
+      const MAIL_STOPS = [
+        { id: 'platform', name: 'the mooring platform', at: () => ({ x: (PLATFORM.xOut + PLATFORM.xIn) / 2, z: (PLATFORM.zMin + PLATFORM.zMax) / 2 }), r: 1.8, hours: 4 },
+        { id: 'resto', name: 'the restaurant', at: () => ({ x: TOWN.resto.x, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.9 }), r: 1.8, hours: 4 },
+        { id: 'cabin', name: 'the cabin', at: () => ({ x: CABIN.x, z: CABIN.d / 2 }), r: 2.0, hours: 4 },
+        { id: 'tavern', name: "Sailors' Rest", at: () => ({ x: TOWN.tavern.x, z: TOWN.tavern.z - TOWN.tavern.d / 2 - 0.9 }), r: 1.8, hours: 4 },
+        { id: 'jetty', name: 'the lighthouse jetty', at: () => ({ x: LH_J.x, z: LH_J.z }), r: 26, hours: 10, boat: true }
+      ];
+      const mailStop = id => MAIL_STOPS.find(s => s.id === id) || MAIL_STOPS[0];
+      const postFront = () => ({ x: TOWN.post.x, z: TOWN.post.z - TOWN.post.d / 2 - 0.85 });
+      const LITTER_SPOTS = [[-24, 3.8], [-20.4, 4.6], [-9.2, 3.7], [9.4, 4.6], [19.6, 3.9], [24.4, 4.4], [33.2, 16.2], [36.4, 16.6], [29.4, 22.4], [36.6, 22.8], [-35.2, 9.4], [26.2, 8.0]];
+      const HERB_SPOTS = [[-27.0, 16.4], [-31.8, 16.5], [-35.8, 17.8], [-36.4, 22.6], [-30.4, 23.0], [-26.6, 22.9], [-22.2, 22.6], [-35.6, 15.0], [-29.6, 21.6]];
+      const SHELL_SPOTS = [[30.9, 21.9], [36.9, 17.3], [37.0, 22.6], [31.6, 16.8], [30.4, 19.6], [33.9, 23.1], [37.1, 19.8]];
+      function ensureJobs() {
+        const T = town(), day = state.dayCount || 0;
+        if (T.jobs.day === day && T.jobs.list.length) return;
+        if (T.jobs.active && T.jobs.day !== day && T.jobs.day >= 0) { T.jobs.active = null; clearJobProps(); showToast('📋 Yesterday\'s job has expired.'); }
+        const r = dayRng(day * 7 + 3), kinds = Object.keys(JOB_KINDS).sort(() => r() - 0.5).slice(0, 3);
+        T.jobs.day = day;
+        T.jobs.list = kinds.map((kind, i) => {
+          const K = JOB_KINDS[kind], j = { kind, id: `${day}-${i}`, pay: Math.round(K.pay[0] + r() * (K.pay[1] - K.pay[0])), xp: K.xp, status: 'open', stage: 0, n: 0, need: kind === 'lantern' ? JOB_LANTERNS.length : 5, left: 0, to: '', variant: r() < 0.5 ? 'herbs' : 'shells', pts: [] };
+          if (kind === 'mail') { const stops = MAIL_STOPS.filter(s => !s.boat || (state.ownedBoats || []).length); const s = stops[Math.floor(r() * stops.length)]; j.to = s.id; if (s.boat) j.pay += 60; }
+          return j;
+        });
+      }
+      const activeJob = () => (state.town && state.town.jobs.active) || null;
+      function acceptJob(idx) {
+        const T = town(), j = T.jobs.list[idx]; if (!j || j.status !== 'open') return;
+        if (T.jobs.active) { showToast('📋 Finish (or drop) your current job first.'); return; }
+        j.status = 'active';
+        const a = Object.assign({}, j, { pts: [] });
+        if (a.kind === 'cleanup' || a.kind === 'forage') {
+          const pool = (a.kind === 'cleanup' ? LITTER_SPOTS : a.variant === 'shells' ? SHELL_SPOTS : HERB_SPOTS).filter(([x, z]) => !townBlockedAny(x, z));
+          a.pts = pool.sort(() => Math.random() - 0.5).slice(0, 5).map(([x, z]) => ({ x, z })); a.need = a.pts.length;
+        }
+        if (a.kind === 'mail') { a.stage = 0; a.left = mailStop(a.to).hours * 60; }
+        T.jobs.active = a; syncJobProps(); saveGame();
+        showToast(`${JOB_KINDS[a.kind].icon} Job taken: ${JOB_KINDS[a.kind].name}.`);
+      }
+      function dropJob() {
+        const T = town(), a = T.jobs.active; if (!a) return;
+        const j = T.jobs.list.find(x => x.id === a.id); if (j) j.status = 'open';
+        T.jobs.active = null; clearJobProps(); saveGame(); showToast('📋 Job dropped. You can take it again.');
+      }
+      function finishJob(ok, msg) {
+        const T = town(), a = T.jobs.active; if (!a) return;
+        const j = T.jobs.list.find(x => x.id === a.id); if (j) j.status = ok ? 'done' : 'failed';
+        T.jobs.active = null; clearJobProps();
+        if (ok) {
+          T.rep++; T.jobsDone++;
+          if (a.kind === 'forage') T.herbs = Math.min(999, T.herbs + 5);
+          if (a.kind === 'lantern') { T.litDay = (state.dayCount || 0); }
+          questEvent('job', { kind: a.kind });
+          townPay(a.pay, a.xp, `${JOB_KINDS[a.kind].icon} Job done: +${shopMoney(a.pay)}, +${a.xp} XP, town reputation ${T.rep} (${repTitle(T.rep)}).`);
+          sfx.playCatchFanfare(false);
+        } else { saveGame(); showToast(msg || '📋 The job could not be finished in time.'); }
+      }
+      /* walk-over checks for the mail run (per frame) and the job clock (in-game minutes) */
+      let jobPropsSynced = false;
+      function townJobTick() {
+        if (!jobPropsSynced && world) { jobPropsSynced = true; syncJobProps(); }
+        const a = activeJob(); if (!a) return;
+        if (a.kind === 'mail') {
+          if (a.stage === 0 && !onBoat) { const p = postFront(); if (Math.hypot(playerX - p.x, playerZ - p.z) < 1.6) { a.stage = 1; saveGame(); showToast(`📦 Parcel collected. Take it to ${mailStop(a.to).name}.`); sfx.playTick(); } }
+          else if (a.stage === 1) {
+            const s = mailStop(a.to), p = s.at(), px = onBoat ? boatPos.x : playerX, pz = onBoat ? boatPos.z : playerZ;
+            if (Math.hypot(px - p.x, pz - p.z) < s.r) finishJob(true);
+          }
+        }
+        if (a.kind === 'lantern' && a.n < a.need && state.timeOfDay >= 22 / 24 && state.timeOfDay < 0.95 && a.stage === 1) finishJob(false, '🏮 22:00 came and some lanterns stayed dark.');
+        if (a.kind === 'lantern' && state.timeOfDay >= 18 / 24 && state.timeOfDay < 22 / 24) a.stage = 1;
+      }
+      function townClock(dMin) {
+        const a = activeJob(); if (!a || dMin <= 0) return;
+        if (a.kind === 'mail' && a.stage === 1) { a.left -= dMin; if (a.left <= 0) finishJob(false, '📦 Too late: the parcel had to arrive sooner.'); }
+      }
+      function townBlockedAny(x, z) { if (!townNav.cols) townNavInit(); return walkColliders.some(c => (c.kind === 'box' ? Math.abs(x - c.x) < c.hx + 0.35 && Math.abs(z - c.z) < c.hz + 0.35 : Math.hypot(x - c.x, z - c.z) < c.r + 0.35)); }
+      /* the pickups of a cleanup or foraging job */
+      const jobProps = [];
+      function clearJobProps() { jobProps.forEach(m => scene.remove(m)); jobProps.length = 0; }
+      function syncJobProps() {
+        clearJobProps(); const a = activeJob(); if (!a || !a.pts.length) return;
+        a.pts.forEach(p => {
+          const g = new THREE.Group(), y = p.z > ISLAND.zGate ? townGround(p.z) : 1.55, M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, flatShading: true });
+          if (a.kind === 'cleanup') {
+            const k = Math.abs(Math.round(p.x * 3 + p.z)) % 3;
+            if (k === 0) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.9, 6), M(0x8b6a4a)); m.rotation.z = Math.PI / 2; m.rotation.y = p.x; m.position.y = 0.08; g.add(m); }
+            else if (k === 1) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.26, 8), M(0x15803d)); m.rotation.z = Math.PI / 2; m.position.y = 0.06; g.add(m); }
+            else { const m = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.24), M(0x9ca3af)); m.position.y = 0.06; m.rotation.y = p.z; g.add(m); }
+          } else if (a.variant === 'shells') { const m = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.2, 7), M(0xfbcfe8)); m.rotation.z = 1.3; m.position.y = 0.07; g.add(m); }
+          else { for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.28, 5), M(0x22c55e)); m.position.set(Math.cos(i * 1.6) * 0.07, 0.14, Math.sin(i * 1.6) * 0.07); g.add(m); } }
+          const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.38, 20), new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.7, depthWrite: false }));
+          ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; g.add(ring);
+          g.position.set(p.x, y, p.z); g.userData.p = p; scene.add(g); jobProps.push(g);
+        });
+      }
+      function nearPickup() {
+        const a = activeJob(); if (!a || !a.pts.length) return -1;
+        return a.pts.findIndex(p => Math.hypot(playerX - p.x, playerZ - p.z) < 1.0);
+      }
+      function takePickup() {
+        const a = activeJob(), i = nearPickup(); if (i < 0) return;
+        a.pts.splice(i, 1); a.n++; sfx.playTick(); syncJobProps();
+        if (a.n >= a.need) finishJob(true); else { saveGame(); showToast(`${JOB_KINDS[a.kind].icon} ${a.n} / ${a.need}`); }
+      }
+      /* the street lanterns: lit by the night watch, they glow until morning */
+      function nearLantern() {
+        const a = activeJob(); if (!a || a.kind !== 'lantern' || a.stage !== 1) return -1;
+        return JOB_LANTERNS.findIndex((p, i) => !town().lit.includes(i) && Math.hypot(playerX - p.x, playerZ - p.z) < 1.3);
+      }
+      function lightLantern() {
+        const a = activeJob(), i = nearLantern(); if (i < 0) return;
+        const T = town(); if (T.litDay !== (state.dayCount || 0) && !a.n) T.lit = [];
+        T.lit.push(i); T.litDay = state.dayCount || 0; a.n++; sfx.playTick();
+        if (a.n >= a.need) finishJob(true); else { saveGame(); showToast(`🏮 ${a.n} / ${a.need} lanterns lit`); }
+      }
+      function updateTownProps() {
+        const D = world && world.district; if (!D) return;
+        const T = town(), night = state.timeOfDay > 0.75 || state.timeOfDay < 0.25;
+        const litNow = T.litDay === (state.dayCount || 0) || (T.litDay === (state.dayCount || 0) - 1 && state.timeOfDay < 0.25);
+        D.lanterns.forEach((l, i) => { const on = night && litNow && T.lit.includes(i); l.glass.emissiveIntensity = on ? 1.4 : 0; });
+        D.trapFloats.forEach((f, i) => { f.visible = !!T.traps[i]; if (f.visible) f.position.y = townGround(TOWN.pool.z) + 0.08 + Math.sin(elapsed * 2 + i) * 0.02; });
+      }
+
+      /* ---- the noticeboard: today's jobs and your standing in town ---- */
+      function openJobsSheet(title) {
+        ensureJobs();
+        openTownSheet(title || '📌 NOTICEBOARD: TOWN JOBS', ({ row, head, note }) => {
+          const T = town(), a = T.jobs.active;
+          note(`Town reputation <b>${T.rep}</b>: ${repTitle(T.rep)} • ${T.jobsDone} jobs done. New jobs every morning.`);
+          if (a) {
+            head('Your job');
+            const K = JOB_KINDS[a.kind], st = a.kind === 'mail' ? (a.stage === 0 ? 'Collect the parcel at the Post Office.' : `Deliver to ${mailStop(a.to).name}: ${Math.floor(a.left / 60)}h ${String(Math.floor(a.left % 60)).padStart(2, '0')}m left.`)
+              : a.kind === 'lantern' ? (a.stage === 1 ? `${a.n} / ${a.need} lit. Until 22:00.` : 'Starts at 18:00.') : a.kind === 'winch' ? 'Go to the winch beside the Boatyard.' : `${a.n} / ${a.need} found (yellow rings).`;
+            row(`<span class="sl-n">${K.icon} ${K.name}<small>${st} • pays ${shopMoney(a.pay)}</small></span>`, [['Drop', 'red', () => { dropJob(); townRefresh(); }]]);
+          }
+          head("Today's jobs");
+          T.jobs.list.forEach((j, i) => {
+            const K = JOB_KINDS[j.kind];
+            row(`<span class="sl-n">${K.icon} ${K.name}<small>${K.desc(j)} • ${shopMoney(j.pay)} + ${j.xp} XP</small></span>`,
+              j.status === 'open' ? [['Take', '', () => { acceptJob(i); townRefresh(); }, !!a]] : [[j.status === 'done' ? 'Done' : j.status === 'failed' ? 'Missed' : 'Taken', '', () => {}, true]]);
+          });
+          craveRows && craveRows({ row, head, note });
+        });
+      }
+      let craveRows = null;   // filled in by the restaurant cravings (v6.4)
+
+      /* ---- the lookout telescope: sweep the sea, spot frenzies, treasure beams and boss shadows; they go on the Map ---- */
+      const scope = { on: false, yaw: 0, auto: true, idle: 0, dir: 1, hold: 0, dwell: new Map(), fov: 13 };
+      function openScope() {
+        if (scope.on) return;
+        const T = town(), day = state.dayCount || 0;
+        if (T.scopeDay !== day) { T.scopeDay = day; seaEvents.sight(); saveGame(); }
+        scope.on = true; scope.yaw = 0; scope.auto = true; scope.idle = 0; scope.dwell.clear();
+        releaseAllInputs(); document.body.dataset.scope = '1';
+        document.getElementById('scope-ui').classList.add('open');
+        showToast('🔭 Drag to look around. Hold the view on something to mark it on your Map.');
+      }
+      function closeScope() { if (!scope.on) return; scope.on = false; document.body.dataset.scope = '0'; document.getElementById('scope-ui').classList.remove('open'); camLookInit = false; }
+      const scopeTargets = () => [
+        ...seaEvents.treasures.map(t => ({ o: t, icon: '🪙', name: 'Treasure chest' })),
+        ...(seaEvents.boss ? [{ o: seaEvents.boss, icon: '🐉', name: 'Boss shadow' }] : []),
+        ...vfx.frenzies.map(f => ({ o: f, icon: '🔥', name: 'Feeding frenzy' }))
+      ];
+      function updateScope(rawDt) {
+        if (!scope.on) return;
+        if (scope.hold) { scope.yaw += scope.hold * rawDt * 0.6; scope.auto = false; scope.idle = 0; }
+        else if (!scope.auto) { scope.idle += rawDt; if (scope.idle > 3) scope.auto = true; }
+        if (scope.auto) { scope.yaw += scope.dir * rawDt * 0.12; if (Math.abs(scope.yaw) > 1.2) scope.dir = -Math.sign(scope.yaw); }
+        scope.yaw = THREE.MathUtils.clamp(scope.yaw, -1.5, 1.5);
+        const S = TOWN.scope, ey = townGround(S.z) + 1.55;
+        camera.position.set(S.x, ey, S.z + 0.25);
+        camera.lookAt(S.x - Math.sin(scope.yaw) * 100, ey - 2.2, S.z - Math.cos(scope.yaw) * 100);
+        camera.fov = scope.fov; camera.updateProjectionMatrix();
+        scopeTargets().forEach(({ o, icon, name }) => {
+          if (o.spotted) return;
+          const dx = o.x - S.x, dz = o.z - S.z, d = Math.hypot(dx, dz); if (d > 700) return;
+          const a = Math.atan2(-dx, -dz), off = Math.abs(Math.atan2(Math.sin(a - scope.yaw), Math.cos(a - scope.yaw)));
+          const w = (scope.dwell.get(o) || 0) + (off < 0.07 ? rawDt : -rawDt);
+          scope.dwell.set(o, Math.max(0, w));
+          if (w > 0.7) { o.spotted = true; questEvent('scope', {}); sfx.playCatchFanfare(false); showToast(`🔭 ${icon} ${name} spotted ${Math.round(d)} m ${mapCompass(dx, dz)}: marked on your Map.`); }
+        });
+      }
+      /* spotted sea events, for the Map and its list */
+      const scopeMarks = () => scopeTargets().filter(t => t.o.spotted).map(t => ({ icon: t.icon, name: `${t.name} (spotted)`, desc: 'Seen through the lookout telescope. Sail out before it is gone.', x: t.o.x, z: t.o.z, far: true }));
+
+      /* ---- Sailors' Rest: "Ship, Captain & Crew" dice against the townsfolk ---- */
+      const DICE_OPP = [['rook', 'Captain Rook'], ['maren', 'Maren'], ['salty', 'Old Salty']];
+      const dice = { phase: 'pick', opp: 0, wager: 10, me: null, them: null, msg: '' };
+      const tavernOpen = () => state.timeOfDay >= 16 / 24 || state.timeOfDay < 2 / 24;
+      function sccNew() { return { ship: false, cap: false, crew: false, cargo: null, rolls: 3, last: [] }; }
+      function sccRoll(g) {
+        const n = g.ship && g.cap && g.crew ? 2 : 5 - (g.ship ? 1 : 0) - (g.cap ? 1 : 0) - (g.crew ? 1 : 0);
+        const v = Array.from({ length: n }, () => 1 + Math.floor(Math.random() * 6)); g.last = v.slice(); g.rolls--;
+        if (g.ship && g.cap && g.crew) { g.cargo = v[0] + v[1]; return; }
+        const take = f => { const i = v.indexOf(f); if (i < 0) return false; v.splice(i, 1); return true; };
+        if (!g.ship && take(6)) g.ship = true;
+        if (g.ship && !g.cap && take(5)) g.cap = true;
+        if (g.ship && g.cap && !g.crew && take(4)) g.crew = true;
+        if (g.ship && g.cap && g.crew) g.cargo = v.length >= 2 ? v[0] + v[1] : null;
+      }
+      const sccScore = g => (g.ship && g.cap && g.crew && g.cargo ? g.cargo : 0);
+      const sccText = g => `${g.ship ? '⛵' : '·'} ${g.cap ? '🧑‍✈️' : '·'} ${g.crew ? '👥' : '·'}${g.cargo ? ` • cargo ${g.cargo}` : ''}`;
+      const dieFaces = v => v.map(n => `<span class="die">${n}</span>`).join('');
+      function diceStart() {
+        const w = dice.wager;
+        if (w > 0 && state.cash < w) { showToast('🎲 Not enough cash for that bet.'); return; }
+        if (w > 0) { state.cash = +(state.cash - w).toFixed(2); updateHUD(); }
+        dice.me = sccNew(); dice.them = sccNew(); dice.phase = 'play'; dice.msg = ''; sccRoll(dice.me); sfx.playTick(); townRefresh();
+      }
+      function diceStand() {
+        const t = dice.them; while (t.rolls > 0 && (sccScore(t) < 8)) sccRoll(t);
+        const a = sccScore(dice.me), b = sccScore(t), name = DICE_OPP[dice.opp][1], T = town(), w = dice.wager;
+        T.dice.played++; dice.phase = 'done';
+        if (a > b) {
+          T.dice.won++; questEvent('dice', { won: true });
+          if (w > 0) { townPay(w * 2, 4, null); dice.msg = `You win ${shopMoney(w)}! ${name} pays up.`; }
+          else { const tier = Math.max(2, Math.min(4, state.baitTier || 2)); state.baitStock[tier] = (state.baitStock[tier] || 0) + 5; if (state.baitTier === tier) state.baitCount = state.baitStock[tier]; townPay(0, 4, null); dice.msg = `You win 5 ${BAIT_TIERS[tier - 1].name}!`; }
+        } else if (a === b) { if (w > 0) { state.cash = +(state.cash + w).toFixed(2); updateHUD(); } dice.msg = 'A draw: the bets go back.'; saveGame(); }
+        else { dice.msg = `${name} wins this one.`; saveGame(); }
+        townRefresh();
+      }
+      function openTavern() {
+        if (!tavernOpen()) { showToast("🍺 Sailors' Rest opens at 16:00."); return; }
+        dice.phase = 'pick';
+        openTownSheet("🍺 SAILORS' REST: SHIP, CAPTAIN & CREW", ({ row, head, note, host }) => {
+          const T = town();
+          note('Roll five dice, three rolls. You need a 6 (ship), then a 5 (captain), then a 4 (crew); the other two dice are your cargo. Highest cargo wins.');
+          if (dice.phase === 'pick') {
+            head('Play against');
+            row(`<span class="sl-n">${DICE_OPP.map(([, n], i) => (i === dice.opp ? `<b>▶ ${n}</b>` : n)).join(' • ')}</span>`, [['Next', '', () => { dice.opp = (dice.opp + 1) % DICE_OPP.length; townRefresh(); }]]);
+            head('Bet');
+            row(`<span class="sl-n">${dice.wager ? shopMoney(dice.wager) : 'For bait (free)'}<small>Played ${T.dice.played} • won ${T.dice.won}</small></span>`,
+              [[`Bait`, '', () => { dice.wager = 0; townRefresh(); }], ['$10', '', () => { dice.wager = 10; townRefresh(); }], ['$50', '', () => { dice.wager = 50; townRefresh(); }], ['$100', '', () => { dice.wager = 100; townRefresh(); }]]);
+            row('<span class="sl-n">Ready?</span>', [['🎲 Roll', '', diceStart, dice.wager > state.cash]]);
+          } else {
+            const g = dice.me, all = g.ship && g.cap && g.crew;
+            head('Your roll');
+            host.insertAdjacentHTML('beforeend', `<div class="dice-row">${dieFaces(g.last)}</div><p class="town-note">${sccText(g)} • ${g.rolls} roll${g.rolls === 1 ? '' : 's'} left</p>`);
+            if (dice.phase === 'play') {
+              const btns = [];
+              if (g.rolls > 0) btns.push([all ? 'Roll cargo again' : '🎲 Roll', '', () => { sccRoll(g); sfx.playTick(); if (g.rolls <= 0) diceStand(); else townRefresh(); }]);
+              btns.push([all ? 'Stand' : g.rolls > 0 ? 'Give up' : 'Finish', all ? '' : 'red', diceStand]);
+              row(`<span class="sl-n">${all ? `Cargo ${g.cargo}. Keep it or roll the two cargo dice again.` : 'Find the ship, captain and crew.'}</span>`, btns);
+            } else {
+              const t = dice.them;
+              head(`${DICE_OPP[dice.opp][1]}`);
+              host.insertAdjacentHTML('beforeend', `<div class="dice-row">${dieFaces(t.last)}</div><p class="town-note">${sccText(t)}</p>`);
+              row(`<span class="sl-n">${dice.msg}</span>`, [['Again', '', () => { dice.phase = 'pick'; townRefresh(); }]]);
+            }
+          }
+        });
+      }
+
+      /* ---- crab traps in the tide pool: bait one, come back the next day ---- */
+      const TRAP_BAIT = 8;
+      const TRAP_LOOT = [{ id: 'crab', name: 'shore crabs', icon: '🦀', w: 46, shell: [1, 3] }, { id: 'blue', name: 'a blue crab', icon: '🦀', w: 18, shell: [2, 2] }, { id: 'lobster', name: 'a spiny lobster', icon: '🦞', w: 15, shell: [3, 3] },
+        { id: 'pearl', name: 'a pearl', icon: '🦪', w: 9, cash: [80, 160] }, { id: 'weed', name: 'only seaweed', icon: '🌿', w: 12 }];
+      function haulTrap(i) {
+        const T = town(), t = T.traps[i]; if (!t || (state.dayCount || 0) <= t.day) return;
+        let r = Math.random() * TRAP_LOOT.reduce((s, x) => s + x.w, 0), L = TRAP_LOOT[0];
+        for (const x of TRAP_LOOT) { r -= x.w; if (r <= 0) { L = x; break; } }
+        T.traps[i] = null; questEvent('trap', {});
+        if (L.shell) { const n = L.shell[0] + Math.floor(Math.random() * (L.shell[1] - L.shell[0] + 1)); const k = kitchen(); k.pantry.shellfish = Math.min(999, (k.pantry.shellfish || 0) + n); townPay(0, 6, `${L.icon} Trap ${i + 1}: ${L.name}! +${n} shellfish for the restaurant pantry.`); }
+        else if (L.cash) { const c = L.cash[0] + Math.round(Math.random() * (L.cash[1] - L.cash[0])); townPay(c, 10, `${L.icon} Trap ${i + 1}: ${L.name}! Sold for ${shopMoney(c)}.`); }
+        else { saveGame(); showToast(`${L.icon} Trap ${i + 1}: ${L.name}.`); }
+      }
+      function openTraps() {
+        openTownSheet('🦀 TIDE POOL: CRAB TRAPS', ({ row, note }) => {
+          const T = town(), day = state.dayCount || 0;
+          note(`Bait a trap (${shopMoney(TRAP_BAIT)}), drop it in the pool and haul it up from the next day on. Crabs and lobsters go to your restaurant's pantry as shellfish (for the bisque); pearls sell straight away.`);
+          T.traps.forEach((t, i) => {
+            if (!t) row(`<span class="sl-n">🪤 Trap ${i + 1}<small>Empty</small></span>`, [['Bait & drop', '', () => { if (state.cash < TRAP_BAIT) return; state.cash = +(state.cash - TRAP_BAIT).toFixed(2); T.traps[i] = { day }; sfx.playTick(); saveGame(); updateHUD(); townRefresh(); }, state.cash < TRAP_BAIT]]);
+            else if (day > t.day) row(`<span class="sl-n">🪤 Trap ${i + 1}<small>Ready: something is moving in there!</small></span>`, [['Haul up', '', () => { haulTrap(i); townRefresh(); }]]);
+            else row(`<span class="sl-n">🪤 Trap ${i + 1}<small>Soaking. Check it tomorrow.</small></span>`, []);
+          });
+        });
+      }
+
+      /* ---- Barnaby's Workshop: hull, trim and pennant colours for every boat you own ---- */
+      function openWorkshop() {
+        openTownSheet("🔨 BARNABY'S WORKSHOP: BOAT PAINT", ({ row, head, note }) => {
+          const T = town(), boats = (state.ownedBoats || []).slice();
+          note(`Pick a colour for each part of a boat (${shopMoney(PAINT_COST)} a coat). The hull and trim follow the boat's own stripes; the pennant flies from the stern.`);
+          if (!boats.length) { note('You have no boat yet. Captain Rook sells them at the Boatyard.'); return; }
+          boats.forEach(tier => {
+            const p = T.paint[tier] || { hull: -1, trim: -1, flag: -1 };
+            head(`${BOAT_ICONS[tier]} ${BOAT_TIERS[tier].name}`);
+            [['hull', 'Hull'], ['trim', 'Trim'], ['flag', 'Pennant']].forEach(([part, label]) => {
+              const sw = BOAT_PAINTS.map(([nm, hex], ci) => [ci === p[part] ? '✓' : ' ', 'swatch', () => paintBoat(tier, part, ci), false, `background:#${hex.toString(16).padStart(6, '0')};`]);
+              const r = row(`<span class="sl-n">${label}<small>${p[part] >= 0 ? BOAT_PAINTS[p[part]][0] : part === 'flag' ? 'none' : 'factory colour'}</small></span>`, sw.concat([['Reset', 'red', () => paintBoat(tier, part, -1), p[part] < 0]]), 'paint-row');
+              r.title = label;
+            });
+          });
+        });
+      }
+      function paintBoat(tier, part, ci) {
+        const T = town(), p = T.paint[tier] || (T.paint[tier] = { hull: -1, trim: -1, flag: -1 });
+        if (p[part] === ci) return;
+        if (ci >= 0) { if (state.cash < PAINT_COST * paintDiscount()) { showToast('🎨 Not enough cash.'); return; } state.cash = +(state.cash - PAINT_COST * paintDiscount()).toFixed(2); }
+        p[part] = ci; questEvent('paint', {}); sfx.playCoin(); saveGame(); updateHUD();
+        if (tier === state.boatTier) rebuildPlayerBoatVisual();
+        townRefresh();
+      }
+      const paintDiscount = () => 1;   // Barnaby's friendship perk lowers it (v6.4)
+
+      /* ---- Talia's greenhouse: sells herbal lures, buys your seaweed ---- */
+      function openGreenhouse() {
+        openTownSheet("🌿 TALIA'S GREENHOUSE", ({ row, note }) => {
+          const T = town(), flora = state.bucket.filter(e => e.category === 'Flora'), pay = Math.round(flora.reduce((s, e) => s + sellValue(e) * 1.25, 0) * floraBonus());
+          note('Talia brews lures from hillside herbs (the foraging job brings them) and pays a quarter more than Recycling for seaweed and sea plants.');
+          row(`<span class="sl-n">🧪 Herbal lure<small>3 herbs → 5 × ${BAIT_TIERS[1].name} • you have ${T.herbs} herbs</small></span>`, [['Brew', '', () => {
+            if (T.herbs < 3) return; T.herbs -= 3; state.baitStock[2] = (state.baitStock[2] || 0) + 5; if (state.baitTier === 2) state.baitCount = state.baitStock[2];
+            townPay(0, 3, `🧪 Brewed 5 ${BAIT_TIERS[1].name}.`); townRefresh(); }, T.herbs < 3]]);
+          row(`<span class="sl-n">🌱 Sell your sea plants<small>${flora.length} in your bucket${flora.length ? ` • ${shopMoney(pay)}` : ''}</small></span>`, [['Sell', '', () => {
+            if (!flora.length) return; state.bucket = state.bucket.filter(e => e.category !== 'Flora'); townPay(pay, 0, `🌱 Talia paid ${shopMoney(pay)} for your sea plants.`); townRefresh(); }, !flora.length]]);
+        });
+      }
+      const floraBonus = () => 1;   // Talia's friendship perk raises it (v6.4)
+
+      /* ---- the Post Office: jobs, treasure maps and bottle stamps ---- */
+      const MAP_COST = 150;
+      function openPostOffice() {
+        ensureJobs();
+        openTownSheet('📮 POST OFFICE', ({ row, head, note }) => {
+          const T = town(), found = (state.foundMessages || []).length, stampsDue = Math.min(6, Math.floor(found / 6)) - T.stamps;
+          note('Maren runs the counter: parcels to carry, old treasure maps, and a stamp for every six bottle messages you find.');
+          head('Counter');
+          row(`<span class="sl-n">🗺️ Treasure map<small>Marks a floating chest out on the Coastal Reef on your Map • one a day • ${shopMoney(MAP_COST)}</small></span>`, [['Buy', '', () => {
+            if (state.cash < MAP_COST || T.mapDay === (state.dayCount || 0)) return;
+            const t = seaEvents.sight(true); if (!t) { showToast('🗺️ Maren finds no fresh map today. Try tomorrow.'); return; }
+            state.cash = +(state.cash - MAP_COST).toFixed(2); T.mapDay = state.dayCount || 0; t.spotted = true; townPay(0, 0, '🗺️ A chest is marked on your Map. Sail out to it.'); townRefresh();
+          }, state.cash < MAP_COST || T.mapDay === (state.dayCount || 0)]]);
+          row(`<span class="sl-n">📜 Bottle stamps<small>${found} / ${BOTTLE_MESSAGES.length} bottle messages • ${T.stamps} / 6 stamps • each stamp pays $100</small></span>`, [['Claim', '', () => {
+            if (stampsDue <= 0) return; T.stamps += stampsDue; townPay(100 * stampsDue, 30 * stampsDue, `📜 ${stampsDue} stamp${stampsDue > 1 ? 's' : ''} from Maren: +${shopMoney(100 * stampsDue)}.`); townRefresh(); }, stampsDue <= 0]]);
+          head('Jobs');
+          row(`<span class="sl-n">📋 Town jobs<small>The same jobs as the noticeboard in the square.</small></span>`, [['Open', '', () => openJobsSheet('📮 POST OFFICE: TOWN JOBS')]]);
+          postRows && postRows({ row, head, note });
+        });
+      }
+      let postRows = null;   // postcard and bottle codes (v6.6)
+
+      /* ---- the winch: hoist 5 crates, press when the swinging hook is over the green ---- */
+      function openWinch() {
+        const a = activeJob(); if (!a || a.kind !== 'winch') return;
+        const W = { t: 0, crate: 0, good: 0, last: performance.now(), x: 0, speed: 1.6, msg: 'Press HOIST when the hook is over the green.' };
+        openTownSheet('🏗️ DOCKHAND WINCH', ({ host, row }) => {
+          host.insertAdjacentHTML('beforeend', `<div class="winch-bar"><div class="winch-zone" id="winch-zone"></div><div class="winch-hook" id="winch-hook"></div></div><p class="town-note" id="winch-msg">${W.msg}</p>`);
+          row(`<span class="sl-n" id="winch-count">Crate ${W.crate + 1} / 5 • ${W.good} hoisted</span>`, [['⬆ HOIST', '', () => {
+            const zw = 0.26 - W.crate * 0.03, ok = Math.abs(W.x - 0.5) < zw / 2; W.crate++; if (ok) W.good++;
+            sfx.playTick(); document.getElementById('winch-msg').textContent = ok ? '✅ Up she goes!' : '❌ It swung off. Next crate.';
+            document.getElementById('winch-count').textContent = `Crate ${Math.min(5, W.crate + 1)} / 5 • ${W.good} hoisted`;
+            if (W.crate >= 5) { cancelAnimationFrame(townUI.raf); setTimeout(() => { townClose(); if (W.good >= 3) finishJob(true); else showToast(`🏗️ Only ${W.good} crates up. Try again: the job is still yours.`); }, 600); }
+          }]]);
+          const tick = now => {
+            const dt = Math.min(0.05, (now - W.last) / 1000); W.last = now; W.t += dt * (W.speed + W.crate * 0.35); W.x = 0.5 + Math.sin(W.t) * 0.48;
+            const hk = document.getElementById('winch-hook'), zn = document.getElementById('winch-zone'); if (!hk) return;
+            const zw = 0.26 - W.crate * 0.03; zn.style.left = `${(0.5 - zw / 2) * 100}%`; zn.style.width = `${zw * 100}%`; hk.style.left = `${W.x * 100}%`;
+            townUI.raf = requestAnimationFrame(tick);
+          };
+          cancelAnimationFrame(townUI.raf); townUI.raf = requestAnimationFrame(tick);
+        });
+      }
+
+      /* ---- the places: action button entries (first match wins) ---- */
+      const frontOf = (t, dz = 0) => ({ x: t.x, z: t.z - t.d / 2 - 0.75 + dz });
+      const inFront = t => Math.abs(playerX - t.x) < 1.1 && playerZ < t.z - t.d / 2 - 0.05 && playerZ > t.z - t.d / 2 - 1.4;
+      SPOTS.unshift(
+        { id: 'pickup', icon: '✋', label: 'PICK UP', cls: 'bounty', color: ['#facc15', '#fef08a'], near: () => nearPickup() >= 0, prox: () => { const a = activeJob(); return `${JOB_KINDS[a.kind].icon} ${a.kind === 'cleanup' ? 'LITTER' : a.variant === 'shells' ? 'A SHELL' : 'HERBS'} • ${a.n} / ${a.need}`; }, press: takePickup },
+        { id: 'lantern', icon: '🔥', label: 'LIGHT', cls: 'bounty', color: ['#f59e0b', '#fde68a'], near: () => nearLantern() >= 0, prox: () => `🏮 STREET LANTERN • ${activeJob().n} / ${activeJob().need} LIT`, press: lightLantern },
+        { id: 'winch', icon: '🏗️', label: 'WINCH', cls: 'shop', color: ['#f59e0b', '#fde68a'], near: () => { const a = activeJob(); return !!a && a.kind === 'winch' && Math.hypot(playerX - TOWN.winch.x, playerZ - (TOWN.winch.z + 0.9)) < 1.2; }, prox: () => '🏗️ WINCH • HOIST 5 CRATES FOR ROOK', press: openWinch }
+      );
+      SPOTS.push(
+        { id: 'scope', icon: '🔭', label: 'LOOK', cls: 'shop', color: ['#38bdf8', '#bae6fd'], near: () => Math.hypot(playerX - TOWN.scope.x, playerZ - (TOWN.scope.z + 0.75)) < 0.6, prox: () => '🔭 TELESCOPE • SPOT FRENZIES, TREASURE AND BOSS SHADOWS', press: openScope },
+        { id: 'board', icon: '📌', label: 'JOBS', cls: 'bounty', color: ['#34d399', '#a7f3d0'], near: () => Math.abs(playerX - TOWN.board.x) < 1.1 && playerZ > ISLAND.zIn && playerZ < TOWN.board.z - 0.2, prox: () => { ensureJobs(); const n = town().jobs.list.filter(j => j.status === 'open').length; return `📌 NOTICEBOARD • ${n} JOB${n === 1 ? '' : 'S'} TODAY`; }, press: () => openJobsSheet() },
+        { id: 'post', icon: '📮', label: 'POST', cls: 'shop', color: ['#60a5fa', '#bfdbfe'], near: () => inFront(TOWN.post), prox: () => '📮 POST OFFICE • JOBS, TREASURE MAPS, BOTTLE STAMPS', press: openPostOffice },
+        { id: 'tavern', icon: '🎲', label: 'DICE', cls: 'shop', color: ['#f59e0b', '#fde68a'], near: () => inFront(TOWN.tavern), prox: () => (tavernOpen() ? "🍺 SAILORS' REST • SHIP, CAPTAIN & CREW" : "🍺 SAILORS' REST • OPENS AT 16:00"), useless: () => !tavernOpen(), press: openTavern },
+        { id: 'traps', icon: '🦀', label: 'TRAPS', cls: 'shop', color: ['#fb923c', '#fed7aa'], near: () => { const d = Math.hypot(playerX - TOWN.pool.x, playerZ - TOWN.pool.z); return d > TOWN.pool.r && d < TOWN.pool.r + 1.4; }, prox: () => { const T = town(), ready = T.traps.filter(t => t && (state.dayCount || 0) > t.day).length; return `🦀 TIDE POOL • ${ready ? ready + ' TRAP' + (ready > 1 ? 'S' : '') + ' READY' : 'CRAB TRAPS'}`; }, press: openTraps },
+        { id: 'workshop', icon: '🎨', label: 'PAINT', cls: 'shop', color: ['#d97706', '#fde68a'], near: () => inFront(TOWN.shop), prox: () => "🔨 BARNABY'S WORKSHOP • BOAT PAINT", press: openWorkshop },
+        { id: 'greenhouse', icon: '🌿', label: 'HERBS', cls: 'shop', color: ['#22c55e', '#bbf7d0'], near: () => inFront(TOWN.talia), prox: () => "🌿 TALIA'S GREENHOUSE • LURES, SEA PLANTS", press: openGreenhouse }
+      );
+
+      const townLift = () => (!onBoat && playerZ > ISLAND.rampZ0 ? townGround(playerZ) - 1.5 : 0);   // the camera rises with the upper terrace
 
       /* ---- the harbour map ---- */
       const MAP_PLACES = () => [
@@ -11694,7 +12462,18 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         { icon: '🧒', name: "Pip's home", desc: 'Pip lives here with the family.', x: TOWN.pip.x, z: TOWN.pip.z, w: TOWN.pip.w, d: TOWN.pip.d, col: '#fef3c7' },
         { icon: '🔬', name: "Ines' cottage", desc: 'Ines, the marine biologist, studies the fish of the bay here.', x: TOWN.ines.x, z: TOWN.ines.z, w: TOWN.ines.w, d: TOWN.ines.d, col: '#e0f2fe' },
         { icon: '🍝', name: restoName(), desc: restoOpen() ? 'Your seaside restaurant: cook your catch with Chef Lorenzo and sell the dishes at lunch and dinner.' : 'Your seaside restaurant, waiting for a chef. Talk to Lorenzo.', x: TOWN.resto.x, z: TOWN.resto.z, w: TOWN.resto.w, d: TOWN.resto.d, col: '#dc2626' },
-        { icon: '🗼', name: 'Lighthouse', desc: 'Out at sea in the Coastal Reef, with a small jetty you can dock at and fish from.', x: 52, z: -150, far: true }
+        { icon: '📌', name: 'Noticeboard', desc: 'Town jobs: three new ones every morning, for cash, XP and town reputation.', x: TOWN.board.x, z: TOWN.board.z, w: 1.6, d: 0.4, col: '#a16207' },
+        { icon: '🧺', name: 'Market Square', desc: 'The east square, with a fish stall, between the restaurant and the Artisan Quarter.', x: TOWN.market.x, z: TOWN.market.z, w: 4, d: 4, col: '#b8b0a2' },
+        { icon: '📮', name: 'Post Office', desc: "Maren's counter: town jobs, treasure maps and stamps for bottle messages.", x: TOWN.post.x, z: TOWN.post.z, w: TOWN.post.w, d: TOWN.post.d, col: '#fef9c3' },
+        { icon: '🔨', name: "Barnaby's Workshop", desc: 'Paint the hull, trim and pennant of every boat you own.', x: TOWN.shop.x, z: TOWN.shop.z, w: TOWN.shop.w, d: TOWN.shop.d, col: '#d6b48a' },
+        { icon: '🦀', name: 'Tide pool', desc: 'Bait up to 3 crab traps and haul them up the next day.', x: TOWN.pool.x, z: TOWN.pool.z, w: 5, d: 5, col: '#1d7f9f' },
+        { icon: '🍺', name: "Sailors' Rest", desc: 'The tavern on the upper terrace: dice with the townsfolk from 16:00.', x: TOWN.tavern.x, z: TOWN.tavern.z, w: TOWN.tavern.w, d: TOWN.tavern.d, col: '#a16207' },
+        { icon: '🌿', name: "Talia's greenhouse", desc: 'Herbal lures from hillside herbs; Talia also buys sea plants.', x: TOWN.talia.x, z: TOWN.talia.z, w: TOWN.talia.w, d: TOWN.talia.d, col: '#dcfce7' },
+        { icon: '🌱', name: 'Herb garden', desc: "Talia's herb beds on Lighthouse Hill.", x: TOWN.garden.x, z: TOWN.garden.z, w: TOWN.garden.w, d: 3, col: '#16a34a' },
+        { icon: '🔭', name: 'Lookout Pavilion', desc: 'A telescope over the bay (spots frenzies, treasure and boss shadows) and a bench for reading.', x: TOWN.lookout.x, z: TOWN.lookout.z, w: 4.2, d: 4.2, col: '#0f766e' },
+        { icon: '🏗️', name: 'Winch', desc: "Rook's dock winch beside the Boatyard: the dockhand job is done here.", x: TOWN.winch.x, z: TOWN.winch.z, w: 1, d: 1, col: '#f59e0b' },
+        { icon: '🗼', name: 'Lighthouse', desc: 'Out at sea in the Coastal Reef, with a small jetty you can dock at and fish from.', x: 52, z: -150, far: true },
+        ...scopeMarks()
       ];
       function mapCompass(dx, dz) {
         const a = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
@@ -11705,7 +12484,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
          pans (drag) and zooms (pinch, wheel, buttons) over those pictures with the overlays drawn on top. */
       const MAP_SNAPS = [
         { x0: -90, x1: 90, z0: -175, z1: 35, ppm: 5.5 },     // wide: the sea out to the lighthouse
-        { x0: -32, x1: 32, z0: -14, z1: 17, ppm: 28 }        // detail: the harbour and Harbour Town
+        { x0: -42, x1: 42, z0: -14, z1: 26, ppm: 24 }        // detail: the harbour and Harbour Town (v6.3.0: wider town)
       ];
       const mapView = { cx: 0, cz: 0, s: 14, snaps: null, ptrs: new Map(), raf: 0 };
       function mapSnapshot() {
@@ -12383,19 +13162,21 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
           return null;
         }
-        function spawnTreasure() {
-          const zone = getCurrentZone();
+        function spawnTreasure(quiet, zoneArg) {
+          const zone = zoneArg || getCurrentZone();
           const spot = freeSpot(70, 220, zone);
-          if (!spot) return;
+          if (!spot) return null;
           const mesh = new THREE.Group();
           mesh.add(makeChest());
           const beam = makeBeam(0xfde047, 0.45, 70); mesh.add(beam);
           scene.add(mesh);
-          treasures.push({ x: spot.x, z: spot.z, ttl: 150, mesh, zoneId: zone.id, phase: Math.random() * 6 });
-          showToast('🪙 A treasure chest is floating nearby! Follow the golden beam.');
+          const t = { x: spot.x, z: spot.z, ttl: 150, mesh, zoneId: zone.id, phase: Math.random() * 6 };
+          treasures.push(t);
+          if (!quiet) showToast('🪙 A treasure chest is floating nearby! Follow the golden beam.');
+          return t;
         }
-        function spawnBoss(zone) {
-          const spot = freeSpot(110, 260, zone);
+        function spawnBoss(zone, quiet, minD = 110, maxD = 260) {
+          const spot = freeSpot(minD, maxD, zone);
           if (!spot) return;
           const mesh = new THREE.Group();
           const shadow = new THREE.Mesh(new THREE.CircleGeometry(9, 28), new THREE.MeshBasicMaterial({ color: 0x050914, transparent: true, opacity: 0.6, depthWrite: false }));
@@ -12405,7 +13186,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           mesh.add(shadow, ring, makeBeam(0xef4444, 1.2, 90));
           scene.add(mesh);
           boss = { x: spot.x, z: spot.z, ttl: 240, mesh, ring, shadow, radius: 10, zoneId: zone.id };
-          showToast(`🐉 A giant shadow circles ${Math.round(Math.hypot(spot.x - boatPos.x, spot.z - boatPos.z))} m away! Cast into the ring.`);
+          if (!quiet) showToast(`🐉 A giant shadow circles ${Math.round(Math.hypot(spot.x - boatPos.x, spot.z - boatPos.z))} m away! Cast into the ring.`);
           updateHUD();
         }
         function removeTreasure(t) { scene.remove(t.mesh); t.mesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); treasures.splice(treasures.indexOf(t), 1); }
@@ -12434,6 +13215,13 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           bossAt(pos) { return boss && Math.hypot(pos.x - boss.x, pos.z - boss.z) <= boss.radius * 1.1 ? boss : null; },
           clearBoss,
           spawn(kind) { const zone = getCurrentZone(); if (kind === 'boss') { if (!boss) spawnBoss(zone); } else spawnTreasure(); },
+          /* the lookout telescope and the Post Office's treasure map (v6.3.0): a chest out on the Coastal Reef and sometimes a boss on the Open Shelf */
+          sight(onlyTreasure) {
+            let t = null;
+            if (treasures.length < 2) { for (let k = 0; k < 4 && !t; k++) t = spawnTreasure(true, ZONES[1]); if (t) t.ttl = 420; }
+            if (!onlyTreasure && !boss && Math.random() < 0.4) { spawnBoss(ZONES[2], true, 320, 560); if (boss) boss.ttl = 420; }
+            return t;
+          },
           nearest(pos) {
             let best = null;
             treasures.forEach(t => { const d = Math.hypot(pos.x - t.x, pos.z - t.z); if (!best || d < best.dist) best = { kind: 'treasure', x: t.x, z: t.z, dist: d }; });
@@ -12442,7 +13230,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           },
           reset() { while (treasures.length) removeTreasure(treasures[0]); clearBoss(); treasureTimer = 25; bossTimer = 150; },
           update(dt, elapsedT) {
-            const aboard = onBoat && state.boatTier > 0;
+            const aboard = (onBoat && state.boatTier > 0) || scope.on;   // the lookout telescope sees them too
             treasures.forEach(t => { t.mesh.visible = aboard; });
             if (boss) boss.mesh.visible = aboard;
             if (!aboard || mode === 'RESCUE_SEQUENCE' || isAnyModalOpen()) return;
@@ -15521,7 +16309,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         updateShopBrowse(dt);
         updateCabinFade(dt);
         updateAquarium(dt);
-        updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign();
+        updateNpcs(dt); questTick(dt); updateRestoProps(); updateRestoSign(); townJobTick(); updateTownProps();
         if (world.islandScenery) world.islandScenery.visible = true;   // v6.0: always shown; whatever blocks the camera fades (updateTownFade)
         updateTownFade(dt);
         updateStationPicker(false);
@@ -15584,6 +16372,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         state.timeOfDay += dt / DAY_SECONDS;
         updateReading(dt / DAY_SECONDS * 1440);   // in-game minutes that just passed (0 while paused)
         updateRestaurant(dt / DAY_SECONDS * 1440);
+        townClock(dt / DAY_SECONDS * 1440);
         if (state.timeOfDay >= 1.0) { state.timeOfDay -= 1.0; dayRollover(); }
         if (!prevFullMoon && isFullMoonNight()) {
           showToast('🌕 FULL MOON RISEN! Rare Glowing Fish are now active!');
@@ -15854,7 +16643,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           }
 
           // Smooth vertical elevation down the wooden boat stairs (-2.55 -> -3.85) onto the mooring platform (Y = 0.71)
-          let playerY = playerZ > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((playerZ - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
+          let playerY = playerZ > ISLAND.rampZ0 ? townGround(playerZ) : playerZ > ISLAND.zGate ? THREE.MathUtils.lerp(1.55, 1.5, THREE.MathUtils.clamp((playerZ - ISLAND.zGate) / 1.0, 0, 1)) : 1.55;
           if (playerX < -2.55 - PIER_DX && playerZ <= -4.35 && playerZ >= PLATFORM.zEnd) {
             const stairT = THREE.MathUtils.clamp((-2.55 - PIER_DX - playerX) / 1.30, 0, 1);
             playerY = THREE.MathUtils.lerp(1.55, 0.71, stairT);
@@ -16385,7 +17174,7 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
         }
 
         const anchorPos = onBoat ? boatPos : world.anglerGroup.position;
-        vfx.frenzyVisible = onBoat && state.boatTier > 0 && hasModule('sonar');
+        vfx.frenzyVisible = (onBoat && state.boatTier > 0 && hasModule('sonar')) || scope.on;
         vfx.update(dt, anchorPos, getWaveHeight, elapsed, zone, dive.active ? 0 : weather.rainRate);
 
         // Smooth camera tracking across entire pier (including left boat slip & portrait mobile screens)
@@ -16405,10 +17194,10 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const pivX = THREE.MathUtils.lerp(camFX, playerX, Math.max(ow, isl)), back = (isPortrait ? 8.4 : 7.8) - isl * 2.2;
           const targetCamPos = _camV1.set(
             pivX + Math.sin(oy) * back,
-            5.6 + isl * 3.0 + Math.sin(elapsed * 1.4) * 0.06,
+            5.6 + isl * 3.0 + Math.sin(elapsed * 1.4) * 0.06 + townLift(),
             playerZ + Math.cos(oy) * back
           );
-          const lookGoal = _camV2.set(pivX - Math.sin(oy) * 6.0, 1.35, playerZ - Math.cos(oy) * 6.0);
+          const lookGoal = _camV2.set(pivX - Math.sin(oy) * 6.0, 1.35 + townLift(), playerZ - Math.cos(oy) * 6.0);
           if (standFocus.stand) {
             standCameraPose(standFocus.stand);
             targetCamPos.copy(_standPos);
@@ -16495,6 +17284,7 @@ if (mode === 'REELING' && tension > 0.78) {
           camJuice.shake *= Math.pow(0.04, rawDt);   // decays in real time, also through a freeze frame
         }
 
+        updateScope(rawDt);   // the lookout telescope takes over the camera
         compass.update();
         if (postUniforms.uMode.value === 0) {
           renderer.setRenderTarget(null);
