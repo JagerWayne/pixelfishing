@@ -14,7 +14,7 @@
   <script>
     /* Single source of truth for the build: shown on the start screen, names the offline cache, and is
        bumped with every release (see README, "Maintaining this file"). */
-    window.PF_VERSION = '6.8.0';
+    window.PF_VERSION = '6.8.1';
     window.PF_THREE_BYTES = 603445; /* decoded size of vendor/three.r128.min.js */
     window.PF_PAGE_BYTES_GUESS = 520000;
 
@@ -9194,18 +9194,29 @@ function replaceSceneMesh(parent, oldObj, newObj) {
       let rodVisProgress = 1.0;
       /* v6.8.0: an umbrella opens over the angler in the rain (on foot, hands free) */
       const umbrella = { w: 0, g: null, canopy: null, v: null };
-      function ensureUmbrella() {
-        if (umbrella.g) return;
+      /* an umbrella model (canopy colour + stripe colour), closed or open by scaling its canopy (see placeUmbrella) */
+      function makeUmbrella(main = 0xdc2626, stripe = 0xf8fafc) {
         const g = new THREE.Group(), M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, flatShading: true, side: THREE.DoubleSide });
         const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.95, 6), M(0x1f2937)); shaft.position.y = 0.42; g.add(shaft);
         const hook = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 5, 10, Math.PI), M(0x7c2d12)); hook.position.set(0.04, -0.04, 0); hook.rotation.z = Math.PI; g.add(hook);
         const canopy = new THREE.Group(); canopy.position.y = 0.96; canopy.rotation.set(-0.21, 0, 0.18); g.add(canopy);   // kept level
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.3, 8, 1, true), M(0xdc2626)); canopy.add(cone);
-        for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.ConeGeometry(0.625, 0.302, 8, 1, true, i * Math.PI / 2, Math.PI / 8), M(0xf8fafc)); canopy.add(w); }
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.3, 8, 1, true), M(main)); canopy.add(cone);
+        for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.ConeGeometry(0.625, 0.302, 8, 1, true, i * Math.PI / 2, Math.PI / 8), M(stripe)); canopy.add(w); }
         const tip = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), M(0x1f2937)); tip.position.y = 0.17; canopy.add(tip);
         g.traverse(o => { if (o.isMesh) o.castShadow = true; });
-        g.visible = false; world.anglerGroup.add(g);
-        Object.assign(umbrella, { g, canopy, v: new THREE.Vector3() });
+        g.visible = false;
+        return { w: 0, g, canopy, v: new THREE.Vector3() };
+      }
+      /* open it (k 0..1) in the left hand of a figure of height scale hs; returns the hand's world target */
+      function placeUmbrella(u, owner, hs) {
+        u.g.visible = true; u.g.position.set(-0.17 * hs, 1.0 * hs, -0.2 * hs); u.g.rotation.set(0.21, 0, -0.18);   // the shaft leans in so the canopy is over the head
+        const k = u.w; u.canopy.scale.set(0.12 + 0.88 * k, 0.55 + 0.45 * k, 0.12 + 0.88 * k);
+        return owner.localToWorld(u.v.copy(u.g.position));
+      }
+      const isRaining = () => state.weather === 'RAIN' || state.weather === 'STORM';
+      function ensureUmbrella() {
+        if (umbrella.g) return;
+        Object.assign(umbrella, makeUmbrella(), { w: umbrella.w }); world.anglerGroup.add(umbrella.g);
       }
       let chairOpenProgress = 0.0;
       let boatPos = new THREE.Vector3(-4.8, 0, -7.5);
@@ -11478,7 +11489,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
 
       /* ---- the townsfolk in the world ---- */
       const npcState = { built: false, list: [] };
-      const NPC_R = 0.3;   // the townsfolk's body radius for collisions (v6.8.0)
+      const NPC_R = 0.3;
+      const NPC_UMBRELLAS = [[0x1d4ed8, 0xfacc15], [0x16a34a, 0xf8fafc], [0x7c3aed, 0xfde68a], [0xea580c, 0x1f2937], [0x0f766e, 0xf8fafc], [0xdb2777, 0xf8fafc], [0x334155, 0xfacc15], [0xca8a04, 0x7c2d12], [0x0369a1, 0xf8fafc]];   // the townsfolk's body radius for collisions (v6.8.0)
       const npcMarkerTex = {};
       function npcMarker(ch, color) {
         if (!npcMarkerTex[ch]) {
@@ -11498,7 +11510,8 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const g = new THREE.Group(); g.add(rig.root); scene.add(g);
           const mk = new THREE.Sprite(new THREE.SpriteMaterial({ map: npcMarker('!', '#facc15'), depthTest: false, transparent: true })); mk.scale.set(0.42, 0.42, 1); mk.renderOrder = 20; mk.visible = false; g.add(mk);
           const start = npcSpotNow(d);
-          npcState.list.push({ id, d, rig, g, mk, anim: new AnglerAnimator(rig), x: start.x, z: start.z, yaw: Math.PI, pts: [], goal: null, hidden: false, talk: 0 });
+          const pal = NPC_UMBRELLAS[npcState.list.length % NPC_UMBRELLAS.length], umb = makeUmbrella(pal[0], pal[1]); g.add(umb.g);   // their own umbrella for rainy days (v6.8.1)
+          npcState.list.push({ id, d, rig, g, mk, umb, anim: new AnglerAnimator(rig), x: start.x, z: start.z, yaw: Math.PI, pts: [], goal: null, hidden: false, talk: 0 });
         });
       }
       function npcSpotNow(d) {
@@ -11533,7 +11546,11 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
           const dy = Math.atan2(Math.sin(n.yaw - n.g.rotation.y), Math.cos(n.yaw - n.g.rotation.y));
           n.g.rotation.y += dy * (dt > 0 ? 1 - Math.exp(-8 * dt) : 0);
           const far = Math.hypot((onBoat ? boatPos.x : playerX) - n.x, (onBoat ? boatPos.z : playerZ) - n.z) > 40;
-          if (!n.hidden && !far) n.anim.update({ dt, elapsed, speed, idleAllowed: true });
+          let hands = null;   // an umbrella in the left hand while it rains
+          n.umb.w += ((isRaining() && !n.hidden ? 1 : 0) - n.umb.w) * (dt > 0 ? 1 - Math.exp(-4 * dt) : 0);
+          if (n.umb.w > 0.02 && !far) { n.g.updateMatrixWorld(true); hands = { L: placeUmbrella(n.umb, n.g, n.rig.dims.hScale), R: null }; }
+          else n.umb.g.visible = false;
+          if (!n.hidden && !far) n.anim.update({ dt, elapsed, speed, idleAllowed: true, hands, handBlend: hands ? n.umb.w : 0 });
           // ! a quest to offer, ? a quest to hand in
           const ready = Object.keys(story().active).some(id => QUEST_BY_ID[id].giver === n.id && questReady(id));
           const offer = QUESTS.some(q => q.giver === n.id && questAvailable(q));
@@ -17643,14 +17660,12 @@ playerBoatMesh = replaceSceneMesh(scene, playerBoatMesh, WorldBuilder.buildBoatM
             handBlend = restW;
           }
           {   // the umbrella (rain or storm, on foot, nothing in the hands, third person)
-            const want = !onBoat && !dive.active && (state.weather === 'RAIN' || state.weather === 'STORM') && !settings.firstPerson
+            const want = !onBoat && !dive.active && isRaining() && !settings.firstPerson
               && !(restW > 0.001) && (mode === 'PIER_IDLE' || mode === 'SHOP_BROWSE');   // not while fishing (the modes), seated or on a boat
             umbrella.w += ((want ? 1 : 0) - umbrella.w) * (dt > 0 ? 1 - Math.exp(-5 * dt) : 0);
             if (umbrella.w > 0.02) {
-              ensureUmbrella(); const u = umbrella, k = u.w;
-              u.g.visible = true; u.g.position.set(-0.17 * hs, 1.0 * hs, -0.2 * hs); u.g.rotation.set(0.21, 0, -0.18);   // the shaft leans in so the canopy is over the head
-              u.canopy.scale.set(0.12 + 0.88 * k, 0.55 + 0.45 * k, 0.12 + 0.88 * k);
-              const grip = world.anglerGroup.localToWorld(u.v.copy(u.g.position));   // the left hand holds it (the right keeps the rod)
+              ensureUmbrella(); const k = umbrella.w;
+              const grip = placeUmbrella(umbrella, world.anglerGroup, hs);   // the left hand holds it (the right keeps the rod)
               if (!hands) { hands = { L: grip, R: null }; handBlend = k; } else { hands.L = grip; handBlend = Math.max(handBlend, k); }
             } else if (umbrella.g) umbrella.g.visible = false;
           }

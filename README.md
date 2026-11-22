@@ -399,7 +399,7 @@ Behind the boardwalk, open along its whole length since v6.6.1 (the **🏘️ Ha
 - **🌿 Herb & shell foraging:** gather 5 herbs on Lighthouse Hill or 5 shells around the tide pool; herbs go to Talia's greenhouse.
 - **🏗️ Dockhand winch assist:** at the winch, hoist 5 crates: press **HOIST** when the swinging hook is over the green (3 good ones pass; the green shrinks each crate).
 
-**People.** Nine townsfolk live here, each with a day routine (they walk between their spots across the town and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map.
+**People.** Nine townsfolk live here, each with a day routine (they walk between their spots across the town and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map. In rain or a storm each of them opens an umbrella in their own colours.
 
 **Friendship (v6.4.0).** Each townsperson likes you a little more for every finished quest (+3), the first chat of the day (+1), a restaurant craving served (+2), one of Ines' commissions (+2) and a dice win against them (+1). Hearts show in the chat, on the noticeboard and in the Quests list. At **8 points** their **perk** is yours for good:
 | Friend | Perk |
@@ -656,6 +656,10 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.8.1: townsfolk umbrellas
+
+- **Townsfolk umbrellas:** in rain or a storm every townsperson opens an umbrella in their own colours (nine palettes), held in the left hand; it folds away again when the weather clears. The angler's umbrella and theirs share one builder (`makeUmbrella` / `placeUmbrella`).
 
 ### 2026-11-22, Version 6.8.0: benches, lamps, umbrella, solid townsfolk
 - **More benches:** 14 new ones (six more along the boardwalk, two at the plaza, four along the upper terrace, one at the Market Square and one by the tide pool), 16 in all plus the Lookout's. Every bench has a **lamp** whose head glows at night over a soft pool of light (glow, not real lights, to keep phones fast). Benches in the lower town now work too.
