@@ -665,7 +665,8 @@ There is no test framework in the repository. Changes are checked with headless 
 - the action button only responds to the button, not the canvas,
 - every one of the 69 catch models builds,
 - the app registers its service worker and reloads and runs offline,
-- contact-sheet renders of fish, boats, props and characters are reviewed by eye.
+- contact-sheet renders of fish, boats, props and characters are reviewed by eye,
+- interface changes: screenshots at 375×812 and 812×375 (also left-handed and XL text), an **axe-core** pass (button names, ARIA, colour contrast) over the start screen, HUD, drawer, settings, career, bag, log, map, quests, chat, a shop and the pause screen, and, for pure clean-ups, a **computed-style parity** diff of every element in those states against the previous build (it must come out empty).
 
 ## Maintaining this file
 
@@ -678,6 +679,14 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 7.2.0: Tide Glass clean-up and accessibility pass
+
+- **Lighter stylesheet:** 424 old declarations and 36 whole rules that the Tide Glass theme already overrode are gone, along with the old styling of the tracker pills, the action button states and the fuel warning (about 16% less CSS). A computed-style comparison of every element on 11 screens shows the same result as before.
+- **Tokens everywhere:** 74 hard-coded colours in inline styles now use the palette tokens (text greys, gold, green, red, teal); only a few one-off tints remain.
+- **Contrast:** the dimmest text colour (`--text-3`) is lighter and passes WCAG AA (4.5:1) on all panel colours. An axe-core check of 12 screens finds no contrast, button-name or ARIA problems.
+- **Thumbstick:** announced as an image with instructions (and the keyboard alternative) instead of a slider without a value.
+- **Blur budget:** frosted glass is only on fixed panels (status bar, chips, compass, toasts, sheets), never on scrolling lists. *Reduce transparency* removes it entirely.
 
 ### 2026-11-22, Version 7.1.0: Tide Glass sheets, drawer and chats
 
