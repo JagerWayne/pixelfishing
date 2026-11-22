@@ -95,9 +95,10 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 | 🐟 **Fish Market** | right of the pier, small (an iced fish bench outside) | your **bucket of fish** as a list with a **Sell all fish** button; shows today's market and the Catch of the Day. It buys fish only. |
 | ♻️ **Recycling** | right of the pier, three skips (green *Flora*, blue *Metal*, yellow *Other*) | your **junk and seaweed** as a list grouped by skip, a **Recycle all** button and the Mayor's award bar ($1,000 per 100 kg) |
 
-- **The catalogue (Tackle Shop, Boatyard, Dive Shop):** press *Browse* and a cream paper brochure slides up over the lower part of the screen while the camera stays on the shop. Category chips on top (Tackle: Rods, Bait, Buckets; Boatyard: Boats, Modules, Fuel; Dive: Dive gear, Spear guns). **One item per page:** a big picture of the item, its title, stats, description, price and state (*Equipped*, *Owned*, *Locked: needs tier 2 first*, *Need $x more*). The ‹ › arrows turn the page (with a page-turn animation), a swipe works too, `A` / `D` or the arrow keys on a keyboard, and `1` to `3` pick a category. `✕` or `Esc` closes it.
-- **Buying:** tap the picture or the *Buy for $X* button; a **confirmation** asks first (*Buy X for $Y? Cash $a to $b*, *Cancel* / *Buy*). The touch that opens it can never confirm it by accident. Locked or unaffordable pages have no active button and say why.
-- **Lists (Fish Market, Recycling):** each row is one piece from your bucket (icon, name, kg, price, hot or glut marks); tap a row to sell just that one (after the confirm) or the big button at the bottom to sell or recycle them all. The bag screen's own *Sell* buttons work only in front of the matching stand.
+- **The shop sheet (every shop, stand and counter, v6.7.0):** press *Browse* (or *Sell fish*, *Kitchen*, *Aquarium* and so on) and a dark sheet slides up over the lower part of the screen while the camera stays on the shop. On top: the shop's name, **your cash** and a close button; under it the **departments** as pill tabs (Tackle: Rods, Bait, Rigs, Buckets, Book; Boatyard: Boats, Modules, Fuel, Book; and so on). In a catalogue every good of the department is a **card**: its 3D picture, a badge (*Equipped*, *Owned*, *Locked*), the title, stats, the full description, the price and one button (*Buy*, *Equip*, *Install*...). A card you cannot use yet says why in red.
+- **Buying:** the card's button opens a **confirmation** first (*Buy X for $Y?*, *Cash $a → $b*, *Cancel* / *Buy*); the touch that opens it can never confirm it by accident.
+- **Lists (Fish Market, Recycling, aquarium, restaurant):** the same cards: each row is one piece from your bucket (icon, name, kg, price, hot or glut marks) with a *Sell* / *Recycle* button, and a big button at the bottom sells or recycles them all (or collects the tickets or takings).
+- **Accessible:** the sheet is a proper dialog for screen readers; the departments are a real tab list (arrow keys, Home / End, `1` to `5`), arrow up / down moves between buttons, focus stays inside the sheet and returns to the right button after a confirmation, `Esc` closes, every button says what it acts on (*Buy Carbon Surf Rod for $750*), results are announced, buttons are at least 44 px and the slide animations are off when your device asks for reduced motion. The town counters (noticeboard, Post Office, tavern, traps, workshop, greenhouse, bunk) use the same cards.
 - The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
 
 **The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: it opens the bunk sheet with the **🏆 Trophy Wall** (mount your heaviest fish over 18 kg, or a boss you landed, on a plaque above the bunk: a 3D replica with species, weight, zone and day) and, from 18:00, **Sleep**: the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
@@ -602,7 +603,7 @@ The script inside `index.html` is organised in labelled sections:
 | H | Career (XP, ranks, achievements), the daily market, save state, validation and helper queries |
 | I | Boarding, docking and the rescue loop |
 | J | Fishing mechanics and the context-sensitive action button |
-| K | UI: shop catalogue and bucket lists (brochure, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera, bounties, settings, customise |
+| K | UI: the shop sheet (`ShopUI` cards, tabs, confirm), bucket modal, toolbox, catch reveal, log, gallery, camera filters, bounties, settings, customise |
 | L | HUD and button synchronisation |
 | M | Main animation and physics loop |
 
@@ -655,6 +656,12 @@ There is no test framework in the repository. Changes are checked with headless 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-22, Version 6.7.0: a new shop sheet
+- **Rewritten shop UI:** one data-driven sheet (`ShopUI`) for every shop, stand and town counter. Render functions only describe content (summary, cards, notes, a main button); the sheet builds it. Catalogues now show every good of a department as a scrollable card (picture, badge, stats, full description, price, one clear button) instead of one page at a time; lists, the aquarium, the restaurant and the town counters use the same cards.
+- **Sleek and readable:** a dark glass sheet in the shop's colour, your cash in the header, pill tabs, larger text and 44 px buttons.
+- **Accessible:** dialog semantics, a real tab list (arrows, Home / End, 1 to 5), arrow-key movement between buttons, focus kept inside and restored after confirmations, descriptive button labels, a live region announcing purchases, visible focus rings and reduced-motion support.
+- **The film camera's code is gone** (model, tracking, styles and its cabin position). Version bumped to **v6.7.0**.
 
 ### 2026-11-22, Version 6.6.2: less camera zoom, filters in the drawer, bigger text
 - **Stand zoom only where it is used:** standing still near a shop no longer zooms the camera onto it; only the **Bounty Board** (its papers) and the **Aquarium** (its sweep) still do. Shops still frame themselves while their sheet is open.
