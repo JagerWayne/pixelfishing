@@ -549,7 +549,7 @@ The menu can show the collision boxes, spawn a treasure chest or boss shadow (on
 
 ## The interface (Tide Glass)
 
-Since v7.0.0 the whole interface uses one frosted-glass look built for phones held in one or two hands:
+Since v7.0.0 the whole interface uses one frosted-glass look built for phones held in one or two hands. Since v2.2 the interface font names the usual sans-serif families (San Francisco, Segoe UI, Roboto, Noto Sans) instead of the device's own font, so a phone with a custom or monospace system font still shows the game's look; numbers, codes and the logo stay monospace on purpose. Text boxes (share codes, your name, look codes) are dark glass with a teal focus ring, and a row with a text box puts it on its own line under the label.
 
 - **Status bar** (top): one glass strip with your **cash**, the **bucket** meter (the **fuel** meter appears next to it on a boat; it turns amber, then red when you are low on fuel for the trip back), the **weather** and **clock**, and the **☰** menu.
 - **Info rail** (under the bar, left): the **zone chip** (zone, distance, return fuel, meal charges), the return-fuel warning when it matters, and the **objective tracker**. The tracker shows only the most urgent line, in this order: the sea radar (treasure, boss, frenzy), a bounty, the current quest, the book you are reading. **+N** opens the others. The live bait camera sits under it.
@@ -731,6 +731,17 @@ For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-23, Version 2.2: a GUI clean-up
+
+- **Post Office share codes:** the *Bottle note* and *Open a code* rows squeezed their label into a one-word column under the text box. The box now goes on its own line under the label, and the code box shows three lines.
+- **Text boxes** are dark glass in the Tide Glass colours (they were cream with brown borders), with a teal focus ring; codes stay in a fixed-width font.
+- **Font:** the interface no longer uses the device's own system font, which on some phones is monospace; it names the usual sans-serif families instead.
+- **Shop items on a phone:** the description uses the row's width with the price and button under it, instead of a narrow column beside them.
+- **Tab strips** that scroll sideways (shops, Customise) fade at the edge, so you can see there are more tabs.
+- **Disabled buttons** (*Locked*, *Out of stock*) are readable: plain glass with readable text instead of a faded red.
+- **Map:** a place with several spots (benches, market stalls) shows its name once, names never overlap, and names at the edge stay on the map.
+- **Boats:** the boat terminal and the "buy a boat first" message now send you to the Boatyard (they said the Tackle Shop).
 
 ### 2026-11-23, Version 2.1: street lights at night, paths without flicker
 

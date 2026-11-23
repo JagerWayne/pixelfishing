@@ -78,7 +78,6 @@
 .cust-dice:active { transform: scale(0.94); }
 .cust-note { text-align: left; margin-top: 6px; }
 .cust-share { display: flex; flex-direction: column; gap: 8px; }
-.cust-share textarea { width: 100%; font: 12px/1.4 ui-monospace, monospace; }
 .cust-view { align-items: stretch; }
 .cust-view > .pixel-btn { flex: 0 0 48px; font-size: 18px; padding: 4px; }
 .cust-view .cust-faces { flex: 1; }
@@ -92,3 +91,24 @@
   #cust-tabs { position: sticky; top: 0; z-index: 1; flex-wrap: nowrap; overflow-x: auto; background: var(--ink-800); padding: 2px 0 8px; margin-bottom: 8px; }
   #cust-tabs .tab-btn { flex: none; }
 }
+
+/* v2.2 GUI clean-up -------------------------------------------------------------------------------------------------- */
+/* text boxes: one Tide Glass look everywhere (Post Office share codes, Customise name and look code) */
+.town-in, #cust-name, .cust-share textarea { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border-radius: var(--r-sm);
+  border: 1px solid var(--glass-line); background: rgba(255, 255, 255, 0.06); color: var(--text); font: 15px/1.4 var(--font-ui); resize: vertical; }
+.town-in::placeholder, #cust-name::placeholder, .cust-share textarea::placeholder { color: var(--text-3); }
+.town-in:focus, #cust-name:focus, .cust-share textarea:focus { outline: 2px solid var(--sea); outline-offset: 1px; border-color: transparent; }
+#share-out, #share-in, #cust-code { font: 13px/1.4 var(--font-num); }
+#share-out { min-height: 84px; }
+/* a row with a text box: the label keeps its full width, the box goes on its own line under it */
+.sh-row-main { flex-wrap: wrap; }
+.sh-row-main > .town-in { flex: 1 0 100%; }
+/* shop items on a phone: the text gets the row's width, the price and button go under it */
+.sh-row.sh-item .sh-row-main { flex-basis: 250px; }
+/* tab strips that scroll sideways fade at the edge, so the hidden tabs show there are more */
+.sh-tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 24px; }
+@media (max-width: 700px) and (orientation: portrait) {
+  #cust-tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); padding-right: 24px; }
+}
+/* disabled buttons stay readable (Locked, Out of stock): plain glass with the dimmest allowed text, no extra fade */
+.pixel-btn:disabled, .pixel-btn.red:disabled, .pixel-btn.gold:disabled, .pixel-btn.green:disabled { opacity: 1; background: rgba(255, 255, 255, 0.05); border-color: var(--glass-line); color: var(--text-3); box-shadow: none; }

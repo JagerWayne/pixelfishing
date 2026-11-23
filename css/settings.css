@@ -66,7 +66,7 @@ body[data-autohide="1"][data-fishing="1"] #live-bait-pip { opacity: 0.12; pointe
 #map-buoy-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 #map-buoy-bar .pixel-btn { min-height: 38px; padding: 4px 10px; font-size: 12px; }
 #map-buoy-bar .mb-l { font-size: 12px; color: #cbd5e1; font-weight: bold; }
-.town-in { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 6px; border: 2px solid #c9a867; background: #fffbeb; color: #3b2410; resize: vertical; }
+.town-in { width: 100%; box-sizing: border-box; resize: vertical; }   /* look: tide-glass-3.css (v2.2) */
 #town-body { display: flex; flex-direction: column; gap: 6px; }
 .town-note { font-size: 14px; margin: 2px 2px 6px; line-height: 1.4; }
 .dice-row { display: flex; gap: 8px; justify-content: center; margin: 4px 0; }
