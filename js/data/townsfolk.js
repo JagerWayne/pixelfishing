@@ -52,7 +52,7 @@ export function init() {
       chat: ['Your restaurant is a boat on dry land: everyone must row together.', 'Fresh fish, a little lemon, nothing else. The secret is: no secret.', 'You catch them, I cook them. A beautiful arrangement.', 'Bring me something rare one day and I will make you a dish to remember.'] },
     maren: { name: 'Maren', icon: '📮', role: 'Postmistress & cartographer',
       look: { eyeShape: 'cat', mouth: 'cat', gender: 'female', skin: 0, hairStyle: 'bun', hairColor: 3, facial: 'none', glasses: 'round', top: 'sweater', topColor: 5, topAccent: 0, bottom: 'skirt', bottomColor: 1, shoes: 'boots', shoeColor: 10, hat: 'none', hatColor: 0, height: 'm', build: 'slim' },
-      home: doorOf(TOWN.post, 0.7, 1.45), spots: [doorOf(TOWN.post, 0.7, 1.45), { x: -1.6, z: 8.6 }, { x: 5.6, z: 16.4 }],
+      home: doorOf(TOWN.post, 0.7, 1.45), spots: [doorOf(TOWN.post, 0.7, 1.45), { x: -1.6, z: 8.6 }, { x: 6.6, z: 18.4 }],
       chat: ['Every bottle that washes up has travelled further than most people ever will.', 'My charts say the Shelf drops away past six hundred metres. My knees say I will never check.', 'A parcel for the lighthouse jetty pays double. The sea is not in a hurry, but I am.', 'I draw the coastline from memory. It changes a little every winter.'] },
     barnaby: { name: 'Barnaby', icon: '🔨', role: 'Retired shipwright',
       look: { eyeShape: 'dot', mouth: 'flat', brows: 'bushy', gender: 'male', skin: 2, hairStyle: 'short', hairColor: 8, facial: 'mustache', glasses: 'round', top: 'vest', topColor: 9, topAccent: 1, bottom: 'jeans', bottomColor: 10, shoes: 'boots', shoeColor: 10, hat: 'flapcap', hatColor: 9, height: 'm', build: 'broad' },

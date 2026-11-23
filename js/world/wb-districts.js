@@ -5,21 +5,13 @@ import { COL, EXTRA_BENCHES, JOB_LANTERNS, TOWN, benchGroundY, townGround } from
 import { Colliders } from '../data/recipes.js';
 
 export const wbDistrictsStatics = {
-  /* Harbour Town's props (v12.0.0 positions from the town plan): the market stall on the Town Square, the Lookout
+  /* Harbour Town's props (v12.0.0 positions from the town plan; the square's stalls are in town-props.js): the Lookout
      Pavilion with its telescope and bench on Lighthouse Hill, the herb garden, the tide pool with its crab traps, the
      street lanterns, the dockhand's winch on the boardwalk and the benches with their lamps. The buildings are built
      by buildHarbourTown. Everything solid has a walk collider. */
   buildTownDistricts(root, fade, textures) {
     const K = this.propKit(textures), M = K.M, W = COL.WALK, out = { lanterns: [], trapFloats: [] };
     const stoneD = M(0x6b7280, 0.95);
-    // the market stall in the square's south-east corner
-    {
-      const S = TOWN.market, y = townGround(S.z);
-      const st = new THREE.Group(); st.position.set(S.x + 0.2, y, S.z + 0.2); root.add(st);
-      K.box(st, 1.6, 0.7, 0.7, K.wood, 0, 0.35, 0); [[-0.5, 0x60a5fa], [0, 0xf8fafc], [0.5, 0xf87171]].forEach(([x, c]) => K.box(st, 0.42, 0.16, 0.5, M(c, 0.8), x, 0.78, 0));
-      [-0.75, 0.75].forEach(x => K.cyl(st, 0.04, 0.04, 1.8, K.darkWood, x, 0.9, -0.3, 6)); K.box(st, 1.8, 0.05, 0.9, M(0x0e7490, 0.8), 0, 1.8, 0);
-      Colliders.box('market stall', S.x + 0.2, S.z + 0.2, 0.85, 0.4, W);
-    }
     // Lookout Pavilion: a six-post gazebo with a roof, a bench (reading spot) and a brass telescope pointing out to sea
     {
       const L = TOWN.lookout, y = townGround(L.z), g = new THREE.Group(); g.position.set(L.x, y, L.z); g.userData.townFade = true; root.add(g); fade.push(g);
@@ -48,6 +40,7 @@ export const wbDistrictsStatics = {
         K.box(bed, G.w, 0.28, 0.6, K.darkWood, 0, 0.14, 0); K.box(bed, G.w - 0.12, 0.05, 0.5, M(0x3f2a14, 1), 0, 0.29, 0);
         for (let i = 0; i < 7; i++) K.sph(bed, 0.13 + (i % 3) * 0.03, M(herb[(i + b) % 4], 0.9), -G.w / 2 + 0.3 + i * (G.w - 0.6) / 6, 0.4, (i % 2 ? 0.1 : -0.1), 6, 5);
         Colliders.box('herb bed', G.x, bz, G.w / 2 + 0.05, 0.32, W);
+        ModelKit.mergeStatic(bed, [], { bakeColor: true });   // v12.1.0: nothing on a bed changes
       }
     }
     // the tide pool on the east terrace: a ring of rocks around clear water, with three trap floats
