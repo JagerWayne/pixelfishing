@@ -72,9 +72,8 @@ function wireTwoTap(btn, idleText, action) {
   });
 }
 /* Start screen: version, Continue / New game */
-const GAME_VERSION = window.PF_VERSION;
 function refreshStartScreen() {
-  document.getElementById('start-version').textContent = `Pixel Fishing v${GAME_VERSION}`;
+  document.getElementById('start-version').textContent = '';   // v2.0: the version is in the title (logo and tab)
   document.getElementById('start-daily').innerHTML = dailyLine(true);
   const startBtn = document.getElementById('btn-start-game');
   const summary = document.getElementById('start-save-summary');

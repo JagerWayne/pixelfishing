@@ -54,7 +54,13 @@ function maybeStart() {
 }
 
 /* loadGame() resolves to the function that starts the game; it is called once three.js is in place */
+/* the version is part of the game's title: the browser tab, and the logo on the loading and start screens */
+function showTitle() {
+  document.title = window.PF_TITLE;
+  document.querySelectorAll('.start-logo').forEach(h => { if (h.querySelector('.logo-ver')) return; const s = document.createElement('span'); s.className = 'logo-ver'; s.textContent = ' v' + window.PF_VERSION; h.appendChild(s); });
+}
 export function boot(loadGame) {
+  showTitle();
   watchGameFiles();
   paint();
   downloadThree().then(ok => {
