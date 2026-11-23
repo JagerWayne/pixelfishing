@@ -1,5 +1,5 @@
 /* WorldBuilder method: buildHarbourTown, the planned town (v12.0.0): gate, streets, the Town Square (props in town-props.js),
-   the notice kiosk, your plot, every building of TOWN_BUILDINGS on the modern kit, the restaurant terrace, the trees. */
+   the notice kiosk, every building of TOWN_BUILDINGS on the modern kit, the restaurant terrace, the trees. */
 import { THREE } from '../engine/three.js';
 import { PixelTextureFactory } from '../render/texture-factory.js';
 import { ModelKit } from '../render/model-kit.js';
@@ -65,14 +65,6 @@ export const wbTownStatics = {
       [[-0.45, 1.3, 0xfef3c7], [0.05, 1.25, 0xfde68a], [0.5, 1.35, 0xf8fafc]].forEach(([x, y, c]) => K.box(k, 0.36, 0.44, 0.01, M(c, 0.9), x, y, 0.05));
       Colliders.box('notice kiosk', B.x, B.z, 0.9, 0.18, W);
       ModelKit.mergeStatic(k, [], { bakeColor: true });
-    }
-    // your plot on the east waterfront: a fresh lawn behind a low timber fence (open to the promenade) and its sign
-    {
-      const P = TOWN.plot, lawn = K.sharpBox(root, P.w, 0.04, P.d, M(0x3b7a30, 0.9), P.x, 1.52, P.z); lawn.receiveShadow = true;
-      const fence = (x, z, w, d) => { K.sharpBox(root, w, 0.7, d, K.lightWood, x, 1.85, z); Colliders.box('plot fence', x, z, w / 2 + 0.02, d / 2 + 0.02, W); };
-      fence(P.x, P.z + P.d / 2, P.w, 0.08); fence(P.x - P.w / 2, P.z, 0.08, P.d); fence(P.x + P.w / 2, P.z, 0.08, P.d);
-      const post = K.box(root, 0.08, 1.2, 0.08, km.frame, P.x - P.w / 2 + 1.2, 2.1, P.z - P.d / 2 + 0.3);
-      sign(root, '🏠 YOUR PLOT', 1.3, post.position.x, 2.6, post.position.z + 0.06);
     }
     // the buildings: one fade group each, a collider for the walls and one for each solid extra
     const groups = {};

@@ -28,7 +28,7 @@ export function buildStreetProps(K, km, root) {
       K.sph(set, 0.08, k % 3 ? flowerM[(k + i) % 5] : km.leaf2, fx, y(z) + 0.22, fz, 6, 4);
     }
   });
-  EXTRA_BENCHES.slice(6).forEach(b => {                                         // a bin on the other side of each town bench
+  EXTRA_BENCHES.filter(b => b.z > 7).forEach(b => {                                         // a bin on the other side of each town bench
     const x = b.x - 1.1, z = b.z + 0.15;
     K.cyl(set, 0.2, 0.17, 0.75, steel, x, y(z) + 0.38, z, 10); K.cyl(set, 0.22, 0.22, 0.06, km.frame, x, y(z) + 0.78, z, 10);
     Colliders.circle('bin', x, z, 0.22, W);

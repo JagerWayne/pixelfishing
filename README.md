@@ -84,7 +84,7 @@ The action button changes with context: *Walk Edge*, *Hold Cast*, *Shop*, *Bount
 
 The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) and a **42 m waterfront boardwalk** (twice as long since v4.6.0) with every shop along its sea edge, backs to the sea and fronts facing south (toward the island), like the Tackle Shop. Walk right up to a stand (about one metre from its front) and press the action button; the button only changes when you are that close. Stop in front of a shop and the camera zooms in on it.
 
-**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Cabin. All fronts face south and every back is on the sea rail. **Since v12.1.0** the shops match the town: white render, timber-slatted sides, dark mono-pitch roofs, an awning in each shop's colours, a glass corner window and a wall lamp that glow at night; the Tackle Shop has a steel frame, a slatted back wall and a flat roof, and Recycling a slatted timber screen and a roof over its skips. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `CABIN` in `js/world/layout.js`.
+**Harbour layout (since v4.9.0), left to right as you look at the harbour from the island:** Boatyard (big), Dive Shop (big), Tackle Shop (small), Bounty board, **the pier**, Recycling (three skips), Fish Market (small), Aquarium Shop, and at the east end a **seating deck** with two benches, planters and a flagpole (where the old cabin stood until v12.2.0; your cabin is now in town). All fronts face south and every back is on the sea rail. **Since v12.1.0** the shops match the town: white render, timber-slatted sides, dark mono-pitch roofs, an awning in each shop's colours, a glass corner window and a wall lamp that glow at night; the Tackle Shop has a steel frame, a slatted back wall and a flat roof, and Recycling a slatted timber screen and a roof over its skips. The layout numbers live in `SHORE_SHOPS`, `RECYCLE` and `SEA_DECK` in `js/world/layout.js`.
 
 **Shops (each has its own trade; none is a menu):**
 
@@ -102,12 +102,16 @@ The pier is a small harbour: a 6.9 m wide pier (widened from 4.9 m in v4.5.0) an
 - **Accessible:** the sheet is a proper dialog for screen readers; the departments are a real tab list (arrow keys, Home / End, `1` to `5`), arrow up / down moves between buttons, focus stays inside the sheet and returns to the right button after a confirmation, `Esc` closes, every button says what it acts on (*Buy Carbon Surf Rod for $750*), results are announced, buttons are at least 44 px and the slide animations are off when your device asks for reduced motion. The town counters (noticeboard, Post Office, tavern, traps, workshop, greenhouse, bunk) use the same cards.
 - The pictures are the goods' 3D models, rendered once to small images and cached, so every shop item has a model (`WorldBuilder.buildShopItem`).
 
-**The cabin** (right end of the boardwalk) is a walk-in room: the **bottle gallery** on the back wall to the left, the **aquarium** to the right, and a bunk bed, rug, lamp and window. Stand beside the **bunk** and the action button says **🛏️ SLEEP**: it opens the bunk sheet with the **🏆 Trophy Wall** (mount your heaviest fish over 18 kg, or a boss you landed, on a plaque above the bunk: a 3D replica with species, weight, zone and day) and, from 18:00, **Sleep**: the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one). The front wall and roof fade away while you are inside so the camera can see in.
+**Your cabin (since v12.2.0)** is a modern single-storey beach house on its own plot on the east waterfront of Harbour Town (tap it, or **Cabin** on the Map, and you walk to its door on Market Lane). White render, timber-slatted sides, a flat roof with solar panels and a deep overhang over a **timber deck on the sea side** (two sun loungers), a front garden with flower beds, a tree and your **mailbox** (the cabin's mail stop). Inside:
+- **Living room:** the **bottle gallery** and the **aquarium** on the back wall (room for every tank up to the 4.3 m Grand Aquarium), a sofa facing the tank, a lamp, and the **📚 bookshelf** on the west wall: press **BOOKS** for your skill books.
+- **Bedroom** (behind a partition): the **bunk** and the **👕 wardrobe**: press **WARDROBE** to open Customise.
+- Stand beside the **bunk** and the action button says **🛏️ SLEEP**: it opens the bunk sheet with the **🏆 Trophy Wall** (mount your heaviest fish over 18 kg, or a boss you landed, on a plaque above the bunk: a 3D replica with species, weight, zone and day) and, from 18:00, **Sleep**: the screen fades and you wake at **06:00** the next morning (a new day: weather, moon, market prices and the aquarium's daily care move on, and the restaurant keeps serving through the evening) having **read 30 pages** of your selected book (the last one opened on a bench, else the first unfinished one).
+- While you are inside, the roof and any wall between the camera and you fade away so the camera can see in. The windows, the door lamp and the pendant lamps light up at night.
 
 In **third person the island's palms, cottages and bushes are hidden** so the camera never gets stuck behind them; first person shows them again.
 
 | 📋 **Bounty Board** | Your three open contracts are written on papers pinned to the board (title, task, reward, progress). Tap a finished paper (marked READY) or press the action button to claim it. |
-| 📜 **Bottle Gallery** (cabin, back wall left) | Browse the message-in-a-bottle collection. |
+| 📜 **Bottle Gallery** (your cabin in town, living room) | Browse the message-in-a-bottle collection. |
 | 🎬 **Camera filters** (side drawer → **🎬 Filter**, since v6.6.2; the cabin's film camera is gone) | Change the camera filter (**Normal**, **8-Bit CRT Monitor**, **Pixelate** and **Pocket DMG-01**, a four-shade handheld look with dithering and dark outlines so boats and fish stay readable) and press **📸 SNAP POSTCARD** to save the current view as a retro postcard PNG (it includes the zone and lens name). |
 | 🧰 **Tackle Toolbox** | Pick which bait to fish with. |
 | 🪣 **Catch Bucket** (open cooler, fish box or freezer depending on your upgrade) | See and manage what you caught. |
@@ -339,7 +343,7 @@ Prices move every in-game day (every 7 real minutes since v6.2.0). Each fish spe
 
 ## The Aquarium
 
-Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the Trophy Case). The tank grows with each tier (1.8 m wide for the Starter Tank up to 4.3 m for the Grand Aquarium) and the Cabin is wide enough for the biggest. Stand in front of it: the angler steps out of the picture and the camera slowly sweeps along the glass from the right end to the left end and back (it stays still when the whole tank fits on screen). Press **AQUARIUM** and a paper sheet opens with four tabs:
+Since v5.0.0 a working **aquarium** fills the back wall of your cabin's living room (it replaced the Trophy Case; the cabin moved into town in v12.2.0). The tank grows with each tier (1.8 m wide for the Starter Tank up to 4.3 m for the Grand Aquarium) and the Cabin is wide enough for the biggest. Stand in front of it: the angler steps out of the picture and the camera slowly sweeps along the glass from the right end to the left end and back (it stays still when the whole tank fits on screen). Press **AQUARIUM** and a paper sheet opens with four tabs:
 
 - **🐠 Fish:** what lives in the tank, with weight, value and mood; each can go back into your bucket or be released.
 - **➕ Add:** the fish in your bucket, each with an *Add* button, or the reason it cannot go in. **Only fish go in, and large fish never do.** Each tank has a largest fish it can hold and a limit on room (a fish takes about its weight to the power 0.8 of room, at least 1):
@@ -356,7 +360,7 @@ Since v5.0.0 a working **aquarium** fills the Cabin's back wall (it replaced the
 - **🧽 Care:** food, cleanliness and happiness bars. Fish eat and foul the water as in-game days pass (more fish, faster): *Fish flakes* are free (+35 food), *Premium pellets* fill the bar (from your stock), *Clean the tank* is free and a *Deep clean* (one kit) also halves the dirt for 3 days. Visitors pay tickets that you *Collect* here.
 - **🪸 Decor:** every decoration you own, with *Remove* (it goes to storage) or *Place* (free, when a slot is free). Removed decorations are never bought again.
 
-**The Aquarium Shop** (on the boardwalk between the Fish Market and the Cabin) is a catalogue like the Tackle Shop: **Tanks** (each upgrade), **Decor** (eight decorations: plants, rocks, driftwood, coral, castle, chest, shipwreck, light show; a purchase goes straight into the tank, or into storage when the slots are full), **Care** (*Premium pellets*, 5 feeds for $90; *Deep-clean kit*, $60) and **Book** (*The Aquarist's Handbook*).
+**The Aquarium Shop** (on the boardwalk, east of the Fish Market) is a catalogue like the Tackle Shop: **Tanks** (each upgrade), **Decor** (eight decorations: plants, rocks, driftwood, coral, castle, chest, shipwreck, light show; a purchase goes straight into the tank, or into storage when the slots are full), **Care** (*Premium pellets*, 5 feeds for $90; *Deep-clean kit*, $60) and **Book** (*The Aquarist's Handbook*).
 
 **Breeding:** two or more grown fish of one species, kept happy (60%+), can have fry on any day (40% chance per species). Fry are tiny, grow up over a few days (never past the tank's limit) and may be a **colour form** (golden, albino or midnight: 2x, 2x, 3x tickets) that can pass on. Each new species you keep adds 3% to all tickets, and six new achievements cover it (*Fish Keeper*, *Reef Keeper*, *Aquarist*, *Full House*, *Fish Breeder*, *Rare Colour*). A catch that would fit the tank says so in its reveal.
 
@@ -370,7 +374,7 @@ Behind the boardwalk, open along its whole length (the **🏘️ Harbour Town** 
 - **Harbour Promenade:** a paved street along the whole town front, with benches, palms and the **📌 notice kiosk** at the gate.
 - **Harbour Street:** the main street, running from the gate straight up to the **Town Square**. The square has a modern fountain (a square basin, a stepped centre and four jets), **three market stalls** (fish, fruit and crafts under striped canopies), bunting across the street, a **wayfinding signpost** (Upper Terrace, Garden Quarter, Artisan Quarter, Harbour), **your restaurant** (named after you, with its terrace) on the west side and the **📮 Post Office** on the east.
 - **Garden Lane (west):** leads past **🌿 Talia's greenhouse** and her herb garden on the waterfront, then up the hill path to **Lighthouse Hill**.
-- **Market Lane (east):** leads to the **🦀 tide pool**. **🔨 Barnaby's Workshop**, a boat shed, stands on the waterfront, next to **🏡 your plot**, where your new cabin will be built (v12.2.0).
+- **Market Lane (east):** leads to the **🦀 tide pool**. **🔨 Barnaby's Workshop**, a boat shed, stands on the waterfront, next to **🏠 your cabin** (v12.2.0) on its own plot.
 - **Upper Terrace:** steps from the square climb 1.8 m to it. On Terrace Lane stand the homes of **🔬 Ines**, **🧒 Pip**, **⚓ Rook** and **🗼 Marta**. The **🍺 Sailors' Rest** closes the top of Harbour Street (you see it from the gate), and the **🔭 Lookout Pavilion** sits at the west end.
 
 **The buildings** are modern coastal houses: white render, timber cladding with vertical slats, dark metal roofs (flat, mono-pitch or gable), large framed windows that **glow at night**, and a front door with a canopy, a door mat, a wall lamp and a sign. Paved streets in stone, lanes in terracotta, planned trees and street lanterns, plus street furniture (v12.1.0): concrete planters, flower beds, a bin beside every town bench, bike racks, bollards at the gate and low hedges beside the terrace homes.
@@ -405,6 +409,7 @@ Behind the boardwalk, open along its whole length (the **🏘️ Harbour Town** 
 | 🍺 Sailors' Rest | **DICE** (16:00 to 02:00) | *Ship, Captain & Crew* against Rook, Maren or Old Salty, for bait or $10 / $50 / $100 |
 | 🦀 Tide pool | **TRAPS** | Up to 3 crab traps ($8 bait each), haul them up from the next day: shore crabs, blue crabs and lobsters become **shellfish** in your restaurant pantry, pearls sell for $80 to $160 |
 | 🔨 Workshop | **PAINT** | Hull, trim and pennant colours (12 colours, $40 a coat) for every boat you own |
+| 🏠 Your cabin (inside, v12.2.0) | **AQUARIUM**, **GALLERY**, **BOOKS**, **WARDROBE**, **SLEEP** | Your aquarium and bottle gallery, your skill books (bookshelf), Customise (wardrobe), the bunk sheet with the Trophy Wall |
 | 🌿 Greenhouse | **HERBS** | Brew a herbal lure (3 herbs → 5 Garden Worms) and sell sea plants for 25% more than Recycling |
 | 🔭 Telescope | **LOOK** | A zoomed view over the sea: drag (or hold ◀ ▶) to pan; keep the view on a feeding frenzy, treasure beam or boss shadow and it is **marked on your Map**. The first look each day can reveal a chest out on the reef and sometimes a boss on the Open Shelf. |
 
@@ -661,7 +666,7 @@ The game modules, by folder (every file starts with a one- or two-line comment s
 | `js/audio/` | The Web Audio engine (`AudioEngine`) and its sound groups: ambience and diving, fishing, the fight |
 | `js/data/` | Data tables: equipment (boats, modules, rods, bait, buckets), the catch catalogue, zones and weather, bottles and bounties, townsfolk, quests, recipes; the `Colliders` registry |
 | `js/render/` | Renderer, scene, camera, screen shader, lights and shadows, textures and icons, `ModelKit`, particles (`VFXManager`), the catch and live-bait previews |
-| `js/world/` | World layout constants, **the town plan** (`town-plan.js`: every town building, street, tree, bench and lantern, with the door helpers `doorOf` / `atDoor`), the modern building kit (`town-kit.js`), the landmark details (`town-landmarks.js`, `town-landmarks-2.js`), the square's fountain and stalls (`town-props.js`) and the street furniture (`town-street-props.js`) and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
+| `js/world/` | World layout constants, **the town plan** (`town-plan.js`: every town building, street, tree, bench and lantern, with the door helpers `doorOf` / `atDoor`), the modern building kit (`town-kit.js`), the landmark details (`town-landmarks.js`, `town-landmarks-2.js`), the square's fountain and stalls (`town-props.js`) and the street furniture (`town-street-props.js`), the cabin's rooms and surroundings (`cabin-rooms.js`, `cabin-outside.js`) and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
 | `js/angler/` | The character: look options, `AnglerFactory` (proportions, faces, rig, skinned geometry, `dress`) and `AnglerAnimator` |
 | `js/sim/` | Runtime state, the stick and controls state, interaction spots, tap-to-walk, the sky and first-person camera, `updateSimulation` and the frame loop (`animate`) |
 | `js/boat/` | Fishing stations, boat handling and hull motion, boarding, the boat terminal |
@@ -726,6 +731,15 @@ For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-23, Version 12.2.0: your cabin in town (town rewrite, part 3)
+
+- **A new cabin on your plot:** a modern beach house on the east waterfront of Harbour Town, with a timber deck and sun loungers on the sea side, a front garden and a mailbox on Market Lane. It is `TOWN.cabin` in the town plan; every room position is in `CABIN`.
+- **Rooms:** a living room with the bottle gallery, the aquarium (every tier fits, up to the 4.3 m Grand Aquarium), a sofa and a new **📚 bookshelf** (your skill books), and a bedroom with the bunk, the Trophy Wall and a new **👕 wardrobe** (opens Customise).
+- **Seeing in:** the roof and any wall between the camera and you fade while you are inside; windows and lamps glow at night.
+- **Walking:** tap the cabin to walk to its door; the town's walking graph now has points inside the cabin. The cabin mail stop is the mailbox.
+- **The boardwalk:** the old cabin spot is a seating deck with two benches and lamps, planters and a flagpole.
+- **Performance:** each fading wall is merged on its own; the cabin view costs about 190 draw calls (the empty plot about 165); the rest of the harbour is unchanged.
 
 ### 2026-11-23, Version 12.1.0: landmarks and street detail (town rewrite, part 2)
 

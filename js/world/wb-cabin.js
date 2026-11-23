@@ -1,7 +1,11 @@
-/* WorldBuilder methods: the recycling stand and the cabin. */
+/* WorldBuilder methods: the recycling stand and the cabin (v12.2.0, in town). */
 import { THREE } from '../engine/three.js';
 import { PixelTextureFactory } from '../render/texture-factory.js';
 import { CABIN } from './layout.js';
+import { townKitMaterials } from './town-kit.js';
+import { ModelKit } from '../render/model-kit.js';
+import { furnishCabin } from './cabin-rooms.js';
+import { buildCabinOutside } from './cabin-outside.js';
 
 export const wbCabinStatics = {
   /* ------------------------------------------------------------------
@@ -45,55 +49,66 @@ export const wbCabinStatics = {
   },
 
   /* ------------------------------------------------------------------
-     CABIN (v4.9.0): a walk-in room on the boardwalk. Local origin: centre of the back wall on the rail (z 0),
-     x from -W/2 to W/2, z from 0 to D. The front wall and the roof are separate groups (userData.front / .roof) that
-     fade out while the player is inside, so the chase camera can see in. The gallery and trophy case stand on the
-     back wall, the bunk.
+     CABIN (v12.2.0): a modern single-storey beach house on your plot in town. Local origin: the centre of the back
+     wall (north, toward the sea) at floor level; x from -W/2 to W/2, z from 0 (back) to D (front, the door, +Z).
+     The walls are fade groups (userData.fadeWalls: { grp, side }) and the roof (userData.roof) fades while you are
+     inside, so the chase camera can see in from any side (updateCabinFade). The furniture is cabin-rooms.js, the
+     deck and the garden cabin-outside.js. The gallery and the aquarium are built by buildWorld on the back wall.
      ------------------------------------------------------------------ */
   buildCabin(textures) {
-    const g = new THREE.Group(), K = this.propKit(textures), C = CABIN;
-    const W = C.w, D = C.d, H = 2.7, T = 0.14, hw = W / 2;
-    const wallM = () => K.M(0xb08a5a, 0.85, 0, { map: textures.wood }), trimM = () => K.M(0x4a2c16, 0.9), roofM = () => K.M(0x7f1d1d, 0.75);
-    const front = new THREE.Group(), roof = new THREE.Group(); g.add(front, roof);
-    g.userData.front = front; g.userData.roof = roof;
-    // floor, a step at the door
-    K.box(g, W, 0.1, D + 0.2, K.lightWood, 0, 0.05, D / 2 - 0.05);
-    K.box(g, C.doorW + 0.6, 0.08, 0.5, K.darkWood, 0, 0.04, D + 0.3);
-    // back wall
-    K.box(g, W, H, T, wallM(), 0, H / 2, -0.02);
-    // side walls
-    [-1, 1].forEach(sd => K.box(g, T, H, D + 0.1, wallM(), sd * (hw - T / 2), H / 2, D / 2));
-    // corner posts
-    [-1, 1].forEach(sx => [0, D].forEach(z => K.box(g, 0.18, H + 0.05, 0.18, trimM(), sx * (hw - 0.05), H / 2, z)));
-    // front wall (fades): two pieces and a lintel round the door, a sign over it
-    const dz = D + 0.05, dw = C.doorW / 2;
-    K.box(front, hw - dw, H, T, wallM(), -(hw + dw) / 2, H / 2, dz); K.box(front, hw - dw, H, T, wallM(), (hw + dw) / 2, H / 2, dz);
-    K.box(front, C.doorW, H - 2.15, T, wallM(), 0, 2.15 + (H - 2.15) / 2, dz);
-    [-dw, dw].forEach(x => K.box(front, 0.12, 2.2, 0.2, trimM(), x, 1.1, dz)); K.box(front, C.doorW + 0.24, 0.12, 0.2, trimM(), 0, 2.2, dz);
-    K.box(front, 1.5, 0.34, 0.06, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🏠 CABIN', 256, 64) }), 0, 2.45, dz + 0.1);
-    [[-1, 1], [1, 1]].forEach(([sd]) => { K.box(front, 0.9, 0.7, 0.05, K.M(0x9bdcf2, 0.2, 0.1, { transparent: true, opacity: 0.55 }), sd * (hw + dw) / 2, 1.5, dz + 0.04); K.box(front, 1.0, 0.8, 0.04, trimM(), sd * (hw + dw) / 2, 1.5, dz + 0.01); });
-    // gabled roof (ridge along X) with eaves
-    {
-      const shape = new THREE.Shape(), half = D / 2 + 0.45, rh = 1.05;
-      shape.moveTo(-half, 0); shape.lineTo(half, 0); shape.lineTo(0, rh); shape.closePath();
-      const geo = new THREE.ExtrudeGeometry(shape, { depth: W + 0.5, bevelEnabled: false });
-      geo.translate(0, 0, -(W + 0.5) / 2);
-      const r = new THREE.Mesh(geo, roofM()); r.rotation.y = Math.PI / 2; r.position.set(0, H, D / 2 - 0.05); roof.add(r);
-      K.box(roof, W + 0.6, 0.08, 0.14, trimM(), 0, H + 0.02, D / 2 - 0.05 + half - 0.02); K.box(roof, W + 0.6, 0.08, 0.14, trimM(), 0, H + 0.02, D / 2 - 0.05 - half + 0.02);
-      K.box(roof, 0.5, 0.7, 0.5, K.M(0x78716c, 0.95), hw - 1.0, H + 0.9, 0.6);   // chimney
+    const g = new THREE.Group(), K = this.propKit(textures), C = CABIN, km = townKitMaterials(K);
+    const W = C.w, D = C.d, H = 2.8, T = 0.14, hw = W / 2, dx = C.doorX, dw = C.doorW / 2;
+    const box = (p, w, h, d, m, x, y, z) => K.sharpBox(p, w, h, d, m, x, y, z);
+    const roof = new THREE.Group(); g.add(roof); g.userData.roof = roof; g.userData.fadeWalls = [];
+    const wall = side => { const grp = new THREE.Group(); g.add(grp); g.userData.fadeWalls.push({ grp, side }); return grp; };
+    // each fade group has its own materials (fading changes their opacity)
+    const mats = () => ({ render: K.M(0xf8fafc, 0.9), clad: K.M(0xd9b48a, 0.9), slat: K.M(0x9c7b58, 0.9), frame: K.M(0x1f2937, 0.9),
+      glass: Object.assign(K.M(0x8fbfcf, 0.12, 0.25, { emissive: new THREE.Color(0xffc56e), emissiveIntensity: 0 }), { userData: { glow: 'window' } }) });
+    const win = (p, m, w, h, x, y, z, side) => {   // four frame bars round a pane; side 0: front or back wall, ±1: a side wall
+      const bar = (bw, bh, ox, oy) => side ? box(p, 0.08, bh, bw, m.frame, x, y + oy, z + ox) : box(p, bw, bh, 0.08, m.frame, x + ox, y + oy, z);
+      bar(w + 0.12, 0.06, 0, h / 2 + 0.03); bar(w + 0.12, 0.06, 0, -h / 2 - 0.03); bar(0.06, h, -w / 2 - 0.03, 0); bar(0.06, h, w / 2 + 0.03, 0);
+      if (side) box(p, 0.03, h, w, m.glass, x, y, z); else box(p, w, h, 0.03, m.glass, x, y, z);
+    };
+    box(g, W + 0.3, 0.1, D + 0.3, km.concrete, 0, -0.03, D / 2);                          // plinth
+    box(g, W - 0.1, 0.04, D - 0.1, K.M(0xc89f6e, 0.9), 0, 0.02, D / 2);                 // oak floor
+    for (let x = -hw + 0.5; x < hw; x += 0.5) box(g, 0.01, 0.045, D - 0.1, K.M(0xa57f52, 0.9), x, 0.02, D / 2);
+    { // back wall: render with a glass band along the top (the gallery and the aquarium stand in front of it)
+      const b = wall('back'), m = mats();
+      box(b, W, 2.4, T, m.render, 0, 1.2, -T / 2); box(b, W, 0.12, T, m.render, 0, H - 0.06, -T / 2);
+      for (let x = -hw + 0.1; x < hw - 0.1; x += 1.1) box(b, 0.08, 0.28, T + 0.02, m.frame, x, 2.54, -T / 2);
+      box(b, W - 0.1, 0.28, 0.03, m.glass, 0, 2.54, -T / 2);
+      box(b, W + 0.02, 1.0, 0.04, m.clad, 0, 0.5, -T - 0.02);                            // timber skirt outside
     }
-    // inside: rug, bunk bed on the right, a hanging lamp, a lifebuoy
-    K.box(g, 2.4, 0.02, 1.5, K.M(0xb91c1c, 0.95), 0.1, 0.11, 2.0); K.box(g, 2.0, 0.025, 1.1, K.M(0xfde68a, 0.95), 0.1, 0.115, 2.0);
-    {
-      const bx = hw - 0.62, bz = 2.55;
-      [[-0.42, -0.85], [0.42, -0.85], [-0.42, 0.85], [0.42, 0.85]].forEach(([x, z]) => K.box(g, 0.07, 1.5, 0.07, K.darkWood, bx + x, 0.85, bz + z));
-      [0.42, 1.12].forEach((y, k) => { K.box(g, 0.9, 0.12, 1.75, K.darkWood, bx, y, bz); K.box(g, 0.84, 0.1, 1.6, K.M(k ? 0x1d4ed8 : 0x0f766e, 0.9), bx, y + 0.1, bz); K.box(g, 0.6, 0.1, 0.34, K.M(0xf8fafc, 0.9), bx, y + 0.2, bz + 0.62); });
-      K.box(g, 0.05, 0.9, 0.4, K.darkWood, bx - 0.45, 0.8, bz + 0.98);
+    [-1, 1].forEach(sd => { // side walls: render inside, timber slats outside, one tall window each
+      const b = wall(sd < 0 ? 'west' : 'east'), m = mats(), x = sd * (hw - T / 2);
+      box(b, T, H, D + T, m.render, x, H / 2, D / 2 - T / 2);
+      box(b, 0.04, H - 0.1, D, m.clad, x + sd * 0.09, H / 2, D / 2);
+      for (let z = 0.3; z < D; z += 0.32) if (Math.abs(z - 4.0) > 0.45) box(b, 0.03, H - 0.1, 0.035, m.slat, x + sd * 0.12, H / 2, z);
+      win(b, m, 0.7, 1.6, x + sd * 0.16, 1.35, 4.0, sd);
+    });
+    { // front wall: the doorway (open), a wide window by the sofa, the bedroom window, a canopy, lamp and sign
+      const f = wall('front'), m = mats(), z = D + T / 2, piece = (x0, x1, y0, y1) => box(f, x1 - x0, y1 - y0, T, m.render, (x0 + x1) / 2, (y0 + y1) / 2, z);
+      piece(-hw, dx - dw, 0, H); piece(dx + dw, -1.75, 0, H); piece(1.75, 3.2, 0, H); piece(4.9, hw, 0, H);
+      piece(dx - dw, dx + dw, 2.25, H); piece(-1.75, 1.75, 0, 0.5); piece(-1.75, 1.75, 2.35, H); piece(3.2, 4.9, 0, 1.0); piece(3.2, 4.9, 2.2, H);
+      win(f, m, 3.5, 1.85, 0, 1.42, z, 0); win(f, m, 1.7, 1.2, 4.05, 1.6, z, 0);
+      box(f, 0.08, 2.3, T + 0.04, m.frame, dx - dw, 1.13, z); box(f, 0.08, 2.3, T + 0.04, m.frame, dx + dw, 1.13, z); box(f, C.doorW + 0.16, 0.08, T + 0.04, m.frame, dx, 2.27, z);
+      { const a = 1.3; box(f, C.doorW - 0.1, 2.1, 0.05, K.M(0x7c5a3a, 0.9), dx + dw - 0.6 * Math.cos(a), 1.08, D - 0.6 * Math.sin(a)).rotation.y = Math.PI - a; }   // the door, open inward
+      box(f, 2.0, 0.08, 0.9, m.frame, dx, 2.5, D + 0.45);
+      box(f, 0.16, 0.24, 0.12, Object.assign(K.M(0xfff1c2, 0.4, 0, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0 }), { userData: { glow: 'lamp' } }), dx + dw + 0.3, 1.95, D + 0.22);
+      box(f, W + 0.02, 0.14, 0.05, K.M(0x0e7490, 0.9), 0, H - 0.1, D + T + 0.01);       // teal accent fascia
+      K.box(f, 1.3, 0.3, 0.05, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('🏠 HOME', 256, 64) }), -hw + 1.1, 1.95, D + T + 0.03);
     }
-    K.cyl(g, 0.012, 0.012, 0.7, K.iron, 0.0, 2.35, 1.8, 4);
-    K.cyl(g, 0.16, 0.2, 0.28, K.M(0xfacc15, 0.3, 0.3, { emissive: new THREE.Color(0xf59e0b), emissiveIntensity: 0.9 }), 0.0, 1.95, 1.8, 8);
-    const lb = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.07, 6, 14), K.M(0xf97316, 0.6)); lb.position.set(-hw + 0.1, 1.6, 2.4); lb.rotation.y = Math.PI / 2; g.add(lb);
-    [front, roof].forEach(grp => grp.traverse(o => { if (o.isMesh) { o.material.transparent = true; } }));
+    { // flat roof with a deep overhang over the sea deck, on two posts
+      const m = mats();
+      box(roof, W + 0.6, 0.2, D + 2.4, km.roof, 0, H + 0.1, D / 2 - 0.8);
+      box(roof, W + 0.64, 0.22, 0.06, m.render, 0, H + 0.1, D / 2 - 0.8 + (D + 2.4) / 2);
+      box(roof, W + 0.64, 0.22, 0.06, m.render, 0, H + 0.1, D / 2 - 0.8 - (D + 2.4) / 2);
+      [-4.3, 4.3].forEach(x => box(roof, 0.12, H, 0.12, m.frame, x, H / 2, -1.85));
+      [-0.55, 0.55].forEach(x => { const pnl = box(roof, 0.9, 0.05, 1.3, km.solar, x + 2.6, H + 0.38, D / 2 - 0.2); pnl.rotation.x = -0.3; });
+    }
+    furnishCabin(K, km, g, C); buildCabinOutside(K, km, g, C);
+    // each fade group is merged on its own (its baked material stays its own, so it can fade), then made fadeable
+    [roof, ...g.userData.fadeWalls.map(w => w.grp)].forEach(grp => { ModelKit.mergeStatic(grp, [], { bakeColor: true }); grp.traverse(o => { if (o.isMesh) o.material.transparent = true; }); });
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return g;
   },

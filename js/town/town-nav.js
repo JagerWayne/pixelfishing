@@ -44,7 +44,9 @@ export function townNavInit() {
   });
   const S = TOWN.square;
   for (let x = S.x0 + 1.2; x < S.x1; x += 3.2) for (let z = S.z0 + 1.0; z < S.z1; z += 3.0) N.push({ x, z });
-  TOWN_BUILDINGS.concat(['board']).forEach(id => N.push(doorOf(TOWN[id], 0.8)));
+  TOWN_BUILDINGS.concat(['board', 'cabin']).forEach(id => N.push(doorOf(TOWN[id], 0.8)));
+  // v12.2.0: inside your cabin, behind the door, in the living room and in the bedroom
+  N.push(doorOf(TOWN.cabin, -0.9), doorOf(TOWN.cabin, -1.6), doorOf(TOWN.cabin, -1.6, 6.6), doorOf(TOWN.cabin, -3.0, 2.6));
   N.push({ x: TOWN.scope.x, z: TOWN.scope.z + 0.75 }, { x: TOWN.pool.x - TOWN.pool.r - 0.8, z: TOWN.pool.z });   // behind the telescope, beside the pool
   townNav.nodes = N.filter(p => !townBlocked(p.x, p.z));
   townNav.adj = townNav.nodes.map((a, i) => townNav.nodes.map((b, j) => (i !== j && Math.hypot(a.x - b.x, a.z - b.z) < 14 && townSegClear(a, b) ? Math.hypot(a.x - b.x, a.z - b.z) : 0)));

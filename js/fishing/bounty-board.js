@@ -4,6 +4,7 @@ import { shared } from '../state.js';
 import { BAIT_TIERS, sfx } from '../data/equipment.js';
 import { BOUNTY_POOL } from '../data/bottles-bounties.js';
 import { CABIN } from '../world/layout.js';
+import { camera } from '../render/renderer.js';
 import { world } from '../render/lights.js';
 import { pickBounties } from './bounties.js';
 import { addXp, bumpStat } from '../save/career.js';
@@ -74,16 +75,25 @@ export function updateBountyPapers(dt) {
     }
   });
 }
-/* the cabin's front wall and roof fade out while you are inside, so the chase camera can see in */
-const cabinFade = { t: 1, mats: null };
+/* v12.2.0: while you are inside the cabin its roof fades, and so does each wall the camera is behind (the camera is
+   outside that wall), so the chase camera can see in from any side */
+const cabinFade = { parts: null };
 export function updateCabinFade(dt) {
   const c = world && world.cabin; if (!c) return;
-  if (!cabinFade.mats) { cabinFade.mats = []; [c.userData.front, c.userData.roof].forEach(grp => grp.traverse(o => { if (o.isMesh && o.material) cabinFade.mats.push(o.material); })); }
-  const inside = !shared.onBoat && Math.abs(shared.playerX - CABIN.x) < CABIN.w / 2 + 0.2 && shared.playerZ > -0.2 && shared.playerZ < CABIN.d + 1.3;
-  const target = inside ? 0.1 : 1, prev = cabinFade.t;
-  cabinFade.t += (target - cabinFade.t) * Math.min(1, dt * 6);
-  if (Math.abs(cabinFade.t - target) < 0.01) cabinFade.t = target;
-  if (cabinFade.t !== prev || dt === 0) { const t = cabinFade.t; cabinFade.mats.forEach(m => { m.opacity = t; m.depthWrite = t > 0.9; }); [c.userData.front, c.userData.roof].forEach(grp => { grp.visible = t > 0.02; }); }
+  if (!cabinFade.parts) cabinFade.parts = [{ grp: c.userData.roof, side: 'roof' }, ...c.userData.fadeWalls].map(p => {
+    const mats = []; p.grp.traverse(o => { if (o.isMesh && o.material && !mats.includes(o.material)) mats.push(o.material); });
+    return { grp: p.grp, side: p.side, mats, t: 1 };
+  });
+  const px = shared.playerX - CABIN.x, pz = shared.playerZ - CABIN.z, hw = CABIN.w / 2;
+  const inside = !shared.onBoat && Math.abs(px) < hw + 0.2 && pz > -0.2 && pz < CABIN.d + 0.3;
+  const cx = camera.position.x - CABIN.x, cz = camera.position.z - CABIN.z;
+  const behind = { roof: true, front: cz > CABIN.d - 0.2, back: cz < 0.2, west: cx < -hw + 0.2, east: cx > hw - 0.2 };
+  cabinFade.parts.forEach(p => {
+    const target = inside && behind[p.side] ? 0.1 : 1, prev = p.t;
+    p.t += (target - p.t) * Math.min(1, dt * 6);
+    if (Math.abs(p.t - target) < 0.01) p.t = target;
+    if (p.t !== prev || dt === 0) { p.mats.forEach(m => { m.opacity = p.t; m.depthWrite = p.t > 0.9; }); p.grp.visible = p.t > 0.02; }
+  });
 }
 export function claimBounty(idx) {
   const b = (shared.state.bounties || [])[idx];

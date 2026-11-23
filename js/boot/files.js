@@ -169,6 +169,8 @@ self.PF_FILES = [
   'js/ui/tracker.js',
   'js/ui/trophies.js',
   'js/ui/world-callout.js',
+  'js/world/cabin-outside.js',
+  'js/world/cabin-rooms.js',
   'js/world/layout.js',
   'js/world/town-kit.js',
   'js/world/town-landmarks.js',

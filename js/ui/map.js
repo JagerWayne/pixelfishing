@@ -1,7 +1,7 @@
 /* The harbour map: places, view, zoom and the map sheet. */
 import { THREE } from '../engine/three.js';
 import { shared } from '../state.js';
-import { CABIN, EXTRA_BENCHES, PLATFORM, RECYCLE, SHORE_SHOPS, TOWN, doorOf } from '../world/layout.js';
+import { EXTRA_BENCHES, PLATFORM, RECYCLE, SHORE_SHOPS, TOWN, doorOf } from '../world/layout.js';
 import { restoName } from '../data/recipes.js';
 import { renderer, scene } from '../render/renderer.js';
 import { world } from '../render/lights.js';
@@ -23,7 +23,7 @@ export const MAP_PLACES = () => [
   { icon: '♻️', name: 'Recycling', desc: 'Sell the junk and seaweed you reel in.', x: RECYCLE.x, z: RECYCLE.d / 2, w: RECYCLE.w, d: RECYCLE.d, col: '#22c55e' },
   { icon: '🐟', name: 'Fish Market', desc: 'Sell your fish.', x: SHORE_SHOPS.fish.x, z: SHORE_SHOPS.fish.z, w: SHORE_SHOPS.fish.w, d: SHORE_SHOPS.fish.d, col: SHORE_SHOPS.fish.color },
   { icon: '🐠', name: 'Aquarium Shop', desc: 'Tanks, decorations, fish food and cleaning kits.', x: SHORE_SHOPS.aquashop.x, z: SHORE_SHOPS.aquashop.z, w: SHORE_SHOPS.aquashop.w, d: SHORE_SHOPS.aquashop.d, col: SHORE_SHOPS.aquashop.color },
-  { icon: '🏠', name: 'Cabin', desc: 'Your home, with the bottle gallery, your aquarium and the bunk with the Trophy Wall.', x: CABIN.x, z: CABIN.d / 2, w: CABIN.w, d: CABIN.d, col: '#b08a5a' },
+  Object.assign(B(TOWN.cabin, '🏠', 'Your beach house on the east waterfront: the aquarium, the bottle gallery and the bookshelf in the living room; the bunk, the Trophy Wall and the wardrobe in the bedroom; a deck on the sea side.', '#f8fafc'), { name: 'Cabin' }),
   { icon: '📖', name: 'Benches', desc: 'Sit down to rest and read your skill books (press SIT, or stand still in front of one).', x: -4.6, z: 5.2, w: 1.4, d: 0.5, col: '#78350f', also: [[4.6, 5.2], ...EXTRA_BENCHES.map(b => [b.x, b.z])] },
   // v12.0.0: the town from its plan (TOWN); buildings carry their door so a tap leads there
   { icon: '🏘️', name: 'Town Square', desc: 'The heart of Harbour Town: the fountain, the market stalls, the restaurant and the Post Office around it.', x: TOWN.square.x, z: TOWN.square.z, w: TOWN.square.x1 - TOWN.square.x0, d: TOWN.square.z1 - TOWN.square.z0, col: '#d6d3cd' },
@@ -41,7 +41,6 @@ export const MAP_PLACES = () => [
   B(TOWN.talia, '🌿', 'Herbal lures from the garden herbs; Talia also buys sea plants.', '#dcfce7'),
   { icon: '🌱', name: 'Herb garden', desc: "Talia's herb beds in the Garden Quarter.", x: TOWN.garden.x, z: TOWN.garden.z, w: TOWN.garden.w, d: 3, col: '#16a34a' },
   { icon: '🔭', name: 'Lookout Pavilion', desc: 'On Lighthouse Hill: a telescope over the bay (spots frenzies, treasure and boss shadows) and a bench for reading.', x: TOWN.lookout.x, z: TOWN.lookout.z, w: 4.2, d: 4.2, col: '#0f766e' },
-  { icon: '🏡', name: 'Your plot', desc: 'Your plot on the east waterfront, where your new cabin will stand.', x: TOWN.plot.x, z: TOWN.plot.z, w: TOWN.plot.w, d: TOWN.plot.d, col: '#4f9a3c' },
   { icon: '🏗️', name: 'Winch', desc: "Rook's dock winch beside the Boatyard: the dockhand job is done here.", x: TOWN.winch.x, z: TOWN.winch.z, w: 1, d: 1, col: '#f59e0b' },
   { icon: '🗼', name: 'Lighthouse', desc: 'Out at sea in the Coastal Reef, with a small jetty you can dock at and fish from.', x: 52, z: -150, far: true },
   ...scopeMarks(),

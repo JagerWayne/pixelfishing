@@ -14,7 +14,7 @@ import { shopBrowse } from '../shop/shop-kinds.js';
 export function updateAquarium(dt) {
   const A = world && world.aquarium; if (!A || !shared.state.aquarium) return;
   const watching = shopBrowse.active && shopBrowse.kind === 'aqua';
-  const near = !shared.onBoat && Math.abs(shared.playerX - CABIN.aquaX) < 11 && shared.playerZ < 9.5;
+  const near = !shared.onBoat && Math.hypot(shared.playerX - CABIN.aquaX, shared.playerZ - CABIN.z) < 11;   // v12.2.0: the cabin is in town
   A.userData.live.visible = near || watching;
   if (!(near || watching)) return;
   aquaSync(false);
