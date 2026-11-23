@@ -3,11 +3,12 @@
 import { THREE } from '../engine/three.js';
 import { PixelTextureFactory } from '../render/texture-factory.js';
 import { ModelKit } from '../render/model-kit.js';
-import { COL, ISLAND, STREETS, TOWN, TOWN_BUILDINGS, TREES, doorOf, faceYaw, townGround } from './layout.js';
+import { COL, ISLAND, TOWN, TOWN_BUILDINGS, TREES, doorOf, faceYaw, townGround } from './layout.js';
 import { Colliders } from '../data/recipes.js';
 import { buildModernBuilding, buildRoundTree, townKitMaterials } from './town-kit.js';
 import { addLandmark } from './town-landmarks.js';
 import { buildFountain, buildStalls } from './town-props.js';
+import { buildStreets } from './town-paving.js';
 import { buildStreetProps } from './town-street-props.js';
 
 const SIGNS = { resto: "🍝 FISHERMAN'S RESTAURANT", post: '📮 POST OFFICE', talia: "🌿 TALIA'S GREENHOUSE", shop: "🔨 BARNABY'S WORKSHOP",
@@ -24,31 +25,11 @@ export const wbTownStatics = {
     [-1, 1].forEach(sx => { K.box(root, 0.5, 2.7, 0.5, km.white, sx * (G + 0.3), 1.5 + 1.35, 6.3); Colliders.box('gate pillar', sx * (G + 0.3), 6.3, 0.25, 0.25, W); });
     K.box(root, 2 * G + 1.4, 0.22, 0.4, K.lightWood, 0, 4.25, 6.3);
     sign(root, '🏘️ HARBOUR TOWN', 2.4, 0, 3.85, 6.08);
-    // streets: paved pieces of at most a metre that follow the ground; Harbour Street climbs the slope in steps
-    const piece = (x0, z0, x1, z1, w, mat) => {
-      const len = Math.hypot(x1 - x0, z1 - z0), y0 = townGround(z0), y1 = townGround(z1);
-      const m = K.sharpBox(root, w, 0.06, len + 0.02, mat, (x0 + x1) / 2, (y0 + y1) / 2 + 0.03, (z0 + z1) / 2);
-      m.rotation.order = 'YXZ'; m.rotation.y = Math.atan2(x1 - x0, z1 - z0); m.rotation.x = -Math.atan2(y1 - y0, len); m.receiveShadow = true;
-    };
-    STREETS.forEach(st => {
-      const mat = st.kind === 'stone' ? stone : brick;
-      for (let k = 0; k < st.pts.length - 1; k++) {
-        const [ax, az] = st.pts[k], [bx, bz] = st.pts[k + 1], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 1.0));
-        for (let i = 0; i < n; i++) {
-          const t0 = i / n, t1 = (i + 1) / n, z0 = az + (bz - az) * t0, z1 = az + (bz - az) * t1;
-          if (st.id === 'harbourUp' && z1 > ISLAND.rampZ0 - 0.2 && z0 < ISLAND.rampZ1 + 0.2) continue;   // the steps below
-          piece(ax + (bx - ax) * t0, z0, ax + (bx - ax) * t1, z1, st.w, mat);
-        }
-        if (st.kind === 'stone') [-1, 1].forEach(s => {   // kerbs along the stone streets
-          const len = Math.hypot(bx - ax, bz - az), nx = (bz - az) / len, nz = -(bx - ax) / len;
-          if (st.id === 'harbourUp') return;
-          piece(ax + nx * s * st.w / 2, az + nz * s * st.w / 2, bx + nx * s * st.w / 2, bz + nz * s * st.w / 2, 0.16, edge);
-        });
-      }
-    });
-    { // the steps up to the Upper Terrace, with low cheek walls
+    // streets: paved pieces that follow the ground, never overlapping (town-paving.js, v2.1); Harbour Street climbs in steps
+    buildStreets(K, root, { stone, brick, edge });
+    { // the steps up to the Upper Terrace, with low cheek walls (v2.1: each tread at its back edge's height, above the grass slope)
       const n = 9, z0 = ISLAND.rampZ0 - 0.2, z1 = ISLAND.rampZ1 + 0.2, dz = (z1 - z0) / n;
-      for (let i = 0; i < n; i++) { const z = z0 + dz * (i + 0.5), y = townGround(z); K.sharpBox(root, 4.0, y - 1.2, dz + 0.02, i % 2 ? stone : edge, 0, (y + 1.2) / 2 + 0.03, z); }
+      for (let i = 0; i < n; i++) { const z = z0 + dz * (i + 0.5), y = townGround(z + dz / 2); K.sharpBox(root, 4.0, y - 1.2, dz + 0.02, i % 2 ? stone : edge, 0, (y + 1.2) / 2 + 0.03, z); }
       [-1, 1].forEach(s => { const c = K.sharpBox(root, 0.3, 0.5, z1 - z0 + 0.4, km.concrete, s * 2.15, (townGround(z0) + townGround(z1)) / 2 + 0.25, (z0 + z1) / 2); c.rotation.x = -Math.atan2(ISLAND.up, z1 - z0); });
     }
     // the Town Square: light paving with a darker border; the fountain, stalls and street furniture (town-props.js)

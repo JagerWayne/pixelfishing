@@ -1,6 +1,6 @@
 /* Build numbers: the single source of truth for the release (shown on the start screen, names the offline cache)
    and the engine sizes the loading screen weighs its progress with. Bump PF_VERSION with every release. */
-window.PF_VERSION = '2.0';   /* v2.0 restarts the numbering (it followed 12.2.0) */
+window.PF_VERSION = '2.1';   /* v2.0 restarted the numbering (it followed 12.2.0) */
 window.PF_TITLE = 'Pixel Fishing v' + window.PF_VERSION;   /* the game's title: the browser tab and the logos */
 window.PF_THREE_REV = '187';
 window.PF_THREE_BYTES = 748803; /* decoded size of vendor/three.r187.module.min.js */

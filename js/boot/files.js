@@ -175,6 +175,7 @@ self.PF_FILES = [
   'js/world/town-kit.js',
   'js/world/town-landmarks.js',
   'js/world/town-landmarks-2.js',
+  'js/world/town-paving.js',
   'js/world/town-props.js',
   'js/world/town-street-props.js',
   'js/world/town-plan.js',

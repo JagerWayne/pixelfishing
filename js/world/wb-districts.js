@@ -57,16 +57,22 @@ export const wbDistrictsStatics = {
         f.visible = false; out.trapFloats.push(f);
       }
     }
-    // street lanterns along the hill path, the upper terrace and the market (the night watch lights them)
+    // street lanterns along the lanes and the terrace: lit every night (the night watch lights them on a lantern-job night)
     // v8.0.0: lanterns, benches and bench lamps go into one set that is merged at the end (only the parts that light up stay apart)
     const propSet = new THREE.Group(), propKeep = []; root.add(propSet);
+    // the soft pool of light under a lamp (bench lamps share one material; each lantern has its own pool, v2.1)
+    const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g2 = c.getContext('2d'), gr = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(255,230,170,0.9)'); gr.addColorStop(0.45, 'rgba(255,210,140,0.3)'); gr.addColorStop(1, 'rgba(255,200,120,0)'); g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+    const lanternPool = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
     JOB_LANTERNS.forEach(p => {
       const y = townGround(p.z), g = new THREE.Group(); g.position.set(p.x, y, p.z); propSet.add(g);
       K.cyl(g, 0.05, 0.07, 2.2, K.iron, 0, 1.1, 0, 8); K.box(g, 0.3, 0.05, 0.3, K.iron, 0, 2.22, 0);
-      const glass = M(0x334155, 0.3, 0.2, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0 });
+      const glass = M(0xfde68a, 0.4, 0.1, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0 });
       propKeep.push(K.box(g, 0.22, 0.3, 0.22, glass, 0, 2.05, 0)); K.box(g, 0.28, 0.04, 0.28, K.iron, 0, 1.89, 0);
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), lanternPool);
+      pool.rotation.x = -Math.PI / 2; pool.position.y = 0.07; pool.visible = false; pool.renderOrder = 2; pool.castShadow = pool.receiveShadow = false; g.add(pool); propKeep.push(pool);
       Colliders.circle('lantern', p.x, p.z, 0.12, W);
-      out.lanterns.push({ g, glass });
+      out.lanterns.push({ g, glass, pool });
     });
     // the dockhand's winch on the boardwalk: a small crane over a stack of crates
     {
@@ -81,8 +87,6 @@ export const wbDistrictsStatics = {
     // v6.8.0: the extra benches, each with a lamp post whose head glows at night over a soft pool of light
     {
       out.benchLamps = [];
-      const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g2 = c.getContext('2d'), gr = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gr.addColorStop(0, 'rgba(255,230,170,0.9)'); gr.addColorStop(0.45, 'rgba(255,210,140,0.3)'); gr.addColorStop(1, 'rgba(255,200,120,0)'); g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
       // every bench lamp lights at the same time, so they share one head and one glow material and merge into two meshes
       const head = K.M(0xfde68a, 0.4, 0.1, { emissive: new THREE.Color(0xfbbf24), emissiveIntensity: 0 });
       const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });

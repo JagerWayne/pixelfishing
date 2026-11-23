@@ -377,7 +377,7 @@ Behind the boardwalk, open along its whole length (the **🏘️ Harbour Town** 
 - **Market Lane (east):** leads to the **🦀 tide pool**. **🔨 Barnaby's Workshop**, a boat shed, stands on the waterfront, next to **🏠 your cabin** (v12.2.0) on its own plot.
 - **Upper Terrace:** steps from the square climb 1.8 m to it. On Terrace Lane stand the homes of **🔬 Ines**, **🧒 Pip**, **⚓ Rook** and **🗼 Marta**. The **🍺 Sailors' Rest** closes the top of Harbour Street (you see it from the gate), and the **🔭 Lookout Pavilion** sits at the west end.
 
-**The buildings** are modern coastal houses: white render, timber cladding with vertical slats, dark metal roofs (flat, mono-pitch or gable), large framed windows that **glow at night**, and a front door with a canopy, a door mat, a wall lamp and a sign. Paved streets in stone, lanes in terracotta, planned trees and street lanterns, plus street furniture (v12.1.0): concrete planters, flower beds, a bin beside every town bench, bike racks, bollards at the gate and low hedges beside the terrace homes.
+**The buildings** are modern coastal houses: white render, timber cladding with vertical slats, dark metal roofs (flat, mono-pitch or gable), large framed windows that **glow at night**, and a front door with a canopy, a door mat, a wall lamp and a sign. Paved streets in stone, lanes in terracotta (drawn without overlaps since v2.1, so crossings and kerbs no longer flicker), planned trees and street lanterns, plus street furniture (v12.1.0): concrete planters, flower beds, a bin beside every town bench, bike racks, bollards at the gate and low hedges beside the terrace homes.
 
 **Landmarks (v12.1.0).** The important places have their own design on top of the kit:
 - **Your restaurant:** a glass front between timber fins, a slatted pergola over the terrace (it carries the string lights), planters and a menu board.
@@ -397,7 +397,7 @@ Behind the boardwalk, open along its whole length (the **🏘️ Harbour Town** 
 
 **Map buoys (v6.5.0):** on the Map, press **📍**, pick **⚓ Wreck**, **🐉 Boss** or **⤵️ Drop-off** and tap the sea: up to **3** coloured buoys float there in the world and show on the Map and its list with distance and direction. Remove them from the same bar. Saved as `buoys`.
 
-**Getting around.** Tap a building (or a place on the Map) and you walk to its door: the route follows the streets around every building. On the boardwalk, everyone (you and the townsfolk) keeps to the lane in front of the benches. **Street lanterns** line Garden Lane, Market Lane and the top of the steps, and **Rook's winch** stands on the boardwalk west of the Boatyard.
+**Getting around.** Tap a building (or a place on the Map) and you walk to its door: the route follows the streets around every building. On the boardwalk, everyone (you and the townsfolk) keeps to the lane in front of the benches. **Street lanterns** line Garden Lane, Market Lane and the top of the steps and light up every night with the bench lamps (since v2.1, each with a pool of light on the ground), and **Rook's winch** stands on the boardwalk west of the Boatyard.
 
 **Places and what the action button does there:**
 | Place | Button | What it does |
@@ -416,7 +416,7 @@ Behind the boardwalk, open along its whole length (the **🏘️ Harbour Town** 
 **Town jobs** (3 a day, one at a time; cash, XP and +1 **town reputation**, from *Newcomer* to *Harbour hero*):
 - **📦 Cargo & mail runner:** collect a parcel at the Post Office and bring it to the mooring platform, the restaurant, the cabin, Sailors' Rest or (with a boat, +$60) the lighthouse jetty, within 4 in-game hours (10 for the jetty).
 - **🧹 Harbour cleanup crew:** pick up 5 pieces of litter (yellow rings) on the boardwalk, the promenade and the lanes (**✋ PICK UP**).
-- **🏮 Night watch:** light the 6 street lanterns (**🔥 LIGHT**) between 18:00 and 22:00; they glow until morning.
+- **🏮 Night watch:** on the night of this job the lanterns are out: light all 6 (**🔥 LIGHT**) between 18:00 and 22:00. The ones you light glow until morning; any you miss stay dark that night (on other nights they all light by themselves).
 - **🌿 Herb & shell foraging:** gather 5 herbs round the herb garden and Lighthouse Hill, or 5 shells around the tide pool; herbs go to Talia's greenhouse.
 - **🏗️ Dockhand winch assist:** at the winch, hoist 5 crates: press **HOIST** when the swinging hook is over the green (3 good ones pass; the green shrinks each crate).
 
@@ -666,7 +666,7 @@ The game modules, by folder (every file starts with a one- or two-line comment s
 | `js/audio/` | The Web Audio engine (`AudioEngine`) and its sound groups: ambience and diving, fishing, the fight |
 | `js/data/` | Data tables: equipment (boats, modules, rods, bait, buckets), the catch catalogue, zones and weather, bottles and bounties, townsfolk, quests, recipes; the `Colliders` registry |
 | `js/render/` | Renderer, scene, camera, screen shader, lights and shadows, textures and icons, `ModelKit`, particles (`VFXManager`), the catch and live-bait previews |
-| `js/world/` | World layout constants, **the town plan** (`town-plan.js`: every town building, street, tree, bench and lantern, with the door helpers `doorOf` / `atDoor`), the modern building kit (`town-kit.js`), the landmark details (`town-landmarks.js`, `town-landmarks-2.js`), the square's fountain and stalls (`town-props.js`) and the street furniture (`town-street-props.js`), the cabin's rooms and surroundings (`cabin-rooms.js`, `cabin-outside.js`) and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
+| `js/world/` | World layout constants, **the town plan** (`town-plan.js`: every town building, street, tree, bench and lantern, with the door helpers `doorOf` / `atDoor`), the modern building kit (`town-kit.js`), the landmark details (`town-landmarks.js`, `town-landmarks-2.js`), the square's fountain and stalls (`town-props.js`) and the street furniture (`town-street-props.js`), the street paving (`town-paving.js`), the cabin's rooms and surroundings (`cabin-rooms.js`, `cabin-outside.js`) and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
 | `js/angler/` | The character: look options, `AnglerFactory` (proportions, faces, rig, skinned geometry, `dress`) and `AnglerAnimator` |
 | `js/sim/` | Runtime state, the stick and controls state, interaction spots, tap-to-walk, the sky and first-person camera, `updateSimulation` and the frame loop (`animate`) |
 | `js/boat/` | Fishing stations, boat handling and hull motion, boarding, the boat terminal |
@@ -731,6 +731,13 @@ For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-23, Version 2.1: street lights at night, paths without flicker
+
+- **Street lanterns light every night.** Before, the 6 lanterns only lit on the night of a lantern job, so most nights they stayed dark. Now they light at dusk with the bench lamps, each with a pool of light on the ground. On the night watch job's night they are out until you light them (any you miss stay dark until morning).
+- **No more flickering paths.** Streets were drawn on top of each other at the crossings (the Promenade and Harbour Street, Terrace Lane and the street up to the Sailors' Rest, the hill path, the link paths), the kerbs half overlapped the road, and every paving piece overlapped the next. The paving is now clipped where another street already paves (`town-paving.js`), the pieces abut, and the kerbs stand above the road and stop at every street mouth.
+- **The slope:** the hill path no longer has gaps or grass poking through where it climbs to the Upper Terrace, and the steps' treads no longer sink into the grass slope.
+- Two flower beds that overlapped Terrace Lane moved off it.
 
 ### 2026-11-23, Version 2.0: the version in the title, and a bigger aquarium blocks you
 

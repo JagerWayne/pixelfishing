@@ -11,7 +11,9 @@ export const townGround = z => 1.5 + ISLAND.up * Math.min(1, Math.max(0, (z - IS
 /* keeps the island's hills and sand under the town, blending back to the hills outside it */
 export const townFlatten = (x, z, y) => {
   const m = 1 - (1 - THREE.MathUtils.smoothstep(Math.abs(x), 40.5, 48)) * (1 - THREE.MathUtils.smoothstep(z, ISLAND.zMax + 1.5, ISLAND.zMax + 24));
-  return THREE.MathUtils.lerp(Math.min(y, townGround(z) - 0.08), y, m);
+  // v2.1: around the foot of the slope the terrain's 2.2 m triangles would bulge above the paving, so dip it a little there
+  const dip = 0.15 * Math.max(0, 1 - Math.abs(z - ISLAND.rampZ0) / 2.2);
+  return THREE.MathUtils.lerp(Math.min(y, townGround(z) - 0.08 - dip), y, m);
 };
 
 /* facings: which way the front door looks. Models are built with their front on +Z and turned by faceYaw. */
@@ -96,7 +98,7 @@ export const JOB_LANTERNS = [{ x: -14.6, z: 21.8 }, { x: -26.4, z: 21.8 }, { x: 
    the town benches, bike racks, the gate bollards, the wayfinding signpost on the square and the bunting over Harbour Street */
 export const STREET_PROPS = {
   planters: [[-2.7, 10.2], [-2.7, 13.6], [2.7, 11.8], [-7.0, 9.9], [7.2, 9.9], [-3.5, 26.4], [3.5, 26.4]],
-  beds: [[-12.0, 10.6, 3.2], [12.0, 10.6, 3.2], [-24.8, 10.6, 2.6], [17.0, 18.0, 2.4], [-17.0, 18.0, 2.4], [-14.0, 31.9, 3.0], [14.0, 31.9, 3.0]],
+  beds: [[-12.0, 10.6, 3.2], [12.0, 10.6, 3.2], [-24.8, 10.6, 2.6], [17.0, 18.0, 2.4], [-17.0, 18.0, 2.4], [-14.0, 31.4, 3.0], [14.0, 31.4, 3.0]],
   bikeRacks: [[6.2, 9.6], [-8.4, 32.0]],
   bollards: [[-2.2, 7.2], [2.2, 7.2], [-2.9, 7.2], [2.9, 7.2]],
   signpost: { x: 3.6, z: 15.0 },

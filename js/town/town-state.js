@@ -22,14 +22,14 @@ import { gamePause } from '../ui/pause.js';
    crab traps in the tide pool, boat paint at Barnaby's Workshop, Talia's greenhouse and the Post Office counter.
    Everything is saved in state.town (sanitizeTown); places are SPOTS entries; walking routes use townPath.
    ========================================================================= */
-export function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1, met: {}, comm: null, commDay: -1, crave: { day: -1, done: [] },
+export function defaultTown() { return { rep: 0, jobsDone: 0, jobs: { day: -1, list: [], active: null }, traps: [null, null, null], paint: {}, herbs: 0, dice: { played: 0, won: 0 }, scopeDay: -1, mapDay: -1, stamps: 0, lit: [], litDay: -1, watch: -1, met: {}, comm: null, commDay: -1, crave: { day: -1, done: [] },
   proj: { weather: false, smoke: false, slip: false }, smoke: { kg: 0, value: 0 }, wall: null, bosses: [], recs: {}, notes: [], chal: null, chalDone: 0 }; }
 export function sanitizeTown(src) {
   const T = defaultTown(); if (!src || typeof src !== 'object') return T;
   const num = (v, lo, hi, d = lo) => { v = Number(v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
   const int = (v, lo, hi) => Math.floor(num(v, lo, hi));
   T.rep = int(src.rep, 0, 1e5); T.jobsDone = int(src.jobsDone, 0, 1e6); T.herbs = int(src.herbs, 0, 999); T.stamps = int(src.stamps, 0, 6);
-  T.scopeDay = int(src.scopeDay, -1, 1e6); T.mapDay = int(src.mapDay, -1, 1e6); T.litDay = int(src.litDay, -1, 1e6);
+  T.scopeDay = int(src.scopeDay, -1, 1e6); T.mapDay = int(src.mapDay, -1, 1e6); T.litDay = int(src.litDay, -1, 1e6); T.watch = int(src.watch, -1, 1e6);
   T.lit = (Array.isArray(src.lit) ? src.lit : []).filter(i => Number.isInteger(i) && i >= 0 && i < JOB_LANTERNS.length).slice(0, JOB_LANTERNS.length);
   if (src.met && typeof src.met === 'object') Object.keys(NPCS).forEach(k => { const v = Math.floor(Number(src.met[k])); if (Number.isFinite(v)) T.met[k] = v; });
   T.commDay = int(src.commDay, -1, 1e6);
