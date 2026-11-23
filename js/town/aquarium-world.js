@@ -6,6 +6,7 @@ import { textures, world } from '../render/lights.js';
 import { AQUARIUM_FORMS, AQUARIUM_MAX_W, aquaTankOf } from './aquarium.js';
 import { ACHIEVEMENTS, CATALOG_INDEX, RANKS, medalFor, rankIndexFor, rankReward, stat } from '../save/career.js';
 import { openCareerModal } from '../ui/career-modal.js';
+import { Physics } from '../engine/physics.js';
 
 export function renderCareer() {
   const idx = rankIndexFor(shared.state.xp || 0), cur = RANKS[idx], next = RANKS[idx + 1];
@@ -91,7 +92,7 @@ function aquaRebuildTank() {
   if (par) { par.remove(old); par.add(A); }
   old.traverse(o => { if (o.geometry) o.geometry.dispose(); });
   world.aquarium = A; aquaView.fish = []; aquaView.sig = '';
-  if (A.userData.collider) A.userData.collider.hx = t.w / 2 + 0.1;
+  if (A.userData.collider) { A.userData.collider.hx = t.w / 2 + 0.1; Physics.resize(A.userData.collider); }   // v12.2.1: Rapier too, not only the built-in walk code
   aquaSetBounds(t);
   return A;
 }

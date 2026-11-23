@@ -597,7 +597,7 @@ Progress is saved automatically in your browser's `localStorage`:
 
 Every field is **validated and clamped on load**, so a corrupted or hand-edited save can never crash the game. Saves from older versions upgrade automatically (existing players keep their outfit, which is the default look for their gender).
 
-The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version shown there is `PF_VERSION` in `js/boot/version.js`; bump it with each release (it also names the offline cache).
+The start screen offers **Continue** (when a save exists) and **New game**, which erases the save after a second tap. The game version is part of the game's title since v2.0: **Pixel Fishing v2.0** in the browser tab and on the loading and start screen logos (`PF_VERSION` and `PF_TITLE` in `js/boot/version.js`, shown by the loader). Bump it with each release (it also names the offline cache). Version 2.0 restarted the numbering; it followed 12.2.0.
 
 On iPhones the home-screen app and Safari can keep separate saves. Clearing site data erases progress.
 
@@ -731,6 +731,11 @@ For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-23, Version 2.0: the version in the title, and a bigger aquarium blocks you
+
+- **Pixel Fishing v2.0:** the numbering restarts at 2.0 (it followed 12.2.0), and the version is now part of the game's title: the browser tab reads *Pixel Fishing v2.0* and the logo on the loading and start screens carries the version.
+- **Fix:** an upgraded aquarium (Reef Tank, Display Tank, Grand Aquarium) is now solid along its whole width. Since v8.2.0 the Rapier walking only knew the Starter Tank's width, so you could walk into the ends of a bigger tank. `Physics.resize` now updates the Rapier collider when the tank changes.
 
 ### 2026-11-23, Version 12.2.0: your cabin in town (town rewrite, part 3)
 

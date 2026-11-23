@@ -7,7 +7,7 @@ export let Physics;
 export function init() {
   Physics = (() => {
     const R = window.RAPIER;
-    const off = { on: false, add() {}, step() {}, moveCharacter: null, blocked: null, segClear: null, npc() {}, debugLines: () => null };
+    const off = { on: false, add() {}, resize() {}, step() {}, moveCharacter: null, blocked: null, segClear: null, npc() {}, debugLines: () => null };
     if (!R || !R.World) return off;
     try {
       const world = new R.World({ x: 0, y: 0, z: 0 });
@@ -32,6 +32,13 @@ export function init() {
           const desc = c.kind === 'box' ? R.ColliderDesc.cuboid(c.hx, HH, c.hz) : R.ColliderDesc.cylinder(HH, c.r);
           const col = world.createCollider(desc.setTranslation(c.x, 0, c.z).setCollisionGroups(G(GR.WALK, 0xffff)));
           byHandle.set(col.handle, c); c.rb = col; dirty = true;
+        },
+        /* a registry entry changed size (the aquarium grows with its tier): give its Rapier collider the new size */
+        resize(c) {
+          const col = c && c.rb; if (!col) return;
+          if (c.kind === 'box') { if (col.setHalfExtents) col.setHalfExtents({ x: c.hx, y: HH, z: c.hz }); else { byHandle.delete(col.handle); world.removeCollider(col, false); c.rb = null; this.add(c); } }
+          else if (col.setRadius) col.setRadius(c.r);
+          dirty = true;
         },
         /* one townsperson: a cylinder that follows them and switches off while they are hidden indoors */
         npc(n, radius) {

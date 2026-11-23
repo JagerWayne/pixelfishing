@@ -58,6 +58,8 @@
 /* start, loading and pause cards */
 .start-kicker { font-size: 12px; color: var(--sea); font-weight: 800; letter-spacing: 2px; }
 .start-logo { margin: 6px 0 4px; color: var(--gold); font-family: var(--font-num); font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+.start-logo .logo-ver { margin-left: 2px; font-size: 0.55em; color: var(--sea); letter-spacing: 0; vertical-align: 0.35em; }
+#start-version:empty { display: none; }
 .start-card, #loading-screen .pixel-box, .pause-card { border-radius: var(--r-lg); }
 .pause-title { color: var(--text); text-shadow: none; font-family: var(--font-num); font-weight: 800; }
 .pause-help { border-top-color: var(--glass-line); color: var(--text-2); }
