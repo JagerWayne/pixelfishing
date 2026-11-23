@@ -1,7 +1,7 @@
 /* The town's walking graph and paths, and the town sheet. */
 import { shared } from '../state.js';
 import { sfx } from '../data/equipment.js';
-import { ISLAND } from '../world/layout.js';
+import { ISLAND, STREETS, TOWN, TOWN_BUILDINGS, doorOf } from '../world/layout.js';
 import { PHYS } from '../data/recipes.js';
 import { Physics } from '../engine/physics.js';
 import { walkColliders } from '../render/lights.js';
@@ -34,12 +34,18 @@ function townSegClear(a, b) {
 }
 export function townNavInit() {
   townNav.cols = walkColliders.filter(c => c.z > ISLAND.zGate - 1);
+  // v12.0.0: waypoints from the plan: every 3 m along each street, a grid over the square, and every building's door
   const N = [];
-  [-35, -27, -20, -12, -4, 0, 4, 10, 14, 21, 25, 30, 36].forEach(x => N.push({ x, z: 7.55 }));
-  [-36, -28, -20.5, -12, -3, 3, 12, 21, 25.5, 31.5, 37].forEach(x => N.push({ x, z: 14.6 }));
-  [-36.5, -30, -21, -15, -5, 5, 15, 21, 28.5, 37].forEach(x => N.push({ x, z: 17.4 }));
-  [-36.5, -28, -20, -10, 0, 10, 20, 29, 37].forEach(x => N.push({ x, z: 23.0 }));
-  [[-3, 10.4], [3, 10.6], [-11.6, 9.6], [12.6, 9.8], [21.8, 11.6], [31.4, 11.0], [-20.5, 10], [-26.5, 11.4], [-33.2, 21.4]].forEach(([x, z]) => N.push({ x, z }));
+  STREETS.forEach(st => {
+    for (let k = 0; k < st.pts.length - 1; k++) {
+      const [ax, az] = st.pts[k], [bx, bz] = st.pts[k + 1], n = Math.max(1, Math.round(Math.hypot(bx - ax, bz - az) / 3));
+      for (let i = 0; i <= n; i++) N.push({ x: ax + (bx - ax) * i / n, z: az + (bz - az) * i / n });
+    }
+  });
+  const S = TOWN.square;
+  for (let x = S.x0 + 1.2; x < S.x1; x += 3.2) for (let z = S.z0 + 1.0; z < S.z1; z += 3.0) N.push({ x, z });
+  TOWN_BUILDINGS.concat(['board']).forEach(id => N.push(doorOf(TOWN[id], 0.8)));
+  N.push({ x: TOWN.scope.x, z: TOWN.scope.z + 0.75 }, { x: TOWN.pool.x - TOWN.pool.r - 0.8, z: TOWN.pool.z });   // behind the telescope, beside the pool
   townNav.nodes = N.filter(p => !townBlocked(p.x, p.z));
   townNav.adj = townNav.nodes.map((a, i) => townNav.nodes.map((b, j) => (i !== j && Math.hypot(a.x - b.x, a.z - b.z) < 14 && townSegClear(a, b) ? Math.hypot(a.x - b.x, a.z - b.z) : 0)));
 }

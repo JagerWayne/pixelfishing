@@ -5,7 +5,7 @@ import { PixelTextureFactory } from '../render/texture-factory.js';
 import { AnglerFactory } from '../angler/angler-factory.js';
 import { LIGHT_TUNING, ModelKit } from '../render/model-kit.js';
 import { AQUARIUM_TANKS, BOAT_TERMINAL, BW_HALF, CABIN, COL, DOCK_PUMP, ISLAND, LH_J, PIER_BUCKET_X, PIER_DX, PIER_HW,
-  PIER_PILE, PIER_TOOLBOX_X, PLATFORM, RECYCLE, SHORE_SHOPS, TOWN, townFlatten, townGround } from './layout.js';
+  PIER_PILE, PIER_TOOLBOX_X, PLATFORM, RECYCLE, SHORE_SHOPS, townFlatten } from './layout.js';
 import { Colliders } from '../data/recipes.js';
 import { WorldBuilder } from './world-builder.js';
 
@@ -48,11 +48,13 @@ export const wbWorldStatics = {
     const grassMat = new THREE.MeshStandardMaterial({ map: textures.grass, roughness: 0.85, flatShading: true });
     // v6.3.0: wider (x +-40), with a ramp up to an upper terrace 1.2 m higher (see ISLAND, townGround)
     const TERR_HW = 40;
-    const terraceMesh = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 1.2, 17 - 6.2), grassMat);
-    terraceMesh.position.set(0, 0.90, (6.2 + 17) / 2);
+    // v12.0.0: the lower town runs to the slope at rampZ0, the Upper Terrace from rampZ1 back to the town's edge
+    const terraceMesh = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 1.2, ISLAND.rampZ0 + 0.4 - 6.2), grassMat);
+    terraceMesh.position.set(0, 0.90, (6.2 + ISLAND.rampZ0 + 0.4) / 2);
     scene.add(terraceMesh);
-    const upperTerrace = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 1.2 + ISLAND.up, 25.4 - ISLAND.rampZ1), grassMat);
-    upperTerrace.position.set(0, 0.3 + (1.2 + ISLAND.up) / 2, (ISLAND.rampZ1 + 25.4) / 2);
+    const upperEnd = ISLAND.zMax + 2.5;
+    const upperTerrace = new THREE.Mesh(new THREE.BoxGeometry(2 * TERR_HW, 1.2 + ISLAND.up, upperEnd - ISLAND.rampZ1), grassMat);
+    upperTerrace.position.set(0, 0.3 + (1.2 + ISLAND.up) / 2, (ISLAND.rampZ1 + upperEnd) / 2);
     scene.add(upperTerrace);
     {
       const run = ISLAND.rampZ1 - ISLAND.rampZ0, a = Math.atan2(ISLAND.up, run);
@@ -111,7 +113,7 @@ export const wbWorldStatics = {
       // a scatter of rocks and bushes on the slopes (bushes join the island scenery group, hidden in third person)
       for (let i = 0; i < 26; i++) {
         const x = (this.noise2(i * 3.1, 1) - 0.5) * 200, z = 26 + this.noise2(i * 1.7, 5) * 40;
-        if (Math.abs(x) < 30 && z < 30) continue;
+        if (Math.abs(x) < 44 && z < ISLAND.zMax + 6) continue;   // v12.0.0: clear of the deeper town
         const y = hY(x, z);
         if (i % 3) { const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9 + (i % 4) * 0.35, 0), new THREE.MeshStandardMaterial({ color: i % 2 ? 0x2f6f2a : 0x3d7f33, roughness: 0.9, flatShading: true })); b.position.set(x, y + 0.4, z); b.scale.y = 0.75; islandScenery.add(b); }
         else { const r = this.buildRock(1.1 + (i % 5) * 0.3, i, 0x8a8f96, 0); r.position.set(x, y + 0.2, z); scene.add(r); }
@@ -130,45 +132,14 @@ export const wbWorldStatics = {
       scene.add(rock);
     });
 
-    // Palm trees on the terrace flanks: curved ringed trunks, drooping leafy fronds and coconuts
-    {
-      const mats = {
-        trunk: new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.95, flatShading: true }),
-        trunk2: new THREE.MeshStandardMaterial({ color: 0x6f4520, roughness: 0.95, flatShading: true }),
-        frond: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7, side: THREE.DoubleSide, flatShading: true }),
-        frond2: new THREE.MeshStandardMaterial({ color: 0x22a046, roughness: 0.7, side: THREE.DoubleSide, flatShading: true }),
-        coconut: new THREE.MeshStandardMaterial({ color: 0x5b3a1a, roughness: 0.8, flatShading: true })
-      };
-      [
-        [-9.6, 13.4, 4.4, -0.7], [9.6, 13.4, 4.6, 0.7], [-12.6, 12.4, 5.2, -0.4], [12.6, 12.4, 5.0, 0.5],   // kept clear of the shop camera views
-        [-21.5, 9.0, 4.8, 0.6], [22.0, 9.5, 5.3, -0.6], [-25.5, 15.5, 5.6, -0.3], [25.0, 16.0, 4.9, 0.3]
-      ].forEach(([tx, tz, h, lean], i) => {
-        const palm = this.buildPalm(h, lean, i * 1.3, mats);
-        palm.position.set(tx, Math.abs(tx) < 40 && tz < 25 ? townGround(tz) : 1.5, tz);
-        islandScenery.add(palm); palm.userData.fade = true;
-        if (Math.abs(tx) < ISLAND.xMax + 0.5 && tz < ISLAND.zMax + 0.5) Colliders.circle('palm', tx, tz, 0.32, COL.WALK);
-      });
-    }
-
-    // Fishermen's cottages along the back of the harbour terrace
-    // (v6.0: they face the sea now, with walk colliders, and each is a fade group so it never blocks the camera)
+    // v12.0.0: every town building, street, tree and prop comes from the town plan (town-plan.js), built below
     const townFade = [];
-    [[TOWN.rook, 0xf8fafc, 0xb91c1c, 0], [TOWN.pip, 0xfef3c7, 0x1e3a8a, 1], [TOWN.ines, 0xe0f2fe, 0xb45309, 2]].forEach(([t, wall, roof, seed]) => {
-      const ct = this.buildCottage(t.w, t.d, wall, roof, seed);
-      ct.position.set(t.x, 1.5, t.z); ct.rotation.y = Math.PI; ct.userData.townFade = true; islandScenery.add(ct); townFade.push(ct);
-      Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, COL.WALK);
-    });
     const restoProps = this.buildHarbourTown(islandScenery, townFade, textures);
     const districtProps = this.buildTownDistricts(islandScenery, townFade, textures);
     // v6.3.1 performance: merge the static meshes of every town building and palm (fading still works per material),
     // then the loose props on the terrace (hedges, paving, cobbles, rocks); groups that change stay as they are
-    islandScenery.children.forEach(g => { if (!g.isMesh && (g.userData.townFade || g.userData.fade)) ModelKit.mergeStatic(g, [g.userData.nameSign, g.userData.soonSign]); });
+    islandScenery.children.forEach(g => { if (!g.isMesh && (g.userData.townFade || g.userData.fade)) ModelKit.mergeStatic(g, [g.userData.nameSign, g.userData.soonSign], { bakeColor: true }); });
     ModelKit.mergeStatic(islandScenery, islandScenery.children.filter(o => !o.isMesh), { bakeColor: true });
-    // a stone path from the pier ramp across the terrace
-    for (let i = 0; i < 9; i++) {
-      const st = new THREE.Mesh(ModelKit.roundedBox(1.1 + (i % 2) * 0.3, 0.08, 0.8, 0.03), new THREE.MeshStandardMaterial({ color: i % 2 ? 0xa8a29e : 0x9ca3af, roughness: 0.95, flatShading: true }));
-      st.position.set(Math.sin(i * 0.7) * 0.3, 1.52, 6.9 + i * 0.95); st.rotation.y = i * 0.3; scene.add(st);
-    }
 
     const pierGroup = new THREE.Group();
     const woodMat = new THREE.MeshStandardMaterial({ map: textures.wood, roughness: 0.85, flatShading: true });

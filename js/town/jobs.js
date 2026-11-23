@@ -4,6 +4,7 @@ import { shared } from '../state.js';
 import { sfx } from '../data/equipment.js';
 import { ZONES } from '../data/catalog.js';
 import { ISLAND, JOB_LANTERNS, TOWN, townGround } from '../world/layout.js';
+import { townFadeState } from '../sim/tap-walk.js';
 import { FRIEND_PERKS, NPCS, friendPerk } from '../data/townsfolk.js';
 import { scene } from '../render/renderer.js';
 import { world } from '../render/lights.js';
@@ -61,6 +62,13 @@ export function updateTownProps() {
   const litNow = T.litDay === (shared.state.dayCount || 0) || (T.litDay === (shared.state.dayCount || 0) - 1 && shared.state.timeOfDay < 0.25);
   D.lanterns.forEach((l, i) => { const on = night && litNow && T.lit.includes(i); l.glass.emissiveIntensity = on ? 1.4 : 0; });
   D.benchLamps.forEach(l => { l.head.emissiveIntensity = night ? 1.6 : 0; l.pool.opacity = night ? 0.55 : 0; });
+  // v12.0.0: windows and door lamps glow at night (the fade gives each building its own copy, so find the copies once)
+  if (D.glowVer !== townFadeState.ver) {
+    D.glowVer = townFadeState.ver; D.glow = [];
+    world.islandScenery.traverse(o => { if (o.isMesh && o.material && o.material.userData.glow && !D.glow.includes(o.material)) D.glow.push(o.material); });
+    D.glowNight = null;
+  }
+  if (D.glowNight !== night) { D.glowNight = night; D.glow.forEach(m => { m.emissiveIntensity = night ? (m.userData.glow === 'lamp' ? 1.5 : 0.85) : 0; }); }
   D.trapFloats.forEach((f, i) => { f.visible = !!T.traps[i]; if (f.visible) f.position.y = townGround(TOWN.pool.z) + 0.08 + Math.sin(shared.elapsed * 2 + i) * 0.02; });
 }
 

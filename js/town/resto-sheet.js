@@ -1,7 +1,7 @@
 /* The cooking mini-game's last step, the restaurant sheet and the restaurant props. */
 import { shared } from '../state.js';
 import { sfx } from '../data/equipment.js';
-import { TOWN } from '../world/layout.js';
+import { TOWN, atDoor } from '../world/layout.js';
 import { friendPerk, rarityAtLeast } from '../data/townsfolk.js';
 import { BUFFS, DISH_MAX, ESPRESSO, PANTRY, RECIPES, RECIPE_BY_ID, RESTO_UP, buffLabel } from '../data/recipes.js';
 import { world } from '../render/lights.js';
@@ -82,8 +82,7 @@ function restoCollect() {
   const k = kitchen(), got = Math.floor(k.bank * 100) / 100; if (got < 1) return;
   shopAsk({ confirm: `Collect ${shopMoney(got)} from the restaurant?`, price: got, verb: 'Sell', can: true, act: () => { shared.state.cash = +(shared.state.cash + got).toFixed(2); k.bank = 0; bumpStat('earned', got); sfx.playCoin(); saveGame(); updateHUD(); showToast(`🍝 Collected ${shopMoney(got)}.`); } });
 }
-const restoFrontZ = () => TOWN.resto.z - TOWN.resto.d / 2;
-export function isNearResto() { return !shared.onBoat && shared.mode === 'PIER_IDLE' && Math.abs(shared.playerX - TOWN.resto.x) <= 1.5 && shared.playerZ <= restoFrontZ() - 0.05 && shared.playerZ >= restoFrontZ() - 1.5; }
+export function isNearResto() { return !shared.onBoat && shared.mode === 'PIER_IDLE' && atDoor(TOWN.resto, shared.playerX, shared.playerZ, 1.5, 1.5); }   // v12.0.0: the plan's door
 /* the terrace in front: tables, and guests while service runs */
 function syncRestoProps() {
   const R = world && world.resto; if (!R) return;

@@ -19,7 +19,6 @@ import { wbShopItemStatics } from './wb-shop-item.js';
 import { wbNatureStatics } from './wb-nature.js';
 import { wbTownStatics } from './wb-town.js';
 import { wbDistrictsStatics } from './wb-districts.js';
-import { wbCottageStatics } from './wb-cottage.js';
 import { wbWorldStatics } from './wb-world.js';
 
 export class WorldBuilder {
@@ -223,6 +222,5 @@ export function init() {
   addMethods(WorldBuilder, null, wbNatureStatics);
   addMethods(WorldBuilder, null, wbTownStatics);
   addMethods(WorldBuilder, null, wbDistrictsStatics);
-  addMethods(WorldBuilder, null, wbCottageStatics);
   addMethods(WorldBuilder, null, wbWorldStatics);
 }
