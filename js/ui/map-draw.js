@@ -27,16 +27,21 @@ export function drawMap() {
   // landmarks: icon and name on the spot, names only when zoomed in enough to read them
   const places = MAP_PLACES();
   g.textAlign = 'center'; g.textBaseline = 'middle';
+  // v2.2: a place with several spots (benches, stalls) shows its name once; a name that would overlap one already drawn,
+  // or run off the map, is moved inside or left out (the icon always shows)
+  const boxes = [], free = (x0, y0, x1, y1) => !boxes.some(b => x0 < b[2] && x1 > b[0] && y0 < b[3] && y1 > b[1]);
   places.forEach(p => {
     const pts = [[p.x, p.z]].concat(p.also ? (Array.isArray(p.also[0]) ? p.also : [p.also]) : []);
-    pts.forEach(([x, z]) => {
+    pts.forEach(([x, z], k) => {
       const sx = X(x), sy = Y(z); if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) return;
       g.font = '18px sans-serif'; g.fillStyle = '#fff'; g.fillText(p.icon, sx, sy);
-      if (S >= 7 || p.far) {
-        g.font = 'bold 11px monospace'; const t = p.name.toUpperCase(), tw = g.measureText(t).width + 8;
-        g.fillStyle = 'rgba(7,11,20,0.72)'; g.fillRect(sx - tw / 2, sy + 11, tw, 15);
-        g.fillStyle = '#f8fafc'; g.fillText(t, sx, sy + 19);
-      }
+      if (k > 0 || !(S >= 7 || p.far)) return;
+      g.font = 'bold 11px sans-serif'; const t = p.name.toUpperCase(), tw = g.measureText(t).width + 8;
+      const cx = Math.min(Math.max(sx, tw / 2 + 2), w - tw / 2 - 2), x0 = cx - tw / 2, y0 = sy + 11;
+      if (!free(x0, y0, x0 + tw, y0 + 15)) return;
+      boxes.push([x0 - 2, y0 - 1, x0 + tw + 2, y0 + 16]);
+      g.fillStyle = 'rgba(7,11,20,0.72)'; g.fillRect(x0, y0, tw, 15);
+      g.fillStyle = '#f8fafc'; g.fillText(t, cx, sy + 19);
     });
   });
   // the townsfolk where they are right now

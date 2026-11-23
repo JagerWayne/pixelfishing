@@ -81,7 +81,7 @@ export function handleBoardOrDockToggle() {
   }
   if (!shared.onBoat) {
     if (shared.state.boatTier === 0) {
-      showToast('Buy a boat at the Tackle Shop first!');
+      showToast('Buy a boat at the Boatyard first!');
       return;
     }
     if (shared.state.fuel <= 0.5) {

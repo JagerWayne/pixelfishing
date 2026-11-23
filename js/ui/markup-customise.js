@@ -73,7 +73,7 @@ export const markupCustomise = `
       </div>
       <div class="modal-body">
         <div class="u-hint-gap">
-          Every boat you own is kept at the harbor with its own fuel tank. Pick the one to moor at the platform; buy new boats at the Tackle Shop.
+          Every boat you own is kept at the harbor with its own fuel tank. Pick the one to moor at the platform; buy new boats at the Boatyard.
         </div>
         <div class="upgrade-grid" id="boat-terminal-list"></div>
       </div>

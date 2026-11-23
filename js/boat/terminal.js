@@ -72,7 +72,7 @@ function renderBoatTerminal() {
               <div class="card-title"><span>${BOAT_ICONS[b.tier]} ${b.name}</span><span style="color:${owned ? 'var(--ok)' : 'var(--text-2)'};">${active ? 'MOORED' : owned ? 'OWNED' : '$' + b.cost.toLocaleString()}</span></div>
               <div class="card-stats">Top speed: <b>${b.speed} m/s</b> • Reaches: <b>Zone ${b.maxZone}</b><br/>${owned
                 ? `Fuel: <b>${fuel.toFixed(0)} / ${b.maxFuel}</b> <span style="display:inline-block; width:70px; height:7px; background:#0f172a; border:1px solid #475569; vertical-align:middle;"><span style="display:block; height:100%; width:${pct}%; background:${pct > 30 ? 'var(--ok)' : 'var(--danger)'};"></span></span>`
-                : 'Not owned yet: buy it at the Tackle Shop.'}</div>
+                : 'Not owned yet: buy it at the Boatyard.'}</div>
             </div>`;
     const btn = document.createElement('button');
     btn.className = active ? 'pixel-btn green' : 'pixel-btn gold';
