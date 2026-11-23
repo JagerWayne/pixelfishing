@@ -8,6 +8,7 @@ import { AQUARIUM_TANKS, BOAT_TERMINAL, BW_HALF, CABIN, COL, DOCK_PUMP, ISLAND, 
   PIER_PILE, PIER_TOOLBOX_X, PLATFORM, RECYCLE, SHORE_SHOPS, townFlatten } from './layout.js';
 import { Colliders } from '../data/recipes.js';
 import { WorldBuilder } from './world-builder.js';
+import { buildSeaDeck, cabinColliders } from './cabin-outside.js';
 
 export const wbWorldStatics = {
   buildWorld(scene, textures) {
@@ -299,20 +300,21 @@ export const wbWorldStatics = {
 
     // 3D Bottle Gallery Display Stand with Back to the Sea, Facing South (+Z)
     const galleryStand = this.buildBottleGalleryStand(textures);
-    galleryStand.position.set(CABIN.galleryX, 1.56, 0.8);
+    galleryStand.position.set(CABIN.galleryX, CABIN.floor, CABIN.z + 0.8);
     galleryStand.rotation.y = 0;
     pierGroup.add(galleryStand);
 
-    // The aquarium on the cabin's back wall, right of the bottle gallery (front faces +Z)
+    // The aquarium on the cabin's back wall, right of the bottle gallery (front faces +Z); the cabin is in town since v12.2.0
     const aquarium = this.buildAquariumTank(textures, AQUARIUM_TANKS[0]);
-    aquarium.position.set(CABIN.aquaX, 1.56, 0.5);
+    aquarium.position.set(CABIN.aquaX, CABIN.floor, CABIN.z + 0.5);
     pierGroup.add(aquarium);
 
     // Recycling stand (three skips) and the walk-in cabin
     const recycleStand = this.buildRecycleStand(textures);
     recycleStand.position.set(RECYCLE.x, 1.56, 0); pierGroup.add(recycleStand);
     const cabin = this.buildCabin(textures);
-    cabin.position.set(CABIN.x, 1.56, 0); pierGroup.add(cabin);
+    cabin.position.set(CABIN.x, CABIN.floor, CABIN.z); pierGroup.add(cabin);
+    buildSeaDeck(this.propKit(textures), pierGroup);   // the old cabin spot on the boardwalk
 
     // 3D Tackle Toolbox on the Starboard Front Pier Opposite the Catch Bucket
     const tackleToolbox = this.buildTackleToolbox();
@@ -335,17 +337,10 @@ export const wbWorldStatics = {
     const W = COL.WALK;
     Colliders.box('tackle shop', -7.525, 1.275, 1.825, 1.275, W);
     Colliders.box('bounty board', -4.2, 0.825, 1.0, 0.825, W);
-    Colliders.box('bottle gallery', CABIN.galleryX, 0.875, 1.3, 0.875, W);
-    aquarium.userData.collider = Colliders.box('aquarium', CABIN.aquaX, 0.5, AQUARIUM_TANKS[0].w / 2 + 0.1, 0.5, W);
+    Colliders.box('bottle gallery', CABIN.galleryX, CABIN.z + 0.875, 1.3, 0.875, W);
+    aquarium.userData.collider = Colliders.box('aquarium', CABIN.aquaX, CABIN.z + 0.5, AQUARIUM_TANKS[0].w / 2 + 0.1, 0.5, W);
     Colliders.box('recycling', RECYCLE.x, 0.65, RECYCLE.w / 2, 0.65, W);
-    {   // the cabin: side walls, the front wall with its door gap, the bunk bed
-      const hw = CABIN.w / 2, dz = CABIN.d + 0.05, dw = CABIN.doorW / 2;
-      Colliders.box('cabin wall W', CABIN.x - hw + 0.07, (CABIN.d + 0.2) / 2, 0.11, (CABIN.d + 0.3) / 2, W);
-      Colliders.box('cabin wall E', CABIN.x + hw - 0.07, (CABIN.d + 0.2) / 2, 0.11, (CABIN.d + 0.3) / 2, W);
-      Colliders.box('cabin front W', CABIN.x - (hw + dw) / 2, dz, (hw - dw) / 2, 0.12, W);
-      Colliders.box('cabin front E', CABIN.x + (hw + dw) / 2, dz, (hw - dw) / 2, 0.12, W);
-      Colliders.box('cabin bed', CABIN.x + hw - 0.62, 2.55, 0.5, 0.95, W);
-    }
+    cabinColliders(CABIN);   // v12.2.0: the walls, rooms, deck and garden (cabin-outside.js)
     Colliders.box('toolbox', PIER_TOOLBOX_X, -7.6, 0.55, 0.45, W);
     const bucketCollider = Colliders.box('bucket', PIER_BUCKET_X, -7.6, 0.69, 0.65, W);
 
@@ -623,7 +618,7 @@ export const wbWorldStatics = {
 
     // Bake the static pier (deck, rails, pilings, stands, props) into a few merged meshes. The aquarium's water and fish
     // (they change), the bounty papers, the cabin's fading front and roof and the secret seagull stay separate.
-    ModelKit.mergeStatic(pierGroup, [aquarium, cheatGull, bountyBoard.userData.papers, cabin.userData.front, cabin.userData.roof], { bakeColor: true });
+    ModelKit.mergeStatic(pierGroup, [aquarium, cheatGull, bountyBoard.userData.papers, ...cabin.userData.fadeWalls.map(w => w.grp), cabin.userData.roof], { bakeColor: true });
     scene.add(pierGroup);
 
     const oceanGeo = new THREE.PlaneGeometry(900, 950, 84, 88);
@@ -903,12 +898,12 @@ export const wbWorldStatics = {
       addPool(-4.2, 1.56, 0.8 + 1.0, 2.1, LIGHT_TUNING.bounty.pool, 0.9);
     }
     // Cabin: a warm lamp in the middle, a teal light on the bottle gallery, a cool glow at the aquarium
-    if (realLights) addLight(CABIN.x, 1.56 + 2.1, 1.8, LIGHT_TUNING.shop.color, 9, LIGHT_TUNING.shop.k);
-    if (realLights) addLight(CABIN.galleryX, 1.56 + 2.0, 0.8 + 0.9, LIGHT_TUNING.gallery.color, 6.5, LIGHT_TUNING.gallery.k);
-    addPool(CABIN.galleryX, 1.56, 0.8 + 1.2, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
-    if (realLights) addLight(CABIN.aquaX, 1.56 + 2.0, 1.4, 0x7dd3fc, 6, LIGHT_TUNING.trophy.k);
-    addPool(CABIN.aquaX, 1.56, 1.7, 2.4, LIGHT_TUNING.trophy.pool, 0.8);
-    addPool(CABIN.x, 1.56, 2.0, 2.6, LIGHT_TUNING.shop.pool, 0.8);
+    if (realLights) addLight(CABIN.x - 0.15, CABIN.floor + 2.1, CABIN.z + 2.3, LIGHT_TUNING.shop.color, 9, LIGHT_TUNING.shop.k);
+    if (realLights) addLight(CABIN.galleryX, CABIN.floor + 2.0, CABIN.z + 1.7, LIGHT_TUNING.gallery.color, 6.5, LIGHT_TUNING.gallery.k);
+    addPool(CABIN.galleryX, CABIN.floor, CABIN.z + 2.0, 2.4, LIGHT_TUNING.gallery.pool, 0.9);
+    if (realLights) addLight(CABIN.aquaX, CABIN.floor + 2.0, CABIN.z + 1.4, 0x7dd3fc, 6, LIGHT_TUNING.trophy.k);
+    addPool(CABIN.aquaX, CABIN.floor, CABIN.z + 1.7, 2.4, LIGHT_TUNING.trophy.pool, 0.8);
+    addPool(CABIN.x + 3.9, CABIN.floor, CABIN.z + 2.6, 2.6, LIGHT_TUNING.shop.pool, 0.8);
     // Recycling stand: a lamp post by the skips
     buildHarborLamp(RECYCLE.x - RECYCLE.w / 2 - 0.4, 1.56, 1.7, realLights);
     addPool(RECYCLE.x, 1.56, 1.8, 2.8, LIGHT_TUNING.shop.pool, 0.8);

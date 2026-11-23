@@ -113,8 +113,8 @@ export function init() {
   STAND_VIEWS = [
     { id: 'shop',    near: () => isNearPierShop(),     cx: -7.6, cy: 3.0, cz: 1.0, halfW: 1.55, halfH: 1.4, side: 1 },
     { id: 'bounty',  focus: true, near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
-    { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
-    { id: 'aquarium', focus: true, near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.45, cz: 0.5, halfW: 0.9, halfH: 0.82, side: 1, pan: true },
+    { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: CABIN.floor + 1.44, cz: CABIN.z + 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
+    { id: 'aquarium', focus: true, near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: CABIN.floor + 1.45, cz: CABIN.z + 0.5, halfW: 0.9, halfH: 0.82, side: 1, pan: true },
     { id: 'resto',   near: () => isNearResto(),       cx: doorOf(TOWN.resto, 0).x, cy: 1.5 + 1.7, cz: doorOf(TOWN.resto, 0).z, halfW: 2.8, halfH: 1.6, side: 1, dir: [TOWN.resto.fx, TOWN.resto.fz] },
     { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
     ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75 * sh.s, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55 * sh.s + 0.1, side: sh.x < 0 ? 1 : -1 }))

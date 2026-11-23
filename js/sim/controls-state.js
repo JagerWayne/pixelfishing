@@ -1,7 +1,7 @@
 /* Rest spots and benches, walking numbers, the fishing and fight state, weather, keys and the stick state. */
 import { THREE } from '../engine/three.js';
 import { shared } from '../state.js';
-import { BW_HALF, CABIN, EXTRA_BENCHES, PIER_HW, PIER_WALK, RECYCLE, SHORE_SHOPS, TOWN } from '../world/layout.js';
+import { BW_HALF, EXTRA_BENCHES, SEA_DECK, PIER_HW, PIER_WALK, RECYCLE, SHORE_SHOPS, TOWN } from '../world/layout.js';
 
 export let CHEAT_GULL, joyEl, knobEl, primaryBtn;
 let BENCH_SEATS;
@@ -26,7 +26,7 @@ export function findRestSpot(px, pz) {
   }
   // boardwalk sea-edge rail, between the stands
   if (pz < 0.62 && Math.abs(px) > PIER_HW + 0.15 && Math.abs(px) < BW_HALF - 0.6) {
-    const busy = [[-9.55, -5.5], [-5.4, -3.0], [RECYCLE.x - RECYCLE.w / 2 - 0.2, RECYCLE.x + RECYCLE.w / 2 + 0.2], [CABIN.x - CABIN.w / 2 - 0.2, CABIN.x + CABIN.w / 2 + 0.2]].some(([a, b]) => px > a && px < b)
+    const busy = [[-9.55, -5.5], [-5.4, -3.0], [RECYCLE.x - RECYCLE.w / 2 - 0.2, RECYCLE.x + RECYCLE.w / 2 + 0.2], [SEA_DECK.x - SEA_DECK.w / 2 - 0.2, SEA_DECK.x + SEA_DECK.w / 2 + 0.2]].some(([a, b]) => px > a && px < b)
       || Object.values(SHORE_SHOPS).some(sh => Math.abs(px - sh.x) < sh.w / 2 + sh.extra / 2 + 0.4);
     if (!busy) return { kind: 'rail', x: px, z: 0.33, yaw: 0, railX: null, railZ: 0.12, side: 0 };
   }

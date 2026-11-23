@@ -65,6 +65,9 @@ export const PHYS = { walk: 'rapier' };
 
 export function init() {
   RECIPE_BY_ID = Object.fromEntries(RECIPES.map(r => [r.id, r]));
-  CABIN.galleryX = CABIN.x - 2.75;
-CABIN.aquaX = CABIN.x + 1.0;
+  CABIN.galleryX = CABIN.x - 4.0;   // living room, on the back wall: the bottle gallery and the aquarium (up to 4.3 m)
+  CABIN.aquaX = CABIN.x - 0.15;
+  CABIN.shelf = { x: CABIN.x - CABIN.w / 2 + 0.3, z: CABIN.z + 3.2 };      // the bookshelf on the west wall (faces +X)
+  CABIN.wardrobe = { x: CABIN.x + 4.0, z: CABIN.z + 0.35 };                // the bedroom wardrobe on the back wall
+  CABIN.door = { x: CABIN.x + CABIN.doorX, z: CABIN.z + CABIN.d };
 }

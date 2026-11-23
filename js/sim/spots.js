@@ -18,6 +18,8 @@ import { npcSnap } from '../town/npcs.js';
 import { updateRestaurant } from '../town/cooking.js';
 import { ensureJobs, townClock } from '../town/town-jobs.js';
 import { openBunk } from '../town/trophy-wall.js';
+import { openCustomize } from '../ui/customise.js';
+import { openBooksModal } from '../shop/books-aquarium.js';
 import { updateHUD } from '../ui/hud.js';
 
 export let BED;
@@ -26,7 +28,7 @@ export function standCameraPose(st) {
   const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   const th = tv * camera.aspect;
   if (st.pan) {
-    const t = aquaTankOf(shared.state.aquarium || {}), tw = t.w, halfH = (t.h + 0.75) / 2, cy = 1.56 + 0.91 + t.h / 2 + 0.12;
+    const t = aquaTankOf(shared.state.aquarium || {}), tw = t.w, halfH = (t.h + 0.75) / 2, cy = CABIN.floor + 0.91 + t.h / 2 + 0.12;
     const dist = THREE.MathUtils.clamp(halfH / tv * 1.12 + 0.45, 2.2, 3.4);
     const visHalf = th * (dist - 0.45), span = Math.max(0, tw / 2 + 0.12 - visHalf);
     const x = st.cx + span * Math.cos(aquaPan.phase);
@@ -51,9 +53,9 @@ export function isNearPierShop() { return nearStandFront(-7.6, 2.05, 2.55, 1.0);
 export function nearShoreShop(sh) { const fz = shopFrontZ(sh); return !shared.onBoat && shared.mode === 'PIER_IDLE' && Math.abs(shared.playerX - sh.x) <= sh.w / 2 + 0.35 && shared.playerZ >= fz - 0.1 && shared.playerZ <= fz + 1.35; }
 export function shoreShopHere() { for (const k in SHORE_SHOPS) if (nearShoreShop(SHORE_SHOPS[k])) return k; return null; }
 export function isNearPierBounty() { return nearStandFront(-4.2, 1.3, 1.65, 1.0); }
-export function isNearPierGallery() { return nearStandFront(CABIN.galleryX, 1.6, 1.75, 1.0); }
+export function isNearPierGallery() { return nearStandFront(CABIN.galleryX, 1.6, CABIN.z + 1.75, 1.0); }
 export function isNearRecycle() { return nearStandFront(RECYCLE.x, RECYCLE.w / 2 + 0.2, RECYCLE.frontZ, 1.0); }
-export function isNearAquarium() { return nearStandFront(CABIN.aquaX, Math.min(2.2, aquaTankOf(shared.state.aquarium || {}).w / 2 + 0.15), 1.0, 1.1); }
+export function isNearAquarium() { return nearStandFront(CABIN.aquaX, Math.min(2.2, aquaTankOf(shared.state.aquarium || {}).w / 2 + 0.15), CABIN.z + 1.0, 1.1); }
 
 /* ---- interaction spots (v6.2.0): places the action button can use, checked after TALK and the kitchen.
    Each entry: icon, label, cls (button style), color [border, text], near(), prox() (banner text), press(), optional useless(). ---- */
@@ -117,9 +119,16 @@ export function buyFuel(missing) {
 
 export function init() {
   /* ---- the cabin bunk: turn in for the night (from 18:00), wake at 06:00 having read 30 pages ---- */
-  BED = { x: CABIN.x + CABIN.w / 2 - 0.62, z: 2.55, from: 0.75, wake: 0.25, pages: 30 };
+  BED = { x: CABIN.x + CABIN.w / 2 - 0.62, z: CABIN.z + 2.55, from: 0.75, wake: 0.25, pages: 30 };
   SPOTS.push({ id: 'bed', icon: '🛏️', label: 'SLEEP', cls: 'shop', color: ['#818cf8', '#c7d2fe'],
-    near: () => shared.playerX > BED.x - 1.7 && shared.playerX < BED.x - 0.35 && shared.playerZ > 1.95 && shared.playerZ < 3.5,
+    near: () => shared.playerX > BED.x - 1.7 && shared.playerX < BED.x - 0.35 && shared.playerZ > BED.z - 0.6 && shared.playerZ < BED.z + 0.95,
     prox: () => (bedTime() ? `🛏️ BUNK • SLEEP UNTIL 06:00${selectedBook() ? ' AND READ ' + BED.pages + ' PAGES' : ''}` : '🛏️ BUNK • TROPHY WALL • SLEEP AFTER 18:00'),
     press: () => openBunk() });
+  /* v12.2.0: the wardrobe (bedroom) opens Customise, the bookshelf (living room) your skill books */
+  SPOTS.push({ id: 'wardrobe', icon: '👕', label: 'WARDROBE', cls: 'shop', color: ['#f472b6', '#fbcfe8'],
+    near: () => Math.abs(shared.playerX - CABIN.wardrobe.x) < 0.75 && shared.playerZ > CABIN.wardrobe.z + 0.35 && shared.playerZ < CABIN.wardrobe.z + 1.35,
+    prox: () => '👕 WARDROBE • CHANGE YOUR LOOK', press: () => openCustomize() });
+  SPOTS.push({ id: 'bookshelf', icon: '📚', label: 'BOOKS', cls: 'shop', color: ['#fbbf24', '#fde68a'],
+    near: () => shared.playerX > CABIN.shelf.x + 0.2 && shared.playerX < CABIN.shelf.x + 1.3 && Math.abs(shared.playerZ - CABIN.shelf.z) < 0.6,
+    prox: () => '📚 BOOKSHELF • YOUR SKILL BOOKS', press: () => openBooksModal() });
 }

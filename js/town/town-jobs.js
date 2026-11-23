@@ -26,7 +26,7 @@ export const JOB_KINDS = {
 const MAIL_STOPS = [
   { id: 'platform', name: 'the mooring platform', at: () => ({ x: (PLATFORM.xOut + PLATFORM.xIn) / 2, z: (PLATFORM.zMin + PLATFORM.zMax) / 2 }), r: 1.8, hours: 4 },
   { id: 'resto', name: 'the restaurant', at: () => doorOf(TOWN.resto, 0.9), r: 1.8, hours: 4 },
-  { id: 'cabin', name: 'the cabin', at: () => ({ x: CABIN.x, z: CABIN.d / 2 }), r: 2.0, hours: 4 },
+  { id: 'cabin', name: 'your cabin', at: () => ({ x: CABIN.x + CABIN.doorX + 1.0, z: CABIN.z + CABIN.d + 2.1 }), r: 1.6, hours: 4 },   // the mailbox (v12.2.0)
   { id: 'tavern', name: "Sailors' Rest", at: () => doorOf(TOWN.tavern, 0.9), r: 1.8, hours: 4 },
   { id: 'jetty', name: 'the lighthouse jetty', at: () => ({ x: LH_J.x, z: LH_J.z }), r: 26, hours: 10, boat: true }
 ];

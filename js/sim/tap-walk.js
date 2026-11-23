@@ -3,7 +3,7 @@ import { THREE } from '../engine/three.js';
 import { shared } from '../state.js';
 import { settings } from '../core/settings.js';
 import { sfx } from '../data/equipment.js';
-import { BW_HALF, CABIN, ISLAND, PIER_WALK, PLATFORM, townGround } from '../world/layout.js';
+import { BW_HALF, ISLAND, PIER_WALK, PLATFORM, townGround } from '../world/layout.js';
 import { camera, renderer, scene } from '../render/renderer.js';
 import { walkColliders, world } from '../render/lights.js';
 import { standFocus } from './runtime.js';
@@ -62,7 +62,7 @@ function clampWalkable(x, z) {
 /* where a tap leads: a shop or stand tapped on its building leads to the spot in front of it */
 function tapDestination(x, z) {
   for (const p of MAP_PLACES()) {
-    if (p.far || !p.w || ['Cabin', 'Pier end', 'Mooring platform', 'Benches', 'Town Square', 'Market stall', 'Herb garden', 'Your plot'].includes(p.name)) continue;
+    if (p.far || !p.w || ['Pier end', 'Mooring platform', 'Benches', 'Town Square', 'Market stall', 'Herb garden', 'Your plot'].includes(p.name)) continue;
     if (Math.abs(x - p.x) <= p.w / 2 + 0.3 && Math.abs(z - p.z) <= p.d / 2 + 0.3)
       return p.door ? { x: p.door.x, z: p.door.z } : { x: p.x, z: p.z + p.d / 2 + 0.85 };   // town buildings: their door (v12.0.0)
   }
@@ -94,7 +94,6 @@ export function planRoute(to, fromPt) {
   if (a !== 'board' && b === 'board') pts.push({ x: THREE.MathUtils.clamp(from.x, -PIER_WALK + 0.4, PIER_WALK - 0.4), z: 0.2 }, pierMouth(to.x));
   if (b === 'dock' && a !== 'dock') pts.push(stairTop, stairFoot);
   if (a === 'dock' && b !== 'dock') pts.unshift(stairFoot, stairTop);
-  if (CABIN && Math.abs(to.x - CABIN.x) < CABIN.w / 2 && to.z < CABIN.d + 0.2 && !(Math.abs(from.x - CABIN.x) < CABIN.w / 2 && from.z < CABIN.d + 0.2)) pts.push({ x: CABIN.x, z: CABIN.d + 0.9 }, { x: CABIN.x, z: CABIN.d - 0.6 });
   if (b0 === 'town' && a0 !== 'town') { if (a0 === 'board' && Math.abs(from.x - cx) > 0.8) pts.push(lane(from.x), lane(cx)); pts.push(gateOut, gateIn, ...townPath(gateIn, to)); }   // around the buildings (townPath)
   else if (a0 === 'town' && b0 === 'town') pts.push(...townPath(from, to));
   else { if (b === 'board' && to.z > BW_LANE - 0.2 && Math.abs(to.x - from.x) > 0.8) pts.push(lane(to.x)); pts.push(to); }

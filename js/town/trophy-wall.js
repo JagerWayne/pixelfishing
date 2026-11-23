@@ -45,7 +45,7 @@ export function syncTrophyWall() {
   c2.fillStyle = '#3b2410'; c2.fillRect(0, 0, 512, 64); c2.fillStyle = '#fde68a'; c2.font = 'bold 24px monospace'; c2.textAlign = 'center'; c2.textBaseline = 'middle';
   c2.fillText(trophyLabel(t).replace('👑 ', 'BOSS: '), 256, 32, 500);
   const lab = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.19), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv) })); lab.rotation.y = -Math.PI / 2; lab.position.set(-0.07, -0.33, 0); g.add(lab);
-  g.position.set(CABIN.w / 2 - 0.16, 1.95, BED.z); cab.add(g); trophyMesh = g;
+  g.position.set(CABIN.w / 2 - 0.16, 1.95, BED.z - CABIN.z); cab.add(g); trophyMesh = g;
 }
 export function openBunk() {
   openTownSheet('🛏️ BUNK & TROPHY WALL', ({ row, head, note }) => {

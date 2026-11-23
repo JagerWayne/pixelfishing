@@ -39,8 +39,9 @@ export const TOWN = {
   garden: { x: -27.6, z: 14.2, w: 4.0 },
   shop: bld({ x: 19.6, z: 13.8, w: 5.2, d: 3.8, face: 'N', name: "Barnaby's Workshop", doorX: -1.5, floors: 1, roof: 'mono', wall: 0xe7e5e4, clad: 0xd4ab80, accent: 0xd97706, extras: ['shedDoor'], landmark: 'boatshed' }),
   pool: { x: 31.0, z: 22.6, r: 2.3 },
-  // your plot on the east waterfront (the new cabin arrives in v12.2.0)
-  plot: { x: 31.0, z: 13.6, w: 8.6, d: 5.8 },
+  // your cabin (v12.2.0) on its plot on the east waterfront: back to the sea (a deck there), door onto Market Lane;
+  // the rooms and their furniture are placed from it in CABIN (layout.js)
+  cabin: bld({ x: 31.0, z: 14.7, w: 11.0, d: 4.6, face: 'S', doorX: -2.7, name: 'Your cabin' }),
   // the Upper Terrace: the homes on Terrace Lane, the Sailors' Rest closing the top of Harbour Street, the lookout
   tavern: bld({ x: 0, z: 39.3, w: 7.4, d: 4.6, face: 'N', name: "Sailors' Rest", floors: 2, roof: 'gable', wall: 0xfafaf9, clad: 0xd9a46c, accent: 0x7c2d12, extras: ['deck', 'barrels'], landmark: 'tavern' }),
   rook: bld({ x: -11.6, z: 37.6, w: 3.9, d: 3.2, face: 'N', name: "Rook's house", owner: 'rook', floors: 2, roof: 'flat', wall: 0xf8fafc, clad: 0xcfae8a, accent: 0x1e3a8a, extras: ['solar'] }),
@@ -84,9 +85,11 @@ export const TREES = [
   ['tree', -27.6, 23.6], ['tree', 24.6, 25.8], ['tree', -16.4, 37.4], ['tree', 6.0, 38.6], ['tree', 16.6, 37.8],
   ['tree', 27.4, 37.6], ['tree', -26.8, 41.4], ['palm', 34.4, 31.6], ['palm', -36.0, 30.6]
 ];
-/* benches (all face north, toward the sea): six on the boardwalk, the rest along the promenade, in the square and on the terrace */
+/* benches (all face north, toward the sea): six on the boardwalk, the rest along the promenade, in the square and on the
+   terrace, and two on the boardwalk's seating deck */
 export const EXTRA_BENCHES = [[-12, 5.25], [-17.5, 5.25], [-22.5, 5.25], [6.8, 5.25], [11.5, 5.25], [21, 5.25],
-  [-8.6, 10.4], [8.8, 10.4], [-29.4, 10.4], [-4.6, 24.6], [-5.4, 15.6], [27.6, 35.0], [-6.2, 35.0]].map(([x, z]) => ({ x, z }));
+  [-8.6, 10.4], [8.8, 10.4], [-29.4, 10.4], [-4.6, 24.6], [-5.4, 15.6], [27.6, 35.0], [-6.2, 35.0],
+  [19.6, 2.3], [23.6, 2.3]].map(([x, z]) => ({ x, z }));   // the last two: the seating deck where the old cabin stood (v12.2.0)
 /* the street lanterns the night watch lights (job), along the lanes and the terrace */
 export const JOB_LANTERNS = [{ x: -14.6, z: 21.8 }, { x: -26.4, z: 21.8 }, { x: 14.6, z: 21.8 }, { x: 25.0, z: 21.8 }, { x: -6.0, z: 31.9 }, { x: 6.2, z: 31.9 }];
 /* v12.1.0 street furniture (merged statically; solid things get a collider): planters, flower beds (flat), bins beside

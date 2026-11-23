@@ -42,7 +42,11 @@ export const AQUARIUM_TANKS = [
   { tier: 3, name: 'Display Tank', maxW: 9, cap: 40, cost: 1800, decor: 5, w: 3.3, h: 1.25 },
   { tier: 4, name: 'Grand Aquarium', maxW: 18, cap: 80, cost: 6000, decor: 6, w: 4.3, h: 1.35 }
 ];
-export const CABIN = { x: 22.0, w: 8.4, d: 3.6, doorW: 2.0 };
+/* v12.2.0: the cabin stands in town (TOWN.cabin); every room position below is in world units. z is the back wall
+   (north, toward the sea), the front with the door faces +Z; the floor is at the town's ground. The old boardwalk spot
+   is the seating deck (SEA_DECK). */
+export const CABIN = { x: 31.0, z: 12.4, w: 11.0, d: 4.6, doorX: -2.7, doorW: 1.3, floor: 1.5, partX: 2.5 };
+export const SEA_DECK = { x: 22.0, w: 8.4, d: 3.6 };
 export const benchGroundY = z => (z > ISLAND.zGate ? townGround(z) : 1.55);
 export const JOB_KIND_IDS = ['mail', 'cleanup', 'lantern', 'forage', 'winch'];
 export const BOAT_PAINTS = [['Signal red', 0xb91c1c], ['Sunset orange', 0xea580c], ['Sun yellow', 0xeab308], ['Kelp green', 0x15803d], ['Lagoon teal', 0x0f766e],

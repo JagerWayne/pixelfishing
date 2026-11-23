@@ -91,7 +91,7 @@ export function init() {
       ['Pier tip', cheatTeleport(0, -10.59, 'Pier tip')], ['Tackle shop', cheatTeleport(-7.6, 4.2, 'Tackle shop')],
       ['Pier entrance', cheatTeleport(0, 3.6, 'Pier entrance')], ['Mooring platform', cheatTeleport(MOOR.boardX, -5.6, 'Mooring platform')],
       ['Fish market', cheatTeleport(SHORE_SHOPS.fish.x, 6.5, 'Fish market')], ['Boatyard', cheatTeleport(SHORE_SHOPS.boatyard.x, 6.5, 'Boatyard')], ['Dive shop', cheatTeleport(SHORE_SHOPS.dive.x, 6.5, 'Dive shop')],
-      ['Recycling', cheatTeleport(RECYCLE.x, 4.2, 'Recycling')], ['Aquarium Shop', cheatTeleport(SHORE_SHOPS.aquashop.x, 4.2, 'Aquarium Shop')], ['Cabin', cheatTeleport(CABIN.x, 2.4, 'Cabin')], ['Town Square', cheatTeleport(0, 16.4, 'Town Square')], ['Upper Terrace', cheatTeleport(0, 34.6, 'Upper Terrace')]] },
+      ['Recycling', cheatTeleport(RECYCLE.x, 4.2, 'Recycling')], ['Aquarium Shop', cheatTeleport(SHORE_SHOPS.aquashop.x, 4.2, 'Aquarium Shop')], ['Cabin', cheatTeleport(CABIN.x - 1.5, CABIN.z + 2.4, 'Cabin')], ['Town Square', cheatTeleport(0, 16.4, 'Town Square')], ['Upper Terrace', cheatTeleport(0, 34.6, 'Upper Terrace')]] },
     { title: '🌊 Sea events (on a boat)', items: [
       ['Spawn treasure chest', () => { if (!shared.onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('treasure'); }],
       ['Spawn boss shadow', () => { if (!shared.onBoat) { showToast('Take your boat out first.'); return; } seaEvents.spawn('boss'); }]] },
