@@ -5,7 +5,7 @@ import { shared } from '../state.js';
 
 export let MOOR, PLATFORM, BOAT_TERMINAL, DOCK_PUMP;
 /* v12.0.0: the town's plan lives in town-plan.js; re-exported here so the rest of the game imports it from one place */
-export { ISLAND, townGround, townFlatten, TOWN, TOWN_BUILDINGS, STREETS, TREES, EXTRA_BENCHES, JOB_LANTERNS, doorOf, atDoor, faceYaw, placeName } from './town-plan.js';
+export { ISLAND, townGround, townFlatten, TOWN, TOWN_BUILDINGS, STREETS, TREES, EXTRA_BENCHES, JOB_LANTERNS, STREET_PROPS, doorOf, atDoor, faceYaw, placeName } from './town-plan.js';
 import { ISLAND, townGround } from './town-plan.js';
 
 /* One place for everything solid. Each collider: { kind: 'box' | 'circle', x, z, hx, hz | r, y0, y1, layers, name }.

@@ -31,11 +31,15 @@ export const wbCabinStatics = {
       else if (i === 1) [[-0.4, 0.05], [-0.05, -0.1], [0.3, 0.1]].forEach(([dx, dz], k) => { K.cyl(g, 0.09, 0.09, 0.2, K.M(0xcbd5e1, 0.35, 0.7), x + dx, 1.0, 0.75 + dz, 10).rotation.z = k * 0.6; });
       else [[-0.4, 0.0, 0x7c4a1e], [0.0, 0.1, 0x57534e], [0.38, -0.05, 0x16a34a]].forEach(([dx, dz, c]) => K.box(g, 0.3, 0.2, 0.22, K.M(c, 0.8), x + dx, 0.98, 0.75 + dz).rotation.y = dx * 2);
     });
-    // post sign with a lamp
-    [-2.25, 2.25].forEach(sx => K.cyl(g, 0.07, 0.08, 2.5, K.darkWood, sx, 1.25, 0.2, 8));
-    K.box(g, 4.7, 0.62, 0.08, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('♻️ RECYCLING', 512, 96) }), 0, 2.55, 0.22);
-    K.box(g, 4.84, 0.76, 0.05, K.darkWood, 0, 2.55, 0.17);
-    K.box(g, 4.9, 0.06, 0.3, K.M(0x14532d, 0.8), 0, 2.98, 0.22);
+    // v12.1.0 modern look: dark steel posts, a slatted timber screen behind the skips and a flat dark roof over them
+    const frameM = K.M(0x1f2937, 0.9), slat = K.M(0xc8a27a, 0.9);
+    [-2.25, 2.25].forEach(sx => K.sharpBox(g, 0.12, 3.0, 0.12, frameM, sx, 1.5, 0.2));
+    for (let i = 0; i < 21; i++) K.sharpBox(g, 0.14, 1.75, 0.05, slat, -2.0 + i * 0.2, 1.05, 0.12 - (i % 2) * 0.04);
+    K.sharpBox(g, 4.4, 0.08, 0.1, frameM, 0, 1.96, 0.12); K.sharpBox(g, 4.4, 0.08, 0.1, frameM, 0, 0.16, 0.12);
+    K.box(g, 4.7, 0.62, 0.08, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture('♻️ RECYCLING', 512, 96) }), 0, 2.55, 0.26);
+    K.sharpBox(g, 4.84, 0.76, 0.05, frameM, 0, 2.55, 0.2);
+    const roof = K.sharpBox(g, 4.9, 0.1, 1.6, K.M(0x2b3442, 0.9), 0, 3.02, 0.7); roof.rotation.x = 0.06;
+    K.sharpBox(g, 4.92, 0.14, 0.04, K.M(0x15803d, 0.9), 0, 2.94, 1.5);
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return g;
   },

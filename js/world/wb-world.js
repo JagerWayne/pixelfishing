@@ -138,7 +138,7 @@ export const wbWorldStatics = {
     const districtProps = this.buildTownDistricts(islandScenery, townFade, textures);
     // v6.3.1 performance: merge the static meshes of every town building and palm (fading still works per material),
     // then the loose props on the terrace (hedges, paving, cobbles, rocks); groups that change stay as they are
-    islandScenery.children.forEach(g => { if (!g.isMesh && (g.userData.townFade || g.userData.fade)) ModelKit.mergeStatic(g, [g.userData.nameSign, g.userData.soonSign], { bakeColor: true }); });
+    islandScenery.children.forEach(g => { if (!g.isMesh && (g.userData.townFade || g.userData.fade)) ModelKit.mergeStatic(g, [g.userData.nameSign, g.userData.soonSign, ...(g.userData.keep || [])], { bakeColor: true }); });
     ModelKit.mergeStatic(islandScenery, islandScenery.children.filter(o => !o.isMesh), { bakeColor: true });
 
     const pierGroup = new THREE.Group();

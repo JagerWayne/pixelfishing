@@ -6,7 +6,6 @@ export const wbTackleShopStatics = {
     const g = new THREE.Group();
     const K = this.propKit(textures);
     const signMat = new THREE.MeshBasicMaterial({ map: textures.shopSign });
-    const awningMat = new THREE.MeshStandardMaterial({ map: textures.awning, roughness: 0.6, side: THREE.DoubleSide });
     const skin = K.M(0xfdba74, 0.75);
     // counter with plank front, top slab and trim
     K.box(g, 2.3, 1.0, 1.0, K.wood, 0, 0.5, 0.35);
@@ -14,8 +13,10 @@ export const wbTackleShopStatics = {
     K.box(g, 2.45, 0.08, 1.12, K.darkWood, 0, 1.04, 0.35);
     K.box(g, 2.3, 0.06, 0.05, K.brass, 0, 0.14, 0.87);
     // back wall with shelves, jars, lures and rope
-    K.box(g, 2.4, 2.2, 0.22, K.wood, 0, 1.1, -0.78);
-    for (let i = 0; i < 9; i++) K.box(g, 2.4, 0.015, 0.23, K.M(0x2b180b, 0.9), 0, 0.2 + i * 0.25, -0.77);
+    // v12.1.0 modern look: a white back wall with timber slats, a dark steel frame and a flat dark roof with a red fascia
+    const frameM = K.M(0x1f2937, 0.9), slatM = K.M(0xc8a27a, 0.9);
+    K.sharpBox(g, 2.4, 2.2, 0.22, K.M(0xf8fafc, 0.9), 0, 1.1, -0.78);
+    for (let i = 0; i < 8; i++) K.sharpBox(g, 0.12, 2.1, 0.03, slatM, -1.05 + i * 0.3, 1.1, -0.655);
     [1.35, 1.8].forEach((y, row) => {
       K.box(g, 2.2, 0.05, 0.28, K.darkWood, 0, y, -0.58);
       for (let i = 0; i < 6; i++) {
@@ -26,19 +27,14 @@ export const wbTackleShopStatics = {
     });
     const coil = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.05, 6, 14), K.rope); coil.position.set(-0.8, 0.95 + 0.4, -0.6); coil.rotation.x = 0.1; g.add(coil);
     // posts and cross beam
-    [[-1.08, -0.7], [1.08, -0.7], [-1.08, 0.86], [1.08, 0.86]].forEach(([x, z]) => K.cyl(g, 0.08, 0.09, 2.45, K.darkWood, x, 1.22, z, 8));
-    K.box(g, 2.4, 0.1, 0.1, K.darkWood, 0, 2.38, 0.86);
-    // striped awning with scalloped valance
-    const awning = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.1, 2.05), awningMat); awning.position.set(0, 2.42, 0.08); awning.rotation.x = 0.22; g.add(awning);
-    for (let i = 0; i < 9; i++) {
-      const x = -1.2 + i * 0.3;
-      const scallop = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05, 10, 1, false, 0, Math.PI), K.M(i % 2 ? 0xf8fafc : 0xdc2626, 0.65));
-      scallop.rotation.set(0, 0, Math.PI / 2); scallop.rotation.x = 0; scallop.rotation.z = 0;
-      scallop.rotation.set(Math.PI / 2, 0, Math.PI / 2); scallop.position.set(x, 2.28, 1.07); scallop.scale.set(1, 1, 1); g.add(scallop);
-    }
-    // hanging sign on chains
-    K.box(g, 2.1, 0.52, 0.1, signMat, 0, 2.86, 0.9);
-    [-0.95, 0.95].forEach(x => K.cyl(g, 0.01, 0.01, 0.4, K.iron, x, 2.58, 0.9, 4));
+    [[-1.08, -0.7], [1.08, -0.7], [-1.08, 0.86], [1.08, 0.86]].forEach(([x, z]) => K.sharpBox(g, 0.1, 2.45, 0.1, frameM, x, 1.22, z));
+    K.sharpBox(g, 2.4, 0.1, 0.1, frameM, 0, 2.38, 0.86);
+    // the roof: a dark slab falling to the front, a red fascia with a thin white stripe
+    const roof = K.sharpBox(g, 2.7, 0.1, 2.1, K.M(0x2b3442, 0.9), 0, 2.5, 0.08); roof.rotation.x = 0.1;
+    K.sharpBox(g, 2.72, 0.16, 0.04, K.M(0xdc2626, 0.9), 0, 2.36, 1.14); K.sharpBox(g, 2.72, 0.03, 0.045, K.M(0xf8fafc, 0.9), 0, 2.36, 1.14);
+    // the sign standing on the front of the roof
+    K.box(g, 2.1, 0.52, 0.1, signMat, 0, 2.72, 1.2);
+    [-0.85, 0.85].forEach(x => K.sharpBox(g, 0.05, 0.3, 0.05, frameM, x, 2.5, 1.12));
     // buoys, lantern, rods on the left, barrel + crates on the right
     [[0xdc2626, 0], [0xf8fafc, 0.2], [0xdc2626, 0.4]].forEach(([c, dx], i) => K.sph(g, 0.11, K.M(c, 0.5), -1.12, 2.12 - i * 0.24, 0.9 + dx * 0, 10, 8));
     K.cyl(g, 0.012, 0.012, 0.6, K.rope, -1.12, 2.0, 0.9, 4);

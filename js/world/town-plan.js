@@ -25,23 +25,24 @@ function bld(o) {
 
 /* look: wall (render), clad (timber tone), accent (door, trims, awning), roof type and colour, floors, extras */
 export const TOWN = {
-  // the Town Square, with the fountain in the middle and the market stall in its south-east corner
+  // the Town Square, with the fountain in the middle and three market stalls round it (v12.1.0)
   square: { x: 0, z: 20, x0: -7.5, x1: 7.5, z0: 14.5, z1: 25.5 },
   well: { x: 0, z: 20, r: 1.7 },
-  market: { x: 4.6, z: 23.4, r: 2.0 },
+  stalls: [{ x: 4.9, z: 23.6, face: 'N', kind: 'fish', canopy: 0x0284c7 }, { x: 4.9, z: 16.4, face: 'S', kind: 'fruit', canopy: 0x16a34a },
+    { x: -3.0, z: 16.2, face: 'S', kind: 'crafts', canopy: 0xdb2777 }],
   board: bld({ x: 3.6, z: 10.7, w: 1.8, d: 0.36, face: 'N', name: 'Notice kiosk' }),
   // the square's two sides: the restaurant (west) and the Post Office (east) face each other
-  resto: bld({ x: -11.6, z: 20, w: 6.2, d: 4.2, face: 'E', name: "Lorenzo's", floors: 1, roof: 'flat', wall: 0xf8f5ef, clad: 0xe2b98c, accent: 0xb91c1c, extras: ['glass', 'awning'] }),
-  post: bld({ x: 11.6, z: 20, w: 4.8, d: 3.6, face: 'W', name: 'Post Office', floors: 2, roof: 'mono', wall: 0xf8fafc, clad: 0xe8c79f, accent: 0x1d4ed8, extras: ['clock'] }),
+  resto: bld({ x: -11.6, z: 20, w: 6.2, d: 4.2, face: 'E', name: "Lorenzo's", floors: 1, roof: 'flat', wall: 0xf8f5ef, clad: 0xe2b98c, accent: 0xb91c1c, extras: ['glass', 'awning'], landmark: 'resto' }),
+  post: bld({ x: 11.6, z: 20, w: 4.8, d: 3.6, face: 'W', name: 'Post Office', floors: 2, roof: 'mono', wall: 0xf8fafc, clad: 0xe8c79f, accent: 0x1d4ed8, landmark: 'post' }),
   // the waterfront: Talia's greenhouse (Garden Quarter, west) and Barnaby's boat shed (Artisan Quarter, east)
-  talia: bld({ x: -20, z: 13.8, w: 4.6, d: 3.2, face: 'N', name: "Talia's greenhouse", floors: 1, roof: 'mono', wall: 0xf0fdf4, clad: 0xdcc39a, accent: 0x15803d, extras: ['glass', 'planters'] }),
+  talia: bld({ x: -20, z: 13.8, w: 4.6, d: 3.2, face: 'N', name: "Talia's greenhouse", floors: 1, roof: 'mono', wall: 0xf0fdf4, clad: 0xdcc39a, accent: 0x15803d, extras: ['glass', 'planters'], landmark: 'greenhouse' }),
   garden: { x: -27.6, z: 14.2, w: 4.0 },
-  shop: bld({ x: 19.6, z: 13.8, w: 5.2, d: 3.8, face: 'N', name: "Barnaby's Workshop", doorX: -1.5, floors: 1, roof: 'mono', wall: 0xe7e5e4, clad: 0xd4ab80, accent: 0xd97706, extras: ['shedDoor'] }),
+  shop: bld({ x: 19.6, z: 13.8, w: 5.2, d: 3.8, face: 'N', name: "Barnaby's Workshop", doorX: -1.5, floors: 1, roof: 'mono', wall: 0xe7e5e4, clad: 0xd4ab80, accent: 0xd97706, extras: ['shedDoor'], landmark: 'boatshed' }),
   pool: { x: 31.0, z: 22.6, r: 2.3 },
   // your plot on the east waterfront (the new cabin arrives in v12.2.0)
   plot: { x: 31.0, z: 13.6, w: 8.6, d: 5.8 },
   // the Upper Terrace: the homes on Terrace Lane, the Sailors' Rest closing the top of Harbour Street, the lookout
-  tavern: bld({ x: 0, z: 39.3, w: 7.4, d: 4.6, face: 'N', name: "Sailors' Rest", floors: 2, roof: 'gable', wall: 0xfafaf9, clad: 0xd9a46c, accent: 0x7c2d12, extras: ['deck', 'barrels'] }),
+  tavern: bld({ x: 0, z: 39.3, w: 7.4, d: 4.6, face: 'N', name: "Sailors' Rest", floors: 2, roof: 'gable', wall: 0xfafaf9, clad: 0xd9a46c, accent: 0x7c2d12, extras: ['deck', 'barrels'], landmark: 'tavern' }),
   rook: bld({ x: -11.6, z: 37.6, w: 3.9, d: 3.2, face: 'N', name: "Rook's house", owner: 'rook', floors: 2, roof: 'flat', wall: 0xf8fafc, clad: 0xcfae8a, accent: 0x1e3a8a, extras: ['solar'] }),
   hut: bld({ x: -21.6, z: 37.6, w: 3.3, d: 2.8, face: 'N', name: "Marta's house", owner: 'marta', floors: 1, roof: 'mono', wall: 0xfef9f2, clad: 0xe0b483, accent: 0x0f766e, extras: ['planters'] }),
   pip: bld({ x: 11.6, z: 37.6, w: 3.6, d: 3.0, face: 'N', name: "Pip's home", owner: 'pip', floors: 2, roof: 'mono', wall: 0xfffbeb, clad: 0xf0c27a, accent: 0xdc2626, extras: ['planters'] }),
@@ -88,6 +89,16 @@ export const EXTRA_BENCHES = [[-12, 5.25], [-17.5, 5.25], [-22.5, 5.25], [6.8, 5
   [-8.6, 10.4], [8.8, 10.4], [-29.4, 10.4], [-4.6, 24.6], [-5.4, 15.6], [27.6, 35.0], [-6.2, 35.0]].map(([x, z]) => ({ x, z }));
 /* the street lanterns the night watch lights (job), along the lanes and the terrace */
 export const JOB_LANTERNS = [{ x: -14.6, z: 21.8 }, { x: -26.4, z: 21.8 }, { x: 14.6, z: 21.8 }, { x: 25.0, z: 21.8 }, { x: -6.0, z: 31.9 }, { x: 6.2, z: 31.9 }];
+/* v12.1.0 street furniture (merged statically; solid things get a collider): planters, flower beds (flat), bins beside
+   the town benches, bike racks, the gate bollards, the wayfinding signpost on the square and the bunting over Harbour Street */
+export const STREET_PROPS = {
+  planters: [[-2.7, 10.2], [-2.7, 13.6], [2.7, 11.8], [-7.0, 9.9], [7.2, 9.9], [-3.5, 26.4], [3.5, 26.4]],
+  beds: [[-12.0, 10.6, 3.2], [12.0, 10.6, 3.2], [-24.8, 10.6, 2.6], [17.0, 18.0, 2.4], [-17.0, 18.0, 2.4], [-14.0, 31.9, 3.0], [14.0, 31.9, 3.0]],
+  bikeRacks: [[6.2, 9.6], [-8.4, 32.0]],
+  bollards: [[-2.2, 7.2], [2.2, 7.2], [-2.9, 7.2], [2.9, 7.2]],
+  signpost: { x: 3.6, z: 15.0 },
+  bunting: [[-2.4, 14.6], [2.4, 14.6], [-2.4, 25.4], [2.4, 25.4]]
+};
 /* which part of town a point is in (for "Rook is out, usually at ...") */
 export function placeName(x, z) {
   if (z < 0.45) return 'the pier';

@@ -1,10 +1,14 @@
-/* WorldBuilder method: buildHarbourTown, the planned town (v12.0.0): gate, streets, the Town Square and its fountain,
+/* WorldBuilder method: buildHarbourTown, the planned town (v12.0.0): gate, streets, the Town Square (props in town-props.js),
    the notice kiosk, your plot, every building of TOWN_BUILDINGS on the modern kit, the restaurant terrace, the trees. */
 import { THREE } from '../engine/three.js';
 import { PixelTextureFactory } from '../render/texture-factory.js';
+import { ModelKit } from '../render/model-kit.js';
 import { COL, ISLAND, STREETS, TOWN, TOWN_BUILDINGS, TREES, doorOf, faceYaw, townGround } from './layout.js';
 import { Colliders } from '../data/recipes.js';
 import { buildModernBuilding, buildRoundTree, townKitMaterials } from './town-kit.js';
+import { addLandmark } from './town-landmarks.js';
+import { buildFountain, buildStalls } from './town-props.js';
+import { buildStreetProps } from './town-street-props.js';
 
 const SIGNS = { resto: "🍝 FISHERMAN'S RESTAURANT", post: '📮 POST OFFICE', talia: "🌿 TALIA'S GREENHOUSE", shop: "🔨 BARNABY'S WORKSHOP",
   tavern: "🍺 SAILORS' REST", rook: '⚓ ROOK', hut: '🗼 MARTA', pip: '🧒 PIP', ines: '🔬 INES' };
@@ -47,19 +51,11 @@ export const wbTownStatics = {
       for (let i = 0; i < n; i++) { const z = z0 + dz * (i + 0.5), y = townGround(z); K.sharpBox(root, 4.0, y - 1.2, dz + 0.02, i % 2 ? stone : edge, 0, (y + 1.2) / 2 + 0.03, z); }
       [-1, 1].forEach(s => { const c = K.sharpBox(root, 0.3, 0.5, z1 - z0 + 0.4, km.concrete, s * 2.15, (townGround(z0) + townGround(z1)) / 2 + 0.25, (z0 + z1) / 2); c.rotation.x = -Math.atan2(ISLAND.up, z1 - z0); });
     }
-    // the Town Square: light paving with a darker border, and the fountain in the middle
+    // the Town Square: light paving with a darker border; the fountain, stalls and street furniture (town-props.js)
     const S = TOWN.square;
     const sq = K.sharpBox(root, S.x1 - S.x0, 0.06, S.z1 - S.z0, M(0x8d867b, 0.95), S.x, 1.53, S.z); sq.receiveShadow = true;
     [[S.x, S.z0, S.x1 - S.x0, 0.3], [S.x, S.z1, S.x1 - S.x0, 0.3], [S.x0, S.z, 0.3, S.z1 - S.z0], [S.x1, S.z, 0.3, S.z1 - S.z0]].forEach(([x, z, w, d]) => K.sharpBox(root, w, 0.07, d, edge, x, 1.535, z));
-    {
-      const F = TOWN.well, f = new THREE.Group(); f.position.set(F.x, 1.5, F.z); f.userData.townFade = true; root.add(f); fade.push(f);
-      const ring = new THREE.Mesh(new THREE.CylinderGeometry(F.r, F.r + 0.08, 0.55, 28, 1, true), km.concrete); ring.position.y = 0.28; ring.material.side = THREE.DoubleSide; f.add(ring);
-      K.cyl(f, F.r + 0.15, F.r + 0.15, 0.08, km.concrete, 0, 0.56, 0, 28);
-      K.cyl(f, F.r - 0.05, F.r - 0.05, 0.04, M(0x2a8fb0, 0.15, 0.2), 0, 0.42, 0, 28);
-      K.cyl(f, 0.32, 0.42, 1.2, km.white, 0, 0.9, 0, 14); K.cyl(f, 0.7, 0.7, 0.08, km.white, 0, 1.5, 0, 18);
-      K.sph(f, 0.22, M(0x7dd3fc, 0.1, 0.3, { transparent: true, opacity: 0.85 }), 0, 1.7, 0, 10, 8);
-      Colliders.circle('fountain', F.x, F.z, F.r + 0.2, W);
-    }
+    buildFountain(K, km, root, fade); buildStalls(K, km, root); buildStreetProps(K, km, root);
     // the notice kiosk at the gate: a timber board under a small roof, facing the promenade
     {
       const B = TOWN.board, k = new THREE.Group(); k.position.set(B.x, 1.5, B.z); k.rotation.y = faceYaw(B.face); root.add(k);
@@ -68,6 +64,7 @@ export const wbTownStatics = {
       sign(k, '📌 TOWN JOBS', 1.4, 0, 1.98, 0.06);
       [[-0.45, 1.3, 0xfef3c7], [0.05, 1.25, 0xfde68a], [0.5, 1.35, 0xf8fafc]].forEach(([x, y, c]) => K.box(k, 0.36, 0.44, 0.01, M(c, 0.9), x, y, 0.05));
       Colliders.box('notice kiosk', B.x, B.z, 0.9, 0.18, W);
+      ModelKit.mergeStatic(k, [], { bakeColor: true });
     }
     // your plot on the east waterfront: a fresh lawn behind a low timber fence (open to the promenade) and its sign
     {
@@ -81,6 +78,7 @@ export const wbTownStatics = {
     const groups = {};
     TOWN_BUILDINGS.forEach(id => {
       const b = TOWN[id], { g, cols } = buildModernBuilding(K, km, b, id === 'resto' ? null : SIGNS[id]);
+      addLandmark(K, km, b, g, cols);
       g.position.set(b.x, townGround(b.z), b.z); g.rotation.y = faceYaw(b.face); g.userData.townFade = true; g.userData.building = id;
       root.add(g); fade.push(g); groups[id] = g;
       Colliders.box(b.name, b.x, b.z, b.hx + 0.12, b.hz + 0.12, W);
@@ -99,7 +97,7 @@ export const wbTownStatics = {
     [[2.0, -2.2], [2.0, 2.2], [3.9, 0]].forEach(([fwd, lat], ti) => {
       const p = at(fwd, lat), tg = new THREE.Group(); tg.position.set(p.x, 1.5, p.z); tg.rotation.y = faceYaw(R.face) + Math.PI / 2; root.add(tg); tables.push(tg);
       K.cyl(tg, 0.45, 0.45, 0.05, km.white, 0, 0.74, 0, 16); K.cyl(tg, 0.05, 0.08, 0.72, K.iron, 0, 0.36, 0, 8);
-      K.box(tg, 0.92, 0.012, 0.18, M(0xdc2626, 0.7), 0, 0.775, 0);
+      K.box(tg, 0.92, 0.012, 0.18, M(0xdc2626, 0.9), 0, 0.775, 0);
       [-0.75, 0.75].forEach((sx, si) => {
         K.cyl(tg, 0.17, 0.17, 0.05, K.darkWood, sx, 0.46, 0, 10); K.cyl(tg, 0.03, 0.03, 0.44, K.iron, sx, 0.22, 0, 6);
         const gst = new THREE.Group(); gst.position.set(sx, 0.48, 0); gst.rotation.y = sx < 0 ? -Math.PI / 2 : Math.PI / 2; tg.add(gst);
@@ -109,8 +107,11 @@ export const wbTownStatics = {
         gst.visible = false; guests.push(gst);
       });
       Colliders.circle('terrace table', p.x, p.z, 0.55, W);
+      ModelKit.mergeStatic(tg, guests.slice(-2), { bakeColor: true });   // v12.1.0: the table in one or two meshes, its two guests apart
     });
-    for (let i = 0; i <= 12; i++) { const p = at(0.7, -3.1 + i * 0.52); K.sph(lights, 0.05, new THREE.MeshBasicMaterial({ color: [0xfde68a, 0xf472b6, 0x7dd3fc][i % 3] }), p.x, 1.5 + 3.05 - Math.sin(i / 12 * Math.PI) * 0.35, p.z, 6, 5); }
+    const bulbs = [0xfde68a, 0xf472b6, 0x7dd3fc].map(color => new THREE.MeshBasicMaterial({ color }));
+    for (let i = 0; i <= 12; i++) { const p = at(0.7, -3.1 + i * 0.52); K.sph(lights, 0.05, bulbs[i % 3], p.x, 1.5 + 3.05 - Math.sin(i / 12 * Math.PI) * 0.35, p.z, 6, 5); }
+    ModelKit.mergeStatic(lights, []);   // three meshes, one per bulb colour (the string is switched as a whole)
     lights.visible = false;
     // planned planting: palms on the promenade, round trees along the streets (each fades if it blocks the camera)
     const palmMats = {

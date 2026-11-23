@@ -65,9 +65,12 @@ export function updateTownProps() {
   // v12.0.0: windows and door lamps glow at night (the fade gives each building its own copy, so find the copies once)
   if (D.glowVer !== townFadeState.ver) {
     D.glowVer = townFadeState.ver; D.glow = [];
-    world.islandScenery.traverse(o => { if (o.isMesh && o.material && o.material.userData.glow && !D.glow.includes(o.material)) D.glow.push(o.material); });
+    const pick = o => { if (o.isMesh && o.material && o.material.userData.glow && !D.glow.includes(o.material)) D.glow.push(o.material); };
+    world.islandScenery.traverse(pick); if (world.pierGroup) world.pierGroup.traverse(pick);   // v12.1.0: the boardwalk shops too
     D.glowNight = null;
+    D.swing = null; world.islandScenery.traverse(o => { if (o.userData.building === 'tavern') D.swing = o.userData.swing || null; });
   }
+  if (D.swing) { const t = shared.elapsed || 0; D.swing.rotation.z = Math.sin(t * 1.3) * 0.12 + Math.sin(t * 0.47) * 0.05; }   // the tavern sign in the breeze
   if (D.glowNight !== night) { D.glowNight = night; D.glow.forEach(m => { m.emissiveIntensity = night ? (m.userData.glow === 'lamp' ? 1.5 : 0.85) : 0; }); }
   D.trapFloats.forEach((f, i) => { f.visible = !!T.traps[i]; if (f.visible) f.position.y = townGround(TOWN.pool.z) + 0.08 + Math.sin(shared.elapsed * 2 + i) * 0.02; });
 }
