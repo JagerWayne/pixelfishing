@@ -17,7 +17,7 @@ import { dive } from '../dive/dive-state.js';
 export let tapMarker;
 
 /* ---- Harbour Town fades: a building or palm between the camera and the angler turns see-through ---- */
-const townFadeState = { list: null };
+export const townFadeState = { list: null, ver: 0 };
 const _fadeRay = new THREE.Ray(), _fadeV = new THREE.Vector3(), _fadeHead = new THREE.Vector3();
 export function updateTownFade(dt) {
   if (!world || !world.townFade) return;
@@ -28,6 +28,7 @@ export function updateTownFade(dt) {
       g.updateMatrixWorld(true);
       return { g, mats, box: new THREE.Box3().setFromObject(g).expandByScalar(0.15), t: 1 };
     });
+    townFadeState.ver++;   // the building materials are copies now (the night glow looks them up again)
   }
   const fp = !!settings.firstPerson && !shopBrowse.active;
   _fadeHead.copy(world.anglerGroup.position); _fadeHead.y += 1.2;
@@ -61,9 +62,9 @@ function clampWalkable(x, z) {
 /* where a tap leads: a shop or stand tapped on its building leads to the spot in front of it */
 function tapDestination(x, z) {
   for (const p of MAP_PLACES()) {
-    if (p.far || !p.w || ['Cabin', 'Pier end', 'Mooring platform', 'Benches', 'Harbour Town', 'Market Square', 'Herb garden'].includes(p.name)) continue;
+    if (p.far || !p.w || ['Cabin', 'Pier end', 'Mooring platform', 'Benches', 'Town Square', 'Market stall', 'Herb garden', 'Your plot'].includes(p.name)) continue;
     if (Math.abs(x - p.x) <= p.w / 2 + 0.3 && Math.abs(z - p.z) <= p.d / 2 + 0.3)
-      return { x: p.x, z: p.z > ISLAND.zGate ? p.z - p.d / 2 - 0.75 : p.z + p.d / 2 + 0.85 };   // town houses face the sea
+      return p.door ? { x: p.door.x, z: p.door.z } : { x: p.x, z: p.z + p.d / 2 + 0.85 };   // town buildings: their door (v12.0.0)
   }
   return clampWalkable(x, z);
 }
@@ -80,7 +81,12 @@ export function planRoute(to, fromPt) {
   const cx = frontCrossX(b0 === 'town' ? to.x : a0 === 'town' && b0 === 'board' ? to.x : a0 === 'town' ? 0 : to.x);
   const gateOut = { x: cx, z: ISLAND.zGate - 0.4 }, gateIn = { x: cx, z: ISLAND.zIn + 0.4 };
   let a = a0, b = b0;
-  if (a0 === 'town' && b0 !== 'town') { pts.push(...townPath(from, gateIn), gateOut); a = 'board'; from.x = cx; from.z = gateOut.z; }
+  // v12.0.0: standing on the open strip between the boardwalk and the town, step onto the town edge first (the
+  // town's waypoint graph starts at zIn)
+  if (a0 === 'town' && from.z < ISLAND.zIn + 0.3) { const edge = { x: from.x, z: ISLAND.zIn + 0.4 }; if (b0 === 'town') pts.push(edge); from.z = edge.z; }
+  // v12.0.0: on the boardwalk, walk along the clear lane in front of the benches (z BW_LANE), never through the bench row
+  const BW_LANE = 4.3, lane = x => ({ x, z: BW_LANE });
+  if (a0 === 'town' && b0 !== 'town') { pts.push(...townPath(from, gateIn), gateOut, lane(cx)); a = 'board'; from.x = cx; from.z = BW_LANE; }
   if (b0 === 'town' && a0 !== 'town') b = 'board';
   const pierMouth = x => ({ x: THREE.MathUtils.clamp(x, -PIER_WALK + 0.4, PIER_WALK - 0.4), z: 0.9 });
   const stairTop = { x: -PIER_WALK + 0.2, z: -5.6 }, stairFoot = { x: PLATFORM.xIn - 0.3, z: -5.6 };
@@ -89,9 +95,9 @@ export function planRoute(to, fromPt) {
   if (b === 'dock' && a !== 'dock') pts.push(stairTop, stairFoot);
   if (a === 'dock' && b !== 'dock') pts.unshift(stairFoot, stairTop);
   if (CABIN && Math.abs(to.x - CABIN.x) < CABIN.w / 2 && to.z < CABIN.d + 0.2 && !(Math.abs(from.x - CABIN.x) < CABIN.w / 2 && from.z < CABIN.d + 0.2)) pts.push({ x: CABIN.x, z: CABIN.d + 0.9 }, { x: CABIN.x, z: CABIN.d - 0.6 });
-  if (b0 === 'town' && a0 !== 'town') pts.push(gateOut, gateIn, ...townPath(gateIn, to));   // around the buildings (townPath)
+  if (b0 === 'town' && a0 !== 'town') { if (a0 === 'board' && Math.abs(from.x - cx) > 0.8) pts.push(lane(from.x), lane(cx)); pts.push(gateOut, gateIn, ...townPath(gateIn, to)); }   // around the buildings (townPath)
   else if (a0 === 'town' && b0 === 'town') pts.push(...townPath(from, to));
-  else pts.push(to);
+  else { if (b === 'board' && to.z > BW_LANE - 0.2 && Math.abs(to.x - from.x) > 0.8) pts.push(lane(to.x)); pts.push(to); }
   return pts;
 }
 export function tapToWalk(clientX, clientY) {

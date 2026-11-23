@@ -60,7 +60,7 @@ function buildNpcs() {
     npcState.list.push({ id, d, rig, g, mk, umb, anim: new AnglerAnimator(rig), x: start.x, z: start.z, yaw: Math.PI, pts: [], goal: null, hidden: false, talk: 0 });
   });
 }
-function npcSpotNow(d) {
+export function npcSpotNow(d) {
   const t = shared.state.timeOfDay;
   if (t < 0.27 || t > 0.8) return d.home;
   return d.spots[Math.floor((t - 0.27) / 0.12) % d.spots.length];

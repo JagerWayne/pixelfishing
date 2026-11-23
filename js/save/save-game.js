@@ -4,7 +4,7 @@ import { shared } from '../state.js';
 import { BAIT_TIERS, BOAT_TIERS, BUCKET_TIERS, ROD_TIERS } from '../data/equipment.js';
 import { CATCH_CATALOG, ZONES } from '../data/catalog.js';
 import { PixelTextureFactory } from '../render/texture-factory.js';
-import { CABIN, RECYCLE, SHORE_SHOPS, TOWN } from '../world/layout.js';
+import { CABIN, RECYCLE, SHORE_SHOPS, TOWN, doorOf } from '../world/layout.js';
 import { boatPos } from '../sim/runtime.js';
 import { SAVE_KEY } from '../fishing/bounties.js';
 import { applyAnglerGender, defaultSaveState } from './defaults.js';
@@ -115,7 +115,7 @@ export function init() {
     { id: 'bounty',  focus: true, near: () => isNearPierBounty(),   cx: -4.2, cy: 2.75, cz: 0.9, halfW: 0.74, halfH: 0.58, minDist: 2.0, pad: 1.05, add: 0.25, yaw: 0.3, side: 1 },
     { id: 'gallery', near: () => isNearPierGallery(),  cx: CABIN.galleryX, cy: 3.0, cz: 0.8, halfW: 1.45, halfH: 1.4, side: 1 },
     { id: 'aquarium', focus: true, near: () => isNearAquarium(),     cx: CABIN.aquaX,    cy: 1.56 + 1.45, cz: 0.5, halfW: 0.9, halfH: 0.82, side: 1, pan: true },
-    { id: 'resto',   near: () => isNearResto(),       cx: TOWN.resto.x, cy: 1.5 + 1.7, cz: TOWN.resto.z - TOWN.resto.d / 2, halfW: 2.8, halfH: 1.6, side: 1, flip: true },
+    { id: 'resto',   near: () => isNearResto(),       cx: doorOf(TOWN.resto, 0).x, cy: 1.5 + 1.7, cz: doorOf(TOWN.resto, 0).z, halfW: 2.8, halfH: 1.6, side: 1, dir: [TOWN.resto.fx, TOWN.resto.fz] },
     { id: 'recycle', near: () => isNearRecycle(),      cx: RECYCLE.x,      cy: 2.5, cz: 0.8, halfW: RECYCLE.w / 2 + 0.3, halfH: 1.6, side: -1 },
     ...Object.entries(SHORE_SHOPS).map(([k, sh]) => ({ id: k, near: () => nearShoreShop(sh), cx: sh.x, cy: 1.56 + 1.75 * sh.s, cz: sh.z + sh.d / 2, halfW: sh.w / 2 + 0.5, halfH: 1.55 * sh.s + 0.1, side: sh.x < 0 ? 1 : -1 }))
   ];

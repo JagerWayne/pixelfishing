@@ -3,7 +3,8 @@ import { shared } from '../state.js';
 import { sfx } from '../data/equipment.js';
 import { CATCH_CATALOG, ZONES } from '../data/catalog.js';
 import { BOTTLE_MESSAGES } from '../data/bottles-bounties.js';
-import { ISLAND, TOWN } from '../world/layout.js';
+import { TOWN, TOWN_BUILDINGS, atDoor, placeName } from '../world/layout.js';
+import { NPCS } from '../data/townsfolk.js';
 import { friendPerk } from '../data/townsfolk.js';
 import { world } from '../render/lights.js';
 import { vfx } from '../render/previews.js';
@@ -16,7 +17,8 @@ import { saveGame } from '../save/save-game.js';
 import { SIT_SPOT, SPOTS } from '../sim/spots.js';
 import { rebuildPierBucketVisual } from '../boat/terminal.js';
 import { showToast } from '../ui/toasts.js';
-import { addFriend, talkMenu, talkSay } from './talk.js';
+import { addFriend, openTalk, talkMenu, talkSay } from './talk.js';
+import { npcSpotNow, npcState } from './npcs.js';
 import { dayRng, town } from './town-state.js';
 import { openTownSheet, townClose, townPay, townRefresh, townUI } from './town-nav.js';
 import { JOB_KINDS, activeJob, ensureJobs, finishJob } from './town-jobs.js';
@@ -74,7 +76,15 @@ function openWinch() {
 }
 
 /* ---- the places: action button entries (first match wins) ---- */
-const inFront = t => Math.abs(shared.playerX - t.x) < 1.1 && shared.playerZ < t.z - t.d / 2 - 0.05 && shared.playerZ > t.z - t.d / 2 - 1.4;
+/* v12.0.0: every door action uses the plan's door (atDoor); on foot only */
+const inFront = t => !shared.onBoat && atDoor(t, shared.playerX, shared.playerZ);
+/* knocking: a townsperson at home opens the door for a chat; otherwise you hear where they usually are */
+function knock(b) {
+  const n = npcState.list.find(q => q.id === b.owner), who = NPCS[b.owner];
+  if (n && !n.hidden && Math.hypot(n.x - n.d.home.x, n.z - n.d.home.z) < 2.4) { openTalk(n); return; }
+  const spot = n ? npcSpotNow(n.d) : null;
+  showToast(`🚪 ${who.name} is out${spot ? `, usually at ${placeName(spot.x, spot.z)} now` : ''}.`);
+}
 
 /* v6.3.1 performance: the town is not drawn far out at sea or underwater, and the pier not underwater (fog hides them anyway) */
 export function perfCull() {
@@ -125,8 +135,10 @@ export function init() {
     { id: 'winch', icon: '🏗️', label: 'WINCH', cls: 'shop', color: ['#f59e0b', '#fde68a'], near: () => { const a = activeJob(); return !!a && a.kind === 'winch' && Math.hypot(shared.playerX - TOWN.winch.x, shared.playerZ - (TOWN.winch.z + 0.9)) < 1.2; }, prox: () => '🏗️ WINCH • HOIST 5 CRATES FOR ROOK', press: openWinch }
   );
   SPOTS.push(
+    ...TOWN_BUILDINGS.filter(id => TOWN[id].owner).map(id => ({ id: 'knock-' + id, icon: '🚪', label: 'KNOCK', cls: 'shop', color: ['#94a3b8', '#e2e8f0'],
+      near: () => inFront(TOWN[id]), prox: () => `🚪 ${TOWN[id].name.toUpperCase()} • KNOCK ON THE DOOR`, press: () => knock(TOWN[id]) })),
     { id: 'scope', icon: '🔭', label: 'LOOK', cls: 'shop', color: ['#38bdf8', '#bae6fd'], near: () => Math.hypot(shared.playerX - TOWN.scope.x, shared.playerZ - (TOWN.scope.z + 0.75)) < 0.6, prox: () => '🔭 TELESCOPE • SPOT FRENZIES, TREASURE AND BOSS SHADOWS', press: openScope },
-    { id: 'board', icon: '📌', label: 'JOBS', cls: 'bounty', color: ['#34d399', '#a7f3d0'], near: () => Math.abs(shared.playerX - TOWN.board.x) < 1.1 && shared.playerZ > ISLAND.zIn && shared.playerZ < TOWN.board.z - 0.2, prox: () => { ensureJobs(); const n = town().jobs.list.filter(j => j.status === 'open').length; return `📌 NOTICEBOARD • ${n} JOB${n === 1 ? '' : 'S'} TODAY`; }, press: () => openJobsSheet() },
+    { id: 'board', icon: '📌', label: 'JOBS', cls: 'bounty', color: ['#34d399', '#a7f3d0'], near: () => inFront(TOWN.board), prox: () => { ensureJobs(); const n = town().jobs.list.filter(j => j.status === 'open').length; return `📌 NOTICEBOARD • ${n} JOB${n === 1 ? '' : 'S'} TODAY`; }, press: () => openJobsSheet() },
     { id: 'post', icon: '📮', label: 'POST', cls: 'shop', color: ['#60a5fa', '#bfdbfe'], near: () => inFront(TOWN.post), prox: () => '📮 POST OFFICE • JOBS, TREASURE MAPS, BOTTLE STAMPS', press: openPostOffice },
     { id: 'tavern', icon: '🎲', label: 'DICE', cls: 'shop', color: ['#f59e0b', '#fde68a'], near: () => inFront(TOWN.tavern), prox: () => (tavernOpen() ? "🍺 SAILORS' REST • SHIP, CAPTAIN & CREW" : "🍺 SAILORS' REST • OPENS AT 16:00"), useless: () => !tavernOpen(), press: openTavern },
     { id: 'traps', icon: '🦀', label: 'TRAPS', cls: 'shop', color: ['#fb923c', '#fed7aa'], near: () => { const d = Math.hypot(shared.playerX - TOWN.pool.x, shared.playerZ - TOWN.pool.z); return d > TOWN.pool.r && d < TOWN.pool.r + 1.4; }, prox: () => { const T = town(), ready = T.traps.filter(t => t && (shared.state.dayCount || 0) > t.day).length; return `🦀 TIDE POOL • ${ready ? ready + ' TRAP' + (ready > 1 ? 'S' : '') + ' READY' : 'CRAB TRAPS'}`; }, press: openTraps },

@@ -37,10 +37,12 @@ export function standCameraPose(st) {
   const dist = THREE.MathUtils.clamp(Math.max(st.halfH / tv, st.halfW / th) * (st.pad || 1.2) + (st.add != null ? st.add : 0.8), st.minDist || 3.4, 12);
   const yaw = (st.yaw || 0.68) * st.side, pitch = 0.24;
   _standLook.set(st.cx, st.cy, st.cz);
+  // dir: the way the front faces (default +Z); the camera swings sideways along the facade by yaw
+  const [fx, fz] = st.dir || [0, 1], tx = Math.abs(fz), tz = Math.abs(fx);
   _standPos.set(
-    st.cx + Math.sin(yaw) * Math.cos(pitch) * dist,
+    st.cx + (tx * Math.sin(yaw) + fx * Math.cos(yaw)) * Math.cos(pitch) * dist,
     st.cy + Math.sin(pitch) * dist,
-    st.cz + (st.flip ? -1 : 1) * Math.cos(yaw) * Math.cos(pitch) * dist   // flip: the front faces -Z (the town's buildings face the sea)
+    st.cz + (tz * Math.sin(yaw) + fz * Math.cos(yaw)) * Math.cos(pitch) * dist
   );
 }
 

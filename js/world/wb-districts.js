@@ -1,48 +1,25 @@
 /* WorldBuilder method: buildTownDistricts, the town districts, benches and lamps. Kept whole. */
 import { THREE } from '../engine/three.js';
-import { PixelTextureFactory } from '../render/texture-factory.js';
 import { ModelKit } from '../render/model-kit.js';
 import { COL, EXTRA_BENCHES, JOB_LANTERNS, TOWN, benchGroundY, townGround } from './layout.js';
 import { Colliders } from '../data/recipes.js';
 
 export const wbDistrictsStatics = {
-  /* Harbour Town districts (v6.3.0): the Market Square and Artisan Quarter to the east (Post Office, Barnaby's
-     Workshop, the tide pool with its crab traps up on the terrace, Sailors' Rest tavern), Lighthouse Hill to the west
-     (Talia's greenhouse, the herb garden, the Lookout Pavilion with its telescope and bench), street lanterns and the
-     dockhand's winch on the boardwalk. Buildings fade (townFade) and everything solid has a walk collider. */
+  /* Harbour Town's props (v12.0.0 positions from the town plan): the market stall on the Town Square, the Lookout
+     Pavilion with its telescope and bench on Lighthouse Hill, the herb garden, the tide pool with its crab traps, the
+     street lanterns, the dockhand's winch on the boardwalk and the benches with their lamps. The buildings are built
+     by buildHarbourTown. Everything solid has a walk collider. */
   buildTownDistricts(root, fade, textures) {
     const K = this.propKit(textures), M = K.M, W = COL.WALK, out = { lanterns: [], trapFloats: [] };
-    const sign = (parent, text, w, x, y, z, px = 288) => K.box(parent, w, w * 0.18, 0.05, new THREE.MeshBasicMaterial({ map: PixelTextureFactory.makeSignTexture(text, px, 52) }), x, y, z);
-    const stoneD = M(0x6b7280, 0.95), pave = M(0xb8b0a2, 0.95);
-    // houses: the cottage model with a sign over the door, facing the sea
-    const house = (t, wall, roof, seed, label) => {
-      const ct = this.buildCottage(t.w, t.d, wall, roof, seed);
-      ct.position.set(t.x, townGround(t.z), t.z); ct.rotation.y = Math.PI; ct.userData.townFade = true; root.add(ct); fade.push(ct);
-      sign(ct, label, Math.min(2.4, t.w * 0.62), 0, 2.08, t.d / 2 + 0.1);
-      Colliders.box(t.name, t.x, t.z, t.w / 2 + 0.12, t.d / 2 + 0.12, W);
-      return ct;
-    };
-    house(TOWN.post, 0xfef9c3, 0x1d4ed8, 3, '📮 POST OFFICE');
-    { const ct = house(TOWN.shop, 0xd6b48a, 0x7c2d12, 4, '🔨 WORKSHOP'); K.box(ct, 0.9, 0.5, 0.5, K.darkWood, TOWN.shop.w / 2 - 0.6, 0.55, TOWN.shop.d / 2 + 0.45); }
-    { const ct = house(TOWN.tavern, 0xa16207, 0x334155, 5, "🍺 SAILORS' REST");
-      [-1, 1].forEach(sx => K.cyl(ct, 0.28, 0.28, 0.62, M(0x7c2d12, 0.85), sx * (TOWN.tavern.w / 2 - 0.45), 0.61, TOWN.tavern.d / 2 + 0.45, 10));
-      Colliders.circle('barrel', TOWN.tavern.x + TOWN.tavern.w / 2 - 0.45, TOWN.tavern.z - TOWN.tavern.d / 2 - 0.45, 0.32, W);
-      Colliders.circle('barrel', TOWN.tavern.x - TOWN.tavern.w / 2 + 0.45, TOWN.tavern.z - TOWN.tavern.d / 2 - 0.45, 0.32, W); }
-    house(TOWN.talia, 0xdcfce7, 0x15803d, 6, '🌿 TALIA');
-    // the Market Square: paving, a fish-crate stall and bunting
+    const stoneD = M(0x6b7280, 0.95);
+    // the market stall in the square's south-east corner
     {
       const S = TOWN.market, y = townGround(S.z);
-      const p = new THREE.Mesh(new THREE.CylinderGeometry(S.r, S.r, 0.06, 26), pave); p.position.set(S.x, y + 0.02, S.z); p.receiveShadow = true; root.add(p);
       const st = new THREE.Group(); st.position.set(S.x + 0.2, y, S.z + 0.2); root.add(st);
       K.box(st, 1.6, 0.7, 0.7, K.wood, 0, 0.35, 0); [[-0.5, 0x60a5fa], [0, 0xf8fafc], [0.5, 0xf87171]].forEach(([x, c]) => K.box(st, 0.42, 0.16, 0.5, M(c, 0.8), x, 0.78, 0));
       [-0.75, 0.75].forEach(x => K.cyl(st, 0.04, 0.04, 1.8, K.darkWood, x, 0.9, -0.3, 6)); K.box(st, 1.8, 0.05, 0.9, M(0x0e7490, 0.8), 0, 1.8, 0);
       Colliders.box('market stall', S.x + 0.2, S.z + 0.2, 0.85, 0.4, W);
     }
-    // cobbles: the hill path west and the lane east
-    const cob = (x, z, i) => { const s = new THREE.Mesh(ModelKit.roundedBox(0.9 + (i % 2) * 0.3, 0.07, 0.7, 0.03), i % 2 ? pave : M(0x9ca3af, 0.95)); s.position.set(x, townGround(z) + 0.02, z); s.rotation.y = i * 0.5; root.add(s); };
-    for (let i = 0; i < 13; i++) { const t = i / 12; cob(-20.5 - t * 12.5 + Math.sin(t * 5) * 0.6, 9.6 + t * 10.0, i); }
-    for (let i = 0; i < 10; i++) cob(21.5 + i * 1.05, 8.4 + Math.sin(i * 0.8) * 0.25, i + 1);
-    for (let i = 0; i < 8; i++) { const t = i / 7; cob(26.5 + t * 2.5, 15.0 + t * 2.6, i); }
     // Lookout Pavilion: a six-post gazebo with a roof, a bench (reading spot) and a brass telescope pointing out to sea
     {
       const L = TOWN.lookout, y = townGround(L.z), g = new THREE.Group(); g.position.set(L.x, y, L.z); g.userData.townFade = true; root.add(g); fade.push(g);

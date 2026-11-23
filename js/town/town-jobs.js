@@ -1,7 +1,7 @@
 /* Town jobs: the kinds, stops and spots, taking and finishing a job, and the job props. */
 import { shared } from '../state.js';
 import { sfx } from '../data/equipment.js';
-import { CABIN, JOB_LANTERNS, LH_J, PLATFORM, TOWN } from '../world/layout.js';
+import { CABIN, JOB_LANTERNS, LH_J, PLATFORM, TOWN, doorOf } from '../world/layout.js';
 import { PHYS } from '../data/recipes.js';
 import { Physics } from '../engine/physics.js';
 import { scene } from '../render/renderer.js';
@@ -25,16 +25,18 @@ export const JOB_KINDS = {
 };
 const MAIL_STOPS = [
   { id: 'platform', name: 'the mooring platform', at: () => ({ x: (PLATFORM.xOut + PLATFORM.xIn) / 2, z: (PLATFORM.zMin + PLATFORM.zMax) / 2 }), r: 1.8, hours: 4 },
-  { id: 'resto', name: 'the restaurant', at: () => ({ x: TOWN.resto.x, z: TOWN.resto.z - TOWN.resto.d / 2 - 0.9 }), r: 1.8, hours: 4 },
+  { id: 'resto', name: 'the restaurant', at: () => doorOf(TOWN.resto, 0.9), r: 1.8, hours: 4 },
   { id: 'cabin', name: 'the cabin', at: () => ({ x: CABIN.x, z: CABIN.d / 2 }), r: 2.0, hours: 4 },
-  { id: 'tavern', name: "Sailors' Rest", at: () => ({ x: TOWN.tavern.x, z: TOWN.tavern.z - TOWN.tavern.d / 2 - 0.9 }), r: 1.8, hours: 4 },
+  { id: 'tavern', name: "Sailors' Rest", at: () => doorOf(TOWN.tavern, 0.9), r: 1.8, hours: 4 },
   { id: 'jetty', name: 'the lighthouse jetty', at: () => ({ x: LH_J.x, z: LH_J.z }), r: 26, hours: 10, boat: true }
 ];
 export const mailStop = id => MAIL_STOPS.find(s => s.id === id) || MAIL_STOPS[0];
-const postFront = () => ({ x: TOWN.post.x, z: TOWN.post.z - TOWN.post.d / 2 - 0.85 });
-const LITTER_SPOTS = [[-24, 3.8], [-20.4, 4.6], [-9.2, 3.7], [9.4, 4.6], [19.6, 3.9], [24.4, 4.4], [33.2, 16.2], [36.4, 16.6], [29.4, 22.4], [36.6, 22.8], [-35.2, 9.4], [26.2, 8.0]];
-const HERB_SPOTS = [[-27.0, 16.4], [-31.8, 16.5], [-35.8, 17.8], [-36.4, 22.6], [-30.4, 23.0], [-26.6, 22.9], [-22.2, 22.6], [-35.6, 15.0], [-29.6, 21.6]];
-const SHELL_SPOTS = [[30.9, 21.9], [36.9, 17.3], [37.0, 22.6], [31.6, 16.8], [30.4, 19.6], [33.9, 23.1], [37.1, 19.8]];
+const postFront = () => doorOf(TOWN.post, 0.85);
+/* v12.0.0: on the new plan's open ground (litter on the boardwalk, promenade and lanes; herbs round the garden and
+   Lighthouse Hill; shells round the tide pool) */
+const LITTER_SPOTS = [[-24, 3.8], [-20.4, 4.6], [-9.2, 3.7], [9.4, 4.6], [16.4, 4.5], [24.4, 4.4], [-16, 8.4], [11, 8.6], [-21.5, 21.6], [22, 18.6], [-2.6, 26.2], [15.6, 34.6]];
+const HERB_SPOTS = [[-27.0, 11.8], [-30.6, 12.4], [-31.2, 16.6], [-24.2, 16.8], [-35.2, 24.4], [-34.6, 30.2], [-28.4, 35.0], [-35.4, 37.6], [-27.6, 40.6]];
+const SHELL_SPOTS = [[27.4, 21.8], [34.8, 21.0], [35.4, 24.6], [27.8, 24.8], [31.2, 26.0], [33.6, 18.6], [28.4, 19.2]];
 export function ensureJobs() {
   const T = town(), day = shared.state.dayCount || 0;
   if (T.jobs.day === day && T.jobs.list.length) return;

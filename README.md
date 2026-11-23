@@ -364,7 +364,16 @@ The fish swim in the tank in the world (their real models, sized by weight), the
 
 ## Harbour Town, its people and the story
 
-Behind the boardwalk, open along its whole length since v6.6.1 (the **🏘️ Harbour Town** gate straight behind the pier remains as a landmark), the island terrace is now a small town you can walk around: a plaza with a well, lamps and a noticeboard, three cottages, **Marta's hut** at the west end and **your restaurant** (named after you) at the east end. Buildings, palms and the well turn see-through when they stand between the camera and you.
+Behind the boardwalk, open along its whole length (the **🏘️ Harbour Town** gate straight behind the pier is a landmark), lies a planned town (since v12.0.0) you can walk around. Buildings, trees and the fountain turn see-through when they stand between the camera and you.
+
+**The layout (v12.0.0).** The town is about 75 m wide and 40 m deep, on two levels:
+- **Harbour Promenade:** a paved street along the whole town front, with benches, palms and the **📌 notice kiosk** at the gate.
+- **Harbour Street:** the main street, running from the gate straight up to the **Town Square**. The square has a fountain and a market stall, **your restaurant** (named after you, with its terrace) on the west side and the **📮 Post Office** (with a clock) on the east.
+- **Garden Lane (west):** leads past **🌿 Talia's greenhouse** and her herb garden on the waterfront, then up the hill path to **Lighthouse Hill**.
+- **Market Lane (east):** leads to the **🦀 tide pool**. **🔨 Barnaby's Workshop**, a boat shed, stands on the waterfront, next to **🏡 your plot**, where your new cabin will be built (v12.2.0).
+- **Upper Terrace:** steps from the square climb 1.8 m to it. On Terrace Lane stand the homes of **🔬 Ines**, **🧒 Pip**, **⚓ Rook** and **🗼 Marta**. The **🍺 Sailors' Rest** closes the top of Harbour Street (you see it from the gate), and the **🔭 Lookout Pavilion** sits at the west end.
+
+**The buildings** are modern coastal houses: white render, timber cladding with vertical slats, dark metal roofs (flat, mono-pitch or gable), large framed windows that **glow at night**, and a front door with a canopy, a door mat, a wall lamp and a sign. Paved streets in stone, lanes in terracotta, planned trees and street lanterns. Every building with a door you can use has an action right at its door (see the table below). Each townsperson's house can be knocked on: **🚪 KNOCK** opens a chat if they are at home (evenings and nights), otherwise you hear where they usually are at that hour.
 
 **Town Projects (v6.6.0, noticeboard):** late-game investments for the town.
 | Project | Cost | What it does |
@@ -377,15 +386,14 @@ Behind the boardwalk, open along its whole length since v6.6.1 (the **🏘️ Ha
 
 **Map buoys (v6.5.0):** on the Map, press **📍**, pick **⚓ Wreck**, **🐉 Boss** or **⤵️ Drop-off** and tap the sea: up to **3** coloured buoys float there in the world and show on the Map and its list with distance and direction. Remove them from the same bar. Saved as `buoys`.
 
-**Districts (v6.3.0).** The terrace now runs from x -37.6 to +37.6 and climbs a gentle ramp (from 14 to 17 m back) to an **upper terrace** 1.2 m higher. Tap-to-walk finds its way around every building (waypoints joined wherever nothing solid is in the way).
-- **Market Square & Artisan Quarter (east):** a paved square with a fish stall, the **📮 Post Office** (Maren) and **🔨 Barnaby's Workshop**; up the lane, the **🦀 tide pool** and the **🍺 Sailors' Rest** tavern on the upper terrace.
-- **Lighthouse Hill (west):** a cobbled path past Marta's hut up to **🌿 Talia's greenhouse**, her **herb garden** and the **🔭 Lookout Pavilion** with a telescope and a reading bench.
-- **Street lanterns** along the hill path, the upper terrace and the market, and **Rook's winch** on the boardwalk west of the Boatyard.
+**Getting around.** Tap a building (or a place on the Map) and you walk to its door: the route follows the streets around every building. On the boardwalk, everyone (you and the townsfolk) keeps to the lane in front of the benches. **Street lanterns** line Garden Lane, Market Lane and the top of the steps, and **Rook's winch** stands on the boardwalk west of the Boatyard.
 
 **Places and what the action button does there:**
 | Place | Button | What it does |
 |---|---|---|
-| 📌 Noticeboard (plaza) | **JOBS** | Today's 3 town jobs, your town reputation |
+| 📌 Notice kiosk (at the gate) | **JOBS** | Today's 3 town jobs, your town reputation |
+| 🚪 Rook's, Pip's, Ines' and Marta's houses | **KNOCK** | A chat if they are home; otherwise where they usually are now |
+| 🍝 Your restaurant (Town Square) | **KITCHEN** | The restaurant sheet (dishes, service, cravings) |
 | 📮 Post Office | **POST** | The same jobs, a **treasure map** ($150, one a day: marks a chest on the Coastal Reef on your Map) and **bottle stamps** ($100 and 30 XP for every 6 bottle messages, up to 6) |
 | 🍺 Sailors' Rest | **DICE** (16:00 to 02:00) | *Ship, Captain & Crew* against Rook, Maren or Old Salty, for bait or $10 / $50 / $100 |
 | 🦀 Tide pool | **TRAPS** | Up to 3 crab traps ($8 bait each), haul them up from the next day: shore crabs, blue crabs and lobsters become **shellfish** in your restaurant pantry, pearls sell for $80 to $160 |
@@ -395,9 +403,9 @@ Behind the boardwalk, open along its whole length since v6.6.1 (the **🏘️ Ha
 
 **Town jobs** (3 a day, one at a time; cash, XP and +1 **town reputation**, from *Newcomer* to *Harbour hero*):
 - **📦 Cargo & mail runner:** collect a parcel at the Post Office and bring it to the mooring platform, the restaurant, the cabin, Sailors' Rest or (with a boat, +$60) the lighthouse jetty, within 4 in-game hours (10 for the jetty).
-- **🧹 Harbour cleanup crew:** pick up 5 pieces of litter (yellow rings) on the boardwalk and the east terrace (**✋ PICK UP**).
+- **🧹 Harbour cleanup crew:** pick up 5 pieces of litter (yellow rings) on the boardwalk, the promenade and the lanes (**✋ PICK UP**).
 - **🏮 Night watch:** light the 6 street lanterns (**🔥 LIGHT**) between 18:00 and 22:00; they glow until morning.
-- **🌿 Herb & shell foraging:** gather 5 herbs on Lighthouse Hill or 5 shells around the tide pool; herbs go to Talia's greenhouse.
+- **🌿 Herb & shell foraging:** gather 5 herbs round the herb garden and Lighthouse Hill, or 5 shells around the tide pool; herbs go to Talia's greenhouse.
 - **🏗️ Dockhand winch assist:** at the winch, hoist 5 crates: press **HOIST** when the swinging hook is over the green (3 good ones pass; the green shrinks each crate).
 
 **People.** Nine townsfolk live here, each with a day routine (they walk between their spots across the town and along the boardwalk, and go home at night): **👵 Old Marta** (the retired lighthouse keeper), **🧔 Captain Rook** (the Boatyard owner), **🧒 Pip** (a young angler), **👩‍🔬 Ines** (a marine biologist), **👨‍🍳 Chef Lorenzo**, and since v6.3.0 **📮 Maren** (postmistress and cartographer), **🔨 Barnaby** (retired shipwright), **🌿 Talia** (botanist and tide-pool keeper) and **🍺 Old Salty** (tavern keeper). Walk up to someone and press **💬 TALK**. A **❗** over a head means they have a quest for you, a green **❓** that you can hand one in. They also appear on the Map. In rain or a storm each of them opens an umbrella in their own colours.
@@ -599,6 +607,7 @@ The game is a plain static site with **no build step and no dependencies**: a sh
 - `js/dom.js` mounts the game's markup (HUD layer, overlays, every modal and sheet, kept as template strings in `js/ui/markup-*.js`) right after the start card, with every id unchanged, before the game starts.
 - **The game is about 150 ES modules of about 100 lines each** (since v10.1.0), grouped in folders by system (table below). Each module imports exactly what it uses with relative paths (`import { ZONES } from '../data/catalog.js'`) and exports what others use.
 - **Start order:** a module's top-level code that does something (builds a mesh, reads the DOM, wires a listener, computes a table from other tables) sits in its `export function init()`. `js/start.js` imports every module and then calls their `init()` functions in `ORDER`, which is the order the old single script ran its top-level code in. Module loading itself only declares functions and plain constants, so nothing runs before its inputs exist.
+- **The town is data (v12.0.0):** `js/world/town-plan.js` lists every building (position, size, facing, door, owner, look), street, tree, bench and lantern. The builders, colliders, door actions, map places, the townsfolk's homes and spots, the job spots and the town's walking graph (waypoints along every street plus every door) all read it.
 - **Shared state:** variables that more than one module reassigns (the mode, position and heading, the boat's motion, the fight, the save object `state`…) live on the `shared` object in `js/state.js` and are written as `shared.playerX`; everything else stays a normal module variable.
 - **Big classes** (`WorldBuilder`, `AnglerFactory`, `AudioEngine`, `AnglerAnimator`, `VFXManager`, `PixelTextureFactory`) are split by method: the class file (e.g. `js/world/world-builder.js`) declares the class with its first methods, the other files (`wb-*.js`, `angler-*.js`, `audio-*.js`…) export objects of whole methods, and `addMethods` (`js/utils.js`) joins them to the class in its `init()`. No function or method is ever cut in two; the few that are longer than 130 lines (`buildWorld`, `dress`, `updateSimulation`, `buildFishModel`…) have a file to themselves.
 - The stylesheets load in cascade order from `index.html`; the TIDE GLASS theme files come after the component files, and `utilities-*.css` (the former inline `style=""` attributes, scoped under their element ids so they keep their old precedence) come last.
@@ -607,7 +616,7 @@ The game is a plain static site with **no build step and no dependencies**: a sh
 
 **Physics (v8.2.0):** [Rapier](https://rapier.rs) 0.21.0 (`@dimforge/rapier3d-compat`). The loader downloads it next to three.js and starts it (compiles its WebAssembly) before the game. The `Physics` module mirrors every walk collider from the `Colliders` registry into a Rapier world (tall cuboids and cylinders, since walking ignores heights). The angler walks with Rapier's **character controller**, a capsule with the old 0.15 m body margin that slides along walls, benches and corners. The townsfolk are moving cylinders, so you still cannot walk through them. The town's path finding asks Rapier (one shape cast per segment instead of a scan of every collider; building the waypoint graph went from about 20 ms to 6 ms). The fixed pier rails, edges and island limits are unchanged clamps. If Rapier cannot load, or the secret menu's **Debug → Walking physics** is set to built-in, the old collision code runs exactly as before; the debug view of collision boxes also draws what Rapier sees (white lines).
 
-**Rendering budget (v8.0.0):** static props are merged per material look with `ModelKit.mergeStatic` and, where the materials only differ in colour, **baked into vertex colours** (`bakeColor`), so the pier, the town props, the harbour lamps and the buoys are a few dozen draw calls; `ModelKit.mergeSafe` does the same for a prop group but keeps anything that lights up or fades. Every character is **baked after `dress()`** (since v11.0.0, `AnglerFactory.bakeRig`): the skinned body and clothes and every rigid part (mittens, shoes, head, hair, hat, glasses, extras) are merged into one skinned mesh per material look, with colours in vertex colours, so the angler and each townsperson are 3 to 5 draw calls (they were 25 to 42) and the painted face stays apart for its expressions; tiny props (under ~12 cm) cast no sun shadow, the shadow map refreshes every other frame on devices running below ~45 fps, and the shaders are compiled in parallel (`compileAsync`) when the town is first built. Compared with v7.2.0 that is about **30–40% fewer draw calls** (pier 617 → 442, harbour 819 → 507, town square 514 → 359). With the baked characters (v11.0.0) the frame takes about half the draw calls of v10.1.0 with everyone nearby (pier 423–635 → 203–360, town 471–658 → 255–375, town square 466–645 → 275–362 per frame, depending on whether the shadow map is redrawn), for about 10% more triangles.
+**Rendering budget (v8.0.0):** static props are merged per material look with `ModelKit.mergeStatic` and, where the materials only differ in colour, **baked into vertex colours** (`bakeColor`), so the pier, the town props, the harbour lamps and the buoys are a few dozen draw calls; `ModelKit.mergeSafe` does the same for a prop group but keeps anything that lights up or fades. Every character is **baked after `dress()`** (since v11.0.0, `AnglerFactory.bakeRig`): the skinned body and clothes and every rigid part (mittens, shoes, head, hair, hat, glasses, extras) are merged into one skinned mesh per material look, with colours in vertex colours, so the angler and each townsperson are 3 to 5 draw calls (they were 25 to 42) and the painted face stays apart for its expressions; tiny props (under ~12 cm) cast no sun shadow, the shadow map refreshes every other frame on devices running below ~45 fps, and the shaders are compiled in parallel (`compileAsync`) when the town is first built. Compared with v7.2.0 that is about **30–40% fewer draw calls** (pier 617 → 442, harbour 819 → 507, town square 514 → 359). With the baked characters (v11.0.0) the frame takes about half the draw calls of v10.1.0 with everyone nearby (pier 423–635 → 203–360, town 471–658 → 255–375, town square 466–645 → 275–362 per frame, depending on whether the shadow map is redrawn), for about 10% more triangles. The planned town (v12.0.0) stays within that budget: each building bakes into about six meshes (matte surfaces, roof, glass, lamp, sign), giving pier 194–324, the gate 233–358, the Town Square 227–322 and the Upper Terrace 279–372 draw calls per frame.
 
 The interface (v7.0.0, *Tide Glass*) is styled from design tokens on `:root` (`--ink-*`, `--sea`, `--coral`, `--gold`, `--glass`, `--blur`, `--r-*`, `--text-scale`); a theme block at the end of the stylesheet restyles the components, and line icons come from an inline SVG sprite (`<use href="#i-…">`).
 
@@ -645,7 +654,7 @@ The game modules, by folder (every file starts with a one- or two-line comment s
 | `js/audio/` | The Web Audio engine (`AudioEngine`) and its sound groups: ambience and diving, fishing, the fight |
 | `js/data/` | Data tables: equipment (boats, modules, rods, bait, buckets), the catch catalogue, zones and weather, bottles and bounties, townsfolk, quests, recipes; the `Colliders` registry |
 | `js/render/` | Renderer, scene, camera, screen shader, lights and shadows, textures and icons, `ModelKit`, particles (`VFXManager`), the catch and live-bait previews |
-| `js/world/` | World layout constants and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
+| `js/world/` | World layout constants, **the town plan** (`town-plan.js`: every town building, street, tree, bench and lantern, with the door helpers `doorOf` / `atDoor`), the modern building kit (`town-kit.js`) and every 3D model builder (`WorldBuilder` and its `wb-*` method groups: fish, junk, boats, pier props, shops, cabin, town, the world) |
 | `js/angler/` | The character: look options, `AnglerFactory` (proportions, faces, rig, skinned geometry, `dress`) and `AnglerAnimator` |
 | `js/sim/` | Runtime state, the stick and controls state, interaction spots, tap-to-walk, the sky and first-person camera, `updateSimulation` and the frame loop (`animate`) |
 | `js/boat/` | Fishing stations, boat handling and hull motion, boarding, the boat terminal |
@@ -710,6 +719,15 @@ For a release, also bump `PF_VERSION` in `js/boot/version.js`. A new or renamed 
 `CLAUDE.md` repeats this rule for AI-assisted work.
 
 ## Changelog
+
+### 2026-11-23, Version 12.0.0: a planned Harbour Town (town rewrite, part 1)
+
+- **A real town plan:** the island is now about 40 m deep. The Harbour Promenade runs along the front. Harbour Street leads from the gate to a new **Town Square** (fountain, market stall, your restaurant and the Post Office facing each other), with Garden Lane to the west (Talia's greenhouse, the herb garden, the path up Lighthouse Hill) and Market Lane to the east (Barnaby's boat shed, the tide pool, your plot). Steps climb to the **Upper Terrace** with the townsfolk's homes, the Lookout Pavilion and the Sailors' Rest at the top of the street, visible from the gate.
+- **Modern coastal buildings:** white render, slatted timber cladding, dark metal roofs (flat, mono-pitch, gable), framed windows that glow at night, doors with canopy, mat, lamp and sign; paved stone streets, terracotta lanes and planned trees.
+- **Doors done one way:** every action sits at the building's door (`atDoor`); the houses of Rook, Pip, Ines and Marta can be **knocked on** (a chat if they are home, otherwise where they usually are now). Townsfolk wait beside doors, never on them.
+- **Walking:** tap a building to walk to its door along the streets; the walking graph is built from the plan. On the boardwalk everyone keeps to a lane in front of the benches (the townsfolk used to walk through them).
+- **Your plot** waits on the east waterfront for the new cabin (v12.2.0); the cabin stays on the boardwalk until then.
+- **Performance:** no more draw calls than v11.0.0 (about six meshes per building).
 
 ### 2026-11-22, Version 11.0.0: a new customise screen and lighter characters (character overhaul, phase 3)
 
