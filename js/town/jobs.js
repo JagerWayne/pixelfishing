@@ -45,7 +45,7 @@ export function takePickup() {
   a.pts.splice(i, 1); a.n++; sfx.playTick(); syncJobProps();
   if (a.n >= a.need) finishJob(true); else { saveGame(); showToast(`${JOB_KINDS[a.kind].icon} ${a.n} / ${a.need}`); }
 }
-/* the street lanterns: lit by the night watch, they glow until morning */
+/* the street lanterns: on a lantern-job night they are out until the night watch lights them (they glow until morning) */
 export function nearLantern() {
   const a = activeJob(); if (!a || a.kind !== 'lantern' || a.stage !== 1) return -1;
   return JOB_LANTERNS.findIndex((p, i) => !town().lit.includes(i) && Math.hypot(shared.playerX - p.x, shared.playerZ - p.z) < 1.3);
@@ -59,8 +59,9 @@ export function lightLantern() {
 export function updateTownProps() {
   const D = world && world.district; if (!D) return;
   const T = town(), night = shared.state.timeOfDay > 0.75 || shared.state.timeOfDay < 0.25;
-  const litNow = T.litDay === (shared.state.dayCount || 0) || (T.litDay === (shared.state.dayCount || 0) - 1 && shared.state.timeOfDay < 0.25);
-  D.lanterns.forEach((l, i) => { const on = night && litNow && T.lit.includes(i); l.glass.emissiveIntensity = on ? 1.4 : 0; });
+  // v2.1: the street lanterns light every night; on the night of a lantern job (T.watch) only the ones you lit
+  const day = shared.state.dayCount || 0, watching = T.watch === (shared.state.timeOfDay < 0.25 ? day - 1 : day);
+  D.lanterns.forEach((l, i) => { const on = night && (!watching || T.lit.includes(i)); l.glass.emissiveIntensity = on ? 1.6 : 0; if (l.pool) l.pool.visible = on; });
   D.benchLamps.forEach(l => { l.head.emissiveIntensity = night ? 1.6 : 0; l.pool.opacity = night ? 0.55 : 0; });
   // v12.0.0: windows and door lamps glow at night (the fade gives each building its own copy, so find the copies once)
   if (D.glowVer !== townFadeState.ver) {

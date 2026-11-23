@@ -19,7 +19,7 @@ import { shopMoney } from '../shop/shop-kinds.js';
 export const JOB_KINDS = {
   mail:    { icon: '📦', name: 'Cargo & mail runner', pay: [45, 90], xp: 20, desc: j => `Collect a parcel at the Post Office and bring it to ${mailStop(j.to).name} within ${Math.round(j.left / 60) || mailStop(j.to).hours} hours.` },
   cleanup: { icon: '🧹', name: 'Harbour cleanup crew', pay: [40, 70], xp: 18, desc: () => 'Pick up 5 pieces of washed-up litter along the boardwalk and the east terrace.' },
-  lantern: { icon: '🏮', name: 'Night watch: lantern lighter', pay: [60, 100], xp: 24, desc: () => `Light the ${JOB_LANTERNS.length} street lanterns between 18:00 and 22:00.` },
+  lantern: { icon: '🏮', name: 'Night watch: lantern lighter', pay: [60, 100], xp: 24, desc: () => `The lanterns are out tonight: light the ${JOB_LANTERNS.length} street lanterns between 18:00 and 22:00.` },
   forage:  { icon: '🌿', name: 'Herb & shell foraging', pay: [35, 65], xp: 16, desc: j => (j.variant === 'shells' ? 'Gather 5 shells around the tide pool for Talia and Lorenzo.' : 'Gather 5 coastal herbs on Lighthouse Hill for Talia and Lorenzo.') },
   winch:   { icon: '🏗️', name: 'Dockhand winch assist', pay: [50, 85], xp: 20, desc: () => "Help Rook hoist 5 heavy crates at the winch beside the Boatyard: press HOIST when the hook is in the green." }
 };
@@ -94,7 +94,9 @@ export function townJobTick() {
     }
   }
   if (a.kind === 'lantern' && a.n < a.need && shared.state.timeOfDay >= 22 / 24 && shared.state.timeOfDay < 0.95 && a.stage === 1) finishJob(false, '🏮 22:00 came and some lanterns stayed dark.');
-  if (a.kind === 'lantern' && shared.state.timeOfDay >= 18 / 24 && shared.state.timeOfDay < 22 / 24) a.stage = 1;
+  if (a.kind === 'lantern' && shared.state.timeOfDay >= 18 / 24 && shared.state.timeOfDay < 22 / 24 && a.stage !== 1) {
+    a.stage = 1; const T = town(); T.watch = shared.state.dayCount || 0; T.lit = []; saveGame();   // v2.1: tonight the lanterns are out until you light them
+  }
 }
 export function townClock(dMin) {
   const a = activeJob(); if (!a || dMin <= 0) return;
